@@ -979,7 +979,7 @@ def usgs_colorado_river_gages():
 
 
 if __name__ == '__main__':
-    usbr_catalog()
+    # usbr_catalog()
     usbr_upper_colorado_reservoirs()
     usbr_lower_colorado_reservoirs()
     usgs_lower_colorado_to_border_gages()
