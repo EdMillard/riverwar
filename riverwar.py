@@ -1071,6 +1071,7 @@ def usgs_lower_colorado():
 
 
 def usgs_lower_colorado_tributaries():
+    usgs_las_vegas_wash_below_lake_las_vegas()
     # usgs_gila_duncan()
     usgs_gila_dome()
     usgs_gila_goodyear()
@@ -1116,19 +1117,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    usgs_lower_colorado_tributaries()
-    usgs_las_vegas_wash_below_lake_las_vegas()
 
     usbr_upper_colorado_reservoirs()
     usbr_lower_colorado_reservoirs()
-    usgs_lower_colorado_to_border_gages()
-
     usgs_lees_ferry()
-    usbr_upper_colorado_reservoirs()
-    usbr_lower_colorado_reservoirs()
-
-    # usgs_colorado_river_gages()
-    usgs_lower_colorado_tributaries()
-
-    usgs_upper_colorado()
-    usgs_lower_colorado()
+    usgs_colorado_river_gages()
