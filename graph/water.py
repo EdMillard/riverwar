@@ -141,9 +141,7 @@ class WaterGraph(object):
         plt.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
 
         water_graph.fig.show()
-        button_pressed = water_graph.fig.waitforbuttonpress()
-        if not button_pressed:
-            exit(1)
+        water_graph.fig.waitforbuttonpress()
 
         return water_graph
 
@@ -182,9 +180,7 @@ class WaterGraph(object):
         water_graph_cfs = WaterGraph.plot(daily_discharge_cfs, gage.site_name, ylabel='CFS',
                                           ymin=gage.cfs_min, ymax=gage.cfs_max, yinterval=gage.cfs_interval,
                                           format_func=WaterGraph.format_discharge, color=gage.color)
-        button_pressed = water_graph_cfs.fig.waitforbuttonpress()
-        if not button_pressed:
-            exit(1)
+        water_graph_cfs.fig.waitforbuttonpress()
 
         daily_discharge_af = WaterGraph.convert_cfs_to_af_per_day(daily_discharge_cfs)
         annual_af = WaterGraph.daily_to_water_year(daily_discharge_af)
@@ -215,9 +211,8 @@ class WaterGraph(object):
         # water_graph_annual.fig.legend()
 
         water_graph_annual.fig.show()
-        button_pressed = water_graph_annual.fig.waitforbuttonpress()
-        if not button_pressed:
-            exit(1)
+        water_graph_annual.fig.waitforbuttonpress()
+
         return water_graph_cfs, water_graph_annual
 
     @staticmethod

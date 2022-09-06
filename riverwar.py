@@ -36,11 +36,32 @@ interrupted = False
 
 # noinspection PyUnusedLocal
 def usbr_catalog():
+    # unified_region_north_atlantic_appalachian = 1
+    # unified_region_south_atlantic_gulf = 2
+    # unified_region_great_lakes = 3
+    # unified_region_mississippi = 4
+    # unified_region_missouri = 5
+    # unified_region_arkansas_rio_grande_texas_gulf = 6
+    unified_region_upper_colorado = 7
+    unified_region_lower_colorado = 8
+    # unified_region_columbia_pacific_northwest = 9
+    # unified_region_california_great_basin = 10
+    # unified_region_alaska = 11
+    # unified_region_pacific_islands = 12
+
+    theme_water = 1
+    # theme_water_quality = 2
+    # theme_biological = 3
+    # theme_environmental = 4
+    # theme_infrastructure_and_assets = 5
+    # theme_hydropower = 7
+    # theme_safety_health_and_industrial_hygiene = 10
+
     catalog_path = Path('data/USBR_RISE/')
     catalog_path.mkdir(parents=True, exist_ok=True)
-    unified_region_upper_colorado = 7
+
     upper_colorado_catalog_path = catalog_path.joinpath('Upper_Colorado_Catalog.json')
-    records = usbr_rise.load_catalog(upper_colorado_catalog_path, unified_region_upper_colorado, theme_id=1)
+    records = usbr_rise.load_catalog(upper_colorado_catalog_path, unified_region_upper_colorado, theme_id=theme_water)
     for record in records:
         attributes = record['attributes']
         record_title = attributes['recordTitle']
@@ -58,12 +79,23 @@ def usbr_catalog():
             catalog_items = usbr_rise.load_catalog_items(record, 'usbr_green_mountain')
         elif record_title.startswith('Ruedi'):
             catalog_items = usbr_rise.load_catalog_items(record, 'usbr_ruedi')
+        elif record_title.startswith('Lake Granby'):
+            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_granby')
+        elif record_title.startswith('Grand Lake'):
+            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_grand_lake')
+        elif record_title.startswith('Willow Creek'):
+            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_willow_creek')
+        elif record_title.startswith('Shadow Mountain'):
+            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_shadow_mountain')
+        elif record_title.startswith('Mcphee'):
+            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_mcphee')
+        elif record_title.startswith('Taylor Park'):
+            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_taylor_park')
         # else:
-            # print(record_title)
+        #    print(record_title)
 
-    unified_region_lower_colorado = 8
     lower_colorado_catalog_path = catalog_path.joinpath('Lower_Colorado_Catalog.json')
-    records = usbr_rise.load_catalog(lower_colorado_catalog_path, unified_region_lower_colorado, theme_id=1)
+    records = usbr_rise.load_catalog(lower_colorado_catalog_path, unified_region_lower_colorado, theme_id=theme_water)
     for record in records:
         attributes = record['attributes']
         record_title = attributes['recordTitle']
@@ -73,8 +105,54 @@ def usbr_catalog():
             catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_mohave')
         elif record_title.startswith('Lake Havasu'):
             catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_havasu')
-        # else:
-            # print(record_title)
+        else:
+             print(record_title)
+
+
+'''
+    SW Colorado
+    Lemon Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
+    Jackson Gulch Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
+    Vallecito Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
+
+    Ridgway Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
+    Paonia Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
+    Fruitgrowers Reservoir - Orchard, CO
+    Silver Jack Reservoir - Gunnison, CO
+    Morrow Point Reservoir Dam and Powerplant Water Operations Monitoring Data from Upper Colorado Hydrologic Database
+    Crystal Reservoir Dam and Powerplant Water Operations Monitoring Data from Upper Colorado Hydrologic Database
+    Taylor Park Reservoir - Uncompaghre
+    Utah:
+        Strawberry Reservoir - East Slope of Wasatch
+        Starvation Reservoir - West of Duschesne
+        Moon Lake Reservoir - North of Duschesne
+        Stateline Reservoir - Wyoming Border, Smiths Fork
+        Scofield Reservoir - Price River
+        Rockport Reservoir - Weber River
+        Lost Creek Reservoir - Weber
+        Red Fleet Reservoir - Vernal
+        Steinaker Reservoir - Vernal
+        Trial Lake - Wasatch
+        Pineview Reservoir - Ogden
+        Willard Bay Reservoir - Ogden
+        Upper Stillwater Reservoir - Bonneville
+    Wyoming:
+        Meeks Cabin Reservoir
+
+
+'''
+'''
+    Colorado River Below Davis Dam Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River At Water Wheel Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River At Taylor Ferry Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River At River Section 41 Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River At Parker Gage Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River At Cibola Gage Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River Below Oxbow Bridge Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River Below Mcintyre Park Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River Below Interstate Bridge Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+    Colorado River Below Big Bend Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
+'''
 
 
 def usbr_lake_powell():
@@ -157,6 +235,39 @@ def usbr_ruedi():
     usbr_ruedi_storage_af = 711
     usbr_ruedi_elevation_ft = 712
     usbr_ruedi_release_total_cfs = 716
+
+
+# noinspection PyUnusedLocal
+def usbr_mcphee():
+    usbr_mcphee_storage_af = 569
+    usbr_mcphee_inflow_cfs = 570
+    usbr_mcphee_elevation_ft = 572
+    usbr_mcphee_evaporation_af = 573
+    usbr_mcphee_release_total_cfs = 4342
+    usbr_mcphee_inflow_af = 4379
+    usbr_mcphee_release_total_af = 4420
+    usbr_mcphee_change_in_storage_af = 4421
+    usbr_mcphee_area_acres = 4791
+
+
+# noinspection PyUnusedLocal
+def usbr_lake_granby():
+    usbr_lake_granby_storage_af = 383
+    usbr_lake_granby_elevation_ft = 384
+    usbr_lake_granby_release_total_cfs = 386
+
+
+# noinspection PyUnusedLocal
+def usbr_grand_lake():
+    usbr_lake_grand_lake_storage_af = 371
+    usbr_lake_grand_lake_elevation_ft = 372
+
+
+# noinspection PyUnusedLocal
+def usbr_shadow_mountain():
+    usbr_lake_shadow_mountain_storage_af = 737
+    usbr_lake_shadow_mountain_elevation_ft = 738
+    usbr_lake_shadow_mountain_release_total_cfs = 740
 
 
 def usbr_navajo_reservoir():
@@ -621,7 +732,7 @@ def usgs_gila_dome():
 
     gage = USGSGage('09520500', start_date='1996-01-01', color='firebrick',
                     cfs_max=1000, cfs_interval=100,
-                    annual_min=0, annual_max=200000, annual_interval=5000, annual_unit='kaf', year_interval=2)
+                    annual_min=0, annual_max=200000, annual_interval=5000, annual_unit='kaf', year_interval=5)
     WaterGraph.plot_gage(gage)
 
 
@@ -647,8 +758,15 @@ def usgs_colorado_below_parker():
     WaterGraph.plot_gage(gage)
 
 
+def usgs_las_vegas_wash_below_lake_las_vegas():
+    gage = USGSGage('09419800', start_date='1956-03-24', color='firebrick',
+                    cfs_max=2000, cfs_interval=100,
+                    annual_min=0, annual_max=300000, annual_interval=10000, annual_unit='kaf', year_interval=4)
+    WaterGraph.plot_gage(gage)
+
+
 def usgs_colorado_below_palo_verde():
-    gage = USGSGage('09429100', start_date='1956-03-24', color='firebrick',
+    gage = USGSGage('09429100', start_date='1969-08-01', color='firebrick',
                     cfs_max=22000, cfs_interval=1000,
                     annual_min=0, annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=4)
     WaterGraph.plot_gage(gage)
@@ -982,7 +1100,8 @@ def usgs_colorado_river_gages():
     usgs_lower_colorado_to_border_gages()
 
 
-def keyboardInterruptHandler(signal, frame):
+# noinspection PyUnusedLocal
+def keyboardInterruptHandler(sig, frame):
     global interrupted
     interrupted = True
 
@@ -997,6 +1116,9 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    usgs_lower_colorado_tributaries()
+    usgs_las_vegas_wash_below_lake_las_vegas()
+
     usbr_upper_colorado_reservoirs()
     usbr_lower_colorado_reservoirs()
     usgs_lower_colorado_to_border_gages()

@@ -66,8 +66,9 @@ class USGSGage(object):
 
     # def __del__(self):
     def daily_discharge(self):
-        file_name = './data/USGS_Gages/' + self.site + '.csv'
-        if not os.path.exists(file_name):
+        file_path = Path('data/USGS_Gages/')
+        file_name = file_path.joinpath(self.site + '.csv')
+        if not file_name.exists():
             self.request_daily_discharge(self.start_date, self.end_date)
 
         return self.load_daily_discharge(self.site)
@@ -162,8 +163,10 @@ class USGSGage(object):
             print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
 
     def load_daily_discharge(self, site):
-        file_name = '/opt/code/riverwar/data/USGS_Gages/' + site + '.csv'
-        if not os.path.exists(file_name):
+        file_path = Path('data/USGS_Gages/')
+        file_path.mkdir(parents=True, exist_ok=True)
+        file_name = file_path.joinpath(self.site + '.csv')
+        if not file_name.exists():
             print('USGS path doesn\'t exist: ', file_name)
             return file_name
         self.daily_discharge_cfs = self.load_time_series_csv(file_name)
