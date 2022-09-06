@@ -1,4 +1,6 @@
-data
+data/USBR_RISE  
+data/USGS_Gages
 .idea
 graph/__pycache__/
 source/__pycache__/
+
