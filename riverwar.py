@@ -28,6 +28,8 @@ from source import usbr_rise
 from graph.water import WaterGraph
 from pathlib import Path
 
+interrupted = False
+
 # matplotlib colors
 # https://i.stack.imgur.com/lFZum.png
 
@@ -982,10 +984,10 @@ def usgs_colorado_river_gages():
 
 def keyboardInterruptHandler(signal, frame):
     global interrupted
-    print("KeyboardInterrupt (ID: {}) .... exiting...".format(signal))
     interrupted = True
 
     try:
+        print("exit")
         sys.exit(0)
     except OSError as e:
         print("riverwar exit exception:", e)
