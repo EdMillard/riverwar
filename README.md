@@ -12,9 +12,9 @@ riverwar is a Python app and library to download and graph hydrological data fro
 python3 riverwar.py
 ```
 Services available for USGS gages include:
-- download abd cache the data of interest as a
+- download and cache the data of interest:
 	daily values (dv)
-- autoupdate the cache to the most recently available day
+- auto update the cache to the most recently available day
 
 Services available for USBR RISE data include:
 - download and cash catalogs for Upper and Lower Colorado River Basin
