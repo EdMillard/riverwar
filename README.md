@@ -55,8 +55,7 @@ usbr_catalog():
 Issue tracker
 -------------
 
-Please report any bugs and enhancement ideas using the dataretrieval issue
-tracker:
+Please report any bugs and enhancement ideas using the riverwar issue tracker:
 
   https://github.com/edmillard/riverwar/issues
 
