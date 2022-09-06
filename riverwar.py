@@ -21,6 +21,8 @@ SOFTWARE.
 """
 import datetime
 import numpy as np
+import signal
+import sys
 from source.usgs_gage import USGSGage
 from source import usbr_rise
 from graph.water import WaterGraph
@@ -978,7 +980,20 @@ def usgs_colorado_river_gages():
     usgs_lower_colorado_to_border_gages()
 
 
+def keyboardInterruptHandler(signal, frame):
+    global interrupted
+    print("KeyboardInterrupt (ID: {}) .... exiting...".format(signal))
+    interrupted = True
+
+    try:
+        sys.exit(0)
+    except OSError as e:
+        print("riverwar exit exception:", e)
+
+
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, keyboardInterruptHandler)
+
     # usbr_catalog()
     usbr_upper_colorado_reservoirs()
     usbr_lower_colorado_reservoirs()
