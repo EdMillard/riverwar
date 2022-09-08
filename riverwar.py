@@ -1100,7 +1100,7 @@ def usgs_colorado_river_gages():
     usgs_lower_colorado_tributaries()
 
 
-def usbr_reports():
+def usbr_lake_havasu_cap_wilmer_pumping_plant():
     wilmer_monthly_af = usbr_report.load_monthly_csv('usbr_lake_havasu_cap_wilmer_pumps.csv')
     water_graph = WaterGraph.plot(wilmer_monthly_af, 'Lake Havasu CAP Wilmer Pumping Plant',
                                   ylabel='kaf', ymin=0, ymax=200000, yinterval=10000, color='firebrick',
@@ -1115,6 +1115,8 @@ def usbr_reports():
     water_graph.running_average(wilmer_annual_af, 10)
     water_graph.fig.waitforbuttonpress()
 
+
+def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
     whitsett_monthly_af = usbr_report.load_monthly_csv( 'usbr_lake_havasu_metropolitan_whitsett_pumps.csv')
     water_graph = WaterGraph.plot(whitsett_monthly_af,
                                   'Lake Havasu Metropolitan Whitsett Pumping Plant',
@@ -1137,12 +1139,20 @@ def usbr_reports():
                                   format_func=WaterGraph.format_kaf)
     water_graph.fig.waitforbuttonpress()
 
-    whitsett_san_diego_annual_af = usbr_report.monthly_to_water_year(whitsett_san_diego_monthly_af, water_year_month=1)
+    whitsett_san_diego_annual_af = usbr_report.monthly_to_calendar_year(whitsett_san_diego_monthly_af)
     water_graph = WaterGraph.bars(whitsett_san_diego_annual_af, title='Lake Havasu Metropolitan San Diego Exchange Whitsett Pumping Plant',
                                   ylabel='kaf', ymin=0, ymax=200000, yinterval=10000,
                                   xlabel='Calendar Year',  xinterval=3, color='firebrick',
                                   format_func=WaterGraph.format_kaf)
     water_graph.running_average(whitsett_san_diego_annual_af, 10)
+    water_graph.fig.waitforbuttonpress()
+
+    WaterGraph.bars_stacked(whitsett_annual_af, whitsett_san_diego_annual_af,
+                        title='Lake Havasu Metropolitan + San Diego Exchange Whitsett Pumping Plant',
+                        label_a='Metropolitan', color_a='firebrick',
+                        label_b='San Diego Exchange', color_b='goldenrod',
+                        ylabel='kaf', ymin=0, ymax=1400000, yinterval=100000,
+                        xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_kaf)
     water_graph.fig.waitforbuttonpress()
 
     # usbr_report.load_monthly_csv('usbr_lake_mead_snwa_griffith_pumps.csv')
@@ -1163,8 +1173,14 @@ def keyboardInterruptHandler(sig, frame):
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-    usbr_reports()
     # usbr_catalog()
+    
+    usbr_lake_havasu_cap_wilmer_pumping_plant()
+    usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
+
+    usbr_upper_colorado_reservoirs()
+    usbr_lower_colorado_reservoirs()
+
     usgs_las_vegas_wash_below_lake_las_vegas()
 
     usgs_lower_colorado()

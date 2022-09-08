@@ -69,8 +69,8 @@ def load_monthly_csv(file_name):
         elif line == 0:
             pass
         else:
-            fields = s.split(' ')
-            if len(fields) > 0:
+            fields = s.strip().split(' ')
+            if len(fields) > 1:
                 month = 1
                 year = fields[0]
                 total = int(fields[-1].replace(',', ''))
@@ -87,6 +87,16 @@ def load_monthly_csv(file_name):
                     months += 1
                 if sum_year != total:
                     print('data error in report expected = ', total, ' got = ', sum_year, fields)
+            elif len(fields) == 1:
+                year = fields[0]
+                monthly_flow = 0
+                for month in range(1, 13):
+                    last_day = calendar.monthrange(int(year), month)[1]
+                    year_month_last_day = str(year) + '-' + str(month) + '-' + str(last_day)
+                    date_time = datetime.datetime.strptime(year_month_last_day, date_time_format)
+                    a[months][0] = date_time
+                    a[months][1] = monthly_flow
+                    months += 1
             else:
                 break
         line += 1
@@ -126,6 +136,41 @@ def monthly_to_water_year(a, water_year_month=10):
     for l in result:
         # a[day][0] = np.datetime64(l[0])
         a[year][0] = l[0].year - offset
+        a[year][1] = l[1]
+        year += 1
+
+    return a
+
+
+def monthly_to_calendar_year(a):
+    dt = datetime.date(1, 1, 1)
+    total = 0
+    result = []
+    previous_year = 1
+    wrote_year = 1
+    current_year = 1
+    for o in a:
+        obj = o['dt'].astype(object)
+        current_year = obj.year
+        if previous_year == 1:
+            previous_year = current_year
+            dt = datetime.date(current_year, 12, 31)
+        elif previous_year != current_year:
+            result.append([dt, total])
+            wrote_year = previous_year
+            total = 0
+            dt = datetime.date(current_year, 12, 31)
+            previous_year = current_year
+        total += o['val']
+
+    if current_year != wrote_year:
+        result.append([dt, total])
+
+    a = np.empty(len(result), [('dt', 'i'), ('val', 'f')])
+    year = 0
+
+    for l in result:
+        a[year][0] = l[0].year
         a[year][1] = l[1]
         year += 1
 
