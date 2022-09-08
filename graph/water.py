@@ -146,6 +146,59 @@ class WaterGraph(object):
         return water_graph
 
     @staticmethod
+    def bars_stacked(a, b, label_a='', label_b='', title='', color_a='royalblue', color_b='limegreen',
+                    ylabel='', ymin=0, ymax=0, yinterval=1,
+                    xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
+        water_graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
+
+        t_min_a = a[0][0] - 1
+        t_min_b = b[0][0] - 1
+        t_max_a = a[-1][0] + 1
+        t_max_b = b[-1][0] + 1
+
+        if t_min_a <= t_min_b:
+            t_min = t_min_a
+        else:
+            t_min = t_min_b
+        if t_max_a >= t_max_b:
+            t_max = t_max_a
+        else:
+            t_max = t_min_b
+
+        labels_x = np.arange(t_min, t_max, xinterval)
+        plt.xticks(labels_x)
+        if xmin != 0:
+            x_min = xmin
+        else:
+            x_min = t_min
+        if xmax != 0:
+            x_max = xmax
+        else:
+            x_max = t_max
+
+        plt.xlim([x_min, x_max])
+
+        if ymax > 0 and yinterval > 0:
+            label_y = np.arange(ymin, ymax+yinterval, yinterval)
+            plt.yticks(label_y)
+        plt.ylim([ymin, ymax])
+
+        water_graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
+
+        x = a['dt']
+        y = a['val']
+        plt.bar(x, y, width=0.9, color=color_a, label=label_a)
+
+        b_x = b['dt']
+        b_y = b['val']
+        plt.bar(b_x, b_y, bottom=y, width=0.9, color=color_b, label=label_b)
+        plt.legend()
+        water_graph.fig.show()
+        water_graph.fig.waitforbuttonpress()
+
+        return water_graph
+
+    @staticmethod
     def plot(a, title='', color='royalblue',
              xlabel='', xmin=0, xmax=0, xinterval=5,
              ylabel='', ymin=0, ymax=0, yinterval=1,
