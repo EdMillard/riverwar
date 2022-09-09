@@ -22,7 +22,6 @@ SOFTWARE.
 import datetime
 import requests
 import numpy as np
-import os
 from pathlib import Path
 
 # USGS Gage parameter definitions
@@ -71,7 +70,7 @@ class USGSGage(object):
         if not file_name.exists():
             self.request_daily_discharge(self.start_date, self.end_date)
 
-        return self.load_daily_discharge(self.site)
+        return self.load_daily_discharge()
 
     def load_time_series_csv(self, filename):
         date_time_format = "%Y-%m-%d"
@@ -162,7 +161,7 @@ class USGSGage(object):
         else:
             print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
 
-    def load_daily_discharge(self, site):
+    def load_daily_discharge(self):
         file_path = Path('data/USGS_Gages/')
         file_path.mkdir(parents=True, exist_ok=True)
         file_name = file_path.joinpath(self.site + '.csv')

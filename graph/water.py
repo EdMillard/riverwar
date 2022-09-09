@@ -88,7 +88,7 @@ class WaterGraph(object):
     def bars(a, title='', color='royalblue',
              ylabel='', ymin=0, ymax=0, yinterval=1,
              xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
-        water_graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
+        graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
 
         if xmin == 0:
             xmin = a[0][0] - 1
@@ -103,19 +103,19 @@ class WaterGraph(object):
             plt.yticks(labels_y)
         plt.ylim([ymin, ymax])
 
-        water_graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
+        graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
         x = a['dt']
         y = a['val']
         plt.bar(x, y, width=0.9, color=color)
 
-        return water_graph
+        return graph
 
     @staticmethod
     def bars_two(a, b, label_a='', label_b='', title='', color_a='royalblue', color_b='limegreen',
                     ylabel='', ymin=0, ymax=0, yinterval=1,
                     xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
-        water_graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
+        graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
 
         if xmin == 0:
             xmin = a[0][0] - 1
@@ -130,7 +130,7 @@ class WaterGraph(object):
             plt.yticks(label_y)
         plt.ylim([ymin, ymax])
 
-        water_graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
+        graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
         x = a['dt']
         y = a['val']
@@ -140,68 +140,94 @@ class WaterGraph(object):
         b_y = b['val']
         plt.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
 
-        water_graph.fig.show()
+        graph.fig.show()
 
-        return water_graph
+        return graph
 
     @staticmethod
-    def bars_stacked(a, b, label_a='', label_b='', title='', color_a='royalblue', color_b='limegreen',
-                    ylabel='', ymin=0, ymax=0, yinterval=1,
-                    xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
-        water_graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
+    def reshape_annual_range(a, year_min, year_max):
+        years = year_max - year_min + 1
+        b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
 
-        t_min_a = a[0][0] - 1
-        t_min_b = b[0][0] - 1
-        t_max_a = a[-1][0] + 1
-        t_max_b = b[-1][0] + 1
+        for year in range(year_min, year_max + 1):
+            b[year - year_min][0] = year
+            b[year - year_min][1] = 0
 
-        if t_min_a <= t_min_b:
-            t_min = t_min_a
-        else:
-            t_min = t_min_b
-        if t_max_a >= t_max_b:
-            t_max = t_max_a
-        else:
-            t_max = t_min_b
+        for year_val in a:
+            year = year_val[0]
+            if year_min <= year <= year_max:
+                b[year - year_min][1] = year_val[1]
 
-        labels_x = np.arange(t_min, t_max, xinterval)
-        plt.xticks(labels_x)
-        if xmin != 0:
-            x_min = xmin
-        else:
-            x_min = t_min
-        if xmax != 0:
-            x_max = xmax
-        else:
-            x_max = t_max
+        return b
 
-        plt.xlim([x_min, x_max])
+    @staticmethod
+    def bars_stacked(bar_data, title='', graph=None,
+                     ylabel='', ymin=0, ymax=0, yinterval=1,
+                     xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
+        if not graph:
+            graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
+            t_min = 10000
+            t_max = 0
+            for bar in bar_data:
+                a = bar['data']
+                bar_min = a[0][0] - 1
+                bar_max = a[-1][0] + 1
+                if bar_min <= t_min:
+                    t_min = bar_min
+                if bar_max >= t_max:
+                    t_max = bar_max
+                labels_x = np.arange(t_min, t_max, xinterval)
+                plt.xticks(labels_x)
+                if xmin != 0:
+                    x_min = xmin
+                else:
+                    x_min = t_min
+                if xmax != 0:
+                    x_max = xmax
+                else:
+                    x_max = t_max
+
+                plt.xlim([x_min, x_max])
+        else:
+            for bar in bar_data:
+                a = bar['data']
+                x_lim = graph.ax.get_xlim()
+                b = WaterGraph.reshape_annual_range(a, 1985, 2021)
 
         if ymax > 0 and yinterval > 0:
             label_y = np.arange(ymin, ymax+yinterval, yinterval)
             plt.yticks(label_y)
         plt.ylim([ymin, ymax])
 
-        water_graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
+        graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
-        x = a['dt']
-        y = a['val']
-        plt.bar(x, y, width=0.9, color=color_a, label=label_a)
+        first = True
+        bottom = None
+        for bar in bar_data:
+            a = bar['data']
+            color = bar['color']
+            label = bar['label']
+            x = a['dt']
+            y = a['val']
+            if first:
+                plt.bar(x, y, width=0.9, color=color, label=label)
+                first = False
+                bottom = y
+            else:
+                plt.bar(x, y, bottom=bottom, width=0.9, color=color, label=label)
+                bottom = bottom + y
 
-        b_x = b['dt']
-        b_y = b['val']
-        plt.bar(b_x, b_y, bottom=y, width=0.9, color=color_b, label=label_b)
         plt.legend()
-        water_graph.fig.show()
+        graph.fig.show()
 
-        return water_graph
+        return graph
 
     @staticmethod
     def plot(a, title='', color='royalblue',
              xlabel='', xmin=0, xmax=0, xinterval=5,
              ylabel='', ymin=0, ymax=0, yinterval=1,
              format_func=format_af):
-        water_graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
+        graph = WaterGraph(title=title, xlabel=xlabel, ylabel=ylabel)
 
         if xmin == 0:
             xmin = a[0][0] - 1
@@ -215,23 +241,23 @@ class WaterGraph(object):
             label_y = np.arange(ymin, ymax+1, yinterval)
             plt.yticks(label_y)
 
-        water_graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
-        water_graph.fig.gca().xaxis.set_major_locator(YearLocator(xinterval))
+        graph.fig.gca().yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
+        graph.fig.gca().xaxis.set_major_locator(YearLocator(xinterval))
 
         x = a['dt']
         y = a['val']
         plt.plot(x, y, linestyle='-', marker='None', color=color)
 
-        return water_graph
+        return graph
 
     @staticmethod
     def plot_gage(gage):
         daily_discharge_cfs = gage.daily_discharge()
 
-        water_graph_cfs = WaterGraph.plot(daily_discharge_cfs, gage.site_name, ylabel='CFS',
-                                          ymin=gage.cfs_min, ymax=gage.cfs_max, yinterval=gage.cfs_interval,
-                                          format_func=WaterGraph.format_discharge, color=gage.color)
-        water_graph_cfs.fig.waitforbuttonpress()
+        graph = WaterGraph.plot(daily_discharge_cfs, gage.site_name, ylabel='CFS',
+                                ymin=gage.cfs_min, ymax=gage.cfs_max, yinterval=gage.cfs_interval,
+                                format_func=WaterGraph.format_discharge, color=gage.color)
+        graph.fig.waitforbuttonpress()
 
         daily_discharge_af = WaterGraph.convert_cfs_to_af_per_day(daily_discharge_cfs)
         annual_af = WaterGraph.daily_to_water_year(daily_discharge_af)
@@ -248,23 +274,22 @@ class WaterGraph(object):
         else:
             y_format = WaterGraph.format_kaf
 
-        water_graph_annual = WaterGraph.bars(annual_af, title=gage.site_name, color=gage.color,
-                                             ylabel=gage.annual_unit, ymin=gage.annual_min, ymax=gage.annual_max,
-                                             yinterval=gage.annual_interval, format_func=y_format,
-                                             xlabel='Water Year', xmin=start_year, xmax=end_year,
-                                             xinterval=gage.year_interval)
+        graph_annual = WaterGraph.bars(annual_af, title=gage.site_name, color=gage.color,
+                                       ylabel=gage.annual_unit, ymin=gage.annual_min, ymax=gage.annual_max,
+                                       yinterval=gage.annual_interval, format_func=y_format,
+                                       xlabel='Water Year', xmin=start_year, xmax=end_year,
+                                       xinterval=gage.year_interval)
 
         running_average = WaterGraph.running_average(annual_af, 10)
         x = running_average['dt']
         y = running_average['val']
         plt.plot(x, y, linestyle='-', linewidth=3, marker='None',
                  color='goldenrod', label='10Y Running Average')
-        # water_graph_annual.fig.legend()
 
-        water_graph_annual.fig.show()
-        water_graph_annual.fig.waitforbuttonpress()
+        graph_annual.fig.show()
+        graph_annual.fig.waitforbuttonpress()
 
-        return water_graph_cfs, water_graph_annual
+        return graph, graph_annual
 
     @staticmethod
     def daily_to_calendar_year(a):

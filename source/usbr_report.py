@@ -112,8 +112,6 @@ def load_monthly_csv(file_name, sep=' '):
 
 
 def load_ics_csv(file_name, sep=' '):
-    date_time_format = "%Y-%m-%d"
-
     file_path = Path('data/USBR_Reports').joinpath(file_name)
     f = file_path.open(mode='r')
     content = f.read()
@@ -157,23 +155,7 @@ def load_ics_csv(file_name, sep=' '):
 
 
 def ___convert_to_datetime(d):
-    return datetime.datetime.strptime(np.datetime_as_string(d,unit='s'), '%Y-%m-%dT%H:%M:%S')
-
-
-def reshape_annual_range(a, year_min, year_max):
-    years = year_max - year_min + 1
-    b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
-
-    for year in range(year_min, year_max+1):
-        b[year-year_min][0] = year
-        b[year-year_min][1] = 0
-
-    for year_val in a:
-        year = year_val[0]
-        if year_min <= year <= year_max:
-            b[year-year_min][1] = year_val[1]
-
-    return b
+    return datetime.datetime.strptime(np.datetime_as_string(d, unit='s'), '%Y-%m-%dT%H:%M:%S')
 
 
 def negative_values(a):
@@ -189,6 +171,7 @@ def negative_values(a):
             b[year_index][1] = a[year_index][1]
 
     return b
+
 
 def negative_values_as_positive(a):
     year_min = a[0][0]
