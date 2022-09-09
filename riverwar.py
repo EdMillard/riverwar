@@ -1101,7 +1101,7 @@ def usgs_colorado_river_gages():
 
 
 def usbr_lake_havasu_cap_wilmer_pumping_plant():
-    wilmer_monthly_af = usbr_report.load_monthly_csv('usbr_lake_havasu_cap_wilmer_pumps.csv')
+    headers, wilmer_monthly_af = usbr_report.load_monthly_csv('usbr_lake_havasu_cap_wilmer_pumps.csv')
     water_graph = WaterGraph.plot(wilmer_monthly_af, 'Lake Havasu CAP Wilmer Pumping Plant',
                                   ylabel='kaf', ymin=0, ymax=200000, yinterval=10000, color='firebrick',
                                   format_func=WaterGraph.format_kaf)
@@ -1115,9 +1115,21 @@ def usbr_lake_havasu_cap_wilmer_pumping_plant():
     water_graph.running_average(wilmer_annual_af, 10)
     water_graph.fig.waitforbuttonpress()
 
+    ics = usbr_lake_mead_ics()
+    ics_az_delta = ics['AZ Delta']
+    ics_az_delta = usbr_report.reshape_annual_range(ics_az_delta, 1985, 2021)
+
+    WaterGraph.bars_stacked(wilmer_annual_af, ics_az_delta,
+                            title='Lake Havasu CAP Wilmer Pumping Plant + AZ ICS Deposits',
+                            label_a='CAP Wilmer Pumps', color_a='firebrick',
+                            label_b='Arizona ICS Deposits', color_b='mediumseagreen',
+                            ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
+                            xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_maf)
+    water_graph.fig.waitforbuttonpress()
+
 
 def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
-    whitsett_monthly_af = usbr_report.load_monthly_csv( 'usbr_lake_havasu_metropolitan_whitsett_pumps.csv')
+    headers, whitsett_monthly_af = usbr_report.load_monthly_csv('usbr_lake_havasu_metropolitan_whitsett_pumps.csv')
     water_graph = WaterGraph.plot(whitsett_monthly_af,
                                   'Lake Havasu Metropolitan Whitsett Pumping Plant',
                                   ylabel='kaf', ymin=0, ymax=120000, yinterval=10000, color='firebrick',
@@ -1132,30 +1144,58 @@ def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
     water_graph.running_average(whitsett_annual_af, 10)
     water_graph.fig.waitforbuttonpress()
 
-    whitsett_san_diego_monthly_af = usbr_report.load_monthly_csv( 'usbr_lake_havasu_met_for_san_diego_whitsett_pumps.csv')
+    headers, whitsett_san_diego_monthly_af = usbr_report.load_monthly_csv(
+        'usbr_lake_havasu_met_for_san_diego_whitsett_pumps.csv')
     water_graph = WaterGraph.plot(whitsett_san_diego_monthly_af,
                                   'Lake Havasu Metropolitan San Diego Exchange Whitsett Pumping Plant',
-                                  ylabel='kaf', ymin=0, ymax=25000, yinterval=1000, color='firebrick',
-                                  format_func=WaterGraph.format_kaf)
+                                  ylabel='maf', ymin=0, ymax=25000, yinterval=1000, color='firebrick',
+                                  format_func=WaterGraph.format_maf)
     water_graph.fig.waitforbuttonpress()
 
     whitsett_san_diego_annual_af = usbr_report.monthly_to_calendar_year(whitsett_san_diego_monthly_af)
-    water_graph = WaterGraph.bars(whitsett_san_diego_annual_af, title='Lake Havasu Metropolitan San Diego Exchange Whitsett Pumping Plant',
-                                  ylabel='kaf', ymin=0, ymax=200000, yinterval=10000,
+    water_graph = WaterGraph.bars(whitsett_san_diego_annual_af,
+                                  title='Lake Havasu Metropolitan San Diego Exchange Whitsett Pumping Plant',
+                                  ylabel='maf', ymin=0, ymax=200000, yinterval=10000,
                                   xlabel='Calendar Year',  xinterval=3, color='firebrick',
-                                  format_func=WaterGraph.format_kaf)
+                                  format_func=WaterGraph.format_maf)
     water_graph.running_average(whitsett_san_diego_annual_af, 10)
     water_graph.fig.waitforbuttonpress()
 
     WaterGraph.bars_stacked(whitsett_annual_af, whitsett_san_diego_annual_af,
-                        title='Lake Havasu Metropolitan + San Diego Exchange Whitsett Pumping Plant',
-                        label_a='Metropolitan', color_a='firebrick',
-                        label_b='San Diego Exchange', color_b='goldenrod',
-                        ylabel='kaf', ymin=0, ymax=1400000, yinterval=100000,
-                        xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_kaf)
+                            title='Lake Havasu Metropolitan + San Diego Exchange Whitsett Pumping Plant',
+                            label_a='Metropolitan', color_a='firebrick',
+                            label_b='San Diego Exchange', color_b='goldenrod',
+                            ylabel='maf', ymin=0, ymax=1400000, yinterval=100000,
+                            xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_maf)
     water_graph.fig.waitforbuttonpress()
 
-    # usbr_report.load_monthly_csv('usbr_lake_mead_snwa_griffith_pumps.csv')
+    ics = usbr_lake_mead_ics()
+    ics_ca_delta = ics['CA Delta']
+
+    ics_ca_withdrawls = usbr_report.negative_values(ics_ca_delta)
+    ics_ca_withdrawls = usbr_report.reshape_annual_range(ics_ca_withdrawls, 1964, 2021)
+    WaterGraph.bars_stacked(whitsett_annual_af, ics_ca_withdrawls,
+                            title='Lake Havasu Metropolitan + CA ICS Withdrawls - San Diego Exchange',
+                            label_a='Metropolitan', color_a='firebrick',
+                            label_b='CA ICS Withdrawls', color_b='lightcoral',
+                            ylabel='maf', ymin=0, ymax=1400000, yinterval=100000,
+                            xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_maf)
+    water_graph.fig.waitforbuttonpress()
+
+    ics_ca_deposits = usbr_report.positive_values(ics_ca_delta)
+    ics_ca_deposits = usbr_report.reshape_annual_range(ics_ca_deposits, 1964, 2021)
+    WaterGraph.bars_stacked(whitsett_annual_af, ics_ca_deposits,
+                            title='Lake Havasu Metropolitan + CA ICS Deposits - San Diego Exchange',
+                            label_a='Metropolitan', color_a='firebrick',
+                            label_b='CA ICS Deposits', color_b='mediumseagreen',
+                            ylabel='maf', ymin=0, ymax=1400000, yinterval=100000,
+                            xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_maf)
+    water_graph.fig.waitforbuttonpress()
+
+
+def usbr_lake_mead_ics():
+    results = usbr_report.load_ics_csv('usbr_lake_mead_ics.csv', sep='\t')
+    return results
 
 
 # noinspection PyUnusedLocal
@@ -1173,8 +1213,8 @@ def keyboardInterruptHandler(sig, frame):
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
+
     # usbr_catalog()
-    
     usbr_lake_havasu_cap_wilmer_pumping_plant()
     usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
 

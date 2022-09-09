@@ -141,7 +141,6 @@ class WaterGraph(object):
         plt.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
 
         water_graph.fig.show()
-        water_graph.fig.waitforbuttonpress()
 
         return water_graph
 
@@ -194,7 +193,6 @@ class WaterGraph(object):
         plt.bar(b_x, b_y, bottom=y, width=0.9, color=color_b, label=label_b)
         plt.legend()
         water_graph.fig.show()
-        water_graph.fig.waitforbuttonpress()
 
         return water_graph
 

@@ -35,27 +35,33 @@ class USBRReport(object):
         pass
 
 
-def load_monthly_csv(file_name):
-    date_time_format = "%Y-%m-%d"
-
-    file_path = Path('data/USBR_Reports').joinpath(file_name)
-    f = file_path.open(mode='r')
-    content = f.read()
-    strings = content.split('\n')
-    # headers = []
+def pre_process_csv(strings, sep):
     line = 0
     years = 0
+    headers = []
     for s in strings:
         if not len(s):
             continue
         if s.startswith('#'):
             continue
         elif line == 0:
-            # headers = s.split(' ')
+            headers = s.split(sep)
             pass
         elif len(s) > 0:
             years += 1
         line += 1
+
+    return headers, years
+
+
+def load_monthly_csv(file_name, sep=' '):
+    date_time_format = "%Y-%m-%d"
+
+    file_path = Path('data/USBR_Reports').joinpath(file_name)
+    f = file_path.open(mode='r')
+    content = f.read()
+    strings = content.split('\n')
+    headers, years = pre_process_csv(strings, sep)
 
     a = np.empty(years*12, [('dt', 'datetime64[s]'), ('val', 'f')])
     months = 0
@@ -69,7 +75,7 @@ def load_monthly_csv(file_name):
         elif line == 0:
             pass
         else:
-            fields = s.strip().split(' ')
+            fields = s.strip().split(sep)
             if len(fields) > 1:
                 month = 1
                 year = fields[0]
@@ -102,7 +108,116 @@ def load_monthly_csv(file_name):
         line += 1
 
     f.close()
-    return a
+    return headers, a
+
+
+def load_ics_csv(file_name, sep=' '):
+    date_time_format = "%Y-%m-%d"
+
+    file_path = Path('data/USBR_Reports').joinpath(file_name)
+    f = file_path.open(mode='r')
+    content = f.read()
+    strings = content.split('\n')
+    headers, years = pre_process_csv(strings, sep)
+
+    results = {}
+    for field in headers:
+        if field != 'Year':
+            results[field] = np.empty(years, [('dt', 'i'), ('val', 'f')])
+
+    line = 0
+    year_index = 0
+    for s in strings:
+        if not len(s):
+            continue
+        if s.startswith('#'):
+            continue
+        elif line == 0:
+            pass
+        else:
+            value_strings = s.strip().split(sep)
+            if len(value_strings) > 1:
+                year_string = value_strings[0]
+                year = int(year_string)
+                value_index = 1
+                for header in headers[1:-1]:
+                    a = results[header]
+                    value_string = value_strings[value_index]
+                    value_index += 1
+                    value = float(value_string.replace(',', ''))
+                    a[year_index][0] = year
+                    a[year_index][1] = value
+                year_index += 1
+            else:
+                break
+        line += 1
+
+    f.close()
+    return results
+
+
+def ___convert_to_datetime(d):
+    return datetime.datetime.strptime(np.datetime_as_string(d,unit='s'), '%Y-%m-%dT%H:%M:%S')
+
+
+def reshape_annual_range(a, year_min, year_max):
+    years = year_max - year_min + 1
+    b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
+
+    for year in range(year_min, year_max+1):
+        b[year-year_min][0] = year
+        b[year-year_min][1] = 0
+
+    for year_val in a:
+        year = year_val[0]
+        if year_min <= year <= year_max:
+            b[year-year_min][1] = year_val[1]
+
+    return b
+
+
+def negative_values(a):
+    year_min = a[0][0]
+    year_max = a[-1][0]
+    years = year_max - year_min + 1
+    b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
+
+    for year in range(year_min, year_max+1):
+        year_index = year-year_min
+        b[year_index][0] = year
+        if a[year_index][1] < 0:
+            b[year_index][1] = a[year_index][1]
+
+    return b
+
+def negative_values_as_positive(a):
+    year_min = a[0][0]
+    year_max = a[-1][0]
+    years = year_max - year_min + 1
+    b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
+
+    for year in range(year_min, year_max+1):
+        year_index = year-year_min
+        b[year_index][0] = year
+        if a[year_index][1] < 0:
+            b[year_index][1] = -a[year_index][1]
+
+    return b
+
+
+def positive_values(a):
+    year_min = a[0][0]
+    year_max = a[-1][0]
+    years = year_max - year_min + 1
+    b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
+
+    for year in range(year_min, year_max+1):
+        year_index = year-year_min
+        b[year_index][0] = year
+        if a[year_index][1] > 0:
+            b[year_index][1] = a[year_index][1]
+
+    return b
 
 
 def monthly_to_water_year(a, water_year_month=10):
