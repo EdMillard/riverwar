@@ -176,51 +176,46 @@ def usbr_lake_powell():
     # usbr_lake_powell_area_acres = 4784
 
     info, daily_elevation_ft = usbr_rise.load(usbr_lake_powell_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Lake Powell Elevation',
-                            ylabel='maf', ymin=3350, ymax=3725, yinterval=25,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=6)
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Powell Elevation', ymin=3350, ymax=3725, yinterval=25,
+               ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_powell_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Lake Powell Storage',
-                            ylabel='maf', ymin=0, ymax=26000000, yinterval=1000000,
-                            format_func=WaterGraph.format_10maf)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_storage_af, sub_plot=1, title='Lake Powell Storage',
+               ymin=0, ymax=26000000, yinterval=1000000,
+               ylabel='maf', format_func=WaterGraph.format_10maf)
 
     info, daily_inflow_af = usbr_rise.load(usbr_lake_powell_inflow_af)
     annual_inflow_af = WaterGraph.daily_to_water_year(daily_inflow_af)
-    graph = WaterGraph.bars(annual_inflow_af, title='Lake Powell Inflow',
-                            ylabel='maf', ymin=3000000, ymax=21000000, yinterval=500000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_inflow_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_inflow_af, sub_plot=2, title='Lake Powell Inflow',
+               ymin=3000000, ymax=21000000, yinterval=500000,
+               xlabel='Water Year', xinterval=3,
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.running_average(annual_inflow_af, 10, sub_plot=2)
 
     info, daily_inflow_unregulated_af = usbr_rise.load(usbr_lake_powell_inflow_volume_unregulated_af)
     annual_inflow_unregulated_af = WaterGraph.daily_to_water_year(daily_inflow_unregulated_af)
-    graph = WaterGraph.bars(annual_inflow_unregulated_af, title='Lake Powell Unregulated Inflow',
-                            ylabel='maf', ymin=2500000, ymax=21000000, yinterval=500000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_inflow_unregulated_af, 10)
+    graph.bars(annual_inflow_unregulated_af, sub_plot=3, title='Lake Powell Unregulated Inflow',
+               ymin=2500000, ymax=21000000, yinterval=500000,
+               xlabel='Water Year', xinterval=3,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_inflow_unregulated_af, 10, sub_plot=3)
     graph.fig.waitforbuttonpress()
 
     info, daily_release_total_af = usbr_rise.load(usbr_lake_powell_release_total_af)
     annual_release_total_af = WaterGraph.daily_to_water_year(daily_release_total_af)
-    graph = WaterGraph.bars(annual_release_total_af, title='Lake Powell Release',
-                            ylabel='maf', ymin=7000000, ymax=20750000, yinterval=500000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_total_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_release_total_af, sub_plot=4, title='Lake Powell Release',
+               ymin=7000000, ymax=20750000, yinterval=500000,
+               xlabel='Water Year', xinterval=3,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_total_af, 10, sub_plot=4)
 
     info, daily_evaporation_af = usbr_rise.load(usbr_lake_powell_evaporation_af)
     annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
-    graph = WaterGraph.bars(annual_evaporation_af, title='Lake Powell Evaporation',
-                            ylabel='kaf', ymin=0, ymax=700000, yinterval=50000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_evaporation_af, 10)
+    graph.bars(annual_evaporation_af, sub_plot=5, title='Lake Powell Evaporation', ymin=0, ymax=700000, yinterval=50000,
+               xlabel='Water Year', xinterval=3,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_evaporation_af, 10, sub_plot=5)
     graph.fig.waitforbuttonpress()
 
 
@@ -287,44 +282,37 @@ def usbr_navajo_reservoir():
     # usbr_navajo_area_acres = 4785
 
     info, daily_elevation_ft = usbr_rise.load(usbr_navajo_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Navajo Elevation',
-                            ylabel='ft', ymin=5700, ymax=6100, yinterval=50,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=5)
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Navajo Elevation', ymin=5700, ymax=6100, yinterval=50,
+               ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_navajo_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Navajo Storage',
-                            ylabel='kaf', ymin=0, ymax=1800000, yinterval=100000,
-                            format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_storage_af, sub_plot=1, title='Navajo Storage', ymin=0, ymax=1800000, yinterval=100000,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     info, daily_inflow_cfs = usbr_rise.load(usbr_navajo_inflow_cfs)
     daily_inflow_af = WaterGraph.convert_cfs_to_af_per_day(daily_inflow_cfs)
     annual_inflow_af = WaterGraph.daily_to_water_year(daily_inflow_af)
-    graph = WaterGraph.bars(annual_inflow_af, title='Navajo Unregulated Inflow',
-                            ylabel='maf', ymin=0, ymax=2000000, yinterval=100000,
-                            xlabel='Water Year',  xinterval=3,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_inflow_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_inflow_af, sub_plot=2, title='Navajo Unregulated Inflow',
+               ylabel='maf', ymin=0, ymax=2000000, yinterval=100000,
+               xlabel='Water Year',  xinterval=3,
+               format_func=WaterGraph.format_maf)
+    graph.running_average(annual_inflow_af, 10, sub_plot=2)
 
     info, daily_release_cfs = usbr_rise.load(usbr_navajo_release_total_cfs)
     daily_release_af = WaterGraph.convert_cfs_to_af_per_day(daily_release_cfs)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph = WaterGraph.bars(annual_release_af, title='Navajo Release',
-                            ylabel='maf', ymin=0, ymax=2100000, yinterval=100000,
-                            xlabel='Water Year', xinterval=4,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_release_af, sub_plot=3, title='Navajo Release', ymin=0, ymax=2100000, yinterval=100000,
+               xlabel='Water Year', xinterval=4,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_af, 10, sub_plot=3)
 
     info, daily_evaporation_af = usbr_rise.load(usbr_navajo_evaporation_af)
     annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
-    graph = WaterGraph.bars(annual_evaporation_af, title='Navajo Evaporation',
-                            ylabel='kaf', ymin=0, ymax=32000, yinterval=1000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_evaporation_af, 10)
+    graph.bars(annual_evaporation_af, sub_plot=4, title='Navajo Evaporation', ymin=0, ymax=32000, yinterval=1000,
+               xlabel='Water Year', xinterval=3,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_evaporation_af, 10, sub_plot=4)
     graph.fig.waitforbuttonpress()
 
 
@@ -347,44 +335,36 @@ def usbr_blue_mesa():
     # usbr_blue_mesa_area_acres = 4773
 
     info, daily_elevation_ft = usbr_rise.load(usbr_blue_mesa_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Blue Mesa Elevation',
-                            ylabel='ft', ymin=7425, ymax=7520, yinterval=5,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=5)
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Blue Mesa Elevation', ymin=7425, ymax=7520, yinterval=5,
+               ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_blue_mesa_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Blue Mesa Storage',
-                            ylabel='kaf', ymin=200000, ymax=850000, yinterval=20000,
-                            format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_storage_af, sub_plot=1, title='Blue Mesa Storage', ymin=200000, ymax=850000, yinterval=20000,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     info, daily_inflow_cfs = usbr_rise.load(usbr_blue_mesa_inflow_cfs)
     daily_inflow_af = WaterGraph.convert_cfs_to_af_per_day(daily_inflow_cfs)
     annual_inflow_af = WaterGraph.daily_to_water_year(daily_inflow_af)
-    graph = WaterGraph.bars(annual_inflow_af, title='Blue Mesa Inflow',
-                            ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_inflow_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_inflow_af, sub_plot=2, title='Blue Mesa Inflow', ymin=0, ymax=1800000, yinterval=100000,
+               xlabel='Water Year', xinterval=3,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_inflow_af, 10, sub_plot=2)
 
     info, daily_release_cfs = usbr_rise.load(usbr_blue_mesa_release_total_cfs)
     daily_release_af = WaterGraph.convert_cfs_to_af_per_day(daily_release_cfs)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph = WaterGraph.bars(annual_release_af, title='Blue Mesa Release',
-                            ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
-                            xlabel='Water Year', xinterval=4,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_release_af, sub_plot=3, title='Blue Mesa Release', ymin=0, ymax=1800000, yinterval=100000,
+               xlabel='Water Year', xinterval=4,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_af, 10, sub_plot=3)
 
     info, daily_evaporation_af = usbr_rise.load(usbr_blue_mesa_evaporation_af)
     annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
-    graph = WaterGraph.bars(annual_evaporation_af, title='Blue Mesa Evaporation',
-                            ylabel='kaf', ymin=0, ymax=10000, yinterval=500,
-                            xlabel='Water Year',  xinterval=3,
-                            format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_evaporation_af, 10)
+    graph.bars(annual_evaporation_af, sub_plot=4, title='Blue Mesa Evaporation', ymin=0, ymax=10000, yinterval=500,
+               xlabel='Water Year',  xinterval=3,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_evaporation_af, 10, sub_plot=4)
     graph.fig.waitforbuttonpress()
 
 
@@ -407,44 +387,39 @@ def usbr_flaming_gorge():
     # usbr_flaming_gorge_area_acres = 4782
 
     info, daily_elevation_ft = usbr_rise.load(usbr_flaming_gorge_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Flaming Gorge Elevation',
-                            ylabel='ft', ymin=5965, ymax=6045, yinterval=10,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=5)
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Flaming Gorge Elevation', ymin=5965, ymax=6045, yinterval=10,
+               ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_flaming_gorge_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Flaming Gorge Storage',
-                            ylabel='maf', ymin=0, ymax=4000000, yinterval=100000,
-                            format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_storage_af, sub_plot=1, title='Flaming Gorge Storage', ymin=0, ymax=4000000, yinterval=100000,
+               ylabel='maf', format_func=WaterGraph.format_maf)
 
     info, daily_inflow_cfs = usbr_rise.load(usbr_flaming_gorge_inflow_cfs)
     daily_inflow_af = WaterGraph.convert_cfs_to_af_per_day(daily_inflow_cfs)
     annual_infow_af = WaterGraph.daily_to_water_year(daily_inflow_af)
-    graph = WaterGraph.bars(annual_infow_af, title='Flaming Gorge Inflow',
-                            ylabel='maf', ymin=0, ymax=3300000, yinterval=100000,
-                            xlabel='Water Year',  xinterval=3,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_infow_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_infow_af, sub_plot=2, title='Flaming Gorge Inflow',
+               ylabel='maf', ymin=0, ymax=3300000, yinterval=100000,
+               xlabel='Water Year',  xinterval=3,
+               format_func=WaterGraph.format_maf)
+    graph.running_average(annual_infow_af, 10, sub_plot=2)
 
     info, daily_release_cfs = usbr_rise.load(usbr_flaming_gorge_release_total_cfs)
     daily_release_af = WaterGraph.convert_cfs_to_af_per_day(daily_release_cfs)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph = WaterGraph.bars(annual_release_af, title='Flaming Gorge Total Release',
-                            ylabel='maf', ymin=0, ymax=3100000, yinterval=100000,
-                            xlabel='Water Year', xinterval=4,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_release_af, sub_plot=3, title='Flaming Gorge Total Release',
+               ylabel='maf', ymin=0, ymax=3100000, yinterval=100000,
+               xlabel='Water Year', xinterval=4,
+               format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_af, 10, sub_plot=3)
 
     info, daily_evaporation_af = usbr_rise.load(usbr_flaming_gorge_evaporation_af)
     annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
-    graph = WaterGraph.bars(annual_evaporation_af, title='Flaming Gorge Evaporation',
-                            ylabel='kaf', ymin=0, ymax=90000, yinterval=5000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_evaporation_af, 10)
+    graph.bars(annual_evaporation_af, sub_plot=4, title='Flaming Gorge Evaporation',
+               ylabel='kaf', ymin=0, ymax=90000, yinterval=5000,
+               xlabel='Water Year', xinterval=3,
+               format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_evaporation_af, 10, sub_plot=4)
     graph.fig.waitforbuttonpress()
 
 
@@ -464,44 +439,37 @@ def usbr_fontenelle():
     # usbr_fontenelle_area_acres = 4783
 
     info, daily_elevation_ft = usbr_rise.load(usbr_fontenelle_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Fontenelle Elevation',
-                            ylabel='ft', ymin=6415, ymax=6510, yinterval=5,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=5)
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Fontenelle Elevation', ymin=6415, ymax=6510, yinterval=5,
+               ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_fontenelle_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Fontenelle Storage',
-                            ylabel='kaf', ymin=0, ymax=380000, yinterval=20000,
-                            format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_storage_af, sub_plot=1, title='Fontenelle Storage', ymin=0, ymax=380000, yinterval=20000,
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
     info, daily_inflow_cfs = usbr_rise.load(usbr_fontenelle_inflow_cfs)
     daily_inflow_af = WaterGraph.convert_cfs_to_af_per_day(daily_inflow_cfs)
     annual_inflow_af = WaterGraph.daily_to_water_year(daily_inflow_af)
-    graph = WaterGraph.bars(annual_inflow_af, title='Fontenelle Inflow',
-                            ylabel='maf', ymin=0, ymax=2400000, yinterval=100000,
-                            xlabel='Water Year', xinterval=3,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_inflow_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_inflow_af, sub_plot=2, title='Fontenelle Inflow', ymin=0, ymax=2400000, yinterval=100000,
+               xlabel='Water Year', xinterval=3,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_inflow_af, 10, sub_plot=2)
 
     info, daily_release_cfs = usbr_rise.load(usbr_fontenelle_release_total_cfs)
     daily_release_total_af = WaterGraph.convert_cfs_to_af_per_day(daily_release_cfs)
     annual_release_total_af = WaterGraph.daily_to_water_year(daily_release_total_af)
-    graph = WaterGraph.bars(annual_release_total_af, title='Fontenelle Release',
-                            ylabel='maf', ymin=0, ymax=2400000, yinterval=100000,
-                            xlabel='Water Year', xinterval=4,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_total_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(annual_release_total_af, sub_plot=3, title='Fontenelle Release', ymin=0, ymax=2400000, yinterval=100000,
+               xlabel='Water Year', xinterval=4,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_total_af, 10, sub_plot=3)
 
     info, daily_evaporation_af = usbr_rise.load(usbr_fontenelle_evaporation_af)
     annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
-    graph = WaterGraph.bars(annual_evaporation_af, title='Fontenelle Evaporation',
-                            ylabel='kaf', ymin=0, ymax=18000, yinterval=500,
-                            xlabel='Water Year',  xinterval=3,
-                            format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_evaporation_af, 10)
+    graph.bars(annual_evaporation_af, sub_plot=4, title='Fontenelle Evaporation',
+               ymin=0, ymax=18000, yinterval=500,
+               xlabel='Water Year',  xinterval=3,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_evaporation_af, 10, sub_plot=4)
     graph.fig.waitforbuttonpress()
 
 
@@ -510,33 +478,31 @@ def usbr_lake_mead():
     usbr_lake_mead_elevation_ft = 6123
     usbr_lake_mead_storage_af = 6124
     # usbr_lake_mead_release_total_cfs = 6125
-
+    graph = WaterGraph(nrows=3)
     info, daily_elevation_ft = usbr_rise.load(usbr_lake_mead_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Lake Mead Elevation', color='firebrick',
-                            ylabel='ft', ymin=900, ymax=1230, yinterval=10,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Mead Elevation', color='firebrick',
+               ylabel='ft', ymin=900, ymax=1230, yinterval=10,
+               format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_mead_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Lake Mead Storage', color='firebrick',
-                            ylabel='maf', ymin=0, ymax=32000000, yinterval=1000000,
-                            format_func=WaterGraph.format_10maf)
+    graph.plot(daily_storage_af, sub_plot=1, title='Lake Mead Storage', color='firebrick',
+               ymin=0, ymax=32000000, yinterval=1000000,
+               ylabel='maf', format_func=WaterGraph.format_10maf)
     # usbr_lake_mead_ics_by_state(graph)
-    graph.fig.waitforbuttonpress()
 
     info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph = WaterGraph.bars(annual_release_af, title='Lake Mead Release', color='firebrick',
-                            ylabel='maf', ymin=3000000, ymax=22500000, yinterval=500000,
-                            xlabel='Water Year', xinterval=5,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_af, 10)
+    graph.bars(annual_release_af, sub_plot=2, title='Lake Mead Release', color='firebrick',
+               ymin=3000000, ymax=22500000, yinterval=500000,
+               xlabel='Water Year', xinterval=5,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    # graph.running_average(annual_release_af, 10)
     graph.fig.waitforbuttonpress()
 
     # info, release = usbrrise.load(usbr_lake_mead_release_avg_cfs)
 
 
-def usbr_lake_mead_ics_by_state(graph=None):
+def usbr_lake_mead_ics_by_state():
     ics = usbr_lake_mead_ics()
     ics_az_total = ics['AZ Total']
     ics_ca_total = ics['CA Total']
@@ -546,10 +512,10 @@ def usbr_lake_mead_ics_by_state(graph=None):
                 {'data': ics_az_total, 'label': 'AZ ICS', 'color': 'firebrick'},
                 {'data': ics_ca_total, 'label': 'CA ICS', 'color': 'lightcoral'}
                 ]
-    graph = WaterGraph.bars_stacked(bar_data, graph=graph,
-                                    title='Lower Basin ICS By State',
-                                    ylabel='maf', ymin=0, ymax=3000000, yinterval=100000,
-                                    xlabel='Calendar Year', xinterval=1, format_func=WaterGraph.format_maf)
+    graph = WaterGraph()
+    graph.bars_stacked(bar_data, title='Lower Basin ICS By State',
+                       ylabel='maf', ymin=0, ymax=3000000, yinterval=100000,
+                       xlabel='Calendar Year', xinterval=1, format_func=WaterGraph.format_maf)
     graph.fig.waitforbuttonpress()
 
 
@@ -561,24 +527,23 @@ def usbr_lake_mohave():
     # usbr_lake_mohave_release_total_cfs = 6135
 
     info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Lake Mohave Elevation', color='firebrick',
-                            ylabel='ft', ymin=620, ymax=647, yinterval=2,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=3)
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Mohave Elevation', color='firebrick',
+               ymin=620, ymax=647, yinterval=2,
+               ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_mohave_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Lake Mohave Storage', color='firebrick',
-                            ylabel='maf', ymin=1000000, ymax=1900000, yinterval=100000,
-                            format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_storage_af, sub_plot=1, title='Lake Mohave Storage', color='firebrick',
+               ymin=1000000, ymax=1900000, yinterval=100000,
+               ylabel='maf', format_func=WaterGraph.format_maf)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph = WaterGraph.bars(annual_release_af, title='Lake Mohave Release', color='firebrick',
-                            ylabel='maf', ymin=6500000, ymax=23000000, yinterval=500000,
-                            xlabel='Water Year', xinterval=4,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_af, 10)
+    graph.bars(annual_release_af, sub_plot=2, title='Lake Mohave Release', color='firebrick',
+               ymin=6500000, ymax=23000000, yinterval=500000,
+               xlabel='Water Year', xinterval=4,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_af, 10, sub_plot=2)
     graph.fig.waitforbuttonpress()
 
 
@@ -590,24 +555,23 @@ def usbr_lake_havasu():
     # usbr_lake_havasu_release_total_cfs = 6130
 
     info, daily_elevation_ft = usbr_rise.load(usbr_lake_havasu_elevation_ft)
-    graph = WaterGraph.plot(daily_elevation_ft, 'Lake Havasu Elevation', color='firebrick',
-                            ylabel='ft', ymin=440, ymax=451, yinterval=1,
-                            format_func=WaterGraph.format_elevation)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=3)
+    graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Havasu Elevation', color='firebrick',
+               ymin=440, ymax=451, yinterval=1,
+               ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_havasu_storage_af)
-    graph = WaterGraph.plot(daily_storage_af, 'Lake Havasu Storage', color='firebrick',
-                            ylabel='kaf', ymin=0, ymax=700000, yinterval=50000,
-                            format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.plot(daily_storage_af, sub_plot=1, title='Lake Havasu Storage', color='firebrick',
+               ymin=0, ymax=700000, yinterval=50000,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph = WaterGraph.bars(annual_release_af, title='Lake Havasu Release', color='firebrick',
-                            ylabel='maf', ymin=4000000, ymax=19200000, yinterval=500000,
-                            xlabel='Water Year', xinterval=4,
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_af, 10)
+    graph.bars(annual_release_af, sub_plot=2, title='Lake Havasu Release', color='firebrick',
+               ymin=4000000, ymax=19200000, yinterval=500000,
+               xlabel='Water Year', xinterval=4,
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_af, 10, sub_plot=2)
     graph.fig.waitforbuttonpress()
 
 
@@ -616,7 +580,8 @@ def usgs_lees_ferry():
                                cfs_max=130000, cfs_interval=5000,
                                annual_min=6000000, annual_max=21000000, annual_interval=500000, annual_unit='maf',
                                year_interval=5)
-    WaterGraph.plot_gage(lees_ferry_gage)
+    graph = WaterGraph()
+    graph.plot_gage(lees_ferry_gage)
 
     # USGS Lees Ferry Gage Daily Discharge Mean
     #
@@ -644,14 +609,13 @@ def usgs_lees_ferry():
     # rw_bars(a, title='Lake Powell Release',
     #        ylabel='maf', ymin=7000000, ymax=20750000, yinterval=500000,
     #        xlabel='Water Year', xinterval=3, format_func=format_maf)
-
-    graph = WaterGraph.bars_two(usbr_glen_canyon_annual_release_af, usgs_lees_ferry_annual_af,
-                                title='Lake Powell Release Comparison, USBR Glen Canyon vs USGS Lees Ferry',
-                                label_a='Glen Canyon', color_a='royalblue',
-                                label_b='Lees Ferry', color_b='limegreen',
-                                ylabel='af', ymin=7000000, ymax=14000000, yinterval=250000,
-                                xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph()
+    graph.bars_two(usbr_glen_canyon_annual_release_af, usgs_lees_ferry_annual_af,
+                   title='Lake Powell Release Comparison, USBR Glen Canyon vs USGS Lees Ferry',
+                   label_a='Glen Canyon', color_a='royalblue',
+                   label_b='Lees Ferry', color_b='limegreen',
+                   ylabel='af', ymin=7000000, ymax=14000000, yinterval=250000,
+                   xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
 
     usbr_lake_powell_release_af_1999_2021 = WaterGraph.array_in_time_range(usbr_glen_canyon_annual_release_af,
                                                                            datetime.datetime(1999, 1, 1),
@@ -687,18 +651,20 @@ def usgs_lees_ferry():
     discrepancy['dt'] = usgs_lees_ferry_af_1999_2021['dt']
     discrepancy['val'] = difference
 
-    graph = WaterGraph.bars_two(glen_canyon_plus_paria, usgs_lees_ferry_af_1999_2021,
-                                title='Lake Powell Release Comparison, USBR Glen Canyon + Paria vs USGS Lees Ferry',
-                                label_a='Glen Canyon + Paria', color_a='royalblue',
-                                label_b='Lees Ferry', color_b='limegreen',
-                                ylabel='maf', ymin=7000000, ymax=14000000, yinterval=250000,
-                                xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
+    graph = WaterGraph()
+    graph.bars_two(glen_canyon_plus_paria, usgs_lees_ferry_af_1999_2021,
+                   title='Lake Powell Release Comparison, USBR Glen Canyon + Paria vs USGS Lees Ferry',
+                   label_a='Glen Canyon + Paria', color_a='royalblue',
+                   label_b='Lees Ferry', color_b='limegreen',
+                   ylabel='maf', ymin=7000000, ymax=14000000, yinterval=250000,
+                   xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
     graph.fig.waitforbuttonpress()
 
-    graph = WaterGraph.bars(discrepancy,
-                            title='Lake Powell Release Difference USBR Glen Canyon + paria vs USGS Lees Ferry',
-                            ylabel='kaf', ymin=0, ymax=300000, yinterval=50000,
-                            xlabel='Water Year', xinterval=2, format_func=WaterGraph.format_kaf)
+    graph = WaterGraph()
+    graph.bars(discrepancy,
+               title='Lake Powell Release Difference USBR Glen Canyon + paria vs USGS Lees Ferry',
+               ylabel='kaf', ymin=0, ymax=300000, yinterval=50000,
+               xlabel='Water Year', xinterval=2, format_func=WaterGraph.format_kaf)
     graph.fig.waitforbuttonpress()
 
 
@@ -707,7 +673,8 @@ def usgs_paria_lees_ferry():
                                      cfs_max=6500, cfs_interval=500,
                                      annual_min=0, annual_max=50000, annual_interval=2500, annual_unit='kaf',
                                      year_interval=5)
-    WaterGraph.plot_gage(paria_lees_ferry_gage)
+    graph = WaterGraph()
+    graph.plot_gage(paria_lees_ferry_gage)
     return paria_lees_ferry_gage.annual_af
 
 
@@ -715,61 +682,70 @@ def usgs_little_colorado_cameron():
     gage = USGSGage('09402000', start_date='1947-06-1', color='firebrick',
                     cfs_max=19000, cfs_interval=1000,
                     annual_min=0, annual_max=850000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_virgin_at_littlefield():
     gage = USGSGage('09415000', start_date='1929-10-01', color='firebrick',
                     cfs_max=26000, cfs_interval=1000,
                     annual_min=0, annual_max=600000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_muddy_near_glendale():
     gage = USGSGage('09419000', start_date='1950-02-01', color='firebrick',
                     cfs_max=5500, cfs_interval=500,
                     annual_min=0, annual_max=54000, annual_interval=2000, annual_unit='kaf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_gila_duncan():
     gage = USGSGage('09439000', start_date='2003-09-30', color='firebrick',
                     cfs_max=26000, cfs_interval=1000,
                     annual_min=0, annual_max=350000, annual_interval=25000, annual_unit='kaf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_gila_goodyear():
     gage = USGSGage('09514100', start_date='1992-10-01', color='firebrick',
                     cfs_max=140000, cfs_interval=10000,
                     annual_min=0, annual_max=1000000, annual_interval=50000, annual_unit='maf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_gila_dome():
     gage = USGSGage('09520500', start_date='1905-01-01', color='firebrick',
                     cfs_max=96000, cfs_interval=10000,
                     annual_min=0, annual_max=4500000, annual_interval=500000, annual_unit='maf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
     gage = USGSGage('09520500', start_date='1996-01-01', color='firebrick',
                     cfs_max=1000, cfs_interval=100,
                     annual_min=0, annual_max=200000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_bill_williams_parker():
     gage = USGSGage('09426620', start_date='1988-10-01', color='firebrick',
                     cfs_max=8000, cfs_interval=500,
                     annual_min=0, annual_max=450000, annual_interval=50000, annual_unit='maf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_salt_above_roosevelt():
     gage = USGSGage('09498500', start_date='1913-10-01', color='firebrick',
                     cfs_max=95000, cfs_interval=5000,
                     annual_min=0, annual_max=2400000, annual_interval=100000, annual_unit='maf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_colorado_below_parker():
@@ -777,28 +753,32 @@ def usgs_colorado_below_parker():
                     cfs_max=41000, cfs_interval=1000,
                     annual_min=4000000, annual_max=22000000, annual_interval=1000000, annual_unit='maf',
                     year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_las_vegas_wash_below_lake_las_vegas():
     gage = USGSGage('09419800', start_date='1969-08-01', color='firebrick',
                     cfs_max=2000, cfs_interval=100,
                     annual_min=0, annual_max=300000, annual_interval=10000, annual_unit='kaf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_colorado_below_palo_verde():
     gage = USGSGage('09429100', start_date='1956-03-24', color='firebrick',
                     cfs_max=17000, cfs_interval=1000,
                     annual_min=0, annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_colorado_nothern_international_border():
     gage = USGSGage('09522000', start_date='1950-01-01', color='firebrick',
                     cfs_max=3000, cfs_interval=500,
                     annual_min=0, annual_max=4000000, annual_interval=200000, annual_unit='maf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_colorado_below_imperial():
@@ -806,21 +786,24 @@ def usgs_colorado_below_imperial():
     gage = USGSGage('09429500', start_date='2018-11-29', color='firebrick',
                     cfs_max=3000, cfs_interval=500,
                     annual_min=0, annual_max=500000, annual_interval=20000, annual_unit='kaf', year_interval=1)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_colorado_below_davis():
     gage = USGSGage('09423000', start_date='1905-05-11', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,
                     annual_min=6000000, annual_max=23000000, annual_interval=500000, annual_unit='maf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_colorado_below_laguna():
     gage = USGSGage('09429600', start_date='1971-12-16', color='firebrick',
                     cfs_max=32000, cfs_interval=2000,
                     annual_min=0, annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_imperial_all_american():
@@ -828,26 +811,30 @@ def usgs_imperial_all_american():
     gage = USGSGage('09523000', start_date='1939-10-01', color='firebrick',
                     cfs_max=15000, cfs_interval=1000,
                     annual_min=3000000, annual_max=8700000, annual_interval=200000, annual_unit='maf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
     # Coachella
     gage = USGSGage('09527590', start_date='2003-10-01', color='firebrick',
                     cfs_max=850, cfs_interval=50,
                     annual_min=0, annual_max=400000, annual_interval=20000, annual_unit='kaf', year_interval=3)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
     # All American Drop 2, probably IID
     gage = USGSGage('09527700', start_date='2011-10-26', color='firebrick',
                     cfs_max=6500, cfs_interval=500,
                     annual_min=0, annual_max=2600000, annual_interval=100000, annual_unit='maf', year_interval=3)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_imperial_all_american_drop_2():
     gage = USGSGage('09527700', start_date='2011-10-26', color='firebrick',
                     cfs_max=6500, cfs_interval=500,
                     annual_min=0, annual_max=2600000, annual_interval=100000, annual_unit='maf', year_interval=3)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -855,7 +842,8 @@ def usgs_coachella_all_american():
     gage = USGSGage('09527590', start_date='2003-10-01', color='firebrick',
                     cfs_max=850, cfs_interval=50,
                     annual_min=0, annual_max=400000, annual_interval=20000, annual_unit='kaf', year_interval=3)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -863,28 +851,32 @@ def usgs_gila_gravity_main_canal():
     gage = USGSGage('09522500', start_date='1943-08-16', color='firebrick',
                     cfs_max=2300, cfs_interval=100,
                     annual_min=0, annual_max=1000000, annual_interval=100000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_north_gila_main_canal():
     gage = USGSGage('09522600', start_date='1966-10-01', color='firebrick',
                     cfs_max=170, cfs_interval=10,
                     annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_reservation_main_canal():
     gage = USGSGage('09523200', start_date='1974-10-01', color='firebrick',
                     cfs_max=270, cfs_interval=10,
                     annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_yuma_main_canal():
     gage = USGSGage('09524000', start_date='1938-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=100,
                     annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -892,42 +884,48 @@ def usgs_colorado_below_yuma_main_canal():
     gage = USGSGage('09521100', start_date='1963-10-01', color='firebrick',
                     cfs_max=10000, cfs_interval=1000,
                     annual_min=0, annual_max=3000000, annual_interval=100000, annual_unit='maf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_yuma_main_canal_wasteway():
     gage = USGSGage('09525000', start_date='1930-10-01', color='firebrick',
                     cfs_max=2200, cfs_interval=200,
                     annual_min=0, annual_max=1100000, annual_interval=100000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_unit_b_canal_near_yuma():
     gage = USGSGage('09522900', start_date='2005-09-30', color='firebrick',
                     cfs_max=120, cfs_interval=10,
                     annual_min=0, annual_max=30000, annual_interval=1000, annual_unit='kaf', year_interval=1)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_wellton_mohawk_main_canal():
     gage = USGSGage('09522700', start_date='1974-10-01', color='firebrick',
                     cfs_max=1900, cfs_interval=200,
                     annual_min=0, annual_max=500000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_wellton_mohawk_main_outlet_drain():
     gage = USGSGage('09529300', start_date='1966-10-01', color='firebrick',
                     cfs_max=350, cfs_interval=50,
                     annual_min=0, annual_max=230000, annual_interval=20000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
 
 
 def usgs_palo_verde_canal():
     gage = USGSGage('09429000', start_date='1950-10-01', color='firebrick',
                     cfs_max=2400, cfs_interval=100,
                     annual_min=650000, annual_max=1050000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -935,7 +933,8 @@ def usgs_crir_canal_near_parker():
     gage = USGSGage('09428500', start_date='1954-10-01', color='firebrick',
                     cfs_max=2000, cfs_interval=100,
                     annual_min=250000, annual_max=750000, annual_interval=50000, annual_unit='kaf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -943,7 +942,8 @@ def usgs_san_juan_bluff():
     gage = USGSGage('09379500', start_date='1941-10-01',
                     cfs_max=43000, cfs_interval=2000,
                     annual_min=400000, annual_max=3300000, annual_interval=100000, annual_unit='maf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -951,7 +951,8 @@ def usgs_green_river():
     gage = USGSGage('09315000', start_date='1894-10-01',
                     cfs_max=70000, cfs_interval=10000,
                     annual_min=1000000, annual_max=9000000, annual_interval=200000, annual_unit='maf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -959,7 +960,8 @@ def usgs_gunnison_grand_junction():
     gage = USGSGage('09152500', start_date='1896-10-01',
                     cfs_max=36000, cfs_interval=1000,
                     annual_max=3800000, annual_interval=100000, annual_unit='maf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -967,7 +969,8 @@ def usgs_colorado_cisco():
     gage = USGSGage('09180500', start_date='1913-10-01',
                     cfs_max=75000, cfs_interval=2500,
                     annual_max=11000000, annual_interval=250000, annual_unit='maf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -975,7 +978,8 @@ def usgs_colorado_potash():
     gage = USGSGage('09185600', start_date='2014-10-29',
                     cfs_max=75000, cfs_interval=2500,
                     annual_max=11000000, annual_interval=250000, annual_unit='maf', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -983,7 +987,8 @@ def usgs_dirty_devil():
     gage = USGSGage('09333500', start_date='1948-06-07',
                     cfs_max=28000, cfs_interval=1000,
                     annual_max=190000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -991,7 +996,8 @@ def usgs_dolores_below_rico():
     gage = USGSGage('09165000', start_date='1951-10-01',
                     cfs_max=1900, cfs_interval=100,
                     annual_max=170000, annual_interval=10000, annual_unit='kaf', year_interval=5)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -999,7 +1005,8 @@ def usgs_dolores_at_dolores():
     gage = USGSGage('09166500', start_date='1895-10-01',
                     cfs_max=7000, cfs_interval=500,
                     annual_max=575000, annual_interval=25000, annual_unit='kaf', year_interval=6)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -1007,7 +1014,8 @@ def usgs_dolores_at_cisco():
     gage = USGSGage('09180000', start_date='1950-12-01',
                     cfs_max=17000, cfs_interval=1000,
                     annual_max=1500000, annual_interval=50000, annual_unit='kaf')
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -1015,7 +1023,8 @@ def usgs_mud_creek_cortez():
     gage = USGSGage('09371492', start_date='1981-10-01',
                     cfs_max=240, cfs_interval=10,
                     annual_max=7500, annual_interval=500, annual_unit='af', year_interval=3)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -1023,7 +1032,8 @@ def usgs_mcelmo_stateline():
     gage = USGSGage('09372000', start_date='1951-03-01',
                     cfs_max=1300, cfs_interval=50,
                     annual_max=70000, annual_interval=5000, annual_unit='af', year_interval=4)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -1031,7 +1041,8 @@ def usgs_mcelmo_trail_canyon():
     gage = USGSGage('09371520', start_date='1993-08-01',
                     cfs_max=1250, cfs_interval=50,
                     annual_max=60000, annual_interval=5000, annual_unit='af', year_interval=3)
-    WaterGraph.plot_gage(gage)
+    graph = WaterGraph(nrows=2)
+    graph.plot_gage(gage)
     return gage
 
 
@@ -1123,18 +1134,17 @@ def usgs_colorado_river_gages():
 
 def usbr_lake_havasu_cap_wilmer_pumping_plant():
     headers, wilmer_monthly_af = usbr_report.load_monthly_csv('usbr_lake_havasu_cap_wilmer_pumps.csv')
-    graph = WaterGraph.plot(wilmer_monthly_af, 'Lake Havasu CAP Wilmer Pumping Plant',
-                            ylabel='kaf', ymin=0, ymax=200000, yinterval=10000, color='firebrick',
-                            format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=3)
+    graph.plot(wilmer_monthly_af, sub_plot=0, title='Lake Havasu CAP Wilmer Pumping Plant',
+               ylabel='kaf', ymin=0, ymax=200000, yinterval=10000, color='firebrick',
+               format_func=WaterGraph.format_kaf)
 
     wilmer_annual_af = usbr_report.monthly_to_water_year(wilmer_monthly_af, water_year_month=1)
-    graph = WaterGraph.bars(wilmer_annual_af, title='Lake Havasu CAP Wilmer Pumping Plant',
-                            ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
-                            xlabel='Calendar Year',  xinterval=3, color='firebrick',
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(wilmer_annual_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph.bars(wilmer_annual_af, sub_plot=1, title='Lake Havasu CAP Wilmer Pumping Plant',
+               ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
+               xlabel='Calendar Year',  xinterval=3, color='firebrick',
+               format_func=WaterGraph.format_maf)
+    graph.running_average(wilmer_annual_af, 10, sub_plot=1)
 
     ics = usbr_lake_mead_ics()
     ics_az_delta = ics['AZ Delta']
@@ -1143,10 +1153,9 @@ def usbr_lake_havasu_cap_wilmer_pumping_plant():
     bar_data = [{'data': wilmer_annual_af, 'label': 'Metropolitan', 'color': 'firebrick'},
                 {'data': ics_az_delta, 'label': 'AZ ICS Deposits', 'color': 'mediumseagreen'},
                 ]
-    graph = WaterGraph.bars_stacked(bar_data,
-                                    title='Lake Havasu CAP Wilmer Pumping Plant + AZ ICS Deposits',
-                                    ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
-                                    xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_maf)
+    graph.bars_stacked(bar_data, sub_plot=2, title='Lake Havasu CAP Wilmer Pumping Plant + AZ ICS Deposits',
+                       ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
+                       xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_maf)
     graph.fig.waitforbuttonpress()
 
 
@@ -1159,30 +1168,27 @@ def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
     # graph.fig.waitforbuttonpress()
 
     whitsett_annual_af = usbr_report.monthly_to_water_year(whitsett_monthly_af, water_year_month=1)
-    graph = WaterGraph.bars(whitsett_annual_af, title='Lake Havasu Metropolitan Whitsett Pumping Plant',
-                            ylabel='maf', ymin=0, ymax=1350000, yinterval=100000,
-                            xlabel='Calendar Year',  xinterval=3, color='firebrick',
-                            format_func=WaterGraph.format_maf)
-    graph.running_average(whitsett_annual_af, 10)
-    graph.fig.waitforbuttonpress()
+    graph = WaterGraph(nrows=3)
+    graph.bars(whitsett_annual_af, sub_plot=0, title='Lake Havasu Metropolitan Whitsett Pumping Plant',
+               ylabel='maf', ymin=0, ymax=1350000, yinterval=100000,
+               xlabel='Calendar Year',  xinterval=3, color='firebrick',
+               format_func=WaterGraph.format_maf)
+    graph.running_average(whitsett_annual_af, 10, sub_plot=0)
 
     headers, whitsett_san_diego_monthly_af = usbr_report.load_monthly_csv(
         'usbr_lake_havasu_met_for_san_diego_whitsett_pumps.csv')
-    # graph = WaterGraph.plot(whitsett_san_diego_monthly_af,
-    #                               'Lake Havasu Metropolitan San Diego Exchange Whitsett Pumping Plant',
-    #                               ylabel='maf', ymin=0, ymax=25000, yinterval=1000, color='firebrick',
-    #                              format_func=WaterGraph.format_maf)
-    # graph.fig.waitforbuttonpress()
+    graph.plot(whitsett_san_diego_monthly_af, sub_plot=1,
+               title='Lake Havasu Metropolitan San Diego Exchange Whitsett Pumping Plant',
+               ylabel='maf', ymin=0, ymax=25000, yinterval=1000, color='firebrick',
+               format_func=WaterGraph.format_maf)
 
     whitsett_san_diego_annual_af = usbr_report.monthly_to_calendar_year(whitsett_san_diego_monthly_af)
     bar_data = [{'data': whitsett_annual_af, 'label': 'Metropolitan', 'color': 'firebrick'},
                 {'data': whitsett_san_diego_annual_af, 'label': 'San Diego Exchange', 'color': 'goldenrod'},
                 ]
-    graph = WaterGraph.bars_stacked(bar_data,
-                                    title='Lake Havasu Metropolitan + San Diego Exchange Pumping',
-                                    ylabel='kaf', ymin=400000, ymax=1400000, yinterval=50000,
-                                    xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.bars_stacked(bar_data, sub_plot=2, title='Lake Havasu Metropolitan + San Diego Exchange Pumping',
+                       ylabel='kaf', ymin=400000, ymax=1400000, yinterval=50000,
+                       xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_kaf)
 
     ics = usbr_lake_mead_ics()
     ics_ca_delta = ics['CA Delta']
@@ -1198,10 +1204,10 @@ def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
                 {'data': ics_ca_withdrawals, 'label': 'CA ICS Withdrawals', 'color': 'lightcoral'},
                 {'data': ics_ca_deposits, 'label': 'CA ICS Deposits', 'color': 'mediumseagreen'}
                 ]
-    graph = WaterGraph.bars_stacked(bar_data,
-                                    title='Lake Havasu Metropolitan + San Diego Exchange Pumping, CA ICS',
-                                    ylabel='kaf', ymin=400000, ymax=1400000, yinterval=50000,
-                                    xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_kaf)
+    graph = WaterGraph()
+    graph.bars_stacked(bar_data, sub_plot=3, title='Lake Havasu Metropolitan + San Diego Exchange Pumping, CA ICS',
+                       ylabel='kaf', ymin=400000, ymax=1400000, yinterval=50000,
+                       xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_kaf)
     graph.fig.waitforbuttonpress()
 
 
@@ -1226,10 +1232,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    # usbr_lake_mead()
+    usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
+    usbr_lake_mead()
     usbr_lake_mead_ics_by_state()
     usbr_lake_havasu_cap_wilmer_pumping_plant()
-    usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
 
     usbr_upper_colorado_reservoirs()
     usbr_lower_colorado_reservoirs()
