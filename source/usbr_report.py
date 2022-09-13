@@ -70,9 +70,13 @@ def load_monthly_csv(file_name, sep=' '):
     for s in strings:
         if not len(s):
             continue
-        if s.startswith('#'):
+        comment_index = s.find('#')
+        if comment_index == 0:
             continue
-        elif line == 0:
+        elif comment_index > 0:
+            s = s[:comment_index]
+            s = s.strip()
+        if line == 0:
             pass
         else:
             fields = s.strip().split(sep)
@@ -83,7 +87,10 @@ def load_monthly_csv(file_name, sep=' '):
                 sum_year = 0
                 for m in fields[1:-1]:
                     monthly_flow = int(m.replace(',', ''))
-                    last_day = calendar.monthrange(int(year), month)[1]
+                    if month <= 12:
+                        last_day = calendar.monthrange(int(year), month)[1]
+                    else:
+                        print('Invalid month: ', fields)
                     year_month_last_day = str(year) + '-' + str(month) + '-' + str(last_day)
                     date_time = datetime.datetime.strptime(year_month_last_day, date_time_format)
                     a[months][0] = date_time
@@ -92,7 +99,7 @@ def load_monthly_csv(file_name, sep=' '):
                     month += 1
                     months += 1
                 if sum_year != total:
-                    print('data error in report expected = ', total, ' got = ', sum_year, fields)
+                    print(year, 'total & sum mismatch diff =', sum_year-total, 'expected = ', total, ' got = ', sum_year, fields)
             elif len(fields) == 1:
                 year = fields[0]
                 monthly_flow = 0
