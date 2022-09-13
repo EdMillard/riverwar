@@ -33,17 +33,20 @@ class WaterGraph(object):
   """
 
     def __init__(self, nrows=1, ncols=1, gage=''):
-        default_font_size = 20
+        default_font_size = 18
         self.gage = gage
-        self.fig, self.ax = plt.subplots(nrows=nrows, ncols=ncols)  # sharex='col'
-        self.fig.set_figwidth(30)
-        self.fig.set_figheight(20)
+
         plt.rc('font', size=default_font_size)  # controls default text size
         # plt.rc('axes', titlesize=40)  # fontsize of the title
         # plt.rc('axes', labelsize=40)  # fontsize of the x and y labels
         plt.rc('xtick', labelsize=default_font_size)  # fontsize of x tick labels
         plt.rc('ytick', labelsize=default_font_size)  # fontsize of y tick labels
         # plt.rc('legend', fontsize=40)  # fontsize of the legend
+
+        self.fig, self.ax = plt.subplots(nrows=nrows, ncols=ncols)  # sharex='col'
+        self.fig.set_figwidth(30)
+        self.fig.set_figheight(20)
+
         if nrows * ncols > 1:
             for ax in self.ax:
                 ax.grid(True)
