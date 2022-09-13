@@ -63,7 +63,7 @@ def ocr_report(image_file_path, water_user='', field_id=''):
                 if len(parts) > 0:
                     clean_string = ''
                     for c in parts[-1]:
-                        if c.isdigit() or c == ' ':
+                        if c.isdigit() or c == ' ' or c == '-':
                             clean_string += c
                     result = clean_string.replace('  ', ' ')
                     result = result.replace('  ', ' ')
@@ -101,7 +101,7 @@ def ocr_image_file(image_file_path, water_user, field_id, f):
                 out_str.strip()
                 error_str = ''
                 if error > error_tolerance:
-                    error_str = 'error: ' + ' diff = ' + str(error) + ' got sum = ' + str(summation) \
+                    error_str = '# error: ' + ' diff = ' + str(error) + ' got sum = ' + str(summation) \
                                 + ' ' + str(image_file_path)
                 print(print_file_name_prefix + str(year) + ': ' + out_str + error_str)
                 f.write(str(year) + ' ' + out_str + error_str + '\n')
@@ -150,7 +150,7 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
             if year_written:
                 year_difference = year_written - year_written_prev
                 if year_difference > 1:
-                    gap_string = 'Gap from ' + str(year_written_prev) + ' to ' + str(year_written)
+                    gap_string = '# Gap from ' + str(year_written_prev) + ' to ' + str(year_written)
                     print(gap_string)
                     f.write(gap_string + '\n')
                 year_written_prev = year_written
@@ -162,41 +162,46 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
-    outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/')
+    outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
 
     # California
     #
     image_path = image_directory.joinpath('ca/consumptive_use')
+    output_path = outputs_path.joinpath('ca/usbr_ca_palo_verde_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Palo Verde Irrigation', field_id='Consumptive Us')
 
     # CA Total
-    output_path = outputs_path.joinpath('usbr_ca_total_consumptive_use.csv')
+    output_path = outputs_path.joinpath('ca/usbr_ca_total_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='California Totals', field_id='Consumptive Use')
 
-    output_path = outputs_path.joinpath('usbr_ca_total_diversion.csv')
+    output_path = outputs_path.joinpath('ca/usbr_ca_total_diversion.csv')
     ocr_reports(image_path, output_path, water_user='California Totals', field_id='Diversion')
 
     # "Measured" Returns in new reports, "Returns" in older reports
-    # output_path = outputs_path.joinpath('usbr_ca_total_measured_returns.csv')
+    # output_path = outputs_path.joinpath('ca/usbr_ca_total_measured_returns.csv')
     # ocr_reports(image_path, output_path, water_user='California Totals', field_id='Measured Returns')
 
     # Only in newer reports, how do you count 'Unmeasured Returns'?
-    # output_path = outputs_path.joinpath('usbr_ca_total_unmeasured_returns.csv')
+    # output_path = outputs_path.joinpath('ca/usbr_ca_total_unmeasured_returns.csv')
     # ocr_reports(image_path, output_path, water_user='California Totals', field_id='Unmeasured Returns')
 
     # CA Diversions
-    output_path = outputs_path.joinpath('usbr_ca_imperial_irrigation_diversion.csv')
+    output_path = outputs_path.joinpath('ca/usbr_ca_imperial_irrigation_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Imperial Irrigation District', field_id='Consumptive Use')
+
+    output_path = outputs_path.joinpath('ca/usbr_ca_imperial_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Imperial Irrigation District', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_ca_palo_verde_diversion.csv')
+    output_path = outputs_path.joinpath('ca/usbr_ca_palo_verde_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Palo Verde Irrigation', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_ca_palo_verde_consumptive_use.csv')
+    output_path = outputs_path.joinpath('ca/usbr_ca_palo_verde_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Palo Verde Irrigation', field_id='Consumptive Use')
 
-    output_path = outputs_path.joinpath('usbr_ca_coachella_diversion.csv')
+    output_path = outputs_path.joinpath('ca/usbr_ca_coachella_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Coachella Valley Water', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_ca_metropolitan_diversion.csv')
+    output_path = outputs_path.joinpath('ca/usbr_ca_metropolitan_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Metropolitan Water District', field_id='Diversion')
     # Fort Mohave Indian
     # Yuma Project Reservation Division
@@ -209,23 +214,23 @@ if __name__ == '__main__':
     image_path = image_directory.joinpath('az/consumptive_use')
 
     # AZ Total, all parameters
-    output_path = outputs_path.joinpath('usbr_az_total_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_total_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Diversion')
 
-    # output_path = outputs_path.joinpath('usbr_az_total_measured_returns.csv')
+    # output_path = outputs_path.joinpath('az/usbr_az_total_measured_returns.csv')
     # ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Measured Returns')
 
-    # output_path = outputs_path.joinpath('usbr_az_total_unmeasured_returns.csv')
+    # output_path = outputs_path.joinpath('az/usbr_az_total_unmeasured_returns.csv')
     # ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Unmeasured Returns')
 
-    output_path = outputs_path.joinpath('usbr_az_total_consumptive_use.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_total_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Consumptive Use')
 
     # AZ Diversions
-    output_path = outputs_path.joinpath('usbr_az_central_arizona_project_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_central_arizona_project_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Central Arizona Project', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_az_wellton_mohawk_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_wellton_mohawk_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Wellton', field_id='Diversion')
 
     output_path = outputs_path.joinpath('usbr_az_crit_diversion.csv')
