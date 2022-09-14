@@ -55,6 +55,7 @@ def pre_process_csv(strings, sep):
 
 
 def load_monthly_csv(file_name, sep=' '):
+    print("load_monthly_csv: ", file_name)
     date_time_format = "%Y-%m-%d"
 
     file_path = Path('data/USBR_Reports').joinpath(file_name)
