@@ -75,6 +75,17 @@ def ocr_report(image_file_path, water_user='', field_id=''):
     return year, ''
 
 
+def ocr_print(image_file_path):
+    try:
+        image = Image.open(image_file_path)
+        image.show()
+
+        text = image_to_text(image_file_path)
+        print(text)
+    except FileNotFoundError:
+        print("File not found: ", str(image_file_path))
+
+
 def ocr_image_file(image_file_path, water_user, field_id, f):
     error_tolerance = 2  # af error allowed between summation of months and annual total
 
@@ -119,7 +130,9 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
     image_file_paths = []
     for image_file_path in image_directory_path.iterdir():
         name = image_file_path.name
-        if name.endswith('.png'):
+        if 'Revision' in name:
+            pass
+        elif name.endswith('.png'):
             image_file_paths.append(image_file_path)
     image_file_paths.sort()
 
@@ -161,18 +174,26 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 
 
 if __name__ == '__main__':
-    image_directory = Path('/ark/Varuna/USBR_Reports/images/')
+    image_directory = Path('/ark/Varuna/USBR_Reports/images/ca/consumptive_use/')
+    while 1:
+        print("Enter image name:")
+        image_name = input()
+        if len(image_name):
+            image_path = image_directory.joinpath(image_name)
+            print("Image path ", image_path)
+            ocr_print(image_path)
+        else:
+            break
+
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
 
     # California
     #
     image_path = image_directory.joinpath('ca/consumptive_use')
-    output_path = outputs_path.joinpath('ca/usbr_ca_palo_verde_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Palo Verde Irrigation', field_id='Consumptive Us')
 
     # CA Total
     output_path = outputs_path.joinpath('ca/usbr_ca_total_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='California Totals', field_id='Consumptive Use')
+    ocr_reports(image_path, output_path, water_user='California Totals', field_id='Consumptive Us')
 
     output_path = outputs_path.joinpath('ca/usbr_ca_total_diversion.csv')
     ocr_reports(image_path, output_path, water_user='California Totals', field_id='Diversion')
@@ -186,17 +207,17 @@ if __name__ == '__main__':
     # ocr_reports(image_path, output_path, water_user='California Totals', field_id='Unmeasured Returns')
 
     # CA Diversions
-    output_path = outputs_path.joinpath('ca/usbr_ca_imperial_irrigation_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Imperial Irrigation District', field_id='Consumptive Use')
-
     output_path = outputs_path.joinpath('ca/usbr_ca_imperial_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Imperial Irrigation District', field_id='Diversion')
+
+    output_path = outputs_path.joinpath('ca/usbr_ca_imperial_irrigation_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Imperial Irrigation District', field_id='Consumptive Us')
 
     output_path = outputs_path.joinpath('ca/usbr_ca_palo_verde_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Palo Verde Irrigation', field_id='Diversion')
 
     output_path = outputs_path.joinpath('ca/usbr_ca_palo_verde_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Palo Verde Irrigation', field_id='Consumptive Use')
+    ocr_reports(image_path, output_path, water_user='Palo Verde Irrigation', field_id='Consumptive Us')
 
     output_path = outputs_path.joinpath('ca/usbr_ca_coachella_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Coachella Valley Water', field_id='Diversion')
@@ -224,7 +245,7 @@ if __name__ == '__main__':
     # ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Unmeasured Returns')
 
     output_path = outputs_path.joinpath('az/usbr_az_total_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Consumptive Use')
+    ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Consumptive Us')
 
     # AZ Diversions
     output_path = outputs_path.joinpath('az/usbr_az_central_arizona_project_diversion.csv')
@@ -233,25 +254,25 @@ if __name__ == '__main__':
     output_path = outputs_path.joinpath('az/usbr_az_wellton_mohawk_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Wellton', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_az_crit_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_crit_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_az_crit_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Consumptive Use')
+    output_path = outputs_path.joinpath('az/usbr_az_crit_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Consumptive Us')
 
-    output_path = outputs_path.joinpath('usbr_az_yuma_mesa_irrigation_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_az_yuma_irrigation_district_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_yuma_irrigation_district_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Irrigation District', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_az_yuma_county_irrigation_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_yuma_county_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma County I', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_az_yuma_county_wua_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma County Water Users', field_id='Diversion')
 
-    output_path = outputs_path.joinpath('usbr_az_north_gila_irrigation_diversion.csv')
+    output_path = outputs_path.joinpath('az/usbr_az_north_gila_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='North Gila', field_id='Diversion')
     # Bullhead City
     # Mohave Valley I.D.D.
@@ -270,21 +291,21 @@ if __name__ == '__main__':
     #
     image_path = image_directory.joinpath('nv/consumptive_use')
 
-    output_path = outputs_path.joinpath('usbr_nv_total_diversion.csv')
+    output_path = outputs_path.joinpath('nv/usbr_nv_total_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Nevada Totals', field_id='Diversion', start_year=1984)
 
-    output_path = outputs_path.joinpath('usbr_nv_total_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Nevada Totals', field_id='Consumptive Use', start_year=1984)
+    output_path = outputs_path.joinpath('nv/usbr_nv_total_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Nevada Totals', field_id='Consumptive Us', start_year=1984)
 
-    output_path = outputs_path.joinpath('usbr_nv_snwa_griffith_diversion.csv')
+    output_path = outputs_path.joinpath('nv/usbr_nv_snwa_griffith_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Griffith Water Project', field_id='Diversion', start_year=1984)
 
     # Las Valley Water District Changed to Robert B. Griffith in 1984
-    # output_path = outputs_path.joinpath('usbr_nv_las_vegas_valley_diversion.csv')
+    # output_path = outputs_path.joinpath('nv/usbr_nv_las_vegas_valley_diversion.csv')
     # ocr_reports(image_path, output_path, water_user='Las Vegas Valley Water District', field_id='Diversion',
     #             end_year=1983)
 
-    output_path = outputs_path.joinpath('usbr_nv_las_vegas_wash_diversion.csv')
+    output_path = outputs_path.joinpath('nv/usbr_nv_las_vegas_wash_diversion.csv')
     ocr_reports(image_path, output_path,  water_user='Las Vegas Wash', field_id='Returns', start_year=1984)
     # Basic Water Company
     # City of Henderson
