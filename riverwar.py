@@ -176,7 +176,7 @@ def usbr_lake_powell():
     # usbr_lake_powell_area_acres = 4784
 
     info, daily_elevation_ft = usbr_rise.load(usbr_lake_powell_elevation_ft)
-    graph = WaterGraph(nrows=6)
+    graph = WaterGraph(nrows=5)
     graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Powell Elevation', ymin=3350, ymax=3725, yinterval=25,
                ylabel='ft', format_func=WaterGraph.format_elevation)
 
@@ -200,22 +200,24 @@ def usbr_lake_powell():
                xlabel='Water Year', xinterval=3,
                ylabel='maf', format_func=WaterGraph.format_maf)
     graph.running_average(annual_inflow_unregulated_af, 10, sub_plot=3)
-    graph.fig.waitforbuttonpress()
-
-    info, daily_release_total_af = usbr_rise.load(usbr_lake_powell_release_total_af)
-    annual_release_total_af = WaterGraph.daily_to_water_year(daily_release_total_af)
-    graph.bars(annual_release_total_af, sub_plot=4, title='Lake Powell Release',
-               ymin=7000000, ymax=20750000, yinterval=500000,
-               xlabel='Water Year', xinterval=3,
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.running_average(annual_release_total_af, 10, sub_plot=4)
 
     info, daily_evaporation_af = usbr_rise.load(usbr_lake_powell_evaporation_af)
     annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
-    graph.bars(annual_evaporation_af, sub_plot=5, title='Lake Powell Evaporation', ymin=0, ymax=700000, yinterval=50000,
+    graph.bars(annual_evaporation_af, sub_plot=4, title='Lake Powell Evaporation', ymin=0, ymax=700000, yinterval=50000,
                xlabel='Water Year', xinterval=3,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_evaporation_af, 10, sub_plot=5)
+    graph.running_average(annual_evaporation_af, 10, sub_plot=4)
+    graph.fig.waitforbuttonpress()
+
+    graph = WaterGraph(nrows=1)
+
+    info, daily_release_total_af = usbr_rise.load(usbr_lake_powell_release_total_af)
+    annual_release_total_af = WaterGraph.daily_to_water_year(daily_release_total_af)
+    graph.bars(annual_release_total_af, sub_plot=0, title='Lake Powell Release',
+               ymin=7000000, ymax=12600000, yinterval=100000,
+               xlabel='Water Year', xinterval=1, xmin=2000, xmax=2021,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_release_total_af, 10, sub_plot=0)
     graph.fig.waitforbuttonpress()
 
 
@@ -1512,9 +1514,9 @@ def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
     ics_ca_deposits = graph.reshape_annual_range(ics_ca_deposits, 1964, 2021)
 
     bar_data = [{'data': whitsett_annual_af, 'label': 'Metropolitan Diversion', 'color': 'firebrick'},
-                {'data': whitsett_san_diego_annual_af, 'label': 'San Diego Exchange', 'color': 'goldenrod'},
-                {'data': ics_ca_withdrawals, 'label': 'CA ICS Withdrawals', 'color': 'lightcoral'},
-                {'data': ics_ca_deposits, 'label': 'CA ICS Deposits', 'color': 'mediumseagreen'}
+                {'data': ics_ca_withdrawals, 'label': 'CA ICS Withdrawals', 'color': 'maroon'},
+                {'data': ics_ca_deposits, 'label': 'CA ICS Deposits', 'color': 'mediumseagreen'},
+                {'data': whitsett_san_diego_annual_af, 'label': 'San Diego Exchange', 'color': 'goldenrod'}
                 ]
     graph = WaterGraph()
     graph.bars_stacked(bar_data, sub_plot=3,
@@ -1545,8 +1547,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    usbr_mexico()
     usbr_lower_basin_states_total_use()
+    usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
+    usbr_lake_powell()
+    usbr_mexico()
     usbr_california_total()
     usbr_crit()
     usbr_palo_verde()
