@@ -152,6 +152,7 @@ class WaterGraph(object):
         b_y = b['val']
         plt.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
 
+
     def bars_stacked(self, bar_data, sub_plot=0, title='',
                      ylabel='', ymin=0, ymax=0, yinterval=1,
                      xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af, vertical=True):
@@ -209,7 +210,7 @@ class WaterGraph(object):
                     bottom = y
                 else:
                     ax.bar(x, y, bottom=bottom, width=0.9, color=color, label=label)
-                    bottom = bottom + y
+                    bottom = bottom + positive_values(y)
             else:
                 ax.bar(x, y, width=0.9, color=color, label=label)
         ax.legend()
@@ -416,3 +417,15 @@ class WaterGraph(object):
                 out_index += 1
             inp_index += 1
         return a
+
+
+def positive_values(a):
+    b = np.zeros(len(a), 'f')
+
+    idx = 0
+    for val in a:
+        if val > 0:
+            b[idx] = val
+        idx += 1
+
+    return b
