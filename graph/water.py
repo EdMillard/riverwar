@@ -154,7 +154,7 @@ class WaterGraph(object):
 
     def bars_stacked(self, bar_data, sub_plot=0, title='',
                      ylabel='', ymin=0, ymax=0, yinterval=1,
-                     xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
+                     xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af, vertical=True):
         if len(self.fig.axes) > 1:
             ax = self.ax[sub_plot]
         else:
@@ -175,7 +175,7 @@ class WaterGraph(object):
             if bar_max >= t_max:
                 t_max = bar_max
             labels_x = np.arange(t_min, t_max, xinterval)
-            plt.xticks(labels_x)
+            ax.set_xticks(labels_x)
             if xmin != 0:
                 x_min = xmin
             else:
@@ -185,12 +185,12 @@ class WaterGraph(object):
             else:
                 x_max = t_max
 
-            plt.xlim([x_min, x_max])
+            ax.set_xlim([x_min, x_max])
 
         if ymax > 0 and yinterval > 0:
             label_y = np.arange(ymin, ymax+yinterval, yinterval)
-            plt.yticks(label_y)
-        plt.ylim([ymin, ymax])
+            ax.set_yticks(label_y)
+        ax.set_ylim([ymin, ymax])
 
         ax.yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
@@ -202,13 +202,16 @@ class WaterGraph(object):
             label = bar['label']
             x = a['dt']
             y = a['val']
-            if first:
-                plt.bar(x, y, width=0.9, color=color, label=label)
-                first = False
-                bottom = y
+            if vertical:
+                if first:
+                    ax.bar(x, y, width=0.9, color=color, label=label)
+                    first = False
+                    bottom = y
+                else:
+                    ax.bar(x, y, bottom=bottom, width=0.9, color=color, label=label)
+                    bottom = bottom + y
             else:
-                plt.bar(x, y, bottom=bottom, width=0.9, color=color, label=label)
-                bottom = bottom + y
+                ax.bar(x, y, width=0.9, color=color, label=label)
         ax.legend()
 
     def plot(self, a, sub_plot=0, title='', color='royalblue',
