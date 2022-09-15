@@ -1366,6 +1366,46 @@ def usbr_lower_basin_states_total_use():
 '''
 
 
+def usbr_mexico():
+    year_interval = 3
+
+    # In Excess of Treaty
+    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_in_excess.csv')
+    graph = WaterGraph(nrows=3)
+    graph.plot(monthly_af, sub_plot=0, title='Mexico in Excess of Treaty (Monthly)',
+               xinterval=year_interval, ymin=0, ymax=2000000, yinterval=100000, color='firebrick',
+               ylabel='maf', format_func=WaterGraph.format_maf)
+
+    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
+    graph.bars(annual_af, sub_plot=1, title='Mexico in Excess of Treaty (Annual)',
+               ymin=0, ymax=14000000, yinterval=1000000,
+               xlabel='',  xinterval=year_interval, color='firebrick',
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_af, 10, sub_plot=1)
+
+    graph.bars(annual_af, sub_plot=2, title='Mexico in Excess of Treaty (Annual)',
+               ymin=0, ymax=400000, yinterval=50000,
+               xlabel='',  xinterval=year_interval, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_af, 10, sub_plot=2)
+    graph.fig.waitforbuttonpress()
+
+    # Bypass pursuant to minute 242
+    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_minute_242_bypass.csv')
+    graph = WaterGraph(nrows=2)
+    graph.plot(monthly_af, sub_plot=0, title='Mexico Pursuant to Minute 242 (Monthly)',
+               xinterval=year_interval, ymin=0, ymax=19000, yinterval=1000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
+    graph.bars(annual_af, sub_plot=1, title='Mexico Pursuant to Minute 242 (Annual)',
+               ymin=0, ymax=160000, yinterval=10000,
+               xlabel='',  xinterval=year_interval, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_af, 10, sub_plot=1)
+    graph.fig.waitforbuttonpress()
+
+
 def usbr_imperial_irrigation_district():
     year_interval = 3
 
@@ -1505,6 +1545,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    usbr_mexico()
     usbr_lower_basin_states_total_use()
     usbr_california_total()
     usbr_crit()
