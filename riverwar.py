@@ -1260,37 +1260,110 @@ def usbr_california_total():
     graph.fig.waitforbuttonpress()
 
 
-def usbr_arizona_total():
+def usbr_lower_basin_states_total_use():
     year_interval = 3
-
-    # Diversion
-    headers, monthly_af = usbr_report.load_monthly_csv('az/usbr_az_total_diversion.csv')
     graph = WaterGraph(nrows=3)
-    graph.plot(monthly_af, sub_plot=0, title='Arizona Total Diversion (Monthly)',
+
+    # CA Total Diversion & Consumptive Use
+    headers, ca_diversion_monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_total_diversion.csv')
+    ca_diversion_annual_af = usbr_report.monthly_to_water_year(ca_diversion_monthly_af, water_year_month=1)
+
+    headers, ca_use_monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_total_consumptive_use.csv')
+    ca_use_annual_af = usbr_report.monthly_to_water_year(ca_use_monthly_af, water_year_month=1)
+
+    bar_data = [{'data': ca_diversion_annual_af, 'label': 'California Diversion', 'color': 'darkmagenta'},
+                {'data': ca_use_annual_af, 'label': 'California Consumptive Use', 'color': 'firebrick'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=0, title='California Totals (Annual)',
+                       ymin=0, ymax=6000000, yinterval=1000000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
+    graph.running_average(ca_use_annual_af, 10, sub_plot=0)
+
+    # AZ Total Diversion & Consumptive Use
+    headers, az_diversion_monthly_af = usbr_report.load_monthly_csv('az/usbr_az_total_diversion.csv')
+    az_diversion_annual_af = usbr_report.monthly_to_water_year(az_diversion_monthly_af, water_year_month=1)
+
+    headers, az_use_monthly_af = usbr_report.load_monthly_csv('az/usbr_az_total_consumptive_use.csv')
+    az_use_annual_af = usbr_report.monthly_to_water_year(az_use_monthly_af, water_year_month=1)
+
+    bar_data = [{'data': az_diversion_annual_af, 'label': 'Arizona Diversion', 'color': 'darkmagenta'},
+                {'data': az_use_annual_af, 'label': 'Arizona Consumptive Use', 'color': 'firebrick'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='Arizona Totals (Annual)',
+                       ymin=0, ymax=4000000, yinterval=500000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
+    graph.running_average(az_use_annual_af, 10, sub_plot=1)
+
+    # NV Total Diversion & Consumptive Use
+    headers, nv_diversion_monthly_af = usbr_report.load_monthly_csv('nv/usbr_nv_total_diversion.csv')
+    nv_diversion_annual_af = usbr_report.monthly_to_water_year(nv_diversion_monthly_af, water_year_month=1)
+
+    headers, nv_use_monthly_af = usbr_report.load_monthly_csv('nv/usbr_nv_total_consumptive_use.csv')
+    nv_use_annual_af = usbr_report.monthly_to_water_year(nv_use_monthly_af, water_year_month=1)
+
+    bar_data = [{'data': nv_diversion_annual_af, 'label': 'Nevada Diversion', 'color': 'darkmagenta'},
+                {'data': nv_use_annual_af, 'label': 'Nevada Consumptive Use', 'color': 'firebrick'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=2, title='Nevada Totals (Annual)',
+                       ymin=0, ymax=550000, yinterval=50000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(nv_use_annual_af, 10, sub_plot=2)
+
+    graph.fig.waitforbuttonpress()
+
+    # Total use as stacked bars
+    total_use_annual_af = np.zeros(len(ca_use_annual_af), [('dt', 'i'), ('val', 'f')])
+    total_use_annual_af['dt'] = ca_use_annual_af['dt']
+    total_use_annual_af['val'] = ca_use_annual_af['val']
+    total_use_annual_af['val'] += az_use_annual_af['val']
+    total_use_annual_af['val'] += nv_use_annual_af['val']
+
+    # total_diversion_annual_af = np.zeros(len(ca_diversion_annual_af), [('dt', 'i'), ('val', 'f')])
+    # total_diversion_annual_af['dt'] = ca_diversion_annual_af['dt']
+    # total_diversion_annual_af['val'] = ca_diversion_annual_af['val']
+    # total_diversion_annual_af['val'] += az_diversion_annual_af['val']
+    # total_diversion_annual_af['val'] += nv_diversion_annual_af['val']
+
+    # diversion_above_use_annual_af = np.zeros(len(ca_diversion_annual_af), [('dt', 'i'), ('val', 'f')])
+    # diversion_above_use_annual_af['dt'] = ca_diversion_annual_af['dt']
+    # diversion_above_use_annual_af['val'] = total_diversion_annual_af['val']
+    # diversion_above_use_annual_af['val'] -= total_use_annual_af['val']
+    graph = WaterGraph(nrows=1)
+
+    bar_data = [{'data': ca_use_annual_af, 'label': 'California Consumptive Use', 'color': 'maroon'},
+                {'data': az_use_annual_af, 'label': 'Arizona Consumptive Use', 'color': 'firebrick'},
+                {'data': nv_use_annual_af, 'label': 'Nevada Consumptive Use', 'color': 'lightcoral'},
+                # {'data': diversion_above_use_annual_af, 'label': 'Total Diversions', 'color': 'darkmagenta'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=0, title='Total Lower Basin Consumptive Use (Annual)',
+                       ymin=0, ymax=9000000, yinterval=500000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf,)
+    graph.running_average(total_use_annual_af, 10, sub_plot=0)
+    graph.fig.waitforbuttonpress()
+
+
+'''
+    graph.plot(diversion_monthly_af, sub_plot=0, title='Arizona Total Diversion (Monthly)',
                xinterval=year_interval, ymin=0, ymax=450000, yinterval=100000, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-
-    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    graph.bars(annual_af, sub_plot=1, title='Arizona Total Diversion (Annual)',
-               ymin=0, ymax=3800000, yinterval=200000,
-               xlabel='',  xinterval=year_interval, color='darkmagenta',
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.running_average(annual_af, 10, sub_plot=1)
-
-    # Consumptive Use
-    headers, monthly_af = usbr_report.load_monthly_csv('az/usbr_az_total_consumptive_use.csv')
-    graph.plot(monthly_af, sub_plot=0, title='Arizona Total Diversion & Consumptive Use (Monthly)',
+    graph.plot(use_monthly_af, sub_plot=0, title='Arizona Total Diversion & Consumptive Use (Monthly)',
                xinterval=year_interval, ymin=0, ymax=450000, yinterval=100000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    graph.bars(annual_af, sub_plot=2, title='Arizona Total Consumptive Use (Annual)',
+    graph.bars(diversion_annual_af, sub_plot=1, title='Arizona Total Diversion (Annual)',
+               ymin=0, ymax=3800000, yinterval=200000,
+               xlabel='',  xinterval=year_interval, color='darkmagenta',
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.bars(use_annual_af, sub_plot=2, title='Arizona Total Consumptive Use (Annual)',
                ymin=0, ymax=3800000, yinterval=200000,
                xlabel='',  xinterval=year_interval, color='firebrick',
                ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.running_average(annual_af, 10, sub_plot=2)
-
-    graph.fig.waitforbuttonpress()
+    graph.running_average(use_annual_af, 10, sub_plot=2)
+'''
 
 
 def usbr_imperial_irrigation_district():
@@ -1432,7 +1505,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    usbr_arizona_total()
+    usbr_lower_basin_states_total_use()
     usbr_california_total()
     usbr_crit()
     usbr_palo_verde()
