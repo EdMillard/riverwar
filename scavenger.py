@@ -57,7 +57,7 @@ def ocr_report(image_file_path, water_user='', field_id=''):
     strings = text.split('\n')
     look_for_diversion = False
     for string in strings:
-        if water_user_lower in string.lower():
+        if not water_user_lower or water_user_lower in string.lower():
             look_for_diversion = True
         if look_for_diversion:
             string_lower = string.lower()
@@ -71,7 +71,10 @@ def ocr_report(image_file_path, water_user='', field_id=''):
                     result = clean_string.replace('  ', ' ')
                     result = result.replace('  ', ' ')
                     result = result.strip()
-                    return year, result
+                    values = result.split(' ')
+                    # Did we get enough numbers to potentially be twelve month + total
+                    if len(values) > 10:
+                        return year, result
                 else:
                     break
 
@@ -293,16 +296,36 @@ def scavenge_nv(image_dir, out_path):
 def scavenge_mx(image_dir, out_path):
     image_path = image_dir.joinpath('mx')
 
+    output_path = out_path.joinpath('mx/usbr_mx_northern_international_boundary.csv')
+    #ocr_reports(image_path, output_path,  field_id='Northerly International')
+    ocr_reports(image_path, output_path,  field_id='NIB')
+
+    output_path = out_path.joinpath('mx/usbr_mx_southern_international_boundary.csv')
+    #ocr_reports(image_path, output_path, field_id='Southerly International')
+    ocr_reports(image_path, output_path, field_id='SIB')
+
+    output_path = out_path.joinpath('mx/usbr_mx_tijuana.csv')
+    ocr_reports(image_path, output_path, field_id='Tijuana')
+
+    output_path = out_path.joinpath('mx/usbr_mx_satisfaction_of_treaty.csv')
+    # 1990-1996 = 1500000, 1997-2000 = 1700000, 2001-2006=1500000
+    ocr_reports(image_path, output_path, field_id='To Mexico As Scheduled')
+    #ocr_reports(image_path, output_path, water_user='', field_id='Satisfaction of Treaty')
+
+    output_path = out_path.joinpath('mx/usbr_mx_limitrophe.csv')
+    ocr_reports(image_path, output_path, field_id='Limitrophe')
+
     output_path = out_path.joinpath('mx/usbr_mx_in_excess.csv')
-    ocr_reports(image_path, output_path, water_user='Calendar Year', field_id='In Excess')
+    ocr_reports(image_path, output_path, field_id='In Excess')
 
     output_path = out_path.joinpath('mx/usbr_mx_minute_242_bypass.csv')
-    ocr_reports(image_path, output_path, water_user='Calendar Year', field_id='Minute 242')
+    ocr_reports(image_path, output_path, field_id='Minute 242')
 
 
 def ocr_print(image_file_path):
     try:
         text = image_to_text(image_file_path)
+        text = text.replace(',', '')
         print(text)
 
         fig, ax = plt.subplots(nrows=1, ncols=1)
