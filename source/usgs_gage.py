@@ -97,7 +97,7 @@ class USGSGage(object):
 
         discharge_mean_index = usgs_discharge_mean_column(headers)
 
-        a = np.empty(days - 1, [('dt', 'datetime64[s]'), ('val', 'f')])
+        a = np.zeros(days - 1, [('dt', 'datetime64[s]'), ('val', 'f')])
         line = 0
         day = 0
         for s in strings:
@@ -219,7 +219,7 @@ def daily_to_water_year(a):
     if total > 0:
         result.append([dt, total])
 
-    a = np.empty(len(result), [('dt', 'i'), ('val', 'f')])
+    a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
     day = 0
     for l in result:
         # a[day][0] = np.datetime64(l[0])
@@ -231,7 +231,7 @@ def daily_to_water_year(a):
 
 
 def convert_cfs_to_af_per_day(cfs):
-    a = np.empty(len(cfs), [('dt', 'datetime64[s]'), ('val', 'f')])
+    a = np.zeros(len(cfs), [('dt', 'datetime64[s]'), ('val', 'f')])
     day = 0
     for l in cfs:
         a[day][0] = l[0]
@@ -277,7 +277,7 @@ def usgs_gage_daily_values(sites, start_date, end_date):
     # print(values)
 
     days = len(dates)
-    a = np.empty(days, [('dt', 'datetime64[s]'), ('val', 'f')])
+    a = np.zeros(days, [('dt', 'datetime64[s]'), ('val', 'f')])
     for day in range(days):
         try:
             dt = new_array[day]

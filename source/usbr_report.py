@@ -64,7 +64,7 @@ def load_monthly_csv(file_name, sep=' '):
     strings = content.split('\n')
     headers, years = pre_process_csv(strings, sep)
 
-    a = np.empty(years*12, [('dt', 'datetime64[s]'), ('val', 'f')])
+    a = np.zeros(years*12, [('dt', 'datetime64[s]'), ('val', 'f')])
     months = 0
 
     line = 0
@@ -81,6 +81,8 @@ def load_monthly_csv(file_name, sep=' '):
             pass
         else:
             fields = s.strip().split(sep)
+            if len(fields) < 14:
+                print("Not enough fields for year, 12 months and total", file_name, fields)
             if len(fields) > 1:
                 month = 1
                 year = fields[0]
@@ -129,7 +131,7 @@ def load_ics_csv(file_name, sep=' '):
     results = {}
     for field in headers:
         if field != 'Year':
-            results[field] = np.empty(years, [('dt', 'i'), ('val', 'f')])
+            results[field] = np.zeros(years, [('dt', 'i'), ('val', 'f')])
 
     line = 0
     year_index = 0
@@ -233,7 +235,7 @@ def monthly_to_water_year(a, water_year_month=10):
     if total > 0:
         result.append([dt, total])
 
-    a = np.empty(len(result), [('dt', 'i'), ('val', 'f')])
+    a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
     year = 0
     if water_year_month == 1:
         offset = 1
@@ -272,7 +274,7 @@ def monthly_to_calendar_year(a):
     if current_year != wrote_year:
         result.append([dt, total])
 
-    a = np.empty(len(result), [('dt', 'i'), ('val', 'f')])
+    a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
     year = 0
 
     for l in result:

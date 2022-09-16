@@ -233,7 +233,7 @@ def load_json(file_path):
         except KeyError:
             break
 
-    a = np.empty(days, [('dt', 'datetime64[s]'), ('val', 'f')])
+    a = np.zeros(days, [('dt', 'datetime64[s]'), ('val', 'f')])
     for day in range(days):
         try:
             value = data[str(day)]

@@ -285,7 +285,7 @@ class WaterGraph(object):
         self.fig.waitforbuttonpress()
 
     def running_average(self, annual_af, window, sub_plot=0):
-        running_average = np.empty(len(annual_af), [('dt', 'i'), ('val', 'f')])
+        running_average = np.zeros(len(annual_af), [('dt', 'i'), ('val', 'f')])
         if len(self.fig.axes) > 1:
             ax = self.ax[sub_plot]
         else:
@@ -343,7 +343,7 @@ class WaterGraph(object):
         if total > 0:
             result.append([dt, total])
 
-        a = np.empty(len(result), [('dt', 'i'), ('val', 'f')])
+        a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
         day = 0
         for l in result:
             # a[day][0] = np.datetime64(l[0])
@@ -380,7 +380,7 @@ class WaterGraph(object):
         if total > 0:
             result.append([dt, total])
 
-        a = np.empty(len(result), [('dt', 'i'), ('val', 'f')])
+        a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
         day = 0
         for l in result:
             # a[day][0] = np.datetime64(l[0])
@@ -393,7 +393,7 @@ class WaterGraph(object):
     @staticmethod
     def convert_cfs_to_af_per_day(cfs):
         day = 0
-        af = np.empty(len(cfs), [('dt', 'datetime64[s]'), ('val', 'f')])
+        af = np.zeros(len(cfs), [('dt', 'datetime64[s]'), ('val', 'f')])
         for l in cfs:
             af[day][0] = l['dt']
             af[day][1] = l[1] * 1.983459
@@ -403,7 +403,7 @@ class WaterGraph(object):
     @staticmethod
     def array_in_time_range(array, start_date, end_date):
         difference_in_years = relativedelta(end_date, start_date).years + 1
-        a = np.empty(difference_in_years, [('dt', 'i'), ('val', 'f')])
+        a = np.zeros(difference_in_years, [('dt', 'i'), ('val', 'f')])
 
         x = array['dt']
         y = array['val']
