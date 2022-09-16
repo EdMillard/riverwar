@@ -93,6 +93,7 @@ def load_monthly_csv(file_name, sep=' '):
                     if month <= 12:
                         last_day = calendar.monthrange(int(year), month)[1]
                     else:
+                        last_day = 30
                         print('Invalid month: ', fields)
                     year_month_last_day = str(year) + '-' + str(month) + '-' + str(last_day)
                     date_time = datetime.datetime.strptime(year_month_last_day, date_time_format)
@@ -102,7 +103,8 @@ def load_monthly_csv(file_name, sep=' '):
                     month += 1
                     months += 1
                 if sum_year != total:
-                    print(year, 'total & sum mismatch diff =', sum_year-total, 'expected = ', total, ' got = ', sum_year, fields)
+                    print(year, 'total & sum mismatch diff =', sum_year-total,
+                          'expected = ', total, ' got = ', sum_year, fields)
             elif len(fields) == 1:
                 year = fields[0]
                 monthly_flow = 0

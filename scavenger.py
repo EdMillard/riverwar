@@ -297,11 +297,11 @@ def scavenge_mx(image_dir, out_path):
     image_path = image_dir.joinpath('mx')
 
     output_path = out_path.joinpath('mx/usbr_mx_northern_international_boundary.csv')
-    #ocr_reports(image_path, output_path,  field_id='Northerly International')
+    # ocr_reports(image_path, output_path,  field_id='Northerly International')
     ocr_reports(image_path, output_path,  field_id='NIB')
 
     output_path = out_path.joinpath('mx/usbr_mx_southern_international_boundary.csv')
-    #ocr_reports(image_path, output_path, field_id='Southerly International')
+    # ocr_reports(image_path, output_path, field_id='Southerly International')
     ocr_reports(image_path, output_path, field_id='SIB')
 
     output_path = out_path.joinpath('mx/usbr_mx_tijuana.csv')
@@ -310,7 +310,7 @@ def scavenge_mx(image_dir, out_path):
     output_path = out_path.joinpath('mx/usbr_mx_satisfaction_of_treaty.csv')
     # 1990-1996 = 1500000, 1997-2000 = 1700000, 2001-2006=1500000
     ocr_reports(image_path, output_path, field_id='To Mexico As Scheduled')
-    #ocr_reports(image_path, output_path, water_user='', field_id='Satisfaction of Treaty')
+    # ocr_reports(image_path, output_path, water_user='', field_id='Satisfaction of Treaty')
 
     output_path = out_path.joinpath('mx/usbr_mx_limitrophe.csv')
     ocr_reports(image_path, output_path, field_id='Limitrophe')
@@ -367,5 +367,3 @@ if __name__ == '__main__':
     scavenge_az(image_directory, outputs_path)
     scavenge_ca(image_directory, outputs_path)
     scavenge_nv(image_directory, outputs_path)
-
-

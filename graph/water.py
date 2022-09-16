@@ -152,7 +152,6 @@ class WaterGraph(object):
         b_y = b['val']
         plt.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
 
-
     def bars_stacked(self, bar_data, sub_plot=0, title='',
                      ylabel='', ymin=0, ymax=0, yinterval=1,
                      xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af, vertical=True):
