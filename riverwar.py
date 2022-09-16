@@ -1371,9 +1371,10 @@ def usbr_lower_basin_states_total_use():
 def usbr_mexico():
     year_interval = 3
 
+    graph = WaterGraph(nrows=3)
+
     # In Excess of Treaty
     headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_in_excess.csv')
-    graph = WaterGraph(nrows=3)
     graph.plot(monthly_af, sub_plot=0, title='Mexico in Excess of Treaty (Monthly)',
                xinterval=year_interval, ymin=0, ymax=2000000, yinterval=100000, color='firebrick',
                ylabel='maf', format_func=WaterGraph.format_maf)
@@ -1405,6 +1406,34 @@ def usbr_mexico():
                xlabel='',  xinterval=year_interval, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.running_average(annual_af, 10, sub_plot=1)
+    graph.fig.waitforbuttonpress()
+
+    graph = WaterGraph(nrows=5)
+    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_satisfaction_of_treaty.csv')
+    graph.plot(monthly_af, sub_plot=0, title='Satisfaction of Treaty (Monthly)',
+               xinterval=year_interval, ymin=0, ymax=300000, yinterval=100000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_northern_international_boundary.csv')
+    graph.plot(monthly_af, sub_plot=1, title='Northern International Border (Monthly)',
+               xinterval=year_interval, ymin=0, ymax=250000, yinterval=100000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_southern_international_boundary.csv')
+    graph.plot(monthly_af, sub_plot=2, title='Southern International Border (Monthly)',
+               xinterval=year_interval, ymin=0, ymax=15000, yinterval=2000, color='firebrick',
+               ylabel='af', format_func=WaterGraph.format_af)
+
+    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_limitrophe.csv')
+    graph.plot(monthly_af, sub_plot=3, title='Limitrophe (Monthly)',
+               xinterval=year_interval, ymin=0, ymax=2000, yinterval=200, color='firebrick',
+               ylabel='af', format_func=WaterGraph.format_af)
+
+    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_tijuana.csv')
+    graph.plot(monthly_af, sub_plot=4, title='Tijuana (Monthly)',
+               xinterval=year_interval, ymin=0, ymax=1100, yinterval=100, color='firebrick',
+               ylabel='af', format_func=WaterGraph.format_af)
+
     graph.fig.waitforbuttonpress()
 
 
@@ -1547,10 +1576,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    usbr_mexico()
     usbr_lower_basin_states_total_use()
     usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
     usbr_lake_powell()
-    usbr_mexico()
     usbr_california_total()
     usbr_crit()
     usbr_palo_verde()
