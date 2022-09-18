@@ -24,6 +24,8 @@ import numpy as np
 from pathlib import Path
 import calendar
 
+current_last_year = 2021
+
 
 class USBRReport(object):
     """
@@ -59,7 +61,13 @@ def load_monthly_csv(file_name, sep=' '):
     date_time_format = "%Y-%m-%d"
 
     file_path = Path('data/USBR_Reports').joinpath(file_name)
-    f = file_path.open(mode='r')
+    try:
+        f = file_path.open(mode='r')
+    except FileNotFoundError:
+        print('File not found: ', file_name)
+        a = np.zeros((current_last_year-1964) * 12, [('dt', 'datetime64[s]'), ('val', 'f')])
+        return '', a
+
     content = f.read()
     strings = content.split('\n')
     headers, years = pre_process_csv(strings, sep)
