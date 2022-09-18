@@ -31,6 +31,8 @@ from pathlib import Path
 
 interrupted = False
 
+current_last_year = 2021
+
 # matplotlib colors
 # https://i.stack.imgur.com/lFZum.png
 
@@ -182,7 +184,7 @@ def usbr_lake_powell():
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_powell_storage_af)
     graph.plot(daily_storage_af, sub_plot=1, title='Lake Powell Storage',
-               ymin=0, ymax=26000000, yinterval=1000000,
+               ymax=26000000, yinterval=1000000,
                ylabel='maf', format_func=WaterGraph.format_10maf)
 
     info, daily_inflow_af = usbr_rise.load(usbr_lake_powell_inflow_af)
@@ -289,7 +291,7 @@ def usbr_navajo_reservoir():
                ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_navajo_storage_af)
-    graph.plot(daily_storage_af, sub_plot=1, title='Navajo Storage', ymin=0, ymax=1800000, yinterval=100000,
+    graph.plot(daily_storage_af, sub_plot=1, title='Navajo Storage', ymax=1800000, yinterval=100000,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     info, daily_inflow_cfs = usbr_rise.load(usbr_navajo_inflow_cfs)
@@ -394,7 +396,7 @@ def usbr_flaming_gorge():
                ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_flaming_gorge_storage_af)
-    graph.plot(daily_storage_af, sub_plot=1, title='Flaming Gorge Storage', ymin=0, ymax=4000000, yinterval=100000,
+    graph.plot(daily_storage_af, sub_plot=1, title='Flaming Gorge Storage', ymax=4000000, yinterval=100000,
                ylabel='maf', format_func=WaterGraph.format_maf)
 
     info, daily_inflow_cfs = usbr_rise.load(usbr_flaming_gorge_inflow_cfs)
@@ -446,7 +448,7 @@ def usbr_fontenelle():
                ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_fontenelle_storage_af)
-    graph.plot(daily_storage_af, sub_plot=1, title='Fontenelle Storage', ymin=0, ymax=380000, yinterval=20000,
+    graph.plot(daily_storage_af, sub_plot=1, title='Fontenelle Storage', ymax=380000, yinterval=20000,
                ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
     info, daily_inflow_cfs = usbr_rise.load(usbr_fontenelle_inflow_cfs)
@@ -488,7 +490,7 @@ def usbr_lake_mead():
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_mead_storage_af)
     graph.plot(daily_storage_af, sub_plot=1, title='Lake Mead Storage', color='firebrick',
-               ymin=0, ymax=32000000, yinterval=1000000,
+               ymax=32000000, yinterval=1000000,
                ylabel='maf', format_func=WaterGraph.format_10maf)
     # usbr_lake_mead_ics_by_state(graph)
 
@@ -564,7 +566,7 @@ def usbr_lake_havasu():
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_havasu_storage_af)
     graph.plot(daily_storage_af, sub_plot=1, title='Lake Havasu Storage', color='firebrick',
-               ymin=0, ymax=700000, yinterval=50000,
+               ymax=700000, yinterval=50000,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
@@ -759,7 +761,7 @@ def usgs_colorado_below_parker():
     graph.plot_gage(gage)
 
 
-def usgs_las_vegas_wash_below_lake_las_vegas():
+def usgs_nv_las_vegas_wash_below_lake_las_vegas():
     gage = USGSGage('09419800', start_date='1969-08-01', color='firebrick',
                     cfs_max=2000, cfs_interval=100,
                     annual_min=0, annual_max=300000, annual_interval=10000, annual_unit='kaf', year_interval=4)
@@ -1100,7 +1102,7 @@ def usgs_lower_colorado_to_border_gages():
 def usgs_lower_colorado():
     usgs_lees_ferry()
     # usgs_paria_lees_ferry()
-    usgs_las_vegas_wash_below_lake_las_vegas()
+    usgs_nv_las_vegas_wash_below_lake_las_vegas()
     usgs_colorado_below_davis()
     usgs_colorado_below_parker()
     usgs_crir_canal_near_parker()
@@ -1134,13 +1136,13 @@ def usgs_colorado_river_gages():
     usgs_lower_colorado_tributaries()
 
 
-def usbr_lake_havasu_cap_wilmer_pumping_plant():
+def usbr_az_cap():
     year_interval = 3
 
-    headers, monthly_af = usbr_report.load_monthly_csv('usbr_lake_havasu_cap_wilmer_pumps.csv')
+    headers, monthly_af = usbr_report.load_monthly_csv('az/usbr_az_central_arizona_project_diversion.csv')
     graph = WaterGraph(nrows=3)
     graph.plot(monthly_af, sub_plot=0, title='Lake Havasu CAP Wilmer Pumping Plant (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=200000, yinterval=10000, color='firebrick',
+               xinterval=year_interval, ymax=200000, yinterval=10000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
@@ -1152,7 +1154,7 @@ def usbr_lake_havasu_cap_wilmer_pumping_plant():
 
     ics = usbr_lake_mead_ics()
     ics_az_delta = ics['AZ Delta']
-    ics_az_delta = graph.reshape_annual_range(ics_az_delta, 1985, 2021)
+    ics_az_delta = graph.reshape_annual_range(ics_az_delta, 1985, current_last_year)
 
     bar_data = [{'data': annual_af, 'label': 'Metropolitan', 'color': 'firebrick'},
                 {'data': ics_az_delta, 'label': 'AZ ICS Deposits', 'color': 'mediumseagreen'},
@@ -1163,47 +1165,55 @@ def usbr_lake_havasu_cap_wilmer_pumping_plant():
     graph.fig.waitforbuttonpress()
 
 
-def usbr_palo_verde():
+def usbr_ca_palo_verde():
     year_interval = 3
+    graph = WaterGraph(nrows=2)
 
     # Diversion
-    headers, monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_palo_verde_diversion.csv')
-    graph = WaterGraph(nrows=4)
-    graph.plot(monthly_af, sub_plot=0, title='Palo Verde Diversion (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=130000, yinterval=10000, color='firebrick',
+    headers, monthly_diversion_af = usbr_report.load_monthly_csv('ca/usbr_ca_palo_verde_diversion.csv')
+    graph.plot(monthly_diversion_af, sub_plot=0, title='Palo Verde Diversion & Consumptive Use (Monthly)',
+               xinterval=year_interval, ymax=125000, yinterval=50000, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    graph.bars(annual_af, sub_plot=1, title='Palo Verde Diversion (Annual)',
-               ymin=0, ymax=1200000, yinterval=100000,
-               xlabel='',  xinterval=year_interval, color='firebrick',
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.running_average(annual_af, 10, sub_plot=1)
+    headers, monthly_cu_af = usbr_report.load_monthly_csv('ca/usbr_ca_palo_verde_consumptive_use.csv')
+    graph.plot(monthly_cu_af, sub_plot=0,
+               xinterval=year_interval, ymax=125000, yinterval=50000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af, water_year_month=1)
+    # graph.bars(annual_diversion_af, sub_plot=1, title='Imperial Irrigation District Diversion (Annual)',
+    #            ymin=2200000, ymax=3300000, yinterval=100000,
+    #            xlabel='',  xinterval=year_interval, color='firebrick',
+    #            ylabel='maf', format_func=WaterGraph.format_maf)
+    # graph.running_average(annual_diversion_af, 10, sub_plot=1)
 
     # Consumptive Use
-    headers, monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_palo_verde_consumptive_use.csv')
-    graph.plot(monthly_af, sub_plot=2, title='Palo Verde Consumptive Use (Monthly)',
-               xinterval=year_interval, ymin=-15000, ymax=90000, yinterval=10000, color='firebrick',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
+    # graph.bars(annual_cu_af, sub_plot=3, title='Imperial Irrigtion Consumptive Use',
+    #            ymin=2200000, ymax=3400000, yinterval=100000,
+    #            xlabel='',  xinterval=year_interval, color='firebrick',
+    #           ylabel='maf', format_func=WaterGraph.format_maf)
 
-    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    graph.bars(annual_af, sub_plot=3, title='Palo Verde Consumptive Use (Annual)',
-               ymin=0, ymax=550000, yinterval=50000,
-               xlabel='',  xinterval=year_interval, color='firebrick',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_af, 10, sub_plot=3)
+    bar_data = [{'data': annual_diversion_af, 'label': 'Palo Verde Diversion', 'color': 'darkmagenta'},
+                {'data': annual_cu_af, 'label': 'Palo Verde Consumptive Use', 'color': 'firebrick'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='Palo Verde Diversion & Consumptive Use (Annual)',
+                       ymin=0, ymax=1100000, yinterval=50000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(annual_cu_af, 10, sub_plot=1)
 
     graph.fig.waitforbuttonpress()
 
 
-def usbr_crit():
+def usbr_az_crit():
     year_interval = 3
 
     # Diversion
     headers, monthly_af = usbr_report.load_monthly_csv('az/usbr_az_crit_diversion.csv')
     graph = WaterGraph(nrows=4)
     graph.plot(monthly_af, sub_plot=0, title='Colorado River Indian Tribe Diversion (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=130000, yinterval=10000, color='firebrick',
+               xinterval=year_interval, ymax=130000, yinterval=10000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
@@ -1229,12 +1239,13 @@ def usbr_crit():
     graph.fig.waitforbuttonpress()
 
 
-def usbr_california_total():
-    year_interval = 3
+def usbr_ca_total():
+    year_interval = 4
+
+    graph = WaterGraph(nrows=4)
 
     # Diversion
     headers, monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_total_diversion.csv')
-    graph = WaterGraph(nrows=3)
     graph.plot(monthly_af, sub_plot=0, title='California Total Diversion (Monthly)',
                xinterval=year_interval, ymin=100000, ymax=700000, yinterval=100000, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
@@ -1259,6 +1270,74 @@ def usbr_california_total():
                ylabel='maf', format_func=WaterGraph.format_maf)
     graph.running_average(annual_af, 10, sub_plot=2)
 
+    headers, monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_total_measured_returns.csv')
+    graph.plot(monthly_af, sub_plot=3, title='California Measured Returns (Monthly)',
+               xinterval=year_interval, ymax=100000, yinterval=50000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    headers, monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_total_unmeasured_returns.csv')
+    graph.plot(monthly_af, sub_plot=3, title='California Unmeasured Returns (Monthly)',
+               xinterval=year_interval, ymax=100000, yinterval=50000, color='darkmagenta',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.fig.waitforbuttonpress()
+
+
+def usbr_diversion_vs_consumptive(state_code, name, state_name,
+                                        ymin1=0, ymax1=1000000, yinterval1=100000,
+                                        ymin2=0, ymax2=1000000, yinterval2=100000):
+    year_interval = 4
+
+    graph = WaterGraph(nrows=2)
+
+    # Diversion
+    diversion_file_name = state_code + '/usbr_' + state_code + '_' + name + '_diversion.csv'
+    headers, monthly_diversion_af = usbr_report.load_monthly_csv(diversion_file_name)
+    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af, water_year_month=1)
+
+    cu_file_name = state_code + '/usbr_' + state_code + '_' + name + '_consumptive_use.csv'
+    headers, monthly_cu_af = usbr_report.load_monthly_csv(cu_file_name)
+    annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
+
+    measured_file_name = state_code + '/usbr_' + state_code + '_' + name + '_measured_returns.csv'
+    headers, monthly_measured_af = usbr_report.load_monthly_csv(measured_file_name)
+    annual_measured_af = usbr_report.monthly_to_water_year(monthly_measured_af, water_year_month=1)
+    annual_measured_af = graph.reshape_annual_range(annual_measured_af, 1964, current_last_year)
+
+    unmeasured_file_name = state_code + '/usbr_' + state_code + '_' + name + '_unmeasured_returns.csv'
+    headers, monthly_unmeasured_af = usbr_report.load_monthly_csv(unmeasured_file_name)
+    annual_unmeasured_af = usbr_report.monthly_to_water_year(monthly_unmeasured_af, water_year_month=1)
+    annual_unmeasured_af = graph.reshape_annual_range(annual_unmeasured_af, 1964, current_last_year)
+
+    annual_diversion_minus_cu = np.zeros(len(annual_diversion_af), [('dt', 'i'), ('val', 'f')])
+    annual_diversion_minus_cu['dt'] = annual_diversion_af['dt']
+    annual_diversion_minus_cu['val'] = annual_diversion_af['val'] - annual_cu_af['val']
+
+    graph.bars(annual_diversion_af, sub_plot=0, title=state_name+' Diversion & Consumptive Use (Annual)',
+               ymin=ymin1, ymax=ymax1, yinterval=yinterval1, label='Diversion',
+               xlabel='', xinterval=year_interval, color='darkmagenta',
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_diversion_af, 10, sub_plot=0, label='10y avg Diversion')
+
+    bar_data = [
+                {'data': annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
+                {'data': annual_measured_af, 'label': 'Measured Returns', 'color': 'darkorchid'},
+                {'data': annual_unmeasured_af, 'label': 'Unmeasured Returns', 'color': 'mediumorchid'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=0, title=state_name+' Totals (Annual)',
+                       ymin=ymin1, ymax=ymax1, yinterval=yinterval1,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(annual_cu_af, 10, sub_plot=0, label='10y avg Consumptive Use')
+
+    # graph.bars(annual_diversion_minus_cu, sub_plot=1, title='Arizona Diversion minus Consumptive Use (Annual)',
+    #            ymin=0, ymax=900000, yinterval=100000,
+    #            xlabel='', xinterval=year_interval, color='lightmagenta',
+    #           ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.plot(annual_diversion_minus_cu, sub_plot=1, title=state_name+' Diversion minus CU aka Return Flows (Monthly)',
+               xinterval=year_interval, ymin=ymin2, ymax=ymax2, yinterval=yinterval2, color='darkred',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_diversion_minus_cu, 10, sub_plot=1, label='10y avg Diversion minus CU')
     graph.fig.waitforbuttonpress()
 
 
@@ -1368,114 +1447,181 @@ def usbr_lower_basin_states_total_use():
 '''
 
 
-def usbr_mexico():
+def usbr_mx():
     year_interval = 3
 
     graph = WaterGraph(nrows=3)
 
-    # In Excess of Treaty
-    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_in_excess.csv')
-    graph.plot(monthly_af, sub_plot=0, title='Mexico in Excess of Treaty (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=2000000, yinterval=100000, color='firebrick',
+    headers, treaty_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_satisfaction_of_treaty.csv')
+    treaty_annual_af = usbr_report.monthly_to_water_year(treaty_monthly_af, water_year_month=1)
+
+    headers, excess_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_in_excess.csv')
+    excess_annual_af = usbr_report.monthly_to_water_year(excess_monthly_af, water_year_month=1)
+
+    graph.plot(excess_monthly_af, sub_plot=0, title='Mexico in Excess of Treaty (Monthly)',
+               xinterval=year_interval, yinterval=100000, color='firebrick',
                ylabel='maf', format_func=WaterGraph.format_maf)
 
-    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    graph.bars(annual_af, sub_plot=1, title='Mexico in Excess of Treaty (Annual)',
-               ymin=0, ymax=14000000, yinterval=1000000,
-               xlabel='',  xinterval=year_interval, color='firebrick',
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.running_average(annual_af, 10, sub_plot=1)
+    bar_data = [
+                {'data': treaty_annual_af, 'label': 'Treaty', 'color': 'firebrick'},
+                {'data': excess_annual_af, 'label': 'Excess of Treaty', 'color': 'lightcoral'},
+    ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='Mexico (Annual)',
+                       ymin=0, ymax=16000000, yinterval=2000000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(excess_annual_af, 10, sub_plot=1)
 
-    graph.bars(annual_af, sub_plot=2, title='Mexico in Excess of Treaty (Annual)',
-               ymin=0, ymax=400000, yinterval=50000,
-               xlabel='',  xinterval=year_interval, color='firebrick',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_af, 10, sub_plot=2)
+    graph.bars_stacked(bar_data, sub_plot=2, title='Mexico (Annual)',
+                       ymin=1300000, ymax=2000000, yinterval=100000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.running_average(excess_annual_af, 10, sub_plot=2)
+
     graph.fig.waitforbuttonpress()
 
     # Bypass pursuant to minute 242
-    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_minute_242_bypass.csv')
+    headers, bypass_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_minute_242_bypass.csv')
     graph = WaterGraph(nrows=2)
-    graph.plot(monthly_af, sub_plot=0, title='Mexico Pursuant to Minute 242 (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=19000, yinterval=1000, color='firebrick',
+    graph.plot(bypass_monthly_af, sub_plot=0, title='Mexico Pursuant to Minute 242 (Monthly)',
+               xinterval=year_interval, yinterval=1000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    graph.bars(annual_af, sub_plot=1, title='Mexico Pursuant to Minute 242 (Annual)',
+    bypass_annual_af = usbr_report.monthly_to_water_year(bypass_monthly_af, water_year_month=1)
+    graph.bars(bypass_annual_af, sub_plot=1, title='Mexico Pursuant to Minute 242 (Annual)',
                ymin=0, ymax=160000, yinterval=10000,
                xlabel='',  xinterval=year_interval, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.running_average(annual_af, 10, sub_plot=1)
+    graph.running_average(bypass_annual_af, 10, sub_plot=1)
     graph.fig.waitforbuttonpress()
 
     graph = WaterGraph(nrows=5)
-    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_satisfaction_of_treaty.csv')
-    graph.plot(monthly_af, sub_plot=0, title='Satisfaction of Treaty (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=300000, yinterval=100000, color='firebrick',
+    graph.plot(treaty_monthly_af, sub_plot=0, title='Satisfaction of Treaty (Monthly)',
+               xinterval=year_interval, ymin=0, yinterval=100000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_northern_international_boundary.csv')
-    graph.plot(monthly_af, sub_plot=1, title='Northern International Border (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=250000, yinterval=100000, color='firebrick',
+    headers, nib_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_northern_international_boundary.csv')
+    graph.plot(nib_monthly_af, sub_plot=1, title='Northern International Border (Monthly)',
+               xinterval=year_interval, yinterval=100000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_southern_international_boundary.csv')
-    graph.plot(monthly_af, sub_plot=2, title='Southern International Border (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=15000, yinterval=2000, color='firebrick',
+    headers, sib_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_southern_international_boundary.csv')
+    graph.plot(sib_monthly_af, sub_plot=2, title='Southern International Border (Monthly)',
+               xinterval=year_interval, yinterval=2000, color='firebrick',
                ylabel='af', format_func=WaterGraph.format_af)
 
-    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_limitrophe.csv')
-    graph.plot(monthly_af, sub_plot=3, title='Limitrophe (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=2000, yinterval=200, color='firebrick',
+    headers, limitrophe_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_limitrophe.csv')
+    graph.plot(limitrophe_monthly_af, sub_plot=3, title='Limitrophe (Monthly)',
+               xinterval=year_interval, yinterval=200, color='firebrick',
                ylabel='af', format_func=WaterGraph.format_af)
 
-    headers, monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_tijuana.csv')
-    graph.plot(monthly_af, sub_plot=4, title='Tijuana (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=1100, yinterval=100, color='firebrick',
+    headers, tijuana_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_tijuana.csv')
+    graph.plot(tijuana_monthly_af, sub_plot=4, title='Tijuana (Monthly)',
+               xinterval=year_interval, yinterval=100, color='firebrick',
                ylabel='af', format_func=WaterGraph.format_af)
 
     graph.fig.waitforbuttonpress()
 
 
-def usbr_imperial_irrigation_district():
+def usbr_ca_imperial_irrigation_district():
     year_interval = 3
+    graph = WaterGraph(nrows=3)
 
     # Diversion
-    headers, monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_imperial_irrigation_diversion.csv')
-    graph = WaterGraph(nrows=2)
-    graph.plot(monthly_af, sub_plot=0, title='Imperial Irrigation District Diversion (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=400000, yinterval=20000, color='firebrick',
+    headers, monthly_diversion_af = usbr_report.load_monthly_csv('ca/usbr_ca_imperial_irrigation_diversion.csv')
+    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af, water_year_month=1)
+
+    headers, monthly_cu_af = usbr_report.load_monthly_csv('ca/usbr_ca_imperial_irrigation_consumptive_use.csv')
+    annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
+
+    headers, monthly_brock_diversion_af = usbr_report.load_monthly_csv(
+        'ca/usbr_ca_imperial_irrigation_brock_diversion.csv')
+    annual_brock_diversion_af = usbr_report.monthly_to_water_year(monthly_brock_diversion_af, water_year_month=1)
+
+    graph.plot(monthly_diversion_af, sub_plot=0, title='Imperial Diversions & Consumptive Use (Monthly)',
+               xinterval=year_interval, yinterval=50000, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    graph.bars(annual_af, sub_plot=1, title='Imperial Irrigation District Diversion (Annual)',
-               ymin=2200000, ymax=3300000, yinterval=100000,
-               xlabel='',  xinterval=year_interval, color='firebrick',
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.running_average(annual_af, 10, sub_plot=1)
+    graph.plot(monthly_cu_af, sub_plot=0,
+               xinterval=year_interval, yinterval=50000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    # Consumptive Use
-    # headers, monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_imperial_irrigation_consumptive_use.csv')
-    # graph.plot(monthly_af, sub_plot=2, title='Imperial Irrigtion District Consumptive Use',
-    #            xinterval=year_interval, ymin=0, ymax=400000, yinterval=20000, color='firebrick',
-    #            ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.plot(monthly_brock_diversion_af, sub_plot=1, title='Imperial Diversions from Brock (Monthly)',
+               xinterval=1, yinterval=5000, color='lightcoral',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    # annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
-    # graph.bars(annual_af, sub_plot=3, title='Imperial Irrigtion Consumptive Use',
-    #            ymin=2200000, ymax=3400000, yinterval=100000,
+    # graph.bars(annual_diversion_af, sub_plot=1, title='Imperial Irrigation District Diversion (Annual)',
+    #            ymin=2200000, ymax=3300000, yinterval=100000,
     #            xlabel='',  xinterval=year_interval, color='firebrick',
     #            ylabel='maf', format_func=WaterGraph.format_maf)
-    # graph.running_average(annual_af, 10, sub_plot=3)
+    # graph.running_average(annual_diversion_af, 10, sub_plot=1)
+
+    # Consumptive Use
+    # graph.bars(annual_cu_af, sub_plot=3, title='Imperial Irrigtion Consumptive Use',
+    #            ymin=2200000, ymax=3400000, yinterval=100000,
+    #            xlabel='',  xinterval=year_interval, color='firebrick',
+    #           ylabel='maf', format_func=WaterGraph.format_maf)
+
+    annual_brock_diversion_af = graph.reshape_annual_range(annual_brock_diversion_af, 1964, current_last_year)
+    annual_brock_diversion_negative = np.zeros(len(annual_brock_diversion_af), [('dt', 'i'), ('val', 'f')])
+    annual_brock_diversion_negative['dt'] = annual_cu_af['dt']
+    annual_brock_diversion_negative['val'] = np.negative(annual_brock_diversion_af['val'])
+
+    graph = WaterGraph()
+    graph.bars(annual_diversion_af, sub_plot=0, title='Imperial Diversions and Consumptive Use (Annual)',
+               ymin=2300000, ymax=3300000, yinterval=50000, color='darkmagenta',
+               xlabel='', xinterval=year_interval,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    bar_data = [
+                {'data': annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
+                {'data': annual_brock_diversion_negative, 'label': 'Brock Diversions', 'color': 'lightcoral'},
+    ]
+    graph.bars_stacked(bar_data, sub_plot=0, title='Imperial Diversions and Consumptive Use (Annual)',
+                       ymin=2300000, ymax=3300000, yinterval=50000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.running_average(annual_cu_af, 10, sub_plot=0, label='10Y CU Running Average')
 
     graph.fig.waitforbuttonpress()
 
 
-def usbr_lake_mead_snwa_griffith_pumping_plant():
+def usbr_ca_coachella():
+    year_interval = 3
+    graph = WaterGraph(nrows=2)
+
+    # Diversion
+    headers, monthly_diversion_af = usbr_report.load_monthly_csv('ca/usbr_ca_coachella_diversion.csv')
+    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af, water_year_month=1)
+    headers, monthly_cu_af = usbr_report.load_monthly_csv('ca/usbr_ca_coachella_consumptive_use.csv')
+    annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
+
+    graph.plot(monthly_diversion_af, sub_plot=0, title='Coachella Diversion (Monthly)',
+               xinterval=year_interval, yinterval=5000, color='darkmagenta',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.plot(monthly_cu_af, sub_plot=0, title='',
+               xinterval=year_interval, yinterval=5000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    bar_data = [
+                {'data': annual_diversion_af, 'label': 'Diversions', 'color': 'darkmagenta'},
+                {'data': annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='Coachella Diversions and Consumptive Use (Annual)',
+                       ymin=0, ymax=600000, yinterval=50000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(annual_cu_af, 10, sub_plot=1)
+
+    graph.fig.waitforbuttonpress()
+
+
+def usbr_nv_snwa():
     year_interval = 2
     headers, monthly_af = usbr_report.load_monthly_csv('nv/usbr_nv_snwa_griffith_diversion.csv')
     graph = WaterGraph(nrows=4)
     graph.plot(monthly_af, sub_plot=0, title='Lake Mead SNWA Griffith Pumping Plant Diversion (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=55000, yinterval=10000, color='firebrick',
+               xinterval=year_interval, yinterval=10000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
@@ -1487,7 +1633,7 @@ def usbr_lake_mead_snwa_griffith_pumping_plant():
 
     headers, monthly_af = usbr_report.load_monthly_csv('nv/usbr_nv_las_vegas_wash_diversion.csv')
     graph.plot(monthly_af, sub_plot=2, title='Lake Mead Las Vegas Wash Return Flows (Monthly)',
-               xinterval=year_interval, ymin=0, ymax=25000, yinterval=10000, color='firebrick',
+               xinterval=year_interval, yinterval=10000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
@@ -1500,8 +1646,8 @@ def usbr_lake_mead_snwa_griffith_pumping_plant():
     graph.fig.waitforbuttonpress()
 
 
-def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
-    headers, whitsett_monthly_af = usbr_report.load_monthly_csv('usbr_lake_havasu_metropolitan_whitsett_pumps.csv')
+def usbr_ca_metropolitan():
+    headers, whitsett_monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_metropolitan_diversion.csv')
     # graph = WaterGraph.plot(whitsett_monthly_af,
     #                               'Lake Havasu Metropolitan Whitsett Pumping Plant (Monthly)',
     #                               ylabel='kaf', ymin=0, ymax=120000, yinterval=10000, color='firebrick',
@@ -1521,7 +1667,7 @@ def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
         'usbr_lake_havasu_met_for_san_diego_whitsett_pumps.csv')
     graph.plot(whitsett_san_diego_monthly_af, sub_plot=1,
                title='Lake Havasu Metropolitan San Diego Exchange Whitsett Pumping Plant Diversion (Monthly)',
-               ymin=0, ymax=25000, yinterval=1000, color='firebrick',
+               yinterval=1000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     whitsett_san_diego_annual_af = usbr_report.monthly_to_calendar_year(whitsett_san_diego_monthly_af)
@@ -1537,10 +1683,10 @@ def usbr_lake_havasu_metropolitan_whitsett_pumping_plant():
     ics_ca_delta = ics['CA Delta']
 
     ics_ca_withdrawals = usbr_report.negative_values(ics_ca_delta)
-    ics_ca_withdrawals = graph.reshape_annual_range(ics_ca_withdrawals, 1964, 2021)
+    ics_ca_withdrawals = graph.reshape_annual_range(ics_ca_withdrawals, 1964, current_last_year)
 
     ics_ca_deposits = usbr_report.positive_values(ics_ca_delta)
-    ics_ca_deposits = graph.reshape_annual_range(ics_ca_deposits, 1964, 2021)
+    ics_ca_deposits = graph.reshape_annual_range(ics_ca_deposits, 1964, current_last_year)
 
     bar_data = [{'data': whitsett_annual_af, 'label': 'Metropolitan Diversion', 'color': 'firebrick'},
                 {'data': ics_ca_withdrawals, 'label': 'CA ICS Withdrawals', 'color': 'maroon'},
@@ -1572,28 +1718,60 @@ def keyboardInterruptHandler(sig, frame):
         print("riverwar exit exception:", e)
 
 
+def usbr_ca():
+    usbr_ca_metropolitan()
+    usbr_ca_imperial_irrigation_district()
+    usbr_ca_coachella()
+    usbr_ca_palo_verde()
+    usbr_ca_total()
+
+
+def usbr_az():
+    usbr_az_crit()
+    usbr_az_cap()
+
+
+def usbr_nv():
+    usbr_nv_snwa()
+    usgs_nv_las_vegas_wash_below_lake_las_vegas()
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    usbr_mexico()
+    usbr_diversion_vs_consumptive('az', 'total', 'Arizona',
+                                  ymin1=900000, ymax1=3800000,
+                                  ymin2=550000, ymax2=900000, yinterval2=25000)
+    usbr_diversion_vs_consumptive('az', 'crit', 'Colorado River Indian',
+                                  ymin1=0, ymax1=750000,
+                                  ymin2=170000, ymax2=400000, yinterval2=25000)
+    usbr_diversion_vs_consumptive('az', 'wellton_mohawk', 'Wellton-Mohawk',
+                                  ymin1=0, ymax1=600000,
+                                  ymin2=-20000, ymax2=275000, yinterval2=25000)
+
+    usbr_diversion_vs_consumptive('ca', 'total', 'California',
+                                  ymin1=3500000, ymax1=6000000,
+                                  ymin2=350000, ymax2=750000, yinterval2=50000)
+    usbr_diversion_vs_consumptive('nv', 'total', 'Nevada',
+                                  ymin1=0, ymax1=500000,
+                                  ymin2=0, ymax2=300000, yinterval2=25000)
+    usbr_az()
+
+    usbr_mx()
+    usbr_ca_total()
+    usbr_ca()
+    usbr_nv()
+    usbr_az()
+
     usbr_lower_basin_states_total_use()
-    usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
     usbr_lake_powell()
-    usbr_california_total()
-    usbr_crit()
-    usbr_palo_verde()
-    usbr_imperial_irrigation_district()
-    usbr_lake_mead_snwa_griffith_pumping_plant()
-    usbr_lake_havasu_metropolitan_whitsett_pumping_plant()
+
     usbr_lake_mead()
     usbr_lake_mead_ics_by_state()
-    usbr_lake_havasu_cap_wilmer_pumping_plant()
 
     usbr_upper_colorado_reservoirs()
     usbr_lower_colorado_reservoirs()
-
-    usgs_las_vegas_wash_below_lake_las_vegas()
 
     usgs_lower_colorado()
     usbr_upper_colorado_reservoirs()
