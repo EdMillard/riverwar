@@ -1740,6 +1740,9 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    usbr_diversion_vs_consumptive('ca', 'metropolitan', 'Metropolitan',
+                                  ymin1=900000, ymax1=3800000,
+                                  ymin2=550000, ymax2=900000, yinterval2=25000)
     usbr_diversion_vs_consumptive('az', 'total', 'Arizona',
                                   ymin1=900000, ymax1=3800000,
                                   ymin2=550000, ymax2=900000, yinterval2=25000)
