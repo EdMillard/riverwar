@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import datetime
+import math
 from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -85,7 +86,7 @@ class WaterGraph(object):
     def format_discharge(value, pos=None):
         return '{0:>6}'.format(value)
 
-    def bars(self, a, sub_plot=0, title='', color='royalblue',
+    def bars(self, a, sub_plot=0, title='', color='royalblue', label=None,
              ylabel='', ymin=0, ymax=0, yinterval=1,
              xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
         if len(self.fig.axes) > 1:
@@ -115,7 +116,10 @@ class WaterGraph(object):
 
         x = a['dt']
         y = a['val']
-        ax.bar(x, y, width=0.9, color=color)
+        if label:
+            ax.bar(x, y, width=0.9, color=color, label=label)
+        else:
+            ax.bar(x, y, width=0.9, color=color)
 
     def bars_two(self, a, b, sub_plot=0, label_a='', label_b='', title='', color_a='royalblue', color_b='limegreen',
                  ylabel='', ymin=0, ymax=0, yinterval=1,
@@ -222,7 +226,8 @@ class WaterGraph(object):
             ax = self.ax[sub_plot]
         else:
             ax = self.ax
-        ax.set_title(label=title)
+        if len(title) > 0:
+            ax.set_title(label=title)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 
@@ -230,6 +235,8 @@ class WaterGraph(object):
             xmin = a[0][0] - 1
         if xmax == 0:
             xmax = a[-1][0] + 1
+        if ymax == 0:
+            ymax = float(math.ceil(a['val'].max()))
         ax.set_xlim([xmin, xmax])
         ax.set_ylim([ymin, ymax])
 
@@ -283,7 +290,7 @@ class WaterGraph(object):
 
         self.fig.waitforbuttonpress()
 
-    def running_average(self, annual_af, window, sub_plot=0):
+    def running_average(self, annual_af, window, sub_plot=0, label=None):
         running_average = np.zeros(len(annual_af), [('dt', 'i'), ('val', 'f')])
         if len(self.fig.axes) > 1:
             ax = self.ax[sub_plot]
@@ -305,7 +312,10 @@ class WaterGraph(object):
 
         x = running_average['dt']
         y = running_average['val']
-        ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod', label='10Y Running Average')
+        if label:
+            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod', label=label)
+        else:
+            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod', label='10Y Running Average')
         ax.legend()
         return running_average
 
