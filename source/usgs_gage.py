@@ -23,6 +23,7 @@ import datetime
 import requests
 import numpy as np
 from pathlib import Path
+from source import usbr_report
 
 # USGS Gage parameter definitions
 # https://help.waterdata.usgs.gov/code/parameter_cd_query?fmt=rdb&inline=true&group_cd=%
@@ -61,16 +62,41 @@ class USGSGage(object):
         self.color = color
 
         self.daily_discharge_cfs = ''
-        self.annual_af = ''
-
     # def __del__(self):
-    def daily_discharge(self):
+
+    @staticmethod
+    def reshape_annual_range(a, start_year, end_year):
+        years = end_year - start_year + 1
+        b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
+
+        for year in range(start_year, end_year + 1):
+            b[year - start_year][0] = year
+            b[year - start_year][1] = 0
+
+        for year_val in a:
+            year = year_val[0]
+            if start_year <= year <= end_year:
+                b[year - start_year][1] = year_val[1]
+
+        return b
+
+    def annual_af(self, start_year=0, end_year=0, water_year_month=1):
+        monthly_af = daily_cfs_to_monthly_af(self.daily_discharge(update=False))
+        if water_year_month == 1:
+            annual_af = usbr_report.monthly_to_calendar_year(monthly_af)
+        else:
+            annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=water_year_month)
+        if start_year > 0 and end_year > 0:
+            annual_af = USGSGage.reshape_annual_range(annual_af, start_year, end_year)
+        return annual_af
+
+    def daily_discharge(self, update=True):
         file_path = Path('data/USGS_Gages/')
         file_name = file_path.joinpath(self.site + '.csv')
         if not file_name.exists():
             self.request_daily_discharge(self.start_date, self.end_date)
 
-        return self.load_daily_discharge()
+        return self.load_daily_discharge(update)
 
     def load_time_series_csv(self, filename):
         date_time_format = "%Y-%m-%d"
@@ -161,25 +187,25 @@ class USGSGage(object):
         else:
             print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
 
-    def load_daily_discharge(self):
-        file_path = Path('data/USGS_Gages/')
-        file_path.mkdir(parents=True, exist_ok=True)
-        file_name = file_path.joinpath(self.site + '.csv')
-        if not file_name.exists():
-            print('USGS path doesn\'t exist: ', file_name)
-            return file_name
-        self.daily_discharge_cfs = self.load_time_series_csv(file_name)
-        end_datetime64 = self.daily_discharge_cfs[-1]['dt']
-        end_date = end_datetime64.astype(datetime.datetime).date()
-        yesterdays_date = datetime.datetime.now().date() - datetime.timedelta(days=1)
-        if end_date < yesterdays_date:
-            end_date += datetime.timedelta(days=1)
-            print('Gage updating from USGS: ', self.site_name, ' ', end_date, ' to ', yesterdays_date)
-            self.request_daily_discharge(str(end_date), str(yesterdays_date), append=True)
+    def load_daily_discharge(self, update=True):
+        if not len(self.daily_discharge_cfs):
+            file_path = Path('data/USGS_Gages/')
+            file_path.mkdir(parents=True, exist_ok=True)
+            file_name = file_path.joinpath(self.site + '.csv')
+            if not file_name.exists():
+                print('USGS path doesn\'t exist: ', file_name)
+                return file_name
             self.daily_discharge_cfs = self.load_time_series_csv(file_name)
+            end_datetime64 = self.daily_discharge_cfs[-1]['dt']
+            end_date = end_datetime64.astype(datetime.datetime).date()
+            yesterdays_date = datetime.datetime.now().date() - datetime.timedelta(days=1)
+            if end_date < yesterdays_date and update:
+                end_date += datetime.timedelta(days=1)
+                print('Gage updating from USGS: ', self.site_name, ' ', end_date, ' to ', yesterdays_date)
+                self.request_daily_discharge(str(end_date), str(yesterdays_date), append=True)
+                self.daily_discharge_cfs = self.load_time_series_csv(file_name)
 
-        daily_discharge_af = convert_cfs_to_af_per_day(self.daily_discharge_cfs)
-        self.annual_af = daily_to_water_year(daily_discharge_af)
+            #daily_discharge_af = convert_cfs_to_af_per_day(self.daily_discharge_cfs)
         return self.daily_discharge_cfs
 
 
@@ -230,14 +256,41 @@ def daily_to_water_year(a):
     return a
 
 
-def convert_cfs_to_af_per_day(cfs):
-    a = np.zeros(len(cfs), [('dt', 'datetime64[s]'), ('val', 'f')])
-    day = 0
-    for l in cfs:
-        a[day][0] = l[0]
-        a[day][1] = l[1] * 1.983459
-        day += 1
+def daily_cfs_to_monthly_af(a):
+    obj = a[0]['dt'].astype(object)
+    dt = datetime.date(obj.year, obj.month, obj.day)
+    month = obj.month
+
+    total = 0
+    result = []
+    for o in a:
+        obj = o['dt'].astype(object)
+        if obj.month != month:
+            result.append([dt, round(total)])
+            total = 0
+            month = obj.month
+        af = o['val'] * 1.983459
+        total += af
+        dt = datetime.date(obj.year, obj.month, obj.day)
+
+    if total > 0:
+        result.append([dt, round(total)])
+
+    a = np.empty(len(result), [('dt', 'datetime64[s]'), ('val', 'f')])
+    month = 0
+    for l in result:
+        a[month][0] = l[0]
+        a[month][1] = l[1]
+        month += 1
+
     return a
+
+
+def convert_cfs_to_af_per_day(cfs):
+    af = np.empty(len(cfs), [('dt', 'datetime64[s]'), ('val', 'f')])
+    af['dt'] = cfs['dt']
+    af['val'] = cfs['val'] * 1.983459
+    return af
 
 
 """

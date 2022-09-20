@@ -128,7 +128,7 @@ def load_monthly_csv(file_name, sep=' '):
         line += 1
 
     f.close()
-    return headers, a
+    return a
 
 
 def load_ics_csv(file_name, sep=' '):
