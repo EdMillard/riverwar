@@ -86,7 +86,7 @@ class WaterGraph(object):
     def format_discharge(value, pos=None):
         return '{0:>6}'.format(value)
 
-    def bars(self, a, sub_plot=0, title='', color='royalblue', label=None,
+    def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, running_average_years=10,
              ylabel='', ymin=0, ymax=0, yinterval=1,
              xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
         if len(self.fig.axes) > 1:
@@ -121,6 +121,9 @@ class WaterGraph(object):
         else:
             ax.bar(x, y, width=0.9, color=color)
 
+        if running_average_years > 0:
+            self.running_average(a, running_average_years, sub_plot=sub_plot)
+
     def bars_two(self, a, b, sub_plot=0, label_a='', label_b='', title='', color_a='royalblue', color_b='limegreen',
                  ylabel='', ymin=0, ymax=0, yinterval=1,
                  xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
@@ -138,23 +141,24 @@ class WaterGraph(object):
         if xmax == 0:
             xmax = a[-1][0] + 1
         labels_x = np.arange(xmin, xmax, xinterval)
-        plt.xticks(labels_x)
-        plt.xlim([xmin, xmax])
+        ax.set_xticks(labels_x)
+        ax.set_xlim([xmin, xmax])
 
         if ymax > 0 and yinterval > 0:
             label_y = np.arange(ymin, ymax+yinterval, yinterval)
-            plt.yticks(label_y)
-        plt.ylim([ymin, ymax])
+            ax.set_yticks(label_y)
+        ax.set_ylim([ymin, ymax])
 
         ax.yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
         x = a['dt']
         y = a['val']
-        plt.bar(x-0.2, y, width=0.4, color=color_a, label=label_a)
+        ax.bar(x-0.2, y, width=0.4, color=color_a, label=label_a)
 
         b_x = b['dt']
         b_y = b['val']
-        plt.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
+        ax.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
+        ax.legend()
 
     def bars_stacked(self, bar_data, sub_plot=0, title='',
                      ylabel='', ymin=0, ymax=0, yinterval=1,
