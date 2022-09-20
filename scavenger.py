@@ -66,7 +66,7 @@ def ocr_report(image_file_path, water_user='', field_id=''):
                 if len(parts) > 0:
                     clean_string = ''
                     for c in parts[-1]:
-                        if c.isdigit() or c == ' ' or c == '-':
+                        if c.isdigit() or c == ' ' or c == '-' or c == '.':
                             clean_string += c
                     result = clean_string.replace('  ', ' ')
                     result = result.replace('  ', ' ')
@@ -81,7 +81,7 @@ def ocr_report(image_file_path, water_user='', field_id=''):
     return year, ''
 
 
-def ocr_image_file(image_file_path, water_user, field_id, f):
+def ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin=0, kaf_end=0):
     error_tolerance = 2  # af error allowed between summation of months and annual total
 
     year, data = ocr_report(image_file_path, water_user, field_id)
@@ -91,8 +91,19 @@ def ocr_image_file(image_file_path, water_user, field_id, f):
         # Footnotes in older reports end in '/'
         if values[0].endswith('/'):
             values.pop(0)
+
+        if kaf_begin <= year <= kaf_end:
+            n = 0
+            for value in values:
+                try:
+                    values[n] = str(int(float(value) * 1000))
+                except ValueError:
+                    print('ValueError: cant convert to float: ', value)
+                n += 1
+
         summation = 0
         for value in values[0:-1]:
+
             try:
                 summation += int(value)
             except ValueError:
@@ -120,7 +131,7 @@ def ocr_image_file(image_file_path, water_user, field_id, f):
 
 
 def ocr_reports(image_directory_path, output_file_path, water_user='', field_id='',
-                start_year=None, end_year=None):
+                start_year=None, end_year=None, kaf_begin=0, kaf_end=0):
     print('ocr_report: ', water_user + ', ' + field_id)
     image_file_paths = []
     for image_file_path in image_directory_path.iterdir():
@@ -154,7 +165,7 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
         year_written_prev = year_from_file_path(image_file_paths[0]) - 1
 
         for image_file_path in image_file_paths:
-            year_written = ocr_image_file(image_file_path, water_user, field_id, f)
+            year_written = ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin, kaf_end)
             if year_written:
                 year_difference = year_written - year_written_prev
                 if year_difference > 1:
@@ -428,6 +439,36 @@ def scavenge_mx(image_dir, out_path):
     ocr_reports(image_path, output_path, field_id='In Excess')
 
 
+def scavenge_releases(image_dir, out_path):
+    image_path = image_dir.joinpath('releases')
+
+    # Numbers are in kaf from 1990 to 2002ish
+
+    output_path = out_path.joinpath('releases/usbr_releases_glen_canyon_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Glen Canyon Dam', kaf_begin=1990, kaf_end=2002)
+
+    output_path = out_path.joinpath('releases/usbr_releases_hoover_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Hoover Dam', kaf_begin=1990, kaf_end=2002)
+
+    output_path = out_path.joinpath('releases/usbr_releases_davis_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Davis Dam', kaf_begin=1990, kaf_end=2002)
+
+    output_path = out_path.joinpath('releases/usbr_releases_parker_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Parker Dam', kaf_begin=1990, kaf_end=2002)
+
+    output_path = out_path.joinpath('releases/usbr_releases_rock_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Rock Dam', kaf_begin=1990, kaf_end=2002)
+
+    output_path = out_path.joinpath('releases/usbr_releases_palo_verde_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Palo Verde', kaf_begin=1990, kaf_end=2002)
+    # Mittry Lake needs to be added to Imperial in 2000's
+    output_path = out_path.joinpath('releases/usbr_releases_imperial_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Imperial Dam', kaf_begin=1990, kaf_end=2002)
+
+    output_path = out_path.joinpath('releases/usbr_releases_laguna_dam.csv')
+    ocr_reports(image_path, output_path, field_id='Laguna Dam', kaf_begin=1990, kaf_end=2002)
+
+
 def ocr_print(image_file_path):
     try:
         text = image_to_text(image_file_path)
@@ -450,7 +491,7 @@ def ocr_print(image_file_path):
 
 
 def ocr_debug(image_dir):
-    image_path = image_dir.joinpath('az/consumptive_use')
+    image_path = image_dir.joinpath('releases')
     while 1:
         print("Enter image name:")
         image_name = input()
@@ -469,6 +510,7 @@ if __name__ == '__main__':
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
 
     ocr_debug(image_directory)
+    scavenge_releases(image_directory, outputs_path)
     scavenge_az(image_directory, outputs_path)
     scavenge_nv(image_directory, outputs_path)
     scavenge_mx(image_directory, outputs_path)
