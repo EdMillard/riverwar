@@ -36,6 +36,47 @@ class USBRRise(object):
     def __init__(self):
         pass
 
+def daily_to_water_year(a):
+    water_year_month = 10
+    dt = datetime.date(1, water_year_month, 1)
+    total = 0
+    result = []
+    for o in a:
+        obj = o['dt'].astype(object)
+        if obj.month == 10 and obj.day == 1:
+            if total > 0:
+                result.append([dt, total])
+                total = 0
+            dt = datetime.date(obj.year+1, water_year_month, 1)
+        elif dt.year == 1:
+            if obj.month < water_year_month:
+                dt = datetime.date(obj.year, water_year_month, 1)
+            else:
+                dt = datetime.date(obj.year+1, water_year_month, 1)
+
+        if not np.isnan(o['val']):
+            total += o['val']
+        else:
+            print('daily_to_water_year not a number:', o)
+
+    if total > 0:
+        result.append([dt, total])
+
+    a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
+    day = 0
+    for l in result:
+        # a[day][0] = np.datetime64(l[0])
+        a[day][0] = l[0].year
+        a[day][1] = l[1]
+        day += 1
+
+    return a
+
+
+def annual_af(item_id, start_date='', end_date='', csv=False):
+    info, daily_inflow_af = load(item_id, start_date=start_date, end_date=end_date, csv=csv)
+    return daily_to_water_year(daily_inflow_af)
+
 
 def load(item_id, start_date='', end_date='', csv=False):
     item_id_str = str(item_id)
