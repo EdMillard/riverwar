@@ -1838,25 +1838,25 @@ def usbr_az_yuma():
     graph = WaterGraph(nrows=2)
 
     # Diversion
-    yuma_county_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_diversion.csv')
+    yuma_county_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_diversion.csv')
     yuma_county_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_county_monthly_diversion_af, water_year_month=1)
-    yuma_county_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_ca_yuma_county_consumptive_use.csv')
+    yuma_county_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_consumptive_use.csv')
     yuma_county_annual_cu_af = usbr_report.monthly_to_water_year(yuma_county_monthly_cu_af, water_year_month=1)
 
-    graph.plot(yuma_county_monthly_diversion_af, sub_plot=0, title='USBR AR Yuma County Diversion (Monthly)',
-               xinterval=year_interval, yinterval=5000, color='darkmagenta',
+    graph.plot(yuma_county_monthly_diversion_af, sub_plot=0, title='USBR AR Yuma County WUA Diversion (Monthly)',
+               xinterval=year_interval, ymax=55000, yinterval=5000, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     graph.plot(yuma_county_monthly_cu_af, sub_plot=0, title='',
-               xinterval=year_interval, yinterval=5000, color='firebrick',
+               xinterval=year_interval, ymax=55000,  yinterval=5000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     bar_data = [
         {'data': yuma_county_annual_diversion_af, 'label': 'Diversions', 'color': 'darkmagenta'},
         {'data': yuma_county_annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
     ]
-    graph.bars_stacked(bar_data, sub_plot=1, title='USBR AR Yuma County Diversions and Consumptive Use (Annual)',
-                       ymin=0, ymax=600000, yinterval=50000,
+    graph.bars_stacked(bar_data, sub_plot=1, title='USBR AR Yuma County WUA Diversions and Consumptive Use (Annual)',
+                       ymin=0, ymax=400000, yinterval=50000,
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(yuma_county_annual_cu_af, 10, sub_plot=1)
@@ -1987,6 +1987,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    usbr_az_yuma()
+
     # usbr_az_cap()
     usbr_lower_colorado_reservoirs()
 
@@ -1996,7 +1998,6 @@ if __name__ == '__main__':
     usgs_lees_ferry()
     # usbr_lake_powell()
 
-    usbr_az_yuma()
 
     usgs_north_gila_main_canal()
     usgs_south_gila_main_canal()
