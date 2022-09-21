@@ -1837,7 +1837,7 @@ def usbr_az_yuma():
     year_interval = 3
     graph = WaterGraph(nrows=2)
 
-    # Diversion
+    # Yuma County WUA
     yuma_county_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_diversion.csv')
     yuma_county_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_county_monthly_diversion_af, water_year_month=1)
     yuma_county_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_consumptive_use.csv')
@@ -1859,7 +1859,37 @@ def usbr_az_yuma():
                        ymin=0, ymax=400000, yinterval=50000,
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(yuma_county_annual_diversion_af, 10, sub_plot=1)
     graph.running_average(yuma_county_annual_cu_af, 10, sub_plot=1)
+
+    graph.fig.waitforbuttonpress()
+
+    # Wellton Mohawk
+    graph = WaterGraph(nrows=2)
+
+    wellton_mohawk_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_wellton_mohawk_diversion.csv')
+    wellton_mohawk_annual_diversion_af = usbr_report.monthly_to_water_year(wellton_mohawk_monthly_diversion_af, water_year_month=1)
+    wellton_mohawk_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_wellton_mohawk_consumptive_use.csv')
+    wellton_mohawk_annual_cu_af = usbr_report.monthly_to_water_year(wellton_mohawk_monthly_cu_af, water_year_month=1)
+
+    graph.plot(wellton_mohawk_monthly_diversion_af, sub_plot=0, title='USBR AR Wellton-Mohawk Diversion (Monthly)',
+               xinterval=year_interval, ymax=75000, yinterval=5000, color='darkmagenta',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.plot(wellton_mohawk_monthly_cu_af, sub_plot=0, title='',
+               xinterval=year_interval, ymax=75000,  yinterval=5000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    bar_data = [
+        {'data': wellton_mohawk_annual_diversion_af, 'label': 'Diversions', 'color': 'darkmagenta'},
+        {'data': wellton_mohawk_annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
+    ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='USBR AR Wellton-Mohawk Diversion and Consumptive Use (Annual)',
+                       ymin=0, ymax=600000, yinterval=50000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(wellton_mohawk_annual_diversion_af, 10, sub_plot=1)
+    graph.running_average(wellton_mohawk_annual_cu_af, 10, sub_plot=1)
 
     graph.fig.waitforbuttonpress()
 
