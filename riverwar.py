@@ -178,41 +178,38 @@ def usbr_lake_powell():
     # usbr_lake_powell_change_in_storage_af = 4404
     # usbr_lake_powell_area_acres = 4784
 
-    info, daily_elevation_ft = usbr_rise.load(usbr_lake_powell_elevation_ft)
-    graph = WaterGraph(nrows=5)
-    graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Powell Elevation', ymin=3350, ymax=3725, yinterval=25,
-               ylabel='ft', format_func=WaterGraph.format_elevation)
+    year_interval = 3
+    graph = WaterGraph(nrows=4)
+
+    # info, daily_elevation_ft = usbr_rise.load(usbr_lake_powell_elevation_ft)
+    # graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Powell Elevation', ymin=3350, ymax=3725, yinterval=25,
+    #            ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_powell_storage_af)
-    graph.plot(daily_storage_af, sub_plot=1, title='Lake Powell Storage',
-               ymax=26000000, yinterval=1000000,
+    graph.plot(daily_storage_af, sub_plot=0, title='Lake Powell Storage',
+               ymax=26000000, yinterval=2000000,
                ylabel='maf', format_func=WaterGraph.format_10maf)
 
-    info, daily_inflow_af = usbr_rise.load(usbr_lake_powell_inflow_af)
-    annual_inflow_af = WaterGraph.daily_to_water_year(daily_inflow_af)
-    graph.bars(annual_inflow_af, sub_plot=2, title='Lake Powell Inflow',
-               ymin=3000000, ymax=21000000, yinterval=500000,
-               xlabel='Water Year', xinterval=3,
+    annual_inflow_af = usbr_rise.annual_af(usbr_lake_powell_inflow_af)
+    graph.bars(annual_inflow_af, sub_plot=1, title='Lake Powell Inflow',
+               ymin=3000000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
                ylabel='maf',  format_func=WaterGraph.format_maf)
 
-    info, daily_inflow_unregulated_af = usbr_rise.load(usbr_lake_powell_inflow_volume_unregulated_af)
-    annual_inflow_unregulated_af = WaterGraph.daily_to_water_year(daily_inflow_unregulated_af)
-    graph.bars(annual_inflow_unregulated_af, sub_plot=3, title='Lake Powell Unregulated Inflow',
-               ymin=2500000, ymax=21000000, yinterval=500000,
-               xlabel='Water Year', xinterval=3,
+    annual_inflow_unregulated_af = usbr_rise.annual_af(usbr_lake_powell_inflow_volume_unregulated_af)
+    graph.bars(annual_inflow_unregulated_af, sub_plot=2, title='Lake Powell Unregulated Inflow',
+               ymin=2500000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
                ylabel='maf', format_func=WaterGraph.format_maf)
 
-    info, daily_evaporation_af = usbr_rise.load(usbr_lake_powell_evaporation_af)
-    annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
-    graph.bars(annual_evaporation_af, sub_plot=4, title='Lake Powell Evaporation', ymin=0, ymax=700000, yinterval=50000,
-               xlabel='Water Year', xinterval=3,
+    annual_evaporation_af = usbr_rise.annual_af(usbr_lake_powell_evaporation_af)
+    graph.bars(annual_evaporation_af, sub_plot=3, title='Lake Powell Evaporation',
+               ymin=0, ymax=700000, yinterval=50000,
+               xlabel='Water Year', xinterval=year_interval,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.fig.waitforbuttonpress()
 
     graph = WaterGraph(nrows=1)
 
-    info, daily_release_total_af = usbr_rise.load(usbr_lake_powell_release_total_af)
-    annual_release_total_af = WaterGraph.daily_to_water_year(daily_release_total_af)
+    annual_release_total_af = usbr_rise.annual_af(usbr_lake_powell_release_total_af)
     graph.bars(annual_release_total_af, sub_plot=0, title='Lake Powell Release',
                ymin=7000000, ymax=12600000, yinterval=100000,
                xlabel='Water Year', xinterval=1, xmin=2000, xmax=2021,
@@ -474,14 +471,14 @@ def usbr_lake_mead():
     #            format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_mead_storage_af)
-    graph.plot(daily_storage_af, sub_plot=0, title='Lake Mead Storage', color='firebrick',
+    graph.plot(daily_storage_af, sub_plot=0, title='Lake Mead Storage (Hoover Dam)', color='firebrick',
                ymax=32000000, yinterval=2000000,
                ylabel='maf', format_func=WaterGraph.format_10maf)
     # usbr_lake_mead_ics_by_state(graph)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph.bars(annual_release_af, sub_plot=1, title='Lake Mead Release', color='firebrick',
+    graph.bars(annual_release_af, sub_plot=1, title='Lake Mead Release (Hoover Dam)', color='firebrick',
                ymin=3000000, ymax=22500000, yinterval=1000000,
                xlabel='Water Year', xinterval=5,
                ylabel='maf', format_func=WaterGraph.format_maf)
@@ -520,13 +517,13 @@ def usbr_lake_mohave():
     #            ymin=620, ymax=647, yinterval=2,
     #            ylabel='ft', format_func=WaterGraph.format_elevation)
     info, daily_storage_af = usbr_rise.load(usbr_lake_mohave_storage_af)
-    graph.plot(daily_storage_af, sub_plot=0, title='Lake Mohave Storage', color='firebrick',
+    graph.plot(daily_storage_af, sub_plot=0, title='Lake Mohave Storage (Davis Dam)', color='firebrick',
                ymin=1000000, ymax=1900000, yinterval=100000,
                ylabel='maf', format_func=WaterGraph.format_maf)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph.bars(annual_release_af, sub_plot=1, title='Lake Mohave Release', color='firebrick',
+    graph.bars(annual_release_af, sub_plot=1, title='Lake Mohave Release (Davis Dam)', color='firebrick',
                ymin=6500000, ymax=23000000, yinterval=1000000,
                xlabel='Water Year', xinterval=4,
                ylabel='maf', format_func=WaterGraph.format_maf)
@@ -547,13 +544,13 @@ def usbr_lake_havasu():
     #            ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_havasu_storage_af)
-    graph.plot(daily_storage_af, sub_plot=0, title='Lake Havasu Storage', color='firebrick',
+    graph.plot(daily_storage_af, sub_plot=0, title='Lake Havasu Storage (Parker Dam)', color='firebrick',
                ymax=700000, yinterval=50000,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph.bars(annual_release_af, sub_plot=1, title='Lake Havasu Release', color='firebrick',
+    graph.bars(annual_release_af, sub_plot=1, title='Lake Havasu Release (Parker Dam)', color='firebrick',
                ymin=4000000, ymax=19200000, yinterval=1000000,
                xlabel='Water Year', xinterval=4,
                ylabel='maf',  format_func=WaterGraph.format_maf)
@@ -570,7 +567,7 @@ def usgs_lees_ferry():
 
     # USGS Lees Ferry Gage Daily Discharge Mean
     #
-    usgs_lees_ferry_annual_af = lees_ferry_gage.annual_af
+    usgs_lees_ferry_annual_af = lees_ferry_gage.annual_af(water_year_month=10)
     # usgs_lees_ferry_running_average = rw_running_average(usgs_lees_ferry_annual_af, 10)
     # x = usgs_lees_ferry_running_average['dt']
     # y = usgs_lees_ferry_running_average['val']
@@ -594,13 +591,16 @@ def usgs_lees_ferry():
     # rw_bars(a, title='Lake Powell Release',
     #        ylabel='maf', ymin=7000000, ymax=20750000, yinterval=500000,
     #        xlabel='Water Year', xinterval=3, format_func=format_maf)
+
     graph = WaterGraph()
     graph.bars_two(usbr_glen_canyon_annual_release_af, usgs_lees_ferry_annual_af,
                    title='Lake Powell Release Comparison, USBR Glen Canyon vs USGS Lees Ferry',
                    label_a='Glen Canyon', color_a='royalblue',
                    label_b='Lees Ferry', color_b='limegreen',
-                   ylabel='af', ymin=7000000, ymax=14000000, yinterval=250000,
+                   ylabel='af', ymin=7000000, ymax=13000000, yinterval=250000,
                    xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
+    graph.running_average(usbr_glen_canyon_annual_release_af, 10, sub_plot=0)
+    graph.running_average(usgs_lees_ferry_annual_af, 10, sub_plot=0)
 
     usbr_lake_powell_release_af_1999_2021 = WaterGraph.array_in_time_range(usbr_glen_canyon_annual_release_af,
                                                                            datetime.datetime(1999, 1, 1),
@@ -641,8 +641,10 @@ def usgs_lees_ferry():
                    title='Lake Powell Release Comparison, USBR Glen Canyon + Paria vs USGS Lees Ferry',
                    label_a='Glen Canyon + Paria', color_a='royalblue',
                    label_b='Lees Ferry', color_b='limegreen',
-                   ylabel='maf', ymin=7000000, ymax=14000000, yinterval=250000,
+                   ylabel='maf', ymin=7000000, ymax=13000000, yinterval=250000,
                    xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
+    graph.running_average(glen_canyon_plus_paria, 10, sub_plot=0)
+    graph.running_average(usgs_lees_ferry_af_1999_2021, 10, sub_plot=0)
     graph.fig.waitforbuttonpress()
 
     graph = WaterGraph()
@@ -660,7 +662,7 @@ def usgs_paria_lees_ferry():
                                      year_interval=5)
     graph = WaterGraph()
     graph.plot_gage(paria_lees_ferry_gage)
-    return paria_lees_ferry_gage.annual_af
+    return paria_lees_ferry_gage.annual_af()
 
 
 def usgs_little_colorado_cameron():
@@ -1861,6 +1863,7 @@ def usbr_az_yuma():
 
     graph.fig.waitforbuttonpress()
 
+
 def usbr_nv_snwa():
     year_interval = 2
     monthly_af = usbr_report.load_monthly_csv('nv/usbr_nv_snwa_griffith_diversion.csv')
@@ -1984,8 +1987,14 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    usbr_lake_powell()
+    # usbr_az_cap()
     usbr_lower_colorado_reservoirs()
+
+    usbr_nv_snwa()
+    usbr_ca_metropolitan()
+
+    usgs_lees_ferry()
+    # usbr_lake_powell()
 
     usbr_az_yuma()
 
@@ -1996,9 +2005,7 @@ if __name__ == '__main__':
     usgs_wellton_mohawk_main_outlet_drain()
 
     usbr_ca_imperial_irrigation_district()
-    usbr_az_cap()
-    usbr_nv_snwa()
-    usbr_ca_metropolitan()
+
     usbr_ca_coachella()
     usgs_imperial_all_american()
     usbr_diversion_vs_consumptive('ca', 'total', 'California',
