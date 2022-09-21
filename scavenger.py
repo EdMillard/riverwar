@@ -258,6 +258,18 @@ def scavenge_ca(image_dir, out_path):
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
 
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Diversion')
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Consumptive Us')
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Diversion')
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Diversion')
+
     # AZ Total, all parameters
     # output_path = out_path.joinpath('az/usbr_az_total_diversion.csv')
     # ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Diversion')
@@ -290,20 +302,14 @@ def scavenge_az(image_dir, out_path):
     output_path = out_path.joinpath('az/usbr_az_crit_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Consumptive Us')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Diversion')
-
-    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Consumptive Us')
-
     output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_district_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Irrigation District', field_id='Diversion')
 
     output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_district_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Irrigation District', field_id='Consumptive Us')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_county_irrigation_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma County I', field_id='Diversion')
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water Users', field_id='Diversion')
 
     output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma County Water Users', field_id='Diversion')
@@ -509,9 +515,9 @@ if __name__ == '__main__':
 
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
 
-    ocr_debug(image_directory)
-    scavenge_releases(image_directory, outputs_path)
+    # ocr_debug(image_directory)
     scavenge_az(image_directory, outputs_path)
+    scavenge_releases(image_directory, outputs_path)
     scavenge_nv(image_directory, outputs_path)
     scavenge_mx(image_directory, outputs_path)
     scavenge_ca(image_directory, outputs_path)
