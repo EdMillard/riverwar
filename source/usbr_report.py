@@ -131,6 +131,12 @@ def load_monthly_csv(file_name, sep=' '):
     return a
 
 
+def annual_af(file_name, sep=' ', water_year_month=1):
+    # FIXME could just load totals from csv and skip monthly
+    monthly_af = load_monthly_csv(file_name, sep)
+    return monthly_to_water_year(monthly_af, water_year_month)
+
+
 def load_ics_csv(file_name, sep=' '):
     file_path = Path('data/USBR_Reports').joinpath(file_name)
     f = file_path.open(mode='r')
