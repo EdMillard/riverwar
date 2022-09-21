@@ -318,9 +318,9 @@ class WaterGraph(object):
         y = running_average['val']
         if label:
             ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod', label=label)
+            ax.legend()
         else:
-            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod', label='10Y Running Average')
-        ax.legend()
+            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod')
         return running_average
 
     @staticmethod
