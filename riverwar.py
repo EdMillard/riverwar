@@ -566,11 +566,34 @@ def usbr_lake_havasu():
     graph.fig.waitforbuttonpress()
 
 
-def usgs_lees_ferry():
-    lees_ferry_gage = USGSGage('09380000', start_date='1921-10-01',
-                               cfs_max=130000, cfs_interval=5000,
-                               annual_min=6000000, annual_max=21000000, annual_interval=500000, annual_unit='maf',
-                               year_interval=5)
+def usgs_lees_ferry(graph=True):
+    gage = USGSGage('09380000', start_date='1921-10-01',
+                    cfs_max=130000, cfs_interval=5000,
+                    annual_min=6000000, annual_max=21000000, annual_interval=500000, annual_unit='maf',
+                    year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def usbr_glen_canyon_annual_release_af(graph=False, start_year=None, end_year=None):
+    usbr_lake_powell_release_total_af = 4354
+    info, daily_usbr_glen_canyon_daily_release_af = usbr_rise.load(usbr_lake_powell_release_total_af)
+    annual_af = WaterGraph.daily_to_water_year(daily_usbr_glen_canyon_daily_release_af)
+    if start_year and end_year:
+        annual_af = reshape_annual_range(annual_af, start_year, end_year)
+    if graph:
+        water_graph = WaterGraph(nrows=1)
+        water_graph.bars(annual_af, sub_plot=0, title='Glen Canyon Release (Annual)', color='firebrick',
+                   ymin=4000000, ymax=21000000, yinterval=1000000,
+                   xlabel='Water Year', xinterval=4,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+        water_graph.fig.waitforbuttonpress()
+    return annual_af
+
+
+def glen_canyon_analysis():
+    lees_ferry_gage = usgs_lees_ferry()
     graph = WaterGraph()
     graph.plot_gage(lees_ferry_gage)
 
@@ -591,27 +614,23 @@ def usgs_lees_ferry():
     # rw_bars(annual_discharge_af, title=name, color='royalblue',
     #        ylabel='maf', ymin=2000000, ymax=21000000, yinterval=500000, format_func=format_maf,
     #        xlabel='Water Year', xinterval=5)
+    glen_canyon_annual_release_af = usbr_glen_canyon_annual_release_af()
 
-    # USBR Lake Powell Annual Water Year Releases from RISE
-    #
-    usbr_lake_powell_release_total_af = 4354
-    info, daily_usbr_glen_canyon_daily_release_af = usbr_rise.load(usbr_lake_powell_release_total_af)
-    usbr_glen_canyon_annual_release_af = WaterGraph.daily_to_water_year(daily_usbr_glen_canyon_daily_release_af)
     # rw_bars(a, title='Lake Powell Release',
     #        ylabel='maf', ymin=7000000, ymax=20750000, yinterval=500000,
     #        xlabel='Water Year', xinterval=3, format_func=format_maf)
 
     graph = WaterGraph()
-    graph.bars_two(usbr_glen_canyon_annual_release_af, usgs_lees_ferry_annual_af,
+    graph.bars_two(glen_canyon_annual_release_af, usgs_lees_ferry_annual_af,
                    title='Lake Powell Release Comparison, USBR Glen Canyon vs USGS Lees Ferry',
                    label_a='Glen Canyon', color_a='royalblue',
                    label_b='Lees Ferry', color_b='limegreen',
                    ylabel='af', ymin=7000000, ymax=13000000, yinterval=250000,
                    xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
-    graph.running_average(usbr_glen_canyon_annual_release_af, 10, sub_plot=0)
+    graph.running_average(glen_canyon_annual_release_af, 10, sub_plot=0)
     graph.running_average(usgs_lees_ferry_annual_af, 10, sub_plot=0)
 
-    usbr_lake_powell_release_af_1999_2021 = WaterGraph.array_in_time_range(usbr_glen_canyon_annual_release_af,
+    usbr_lake_powell_release_af_1999_2021 = WaterGraph.array_in_time_range(glen_canyon_annual_release_af,
                                                                            datetime.datetime(1999, 1, 1),
                                                                            datetime.datetime(2021, 12, 31))
 
@@ -1431,10 +1450,61 @@ def lake_powell_inflow():
                        ylabel='maf', format_func=WaterGraph.format_maf, vertical=True)
     total = add3_annual(colorado_cisco_af, green_river_af, san_juan_af)
     graph.running_average(total, 10, sub_plot=0)
+    graph.fig.waitforbuttonpress()
 
     graph.bars(annual_inflow_af, sub_plot=1, title='USBR RISE Lake Powell Inflow',
                ymin=0, ymax=22000000, yinterval=1000000, xinterval=year_interval,
                ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.fig.waitforbuttonpress()
+
+
+def lake_mead_inflow():
+    start_year = 1964
+    end_year = 2021
+    year_interval = 3
+
+    show_graph = False
+    usgs_little_colorado_gage = usgs_little_colorado_cameron(graph=show_graph)
+    little_colorado_af = usgs_little_colorado_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+    usgs_virgin_gage = usgs_virgin_at_littlefield(graph=show_graph)
+    virgin_af = usgs_virgin_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+    usgs_muddy_gage = usgs_muddy_near_glendale(graph=show_graph)
+    muddy_af = usgs_muddy_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+
+    lees_ferry_gage = usgs_lees_ferry(graph=show_graph)
+    lees_ferry_af = lees_ferry_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+
+    glen_canyon_annual_release_af = usbr_glen_canyon_annual_release_af(graph=show_graph, start_year=start_year, end_year=end_year)
+    paria_annual_af = usgs_paria_lees_ferry(graph=show_graph).annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+
+    glen_canyon_plus_paria_af = add_annual(glen_canyon_annual_release_af, paria_annual_af)
+    glen_canyon_seep_af = subtract_annual(lees_ferry_af, glen_canyon_plus_paria_af)
+
+    # Add paria to Glen Canyon
+    # Subtract from Lee's Ferry
+
+    # Stacked graph of the four inputs
+    # Compare to USBR side flows from 24 month
+    graph = WaterGraph(nrows=2)
+    graph.bars(glen_canyon_seep_af, sub_plot=0, title='Glen Canyon + Paria - Lees Ferry Gage',
+               ymin=0, ymax=300000, yinterval=50000, xinterval=year_interval,
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
+    bar_data = [{'data': glen_canyon_seep_af, 'label': 'Theoretical Glen Canyon Seep', 'color': 'royalblue'},
+                {'data': little_colorado_af, 'label': 'Little Colorado at Cameron', 'color': 'darkred'},
+                {'data': virgin_af, 'label': 'Virgin at Littlefield', 'color': 'firebrick'},
+                {'data': muddy_af, 'label': 'Muddy at Glendale', 'color': 'lightcoral'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='Lake Mead Inflows Excluding Glen Canyon Release',
+                       ymin=0, ymax=1150000, yinterval=100000,
+                       xlabel='Water Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=True)
+    total = add3_annual(little_colorado_af, virgin_af, muddy_af)
+    total = add_annual(total, glen_canyon_seep_af)
+    graph.annotate_vertical_arrow(2005, "Big Monsoon", sub_plot=1, offset_percent=5.0)
+    graph.annotate_vertical_arrow(2017, "May Rain", sub_plot=1,offset_percent=40.0)
+    graph.annotate_vertical_arrow(2019, "Spring Bomb Cyclone", sub_plot=1, offset_percent=30.0)
+
+    graph.running_average(total, 10, sub_plot=1)
     graph.fig.waitforbuttonpress()
 
 
@@ -2232,17 +2302,14 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    lake_mead_inflow()
+    usbr_az_yuma()
+
     lake_powell_inflow()
-    usbr_az_yuma()
     usbr_upper_colorado_reservoirs()
-    usbr_lake_havasu()
-    usgs_lees_ferry()
     usgs_lower_colorado_tributaries()
-    usbr_az_yuma()
-
-    # usbr_az_cap()
-    usbr_lower_colorado_reservoirs()
-
+    usbr_lake_havasu()
+    usbr_az_cap()
     usbr_nv_snwa()
     usbr_ca_metropolitan()
 
@@ -2277,14 +2344,10 @@ if __name__ == '__main__':
                                   ymin1=900000, ymax1=3800000,
                                   ymin2=550000, ymax2=900000, yinterval2=25000)
     usbr_mx()
-
     usbr_az()
-
-    usbr_mx()
     usbr_ca_total()
     usbr_ca()
     usbr_nv()
-    usbr_az()
 
     usbr_lower_basin_states_total_use()
     usbr_lake_powell()
