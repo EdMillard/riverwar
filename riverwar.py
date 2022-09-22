@@ -161,7 +161,7 @@ def usbr_catalog():
 
 def usbr_lake_powell():
     # usbr_lake_powell_release_powerplant_cfs = 507
-    usbr_lake_powell_elevation_ft = 508
+    # usbr_lake_powell_elevation_ft = 508
     usbr_lake_powell_storage_af = 509
     usbr_lake_powell_evaporation_af = 510
     # usbr_lake_powell_inflow_cfs = 511
@@ -461,7 +461,7 @@ def usbr_fontenelle():
 
 def usbr_lake_mead():
     usbr_lake_mead_release_total_af = 6122
-    usbr_lake_mead_elevation_ft = 6123
+    # usbr_lake_mead_elevation_ft = 6123
     usbr_lake_mead_storage_af = 6124
     # usbr_lake_mead_release_total_cfs = 6125
     graph = WaterGraph(nrows=2)
@@ -507,7 +507,7 @@ def usbr_lake_mead_ics_by_state():
 def usbr_lake_mohave():
     usbr_lake_mohave_release_total_af = 6131
     # usbr_lake_mohave_water_temperature_degf = 6132
-    usbr_lake_mohave_elevation_ft = 6133
+    # usbr_lake_mohave_elevation_ft = 6133
     usbr_lake_mohave_storage_af = 6134
     # usbr_lake_mohave_release_total_cfs = 6135
 
@@ -533,7 +533,7 @@ def usbr_lake_mohave():
 def usbr_lake_havasu():
     usbr_lake_havasu_release_total_af = 6126
     # usbr_lake_havasu_water_temperature_degf = 6127
-    usbr_lake_havasu_elevation_ft = 6128
+    # usbr_lake_havasu_elevation_ft = 6128
     usbr_lake_havasu_storage_af = 6129
     # usbr_lake_havasu_release_total_cfs = 6130
 
@@ -608,7 +608,7 @@ def usgs_lees_ferry():
 
     # USGS Paria At Lees Ferry Gage Daily Discharge Mean
     #
-    usgs_paria_annual_af = usgs_paria_lees_ferry()
+    usgs_paria_annual_af = usgs_paria_lees_ferry().annual_af()
     usgs_paria_annual_af_1999_2021 = WaterGraph.array_in_time_range(usgs_paria_annual_af,
                                                                     datetime.datetime(1999, 1, 1),
                                                                     datetime.datetime(2021, 12, 31))
@@ -655,142 +655,157 @@ def usgs_lees_ferry():
     graph.fig.waitforbuttonpress()
 
 
-def usgs_paria_lees_ferry():
-    paria_lees_ferry_gage = USGSGage('09382000', start_date='1932-10-01',
-                                     cfs_max=6500, cfs_interval=500,
-                                     annual_min=0, annual_max=50000, annual_interval=2500, annual_unit='kaf',
-                                     year_interval=5)
-    graph = WaterGraph()
-    graph.plot_gage(paria_lees_ferry_gage)
-    return paria_lees_ferry_gage.annual_af()
+def usgs_paria_lees_ferry(graph=True):
+    gage = USGSGage('09382000', start_date='1932-10-01',
+                    cfs_max=6500, cfs_interval=500,
+                    annual_min=0, annual_max=50000, annual_interval=2500, annual_unit='kaf',
+                    year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_little_colorado_cameron():
+def usgs_little_colorado_cameron(graph=True):
     gage = USGSGage('09402000', start_date='1947-06-1', color='firebrick',
                     cfs_max=19000, cfs_interval=1000,
                     annual_min=0, annual_max=850000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_virgin_at_littlefield():
+def usgs_virgin_at_littlefield(graph=True):
     gage = USGSGage('09415000', start_date='1929-10-01', color='firebrick',
                     cfs_max=26000, cfs_interval=1000,
                     annual_min=0, annual_max=600000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_muddy_near_glendale():
+def usgs_muddy_near_glendale(graph=True):
     gage = USGSGage('09419000', start_date='1950-02-01', color='firebrick',
                     cfs_max=5500, cfs_interval=500,
                     annual_min=0, annual_max=54000, annual_interval=2000, annual_unit='kaf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_gila_duncan():
+def usgs_gila_duncan(graph=True):
     gage = USGSGage('09439000', start_date='2003-09-30', color='firebrick',
                     cfs_max=26000, cfs_interval=1000,
                     annual_min=0, annual_max=350000, annual_interval=25000, annual_unit='kaf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_gila_goodyear():
+def usgs_gila_goodyear(graph=True):
     gage = USGSGage('09514100', start_date='1992-10-01', color='firebrick',
                     cfs_max=140000, cfs_interval=10000,
                     annual_min=0, annual_max=1000000, annual_interval=50000, annual_unit='maf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_gila_dome():
-    gage = USGSGage('09520500', start_date='1905-01-01', color='firebrick',
-                    cfs_max=96000, cfs_interval=10000,
-                    annual_min=0, annual_max=4500000, annual_interval=500000, annual_unit='maf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+def usgs_gila_dome(graph=True):
+    gage_full = USGSGage('09520500', start_date='1905-01-01', color='firebrick',
+                         cfs_max=96000, cfs_interval=20000,
+                         annual_min=0, annual_max=4500000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage_full)
 
     gage = USGSGage('09520500', start_date='1996-01-01', color='firebrick',
                     cfs_max=1000, cfs_interval=100,
-                    annual_min=0, annual_max=200000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+                    annual_min=0, annual_max=200000, annual_interval=10000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage_full
 
 
-def usgs_bill_williams_parker():
+def usgs_bill_williams_parker(graph=True):
     gage = USGSGage('09426620', start_date='1988-10-01', color='firebrick',
                     cfs_max=8000, cfs_interval=500,
                     annual_min=0, annual_max=450000, annual_interval=50000, annual_unit='maf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_salt_above_roosevelt():
+def usgs_salt_above_roosevelt(graph=True):
     gage = USGSGage('09498500', start_date='1913-10-01', color='firebrick',
                     cfs_max=95000, cfs_interval=5000,
                     annual_min=0, annual_max=2400000, annual_interval=100000, annual_unit='maf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_colorado_below_parker():
+def usgs_colorado_below_parker(graph=True):
     gage = USGSGage('09427520', start_date='1934-11-16', color='firebrick',
                     cfs_max=41000, cfs_interval=1000,
                     annual_min=4000000, annual_max=22000000, annual_interval=1000000, annual_unit='maf',
                     year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_nv_las_vegas_wash_below_lake_las_vegas():
+def usgs_nv_las_vegas_wash_below_lake_las_vegas(graph=True):
     gage = USGSGage('09419800', start_date='1969-08-01', color='firebrick',
                     cfs_max=2000, cfs_interval=100,
                     annual_min=0, annual_max=300000, annual_interval=10000, annual_unit='kaf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_colorado_below_palo_verde():
+def usgs_colorado_below_palo_verde(graph=True):
     gage = USGSGage('09429100', start_date='1956-03-24', color='firebrick',
                     cfs_max=17000, cfs_interval=1000,
                     annual_min=0, annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_colorado_nothern_international_border():
+def usgs_colorado_nothern_international_border(graph=True):
     gage = USGSGage('09522000', start_date='1950-01-01', color='firebrick',
                     cfs_max=3000, cfs_interval=500,
                     annual_min=0, annual_max=4000000, annual_interval=200000, annual_unit='maf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_colorado_below_imperial():
+def usgs_colorado_below_imperial(graph=True):
     # Bogus gage
     gage = USGSGage('09429500', start_date='2018-11-29', color='firebrick',
                     cfs_max=3000, cfs_interval=500,
                     annual_min=0, annual_max=500000, annual_interval=20000, annual_unit='kaf', year_interval=1)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_colorado_below_davis():
+def usgs_colorado_below_davis(graph=True):
     gage = USGSGage('09423000', start_date='1905-05-11', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,
                     annual_min=6000000, annual_max=23000000, annual_interval=500000, annual_unit='maf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_colorado_below_laguna():
+def usgs_colorado_below_laguna(graph=True):
     gage = USGSGage('09429600', start_date='1971-12-16', color='firebrick',
                     cfs_max=32000, cfs_interval=2000,
                     annual_min=0, annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
 def reshape_annual_range(a, year_min, year_max):
@@ -822,6 +837,17 @@ def add_annual(augend, addend, start_year=0, end_year=0):
     summation = np.zeros(len(augend), [('dt', 'i'), ('val', 'f')])
     summation['dt'] = augend['dt']
     summation['val'] = augend['val'] + addend['val']
+    if start_year and end_year:
+        summation = reshape_annual_range(summation, start_year, end_year)
+    return summation
+
+
+def add3_annual(augend, addend, addend2, start_year=0, end_year=0):
+    summation = np.zeros(len(augend), [('dt', 'i'), ('val', 'f')])
+    summation['dt'] = augend['dt']
+    summation['val'] = augend['val'] + addend['val']
+    summation['val'] = summation['val'] + addend2['val']
+
     if start_year and end_year:
         summation = reshape_annual_range(summation, start_year, end_year)
     return summation
@@ -1000,296 +1026,368 @@ def usgs_imperial_all_american():
                ylabel='kaf',  format_func=WaterGraph.format_kaf)
     graph.fig.waitforbuttonpress()
 
-def gila_gravity_main_canal():
-    # Gila Gravity Main Canal Above Imperial Dam
-    gage = USGSGage('09522500', start_date='1943-08-16')
-    gila_main_annual_af = gage.annual_af(start_year=1965, end_year=current_last_year)
-    graph.bars(gila_main_annual_af, sub_plot=2, title='USGS Gila Gravity Main Canal Diversions (Annual)',
-               xinterval=year_interval, ymin=0, ymax=1100000, yinterval=100000, color='firebrick',
-               ylabel='maf',  format_func=WaterGraph.format_maf)
 
-def usgs_imperial_all_american_drop_2():
+def usgs_imperial_all_american_drop_2(graph=True):
     gage = USGSGage('09527700', start_date='2011-10-26', color='firebrick',
                     cfs_max=6500, cfs_interval=500,
                     annual_min=0, annual_max=2600000, annual_interval=100000, annual_unit='maf', year_interval=3)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_coachella_all_american():
+def usgs_coachella_all_american(graph=True):
     gage = USGSGage('09527590', start_date='2003-10-01', color='firebrick',
                     cfs_max=850, cfs_interval=50,
                     annual_min=0, annual_max=400000, annual_interval=20000, annual_unit='kaf', year_interval=3)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_gila_gravity_main_canal():
+def usgs_gila_gravity_main_canal(graph=True):
     gage = USGSGage('09522500', start_date='1943-08-16', color='firebrick',
                     cfs_max=2300, cfs_interval=100,
                     annual_min=0, annual_max=1000000, annual_interval=100000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_gila_gravity_main_canal_at_yuma_mesa_pumping():
+def usgs_gila_gravity_main_canal_at_yuma_mesa_pumping(graph=True):
     gage = USGSGage('09522600', start_date='2005-09-30', color='firebrick',
                     cfs_max=170, cfs_interval=10,
                     annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_north_gila_main_canal():
+def usgs_north_gila_main_canal(graph=True):
     gage = USGSGage('09522600', start_date='1966-10-01', color='firebrick',
                     cfs_max=170, cfs_interval=10,
                     annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_south_gila_main_canal():
+def usgs_south_gila_main_canal(graph=True):
     gage = USGSGage('09522800', start_date='1973-10-01', color='firebrick',
                     cfs_max=170, cfs_interval=10,
                     annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_city_of_yuma_at_avenue_9e_pumping():
+def usgs_city_of_yuma_at_avenue_9e_pumping(graph=True):
     gage = USGSGage('09522860', start_date='2015-09-30', color='firebrick',
                     cfs_max=170, cfs_interval=10,
                     annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_reservation_main_canal():
+def usgs_reservation_main_canal(graph=True):
     gage = USGSGage('09523200', start_date='1974-10-01', color='firebrick',
                     cfs_max=270, cfs_interval=10,
                     annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_yuma_main_canal():
+def usgs_yuma_main_canal(graph=True):
     gage = USGSGage('09524000', start_date='1938-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=100,
                     annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_reservation_main_drain_no_4():
+def usgs_reservation_main_drain_no_4(graph=True):
     gage = USGSGage('09530000', start_date='1966-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=100,
                     annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_yuma_main_canal_wasteway():
+def usgs_yuma_main_canal_wasteway(graph=True):
     gage = USGSGage('09525000', start_date='1930-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=100,
                     annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_colorado_river_below_yuma_wasteway():
+def usgs_colorado_river_below_yuma_wasteway(graph=True):
     gage = USGSGage('09521100', start_date='1963-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=100,
                     annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_yuma_municipal():
+def usgs_yuma_municipal(graph=True):
     gage = USGSGage('09526000', start_date='1983-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=100,
                     annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_unit_b_canal_near_yuma():
+def usgs_unit_b_canal_near_yuma(graph=True):
     gage = USGSGage('09522900', start_date='2005-09-30', color='firebrick',
                     cfs_max=120, cfs_interval=10,
                     annual_min=0, annual_max=30000, annual_interval=1000, annual_unit='kaf', year_interval=1)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_mcas_diversion_of_b_canal_near_yuma():
+def usgs_mcas_diversion_of_b_canal_near_yuma(graph=True):
     gage = USGSGage('09522880', start_date='2005-09-30', color='firebrick',
                     cfs_max=120, cfs_interval=10,
                     annual_min=0, annual_max=30000, annual_interval=1000, annual_unit='kaf', year_interval=1)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_wellton_mohawk_main_canal():
+def usgs_wellton_mohawk_main_canal(graph=True):
     gage = USGSGage('09522700', start_date='1974-10-01', color='firebrick',
                     cfs_max=1900, cfs_interval=200,
                     annual_min=0, annual_max=500000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_wellton_mohawk_main_outlet_drain():
+def usgs_wellton_mohawk_main_outlet_drain(graph=True):
     gage = USGSGage('09529300', start_date='1966-10-01', color='firebrick',
                     cfs_max=350, cfs_interval=50,
                     annual_min=0, annual_max=230000, annual_interval=20000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
-def usgs_palo_verde_canal():
+def usgs_palo_verde_canal(graph=True):
     gage = USGSGage('09429000', start_date='1950-10-01', color='firebrick',
                     cfs_max=2400, cfs_interval=100,
                     annual_min=650000, annual_max=1050000, annual_interval=50000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_crir_canal_near_parker():
+def usgs_crir_canal_near_parker(graph=True):
     gage = USGSGage('09428500', start_date='1954-10-01', color='firebrick',
                     cfs_max=2000, cfs_interval=100,
                     annual_min=250000, annual_max=750000, annual_interval=50000, annual_unit='kaf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_san_juan_bluff():
+def usgs_san_juan_bluff(graph=True):
     gage = USGSGage('09379500', start_date='1941-10-01',
-                    cfs_max=43000, cfs_interval=2000,
+                    cfs_max=36000, cfs_interval=2000,
                     annual_min=400000, annual_max=3300000, annual_interval=100000, annual_unit='maf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_green_river():
+def usgs_green_river_at_green_river(graph=True):
     gage = USGSGage('09315000', start_date='1894-10-01',
-                    cfs_max=70000, cfs_interval=10000,
-                    annual_min=1000000, annual_max=9000000, annual_interval=200000, annual_unit='maf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+                    cfs_max=70000, cfs_interval=5000,
+                    annual_min=1000000, annual_max=9000000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_gunnison_grand_junction():
+def usgs_yampa_river_near_maybell(graph=True):
+    gage = USGSGage('09251000', start_date='1916-05-01',
+                    cfs_max=25000, cfs_interval=5000,
+                    annual_min=0, annual_max=2300000, annual_interval=100000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def usgs_gunnison_grand_junction(graph=True):
     gage = USGSGage('09152500', start_date='1896-10-01',
-                    cfs_max=36000, cfs_interval=1000,
-                    annual_max=3800000, annual_interval=100000, annual_unit='maf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+                    cfs_max=36000, cfs_interval=2000,
+                    annual_max=3800000, annual_interval=200000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_colorado_cisco():
+def usgs_colorado_cisco(graph=True):
     gage = USGSGage('09180500', start_date='1913-10-01',
                     cfs_max=75000, cfs_interval=2500,
-                    annual_max=11000000, annual_interval=250000, annual_unit='maf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+                    annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_colorado_potash():
+def usgs_colorado_potash(graph=True):
     gage = USGSGage('09185600', start_date='2014-10-29',
                     cfs_max=75000, cfs_interval=2500,
                     annual_max=11000000, annual_interval=250000, annual_unit='maf', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_dirty_devil():
+def usgs_dirty_devil(graph=True):
     gage = USGSGage('09333500', start_date='1948-06-07',
                     cfs_max=28000, cfs_interval=1000,
-                    annual_max=190000, annual_interval=5000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+                    annual_max=190000, annual_interval=10000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_dolores_below_rico():
+def usgs_dolores_below_rico(graph=True):
     gage = USGSGage('09165000', start_date='1951-10-01',
                     cfs_max=1900, cfs_interval=100,
                     annual_max=170000, annual_interval=10000, annual_unit='kaf', year_interval=5)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_dolores_at_dolores():
+def usgs_dolores_at_dolores(graph=True):
     gage = USGSGage('09166500', start_date='1895-10-01',
                     cfs_max=7000, cfs_interval=500,
                     annual_max=575000, annual_interval=25000, annual_unit='kaf', year_interval=6)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_dolores_at_cisco():
+def usgs_dolores_at_cisco(graph=True):
     gage = USGSGage('09180000', start_date='1950-12-01',
                     cfs_max=17000, cfs_interval=1000,
                     annual_max=1500000, annual_interval=50000, annual_unit='kaf')
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_mud_creek_cortez():
+def usgs_mud_creek_cortez(graph=True):
     gage = USGSGage('09371492', start_date='1981-10-01',
                     cfs_max=240, cfs_interval=10,
                     annual_max=7500, annual_interval=500, annual_unit='af', year_interval=3)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_mcelmo_stateline():
+def usgs_mcelmo_stateline(graph=True):
     gage = USGSGage('09372000', start_date='1951-03-01',
                     cfs_max=1300, cfs_interval=50,
                     annual_max=70000, annual_interval=5000, annual_unit='af', year_interval=4)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_mcelmo_trail_canyon():
+def usgs_mcelmo_trail_canyon(graph=True):
     gage = USGSGage('09371520', start_date='1993-08-01',
                     cfs_max=1250, cfs_interval=50,
                     annual_max=60000, annual_interval=5000, annual_unit='af', year_interval=3)
-    graph = WaterGraph(nrows=2)
-    graph.plot_gage(gage)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
-def usgs_upper_colorado():
-    usgs_gunnison_grand_junction()
-    usgs_dirty_devil()
-    usgs_green_river()
-    usgs_colorado_cisco()
-    usgs_san_juan_bluff()
+def lake_powell_inflow():
+    start_year = 1963
+    end_year = 2022
+    usgs_colorado_cisco_gage = usgs_colorado_cisco(graph=True)
+    colorado_cisco_af = usgs_colorado_cisco_gage.annual_af(start_year=start_year, end_year=end_year)
+    usgs_green_river_gage = usgs_green_river_at_green_river(graph=True)
+    green_river_af = usgs_green_river_gage.annual_af(start_year=start_year, end_year=end_year)
+    usgs_san_juan_bluff_gage = usgs_san_juan_bluff(graph=True)
+    san_juan_af = usgs_san_juan_bluff_gage.annual_af(start_year=start_year, end_year=end_year)
+    usgs_dirty_devil_gage = usgs_dirty_devil(graph=True)
+    dirty_devil_af = usgs_dirty_devil_gage.annual_af(start_year=start_year, end_year=end_year)
 
-    # usgs_mud_creek_cortez()
-    # usgs_mcelmo_trail_canyon()
-    # usgs_mcelmo_stateline()
-    # usgs_dolores_below_rico()
-    # usgs_dolores_at_dolores()
-    usgs_dolores_at_cisco()
+    year_interval = 3
+    graph = WaterGraph(nrows=1)
+    usbr_lake_powell_inflow_af = 4288
+    usbr_lake_powell_inflow_volume_unregulated_af = 4301
+    annual_inflow_af = usbr_rise.annual_af(usbr_lake_powell_inflow_af)
+    # graph.bars(annual_inflow_af, sub_plot=0, title='Lake Powell Inflow',
+    #            ymin=3000000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
+    #           ylabel='maf',  format_func=WaterGraph.format_maf)
+
+    annual_inflow_unregulated_af = usbr_rise.annual_af(usbr_lake_powell_inflow_volume_unregulated_af)
+    # graph.bars(annual_inflow_unregulated_af, sub_plot=1, title='Lake Powell Unregulated Inflow',
+    #            ymin=300000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
+    #            ylabel='maf', format_func=WaterGraph.format_maf)
+    # bar_data = [{'data': annual_inflow_unregulated_af, 'label': 'Lake Powell Unregulated Inflow', 'color': 'blue'},
+    #             {'data': annual_inflow_af, 'label': 'Lake Powell Inflow', 'color': 'royalblue'},
+    #             ]
+    # graph.bars_stacked(bar_data, sub_plot=0, title='Lake Powell Inflow & Unregulated Inflow',
+    #                    ymin=300000, ymax=21000000, yinterval=2000000,
+    #                    xlabel='Water Year', xinterval=3,
+    #                    ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
+
+    graph.bars_two(annual_inflow_af, annual_inflow_unregulated_af,
+                   title='Lake Powell Inflow & Unregulated Inflow',
+                   label_a='Inflow', color_a='royalblue',
+                   label_b='Unregulated Inflow', color_b='darkblue',
+                   ylabel='af', ymin=0, ymax=21000000, yinterval=2000000,
+                   xlabel='Water Year', xinterval=year_interval, format_func=WaterGraph.format_maf)
+    graph.running_average(annual_inflow_af, 10, sub_plot=0)
+    graph.running_average(annual_inflow_unregulated_af, 10, sub_plot=0)
+
+    graph.fig.waitforbuttonpress()
+
+    graph = WaterGraph(nrows=2)
+    bar_data = [{'data': colorado_cisco_af, 'label': 'Colorado at Cisco', 'color': 'darkblue'},
+                {'data': green_river_af, 'label': 'Green at Green River', 'color': 'royalblue'},
+                {'data': san_juan_af, 'label': 'San Juan at Bluff', 'color': 'cornflowerblue'},
+                {'data': dirty_devil_af, 'label': 'Dirty Devil', 'color': 'lightblue'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=0, title='USGS Lake Powell River Inflows',
+                       ymin=0, ymax=22000000, yinterval=1000000,
+                       xlabel='Water Year', xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=True)
+    total = add3_annual(colorado_cisco_af, green_river_af, san_juan_af)
+    graph.running_average(total, 10, sub_plot=0)
+
+    graph.bars(annual_inflow_af, sub_plot=1, title='USBR RISE Lake Powell Inflow',
+               ymin=0, ymax=22000000, yinterval=1000000, xinterval=year_interval,
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.fig.waitforbuttonpress()
+    # usgs_yampa_river_near_maybell()
+    # usgs_gunnison_grand_junction()
+    # usgs_dolores_at_cisco()
+    # usgs_dirty_devil()
+
+
+def usbr_southwest_colorado():
+    usgs_mud_creek_cortez()
+    usgs_mcelmo_trail_canyon()
+    usgs_mcelmo_stateline()
+    usgs_dolores_below_rico()
+    usgs_dolores_at_dolores()
 
 
 def usbr_upper_colorado_reservoirs():
@@ -1357,7 +1455,6 @@ def usgs_all_american_canal():
 
 
 def usgs_colorado_river_gages():
-    usgs_upper_colorado()
     usgs_lower_colorado()
 
     usgs_lower_colorado_tributaries()
@@ -1839,7 +1936,8 @@ def usbr_az_yuma():
 
     # Yuma County WUA
     yuma_county_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_diversion.csv')
-    yuma_county_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_county_monthly_diversion_af, water_year_month=1)
+    yuma_county_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_county_monthly_diversion_af,
+                                                                        water_year_month=1)
     yuma_county_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_consumptive_use.csv')
     yuma_county_annual_cu_af = usbr_report.monthly_to_water_year(yuma_county_monthly_cu_af, water_year_month=1)
 
@@ -1868,7 +1966,8 @@ def usbr_az_yuma():
     graph = WaterGraph(nrows=2)
 
     wellton_mohawk_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_wellton_mohawk_diversion.csv')
-    wellton_mohawk_annual_diversion_af = usbr_report.monthly_to_water_year(wellton_mohawk_monthly_diversion_af, water_year_month=1)
+    wellton_mohawk_annual_diversion_af = usbr_report.monthly_to_water_year(wellton_mohawk_monthly_diversion_af,
+                                                                           water_year_month=1)
     wellton_mohawk_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_wellton_mohawk_consumptive_use.csv')
     wellton_mohawk_annual_cu_af = usbr_report.monthly_to_water_year(wellton_mohawk_monthly_cu_af, water_year_month=1)
 
@@ -2017,6 +2116,11 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    lake_powell_inflow()
+
+    usgs_lees_ferry()
+
+    usgs_lower_colorado_tributaries()
     usbr_az_yuma()
 
     # usbr_az_cap()
@@ -2025,9 +2129,7 @@ if __name__ == '__main__':
     usbr_nv_snwa()
     usbr_ca_metropolitan()
 
-    usgs_lees_ferry()
     # usbr_lake_powell()
-
 
     usgs_north_gila_main_canal()
     usgs_south_gila_main_canal()
