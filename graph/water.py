@@ -87,14 +87,17 @@ class WaterGraph(object):
     def format_discharge(value, pos=None):
         return '{0:>6}'.format(value)
 
-    def annotate_vertical_arrow(self, x, text, offset_percent=0.025, color='black'):
-        y_lim = self.ax.get_ylim()
+    def annotate_vertical_arrow(self, x, text, sub_plot=0, offset_percent=0.025, color='black'):
+        if len(self.fig.axes) > 1:
+            ax = self.ax[sub_plot]
+        else:
+            ax = self.ax
+        y_lim = ax.get_ylim()
         y_axis_range = y_lim[1] - y_lim[0]
         offset = y_axis_range * (offset_percent*0.01)
-        self.ax.annotate(text,
-                         xy=(x, 0), xycoords='data', color=color,
-                         xytext=(x, y_lim[1] - offset), textcoords='data', horizontalalignment='center',
-                         arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color=color))
+        ax.annotate(text, xy=(x, 0), xycoords='data', color=color,
+                    xytext=(x, y_lim[1] - offset), textcoords='data', horizontalalignment='center',
+                    arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color=color))
 
     def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, running_average_years=10,
              ymin=0, ymax=0, yinterval=1,
