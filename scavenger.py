@@ -25,6 +25,7 @@ import pyocr.builders
 from PIL import Image
 from matplotlib import pyplot as plt
 from matplotlib import image as mpimg
+import re
 
 
 def image_to_text(image_file_path):
@@ -103,13 +104,12 @@ def ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin=0, kaf_en
 
         summation = 0
         for value in values[0:-1]:
-
             try:
                 summation += int(value)
             except ValueError:
                 print(print_file_name_prefix + 'ValueError in summation: ', value, year, data)
-        try:
-            if len(values):
+        if len(values):
+            try:
                 total = int(values[-1])
                 error = abs(total - summation)
                 out_str = ''
@@ -123,10 +123,11 @@ def ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin=0, kaf_en
                 print(print_file_name_prefix + str(year) + ': ' + out_str + error_str)
                 f.write(str(year) + ' ' + out_str + error_str + '\n')
                 return year
-            else:
-                print(print_file_name_prefix + "Error Value array empty")
-        except ValueError:
-            print(print_file_name_prefix + 'ValueError on total: ', values[-1], year, data)
+            except ValueError:
+                print(print_file_name_prefix + 'ValueError on total: ', values[-1], year, data)
+        else:
+            print(print_file_name_prefix + "Error Value array empty")
+
     return None
 
 
@@ -164,15 +165,19 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
         f.write('Year Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec Total\n')
         year_written_prev = year_from_file_path(image_file_paths[0]) - 1
 
+        year_prev = int(re.split(r'\D+', image_file_paths[0].name)[0])
+        year_written = 0
         for image_file_path in image_file_paths:
+            year = int(re.split(r'\D+', image_file_path.name)[0])
+
+            if year == year_written:
+                continue
+            elif year != year_prev:
+                if not year_written:
+                    print('\t', year_prev)
+                    f.write(str(year_prev) + '\n')
+                year_prev = year
             year_written = ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin, kaf_end)
-            if year_written:
-                year_difference = year_written - year_written_prev
-                if year_difference > 1:
-                    gap_string = '# Gap from ' + str(year_written_prev) + ' to ' + str(year_written)
-                    print(gap_string)
-                    f.write(gap_string + '\n')
-                year_written_prev = year_written
 
         f.close()
     else:
@@ -181,7 +186,7 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 
 def scavenge_ca(image_dir, out_path):
     image_path = image_dir.joinpath('ca/consumptive_use')
-
+    # FIXME Run "Indian Unit" and "Bard Unit" in Yuma project, "Returns from Yuma Project" "FORT MOJAVE INDIAN RESERVATION""AGRICULTURAL - RIVER PUMPS" "COLORADO RIVER INDIAN RESERVATION""Wells and pumps"
     # CA Total
     output_path = out_path.joinpath('ca/usbr_ca_total_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='California Totals', field_id='Consumptive Us')
@@ -258,23 +263,27 @@ def scavenge_ca(image_dir, out_path):
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Diversion')
+    output_path = out_path.joinpath('az/usbr_az_unit_b_diversion.csv')
+    # Sometimes this is just "Unit B" no quotes
+    ocr_reports(image_path, output_path, water_user='Unit \"B\"', field_id='diversion')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Consumptive Us')
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Pumped from wells')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Diversion')
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_outlet_drain_returns.csv')
+    ocr_reports(image_path, output_path, water_user='', field_id='yuma mesa outlet drain')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Diversion')
+    output_path = out_path.joinpath('az/usbr_az_south_gila_returns.csv')
+    ocr_reports(image_path, output_path, water_user='', field_id='returns from south gila')
+
+    output_path = out_path.joinpath('az/usbr_az_other_users_pumping_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='other users pumping', field_id='diversion')
+
+
 
     # AZ Total, all parameters
-    # output_path = out_path.joinpath('az/usbr_az_total_diversion.csv')
-    # ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Diversion')
-    output_path = out_path.joinpath('az/usbr_az_wellton_mohawk_measured_return.csv')
-    ocr_reports(image_path, output_path, water_user='Wellton', field_id='Total Returns')
+    output_path = out_path.joinpath('az/usbr_az_total_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Diversion')
 
     output_path = out_path.joinpath('az/usbr_az_total_measured_returns.csv')
     ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Measured Returns')
@@ -282,8 +291,8 @@ def scavenge_az(image_dir, out_path):
     output_path = out_path.joinpath('az/usbr_az_total_unmeasured_returns.csv')
     ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Unmeasured Returns')
 
-    # output_path = out_path.joinpath('az/usbr_az_total_consumptive_use.csv')
-    # ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Consumptive Us')
+    output_path = out_path.joinpath('az/usbr_az_total_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Consumptive Us')
 
     # AZ Diversions
     output_path = out_path.joinpath('az/usbr_az_central_arizona_project_diversion.csv')
@@ -292,6 +301,10 @@ def scavenge_az(image_dir, out_path):
 
     output_path = out_path.joinpath('az/usbr_az_wellton_mohawk_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Wellton', field_id='Diversion')
+
+    output_path = out_path.joinpath('az/usbr_az_wellton_mohawk_measured_returns.csv')
+    # Some years this is "Total Meas. Returns" or "Returns Total"
+    ocr_reports(image_path, output_path, water_user='Wellton', field_id='Total Returns')
 
     output_path = out_path.joinpath('az/usbr_az_wellton_mohawk_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Wellton', field_id='Consumptive Us')
@@ -302,17 +315,21 @@ def scavenge_az(image_dir, out_path):
     output_path = out_path.joinpath('az/usbr_az_crit_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Consumptive Us')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_district_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Irrigation District', field_id='Diversion')
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Diversion')
 
-    output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_district_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Irrigation District', field_id='Consumptive Us')
-
-    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma County Water Users', field_id='Diversion')
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Consumptive Us')
 
     output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma County Water Users', field_id='Diversion')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Diversion')
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Consumptive Us')
+
+    # FIXME Runme
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Pumped from wells')
 
     output_path = out_path.joinpath('az/usbr_az_north_gila_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='North Gila', field_id='Diversion')
@@ -350,7 +367,7 @@ def scavenge_az(image_dir, out_path):
 
 def scavenge_nv(image_dir, out_path):
     image_path = image_dir.joinpath('nv/consumptive_use')
-
+    # FIXME Run "CITY OF HENDERSON" "Basic Management"
     output_path = out_path.joinpath('nv/usbr_nv_total_measured_returns.csv')
     ocr_reports(image_path, output_path, water_user='Nevada Totals', field_id='Measured Returns')
 
@@ -497,7 +514,7 @@ def ocr_print(image_file_path):
 
 
 def ocr_debug(image_dir):
-    image_path = image_dir.joinpath('releases')
+    image_path = image_dir.joinpath('az/consumptive_use')
     while 1:
         print("Enter image name:")
         image_name = input()
