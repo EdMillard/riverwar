@@ -1951,6 +1951,42 @@ def usbr_az_yuma():
     year_interval = 3
     graph = WaterGraph(nrows=2)
 
+    # Yuma Mesa Irrigaton - This is complicated, early years had a drain with return flows
+    # migrated to returns, then measured and unmeasured returns later
+    yuma_mesa_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
+    yuma_mesa_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_diversion_af,
+                                                                      water_year_month=1)
+    yuma_mesa_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
+    yuma_mesa_annual_cu_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_cu_af, water_year_month=1)
+
+    yuma_mesa_monthly_drain_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
+    yuma_mesa_annual_drain_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_drain_af, water_year_month=1)
+
+    graph.plot(yuma_mesa_monthly_diversion_af, sub_plot=0, title='USBR AR Yuma Mesa Irrigation Diversion (Monthly)',
+               xinterval=year_interval, ymax=35000, yinterval=5000, color='darkmagenta',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.plot(yuma_mesa_monthly_cu_af, sub_plot=0, title='',
+               xinterval=year_interval, ymax=35000,  yinterval=5000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.plot(yuma_mesa_monthly_drain_af, sub_plot=0, title='',
+               xinterval=year_interval, ymax=35000,  yinterval=5000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    bar_data = [
+        {'data': yuma_mesa_annual_diversion_af, 'label': 'Diversions', 'color': 'darkmagenta'},
+        {'data': yuma_mesa_annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
+    ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='USBR AR Yuma County WUA Diversions and Consumptive Use (Annual)',
+                       ymin=0, ymax=300000, yinterval=50000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(yuma_mesa_annual_diversion_af, 10, sub_plot=1)
+    graph.running_average(yuma_mesa_annual_cu_af, 10, sub_plot=1)
+
+    graph.fig.waitforbuttonpress()
+
     # Yuma County WUA
     yuma_county_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_diversion.csv')
     yuma_county_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_county_monthly_diversion_af,
@@ -2133,6 +2169,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    usbr_az_yuma()
     lake_powell_inflow()
     usbr_upper_colorado_reservoirs()
     usbr_lake_havasu()
