@@ -1207,24 +1207,6 @@ def usgs_crir_canal_near_parker(graph=True):
     return gage
 
 
-def usgs_san_juan_bluff(graph=True):
-    gage = USGSGage('09379500', start_date='1941-10-01',
-                    cfs_max=36000, cfs_interval=2000,
-                    annual_min=400000, annual_max=3300000, annual_interval=100000, annual_unit='maf', year_interval=6)
-    if graph:
-        WaterGraph(nrows=2).plot_gage(gage)
-    return gage
-
-
-def usgs_green_river_at_green_river(graph=True):
-    gage = USGSGage('09315000', start_date='1894-10-01',
-                    cfs_max=70000, cfs_interval=5000,
-                    annual_min=1000000, annual_max=9000000, annual_interval=500000, annual_unit='maf', year_interval=6)
-    if graph:
-        WaterGraph(nrows=2).plot_gage(gage)
-    return gage
-
-
 def usgs_yampa_river_near_maybell(graph=True):
     gage = USGSGage('09251000', start_date='1916-05-01',
                     cfs_max=25000, cfs_interval=5000,
@@ -1238,6 +1220,24 @@ def usgs_gunnison_grand_junction(graph=True):
     gage = USGSGage('09152500', start_date='1896-10-01',
                     cfs_max=36000, cfs_interval=2000,
                     annual_max=3800000, annual_interval=200000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def usgs_san_juan_bluff(graph=True):
+    gage = USGSGage('09379500', start_date='1941-10-01',
+                    cfs_max=36000, cfs_interval=2000,
+                    annual_min=400000, annual_max=3300000, annual_interval=100000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def usgs_green_river_at_green_river(graph=True):
+    gage = USGSGage('09315000', start_date='1894-10-01',
+                    cfs_max=70000, cfs_interval=5000,
+                    annual_min=1000000, annual_max=9000000, annual_interval=500000, annual_unit='maf', year_interval=6)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
@@ -1336,12 +1336,51 @@ def usgs_mcelmo_trail_canyon(graph=True):
 def lake_powell_inflow():
     start_year = 1963
     end_year = 2022
-    usgs_colorado_cisco_gage = usgs_colorado_cisco(graph=True)
+
+    show_graph = False
+    show_annotated = False
+
+    usgs_colorado_cisco_gage = usgs_colorado_cisco(graph=show_graph)
+    if show_annotated:
+        colorado_cisco_af = usgs_colorado_cisco_gage.annual_af()
+        graph = WaterGraph(nrows=1)
+        graph.bars(colorado_cisco_af, sub_plot=0, title=usgs_colorado_cisco_gage.site_name, color='royalblue',
+                   ymin=0, ymax=11500000, yinterval=500000, xinterval=4,
+                   xlabel='Water Year', bar_width=1,  # xmin=start_year, xmax=end_year,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+        graph.annotate_vertical_arrow(1916, "Grand Valley", offset_percent=2.5)
+        graph.annotate_vertical_arrow(1942, "Green Mountain", offset_percent=2.5)
+        graph.annotate_vertical_arrow(1947, "Adams Tunnel", offset_percent=5)
+        graph.annotate_vertical_arrow(1963, "Dillon", offset_percent=2.5)
+        graph.annotate_vertical_arrow(1966, "Blue Mesa", offset_percent=5)
+        graph.fig.waitforbuttonpress()
     colorado_cisco_af = usgs_colorado_cisco_gage.annual_af(start_year=start_year, end_year=end_year)
-    usgs_green_river_gage = usgs_green_river_at_green_river(graph=True)
+
+    usgs_green_river_gage = usgs_green_river_at_green_river(graph=show_graph)
+    if show_annotated:
+        green_river_af = usgs_green_river_gage.annual_af()
+        graph = WaterGraph(nrows=1)
+        graph.bars(green_river_af, sub_plot=0, title=usgs_green_river_gage.site_name, color='royalblue',
+                   ymin=0, ymax=9000000, yinterval=500000, xinterval=4,
+                   xlabel='Water Year', bar_width=1,  # xmin=start_year, xmax=end_year,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+        graph.annotate_vertical_arrow(1962, "Flaming Gorge", offset_percent=2.5)
+        graph.annotate_vertical_arrow(1963, "Fontenelle", offset_percent=5)
+        graph.fig.waitforbuttonpress()
     green_river_af = usgs_green_river_gage.annual_af(start_year=start_year, end_year=end_year)
-    usgs_san_juan_bluff_gage = usgs_san_juan_bluff(graph=True)
+
+    usgs_san_juan_bluff_gage = usgs_san_juan_bluff(graph=show_graph)
+    if show_annotated:
+        san_juan_af = usgs_san_juan_bluff_gage.annual_af()
+        graph = WaterGraph(nrows=1)
+        graph.bars(san_juan_af, sub_plot=0, title=usgs_san_juan_bluff_gage.site_name, color='royalblue',
+                   ymin=0, ymax=3250000, yinterval=250000, xinterval=4,
+                   xlabel='Water Year', # xmin=start_year, xmax=end_year,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+        graph.annotate_vertical_arrow(1962, "Navajo", offset_percent=2.5)
+        graph.fig.waitforbuttonpress()
     san_juan_af = usgs_san_juan_bluff_gage.annual_af(start_year=start_year, end_year=end_year)
+
     usgs_dirty_devil_gage = usgs_dirty_devil(graph=True)
     dirty_devil_af = usgs_dirty_devil_gage.annual_af(start_year=start_year, end_year=end_year)
     # Only around 8 kaf annually
@@ -2193,8 +2232,8 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    usbr_az_yuma()
     lake_powell_inflow()
+    usbr_az_yuma()
     usbr_upper_colorado_reservoirs()
     usbr_lake_havasu()
     usgs_lees_ferry()

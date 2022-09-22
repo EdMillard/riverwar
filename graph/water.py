@@ -24,6 +24,7 @@ import math
 from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.markers as markers
 import numpy as np
 from matplotlib.dates import YearLocator
 
@@ -86,9 +87,19 @@ class WaterGraph(object):
     def format_discharge(value, pos=None):
         return '{0:>6}'.format(value)
 
+    def annotate_vertical_arrow(self, x, text, offset_percent=0.025, color='black'):
+        y_lim = self.ax.get_ylim()
+        y_axis_range = y_lim[1] - y_lim[0]
+        offset = y_axis_range * (offset_percent*0.01)
+        self.ax.annotate(text,
+                         xy=(x, 0), xycoords='data', color=color,
+                         xytext=(x, y_lim[1] - offset), textcoords='data', horizontalalignment='center',
+                         arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color=color))
+
     def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, running_average_years=10,
-             ylabel='', ymin=0, ymax=0, yinterval=1,
-             xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af):
+             ymin=0, ymax=0, yinterval=1,
+             xlabel='', xmin=0, xmax=0, xinterval=1, bar_width=0.9,
+             ylabel='', format_func=format_af):
         if len(self.fig.axes) > 1:
             ax = self.ax[sub_plot]
         else:
@@ -117,9 +128,9 @@ class WaterGraph(object):
         x = a['dt']
         y = a['val']
         if label:
-            ax.bar(x, y, width=0.9, color=color, label=label)
+            ax.bar(x, y, width=bar_width, color=color, label=label)
         else:
-            ax.bar(x, y, width=0.9, color=color)
+            ax.bar(x, y, width=bar_width, color=color)
 
         if running_average_years > 0:
             self.running_average(a, running_average_years, sub_plot=sub_plot)
@@ -284,13 +295,7 @@ class WaterGraph(object):
                   ylabel=gage.annual_unit, ymin=gage.annual_min, ymax=gage.annual_max,
                   yinterval=gage.annual_interval, format_func=y_format,
                   xlabel='Water Year', xmin=start_year, xmax=end_year,
-                  xinterval=gage.year_interval)
-
-        running_average = self.running_average(annual_af, 10, sub_plot=1)
-        x = running_average['dt']
-        y = running_average['val']
-        plt.plot(x, y, linestyle='-', linewidth=3, marker='None',
-                 color='goldenrod', label='10Y Running Average')
+                  xinterval=gage.year_interval, running_average_years=10)
 
         self.fig.waitforbuttonpress()
 
