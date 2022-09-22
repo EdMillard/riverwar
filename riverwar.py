@@ -1949,7 +1949,7 @@ def usbr_ca_coachella():
 
 def usbr_az_yuma():
     year_interval = 3
-    graph = WaterGraph(nrows=2)
+    graph = WaterGraph(nrows=3)
 
     # Yuma Mesa Irrigaton - This is complicated, early years had a drain with return flows
     # migrated to returns, then measured and unmeasured returns later
@@ -1959,8 +1959,17 @@ def usbr_az_yuma():
     yuma_mesa_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
     yuma_mesa_annual_cu_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_cu_af, water_year_month=1)
 
-    yuma_mesa_monthly_drain_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
+    yuma_mesa_monthly_drain_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_outlet_drain_returns.csv')
     yuma_mesa_annual_drain_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_drain_af, water_year_month=1)
+
+    yuma_mesa_monthly_returns_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_returns.csv')
+    yuma_mesa_annual_returns_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_returns_af, water_year_month=1)
+
+    yuma_mesa_monthly_measured_returns_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_measured_returns.csv')
+    yuma_mesa_annual_measured_returns_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_measured_returns_af, water_year_month=1)
+
+    yuma_mesa_monthly_unmeasured_returns_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_unmeasured_returns.csv')
+    yuma_mesa_annual_unmeasured_returns_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_unmeasured_returns_af, water_year_month=1)
 
     graph.plot(yuma_mesa_monthly_diversion_af, sub_plot=0, title='USBR AR Yuma Mesa Irrigation Diversion (Monthly)',
                xinterval=year_interval, ymax=35000, yinterval=5000, color='darkmagenta',
@@ -1973,6 +1982,21 @@ def usbr_az_yuma():
     graph.plot(yuma_mesa_monthly_drain_af, sub_plot=0, title='',
                xinterval=year_interval, ymax=35000,  yinterval=5000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.plot(yuma_mesa_monthly_unmeasured_returns_af, sub_plot=2, title='',
+               xinterval=year_interval, ymax=50000,  yinterval=5000, color='blue',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.plot(yuma_mesa_monthly_measured_returns_af, sub_plot=2, title='',
+               xinterval=year_interval, ymax=50000,  yinterval=5000, color='firebrick',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    graph.plot(yuma_mesa_monthly_returns_af, sub_plot=2, title='',
+               xinterval=year_interval, ymax=50000,  yinterval=5000, color='maroon',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+
+
 
     bar_data = [
         {'data': yuma_mesa_annual_diversion_af, 'label': 'Diversions', 'color': 'darkmagenta'},
