@@ -238,7 +238,7 @@ class WaterGraph(object):
 
     def plot(self, a, sub_plot=0, title='', color='royalblue',
              xlabel='', xmin=0, xmax=0, xinterval=5,
-             ylabel='', ymin=0, ymax=0, yinterval=1,
+             ylabel='', ymin=0, ymax=0, yinterval=1, label=None,
              format_func=format_af):
         if len(self.fig.axes) > 1:
             ax = self.ax[sub_plot]
@@ -270,7 +270,9 @@ class WaterGraph(object):
 
         x = a['dt']
         y = a['val']
-        ax.plot(x, y, linestyle='-', marker='None', color=color)
+        ax.plot(x, y, linestyle='-', marker='None', color=color, label=label)
+        if label:
+            ax.legend()
 
     def plot_gage(self, gage):
         daily_discharge_cfs = gage.daily_discharge()
