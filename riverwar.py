@@ -212,7 +212,7 @@ def usbr_lake_powell():
     annual_release_total_af = usbr_rise.annual_af(usbr_lake_powell_release_total_af)
     graph.bars(annual_release_total_af, sub_plot=0, title='Lake Powell Release',
                ymin=7000000, ymax=12600000, yinterval=100000,
-               xlabel='Water Year', xinterval=1, xmin=2000, xmax=2021,
+               xlabel='Water Year', xinterval=1, xmin=2000, xmax=current_last_year,
                ylabel='maf', format_func=WaterGraph.format_maf)
     graph.fig.waitforbuttonpress()
 
@@ -610,7 +610,7 @@ def glen_canyon_analysis():
 
     usgs_lees_ferry_af_1999_2021 = WaterGraph.array_in_time_range(usgs_lees_ferry_annual_af,
                                                                   datetime.datetime(1999, 1, 1),
-                                                                  datetime.datetime(2021, 12, 31))
+                                                                  datetime.datetime(current_last_year, 12, 31))
     # rw_bars(annual_discharge_af, title=name, color='royalblue',
     #        ylabel='maf', ymin=2000000, ymax=21000000, yinterval=500000, format_func=format_maf,
     #        xlabel='Water Year', xinterval=5)
@@ -632,14 +632,14 @@ def glen_canyon_analysis():
 
     usbr_lake_powell_release_af_1999_2021 = WaterGraph.array_in_time_range(glen_canyon_annual_release_af,
                                                                            datetime.datetime(1999, 1, 1),
-                                                                           datetime.datetime(2021, 12, 31))
+                                                                           datetime.datetime(current_last_year, 12, 31))
 
     # USGS Paria At Lees Ferry Gage Daily Discharge Mean
     #
     usgs_paria_annual_af = usgs_paria_lees_ferry().annual_af()
     usgs_paria_annual_af_1999_2021 = WaterGraph.array_in_time_range(usgs_paria_annual_af,
                                                                     datetime.datetime(1999, 1, 1),
-                                                                    datetime.datetime(2021, 12, 31))
+                                                                    datetime.datetime(current_last_year, 12, 31))
 
     usbr_glen_canyon_vector = usbr_lake_powell_release_af_1999_2021['val']
     usgs_paria_vector = usgs_paria_annual_af_1999_2021['val']
@@ -1480,7 +1480,7 @@ def lake_powell_inflow():
 
 def lake_mead_inflow():
     start_year = 1964
-    end_year = 2021
+    end_year = current_last_year
     year_interval = 3
 
     show_graph = False
@@ -1709,6 +1709,8 @@ def usbr_az_crit():
 
 
 def usbr_ca_total():
+    start_year = 1964
+    end_year = current_last_year
     year_interval = 4
 
     graph = WaterGraph(nrows=2)
@@ -1720,8 +1722,8 @@ def usbr_ca_total():
     brock_diversion_monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_imperial_irrigation_brock_diversion.csv')
     brock_diversion_annual_af = usbr_report.monthly_to_water_year(brock_diversion_monthly_af, water_year_month=1)
     # Need to remove 2010 brock diversion, its correctly incorporated to CA Total Diversion in 2010 AR
-    brock_diversion_annual_af = reshape_annual_range(brock_diversion_annual_af, 2011, 2021)
-    brock_diversion_annual_af = reshape_annual_range(brock_diversion_annual_af, 1964, 2021)
+    brock_diversion_annual_af = reshape_annual_range(brock_diversion_annual_af, 2011, end_year)
+    brock_diversion_annual_af = reshape_annual_range(brock_diversion_annual_af, start_year, end_year)
     # Diversion Revised with Block
     diversion_revised_annual_af = add_annual(diversion_annual_af, brock_diversion_annual_af)
     cu_monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_total_consumptive_use.csv')
@@ -1729,9 +1731,9 @@ def usbr_ca_total():
     returns_annual_af = subtract_annual(diversion_revised_annual_af, cu_annual_af)
 
     measured_returns_annual_af = usbr_report.annual_af('ca/usbr_ca_total_measured_returns.csv')
-    measured_returns_annual_af = reshape_annual_range(measured_returns_annual_af, 1964, 2021)
+    measured_returns_annual_af = reshape_annual_range(measured_returns_annual_af, start_year, end_year)
     unmeasured_returns_annual_af = usbr_report.annual_af('ca/usbr_ca_total_unmeasured_returns.csv')
-    unmeasured_returns_annual_af = reshape_annual_range(unmeasured_returns_annual_af, 1964, 2021)
+    unmeasured_returns_annual_af = reshape_annual_range(unmeasured_returns_annual_af, start_year, end_year)
     graph.bars(returns_annual_af, sub_plot=1, title='California Return Flows Computed w Brock Revision (Annual)',
                ymin=350000, ymax=750000, yinterval=50000, label='Computed Returns (Revised Diversion minus CU)',
                xlabel='',  xinterval=year_interval, color='darkmagenta',
@@ -1781,6 +1783,7 @@ def usbr_ca_total():
 def usbr_diversion_vs_consumptive(state_code, name, state_name,
                                   ymin1=0, ymax1=1000000, yinterval1=100000, yformat1='maf',
                                   ymin2=0, ymax2=1000000, yinterval2=100000, yformat2='kaf'):
+    start_year = 1964
     year_interval = 4
 
     graph = WaterGraph(nrows=2)
@@ -1793,10 +1796,12 @@ def usbr_diversion_vs_consumptive(state_code, name, state_name,
     annual_cu_af = usbr_report.annual_af(cu_file_name)
 
     measured_file_name = state_code + '/usbr_' + state_code + '_' + name + '_measured_returns.csv'
-    annual_measured_af = usbr_report.annual_af(measured_file_name, 1964, current_last_year)
+    annual_measured_af = usbr_report.annual_af(measured_file_name)
+    annual_measured_af = reshape_annual_range(annual_measured_af, start_year, current_last_year)
 
     unmeasured_file_name = state_code + '/usbr_' + state_code + '_' + name + '_unmeasured_returns.csv'
-    annual_unmeasured_af = usbr_report.annual_af(unmeasured_file_name, 1964, current_last_year)
+    annual_unmeasured_af = usbr_report.annual_af(unmeasured_file_name)
+    annual_unmeasured_af = reshape_annual_range(annual_unmeasured_af, start_year, current_last_year)
 
     annual_diversion_minus_cu = subtract_annual(annual_diversion_af, annual_cu_af)
 
@@ -2016,6 +2021,7 @@ def usbr_mx():
 
 
 def usbr_ca_imperial_irrigation_district():
+    start_year = 1964
     year_interval = 3
     graph = WaterGraph(nrows=3)
 
@@ -2052,7 +2058,7 @@ def usbr_ca_imperial_irrigation_district():
     #            xlabel='',  xinterval=year_interval, color='firebrick',
     #           ylabel='maf', format_func=WaterGraph.format_maf)
 
-    annual_brock_diversion_af = graph.reshape_annual_range(annual_brock_diversion_af, 1964, current_last_year)
+    annual_brock_diversion_af = graph.reshape_annual_range(annual_brock_diversion_af, start_year, current_last_year)
     annual_brock_diversion_negative = np.zeros(len(annual_brock_diversion_af), [('dt', 'i'), ('val', 'f')])
     annual_brock_diversion_negative['dt'] = annual_cu_af['dt']
     annual_brock_diversion_negative['val'] = np.negative(annual_brock_diversion_af['val'])
@@ -2107,74 +2113,52 @@ def usbr_ca_coachella():
 
 
 def usbr_az_yuma():
+    start_year = 1964
     year_interval = 3
     graph = WaterGraph(nrows=3)
 
-    # Yuma Mesa Irrigaton - This is complicated, early years had a drain with return flows
+    # Yuma Mesa Irrigation
+    # This is complicated, early years had a drain with return flows
     # migrated to returns, then measured and unmeasured returns later
-    yuma_mesa_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
-    yuma_mesa_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_diversion_af,
-                                                                      water_year_month=1)
-    yuma_mesa_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
-    yuma_mesa_annual_cu_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_cu_af, water_year_month=1)
-
-    yuma_mesa_monthly_drain_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_outlet_drain_returns.csv')
-    yuma_mesa_annual_drain_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_drain_af, water_year_month=1)
-
-    yuma_mesa_monthly_returns_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_mesa_irrigation_returns.csv')
-    yuma_mesa_annual_returns_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_returns_af, water_year_month=1)
-
-    yuma_mesa_monthly_measured_returns_af = usbr_report.load_monthly_csv(
-        'az/usbr_az_yuma_mesa_irrigation_measured_returns.csv')
-    yuma_mesa_annual_measured_returns_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_measured_returns_af,
-                                                                             water_year_month=1)
-
-    yuma_mesa_monthly_unmeasured_returns_af = usbr_report.load_monthly_csv(
+    yuma_mesa_diversion_annual_af = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
+    yuma_mesa_cu_annual_af = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
+    yuma_mesa_drain_annual_af = usbr_report.annual_af('az/usbr_az_yuma_mesa_outlet_drain_returns.csv')
+    drain_start_year = yuma_mesa_drain_annual_af['dt'][0]
+    drain_end_year = yuma_mesa_drain_annual_af['dt'][-1]
+    yuma_mesa_diversion_tmp = reshape_annual_range(yuma_mesa_diversion_annual_af, drain_start_year, drain_end_year)
+    yuma_mesa_drain_cu_annual_af = subtract_annual(yuma_mesa_diversion_tmp, yuma_mesa_drain_annual_af)
+    yuma_mesa_drain_cu_annual_af = reshape_annual_range(yuma_mesa_drain_cu_annual_af, start_year, current_last_year)
+    yuma_mesa_cu_annual_af = reshape_annual_range(yuma_mesa_cu_annual_af, start_year, current_last_year)
+    yuma_mesa_cu_annual_af = add_annual(yuma_mesa_cu_annual_af, yuma_mesa_drain_cu_annual_af)
+    yuma_mesa_returns_annual_af = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_returns.csv')
+    yuma_mesa_measured_returns_annual_af = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_measured_returns.csv')
+    yuma_mesa_annual_unmeasured_returns_af = usbr_report.annual_af(
         'az/usbr_az_yuma_mesa_irrigation_unmeasured_returns.csv')
-    yuma_mesa_annual_unmeasured_returns_af = usbr_report.monthly_to_water_year(yuma_mesa_monthly_unmeasured_returns_af,
-                                                                               water_year_month=1)
-
-    graph.plot(yuma_mesa_monthly_diversion_af, sub_plot=0, title='USBR AR Yuma Mesa Irrigation Diversion (Monthly)',
-               xinterval=year_interval, ymax=35000, yinterval=5000, color='darkmagenta',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-
-    graph.plot(yuma_mesa_monthly_cu_af, sub_plot=0, title='',
-               xinterval=year_interval, ymax=35000,  yinterval=5000, color='firebrick',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-
-    graph.plot(yuma_mesa_monthly_drain_af, sub_plot=0, title='',
-               xinterval=year_interval, ymax=35000,  yinterval=5000, color='firebrick',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-
-    graph.plot(yuma_mesa_monthly_unmeasured_returns_af, sub_plot=2, title='',
-               xinterval=year_interval, ymax=50000,  yinterval=5000, color='blue',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-
-    graph.plot(yuma_mesa_monthly_measured_returns_af, sub_plot=2, title='',
-               xinterval=year_interval, ymax=50000,  yinterval=5000, color='firebrick',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-
-    graph.plot(yuma_mesa_monthly_returns_af, sub_plot=2, title='',
-               xinterval=year_interval, ymax=50000,  yinterval=5000, color='maroon',
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-
     bar_data = [
-        {'data': yuma_mesa_annual_diversion_af, 'label': 'Diversions', 'color': 'darkmagenta'},
-        {'data': yuma_mesa_annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
+        {'data': yuma_mesa_drain_annual_af, 'label': 'Diversion minus Drain Consumptive Use ', 'color': 'firebrick'},
     ]
-    graph.bars_stacked(bar_data, sub_plot=1, title='USBR AR Yuma County WUA Diversions and Consumptive Use (Annual)',
+    graph.bars_stacked(bar_data, sub_plot=0, title='USBR AR Yuma Mesa Drain Returns (Annual)',
                        ymin=0, ymax=300000, yinterval=50000,
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
-    graph.running_average(yuma_mesa_annual_diversion_af, 10, sub_plot=1)
-    graph.running_average(yuma_mesa_annual_cu_af, 10, sub_plot=1)
+    graph.running_average(yuma_mesa_diversion_annual_af, 10, sub_plot=1)
+    bar_data = [
+        {'data': yuma_mesa_diversion_annual_af, 'label': 'Diversions', 'color': 'darkmagenta'},
+        {'data': yuma_mesa_cu_annual_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
+        # {'data': yuma_mesa_drain_cu_annual_af, 'label': 'Diversion minus Drain Consumptive Use ', 'color': 'firebrick'},
+    ]
+    graph.bars_stacked(bar_data, sub_plot=1, title='USBR AR Yuma Mesa Diversions and Consumptive Use (Annual)',
+                       ymin=0, ymax=300000, yinterval=50000,
+                       xlabel='', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(yuma_mesa_diversion_annual_af, 10, sub_plot=1)
+    graph.running_average(yuma_mesa_cu_annual_af, 10, sub_plot=1)
 
     graph.fig.waitforbuttonpress()
 
     # Yuma County WUA
     yuma_county_monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_diversion.csv')
-    yuma_county_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_county_monthly_diversion_af,
-                                                                        water_year_month=1)
+    yuma_county_annual_diversion_af = usbr_report.monthly_to_water_year(yuma_county_monthly_diversion_af)
     yuma_county_monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_county_wua_consumptive_use.csv')
     yuma_county_annual_cu_af = usbr_report.monthly_to_water_year(yuma_county_monthly_cu_af, water_year_month=1)
 
@@ -2259,6 +2243,8 @@ def usbr_nv_snwa():
 
 
 def usbr_ca_metropolitan():
+    start_year = 1964
+    year_interval = 3
     whitsett_monthly_af = usbr_report.load_monthly_csv('ca/usbr_ca_metropolitan_diversion.csv')
     # graph = WaterGraph.plot(whitsett_monthly_af,
     #                               'Lake Havasu Metropolitan Whitsett Pumping Plant (Monthly)',
@@ -2271,7 +2257,7 @@ def usbr_ca_metropolitan():
     graph.bars(whitsett_annual_af, sub_plot=0,
                title='Lake Havasu Metropolitan Whitsett Pumping Plant Diversion (Annual)',
                ymin=0, ymax=1350000, yinterval=100000,
-               xlabel='Calendar Year',  xinterval=3, color='firebrick',
+               xlabel='Calendar Year',  xinterval=year_interval, color='firebrick',
                ylabel='maf',  format_func=WaterGraph.format_maf)
 
     whitsett_san_diego_monthly_af = usbr_report.load_monthly_csv(
@@ -2287,17 +2273,17 @@ def usbr_ca_metropolitan():
                 ]
     graph.bars_stacked(bar_data, sub_plot=2, title='Lake Havasu Metropolitan + San Diego Exchange (Annual)',
                        ymin=400000, ymax=1400000, yinterval=50000,
-                       xlabel='Calendar Year', xinterval=3,
+                       xlabel='Calendar Year', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     ics = usbr_lake_mead_ics()
     ics_ca_delta = ics['CA Delta']
 
     ics_ca_withdrawals = usbr_report.negative_values(ics_ca_delta)
-    ics_ca_withdrawals = graph.reshape_annual_range(ics_ca_withdrawals, 1964, current_last_year)
+    ics_ca_withdrawals = graph.reshape_annual_range(ics_ca_withdrawals, start_year, current_last_year)
 
     ics_ca_deposits = usbr_report.positive_values(ics_ca_delta)
-    ics_ca_deposits = graph.reshape_annual_range(ics_ca_deposits, 1964, current_last_year)
+    ics_ca_deposits = graph.reshape_annual_range(ics_ca_deposits, start_year, current_last_year)
 
     bar_data = [{'data': whitsett_annual_af, 'label': 'Metropolitan Diversion', 'color': 'firebrick'},
                 {'data': ics_ca_withdrawals, 'label': 'CA ICS Withdrawals', 'color': 'maroon'},
@@ -2353,15 +2339,22 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+
+    usbr_diversion_vs_consumptive('nv', 'total', 'Nevada',
+                                  ymin1=0, ymax1=550000, yinterval1=50000, yformat1='kaf',
+                                  ymin2=0, ymax2=300000, yinterval2=25000)
+    usbr_diversion_vs_consumptive('az', 'total', 'Arizona',
+                                  ymin1=900000, ymax1=3800000,
+                                  ymin2=550000, ymax2=900000, yinterval2=25000)
+    # This graph will be wrong because Brock is mishandled by Bureau AR's in Diversion Total
+    # Use the special cased revised graph in usbr_ca_total() instead
+    # usbr_diversion_vs_consumptive('ca', 'total', 'California',
+    #                               ymin1=3500000, ymax1=6000000,
+    #                               ymin2=350000, ymax2=750000, yinterval2=50000)
     usbr_ca_total()
 
-    usbr_diversion_vs_consumptive('ca', 'total', 'California',
-                                  ymin1=3500000, ymax1=6000000,
-                                  ymin2=350000, ymax2=750000, yinterval2=50000)
-
-    lake_mead_inflow()
     usbr_az_yuma()
-
+    lake_mead_inflow()
     lake_powell_inflow()
     usbr_upper_colorado_reservoirs()
     usgs_lower_colorado_tributaries()
@@ -2383,12 +2376,7 @@ if __name__ == '__main__':
     usbr_ca_coachella()
     usgs_imperial_all_american()
 
-    usbr_diversion_vs_consumptive('nv', 'total', 'Nevada',
-                                  ymin1=0, ymax1=550000, yinterval1=50000, yformat1='kaf',
-                                  ymin2=0, ymax2=300000, yinterval2=25000)
-    usbr_diversion_vs_consumptive('az', 'total', 'Arizona',
-                                  ymin1=900000, ymax1=3800000,
-                                  ymin2=550000, ymax2=900000, yinterval2=25000)
+
     usbr_diversion_vs_consumptive('az', 'crit', 'Colorado River Indian',
                                   ymin1=0, ymax1=750000,
                                   ymin2=170000, ymax2=400000, yinterval2=25000)
@@ -2400,7 +2388,6 @@ if __name__ == '__main__':
                                   ymin2=550000, ymax2=900000, yinterval2=25000)
     usbr_mx()
     usbr_az()
-    usbr_ca_total()
     usbr_ca()
     usbr_nv()
 
