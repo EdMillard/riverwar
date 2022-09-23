@@ -89,8 +89,8 @@ def load_monthly_csv(file_name, sep=' '):
             pass
         else:
             fields = s.strip().split(sep)
-            if len(fields) < 14:
-                print("Not enough fields for year, 12 months and total", file_name, fields)
+            #if len(fields) < 14:
+            #    print("Not enough fields for year, 12 months and total", file_name, fields)
             if len(fields) > 1:
                 month = 1
                 year = fields[0]
