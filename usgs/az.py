@@ -1,0 +1,256 @@
+"""
+Copyright (c) 2022 Ed Millard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+from source.usgs_gage import USGSGage
+from graph.water import WaterGraph
+
+
+def lees_ferry(graph=True):
+    gage = USGSGage('09380000', start_date='1921-10-01',
+                    cfs_max=130000, cfs_interval=5000,
+                    annual_min=6000000, annual_max=21000000, annual_interval=500000, annual_unit='maf',
+                    year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def paria_lees_ferry(graph=True):
+    gage = USGSGage('09382000', start_date='1932-10-01',
+                    cfs_max=6500, cfs_interval=500,
+                    annual_min=0, annual_max=50000, annual_interval=2500, annual_unit='kaf',
+                    year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def little_colorado_cameron(graph=True):
+    gage = USGSGage('09402000', start_date='1947-06-1', color='firebrick',
+                    cfs_max=19000, cfs_interval=1000,
+                    annual_min=0, annual_max=850000, annual_interval=50000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def gila_duncan(graph=True):
+    gage = USGSGage('09439000', start_date='2003-09-30', color='firebrick',
+                    cfs_max=26000, cfs_interval=1000,
+                    annual_min=0, annual_max=350000, annual_interval=25000, annual_unit='kaf', year_interval=4)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def gila_goodyear(graph=True):
+    gage = USGSGage('09514100', start_date='1992-10-01', color='firebrick',
+                    cfs_max=140000, cfs_interval=10000,
+                    annual_min=0, annual_max=1000000, annual_interval=50000, annual_unit='maf', year_interval=4)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def gila_dome(graph=True):
+    gage_full = USGSGage('09520500', start_date='1905-01-01', color='firebrick',
+                         cfs_max=96000, cfs_interval=20000,
+                         annual_min=0, annual_max=4500000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage_full)
+
+    gage = USGSGage('09520500', start_date='1996-01-01', color='firebrick',
+                    cfs_max=1000, cfs_interval=100,
+                    annual_min=0, annual_max=200000, annual_interval=10000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage_full
+
+
+def bill_williams_parker(graph=True):
+    gage = USGSGage('09426620', start_date='1988-10-01', color='firebrick',
+                    cfs_max=8000, cfs_interval=500,
+                    annual_min=0, annual_max=450000, annual_interval=50000, annual_unit='maf', year_interval=4)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def salt_above_roosevelt(graph=True):
+    gage = USGSGage('09498500', start_date='1913-10-01', color='firebrick',
+                    cfs_max=95000, cfs_interval=5000,
+                    annual_min=0, annual_max=2400000, annual_interval=100000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def virgin_at_littlefield(graph=True):
+    gage = USGSGage('09415000', start_date='1929-10-01', color='firebrick',
+                    cfs_max=26000, cfs_interval=1000,
+                    annual_min=0, annual_max=600000, annual_interval=50000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def yuma_municipal(graph=True):
+    gage = USGSGage('09526000', start_date='1983-10-01', color='firebrick',
+                    cfs_max=2100, cfs_interval=100,
+                    annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def city_of_yuma_at_avenue_9e_pumping(graph=True):
+    gage = USGSGage('09522860', start_date='2015-09-30', color='firebrick',
+                    cfs_max=170, cfs_interval=10,
+                    annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def yuma_main_canal(graph=True):
+    gage = USGSGage('', start_date='1938-10-01', color='firebrick',
+                    cfs_max=2100, cfs_interval=100,
+                    annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def yuma_main_canal_wasteway(graph=True):
+    gage = USGSGage('09525000', start_date='1930-10-01', color='firebrick',
+                    cfs_max=2100, cfs_interval=100,
+                    annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def unit_b_canal_near_yuma(graph=True):
+    gage = USGSGage('09522900', start_date='2005-09-30', color='firebrick',
+                    cfs_max=120, cfs_interval=10,
+                    annual_min=0, annual_max=30000, annual_interval=1000, annual_unit='kaf', year_interval=1)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def mcas_diversion_of_b_canal_near_yuma(graph=True):
+    gage = USGSGage('09522880', start_date='2005-09-30', color='firebrick',
+                    cfs_max=120, cfs_interval=10,
+                    annual_min=0, annual_max=30000, annual_interval=1000, annual_unit='kaf', year_interval=1)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def wellton_mohawk_main_canal(graph=True):
+    gage = USGSGage('09522700', start_date='1974-10-01', color='firebrick',
+                    cfs_max=1900, cfs_interval=200,
+                    annual_min=0, annual_max=500000, annual_interval=50000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def wellton_mohawk_main_outlet_drain(graph=True):
+    gage = USGSGage('09529300', start_date='1966-10-01', color='firebrick',
+                    cfs_max=350, cfs_interval=50,
+                    annual_min=0, annual_max=230000, annual_interval=20000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def palo_verde_canal(graph=True):
+    gage = USGSGage('09429000', start_date='1950-10-01', color='firebrick',
+                    cfs_max=2400, cfs_interval=100,
+                    annual_min=650000, annual_max=1050000, annual_interval=50000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def crir_canal_near_parker(graph=True):
+    gage = USGSGage('09428500', start_date='1954-10-01', color='firebrick',
+                    cfs_max=2000, cfs_interval=100,
+                    annual_min=250000, annual_max=750000, annual_interval=50000, annual_unit='kaf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def gila_gravity_main_canal(graph=True):
+    gage = USGSGage('09522500', start_date='1943-08-16', color='firebrick',
+                    cfs_max=2300, cfs_interval=100,
+                    annual_min=0, annual_max=1000000, annual_interval=100000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def gila_gravity_main_canal_at_yuma_mesa_pumping(graph=True):
+    gage = USGSGage('09522600', start_date='2005-09-30', color='firebrick',
+                    cfs_max=170, cfs_interval=10,
+                    annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def north_gila_main_canal(graph=True):
+    gage = USGSGage('09522600', start_date='1966-10-01', color='firebrick',
+                    cfs_max=170, cfs_interval=10,
+                    annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def north_gila_main_canal_number_2(graph=True):
+    gage = USGSGage('09522650', start_date='1969-07-01', color='firebrick',
+                    cfs_max=170, cfs_interval=10,
+                    annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def south_gila_main_canal(graph=True):
+    gage = USGSGage('09522800', start_date='1973-10-01', color='firebrick',
+                    cfs_max=170, cfs_interval=10,
+                    annual_min=0, annual_max=65000, annual_interval=5000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+    #
+    # 09528200 COCOPAH DIVERSION FROM WEST MAIN CANAL NR SOMERTON 2007-01-23
+    # 09528800 LEVEE CANAL WASTEWAY NEAR YUMA, AZ 1966-10-01
+    # 09529000 GILA DRAIN NO. 1 NEAR YUMA, AZ 1974-10-01
+    # 09529250 BRUCE CHURCH WASTEWAY NEAR YUMA, AZ  1966-10-01
+    # 09529420 SOUTH GILA TERMINAL CANAL WASTEWAY NR YUMA, AZ 1966-10-01
+    # 09522660 GILA MONSTER FARMS TURNOUT NO. 1 NEAR YUMA, AZ 2004-10-01
+    # 09522680 GILA MONSTER FARMS TURNOUT NO. 2 NEAR YUMA, AZ 2007-10-01
