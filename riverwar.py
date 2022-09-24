@@ -24,7 +24,7 @@ import numpy as np
 import signal
 import sys
 import usgs
-import usgs.ca
+from usgs import az, ca, co, ut   # nm, wy
 from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
@@ -1861,6 +1861,7 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    usgs.az.test()
     usgs.ca.test()
 
     usbr_diversion_vs_consumptive('nv', 'total', 'Nevada',

@@ -80,9 +80,18 @@ def reservation_main_canal(graph=True):
     return gage
 
 
+def titsink_canal(graph=True):
+    gage = USGSGage('09523400', start_date='1966-10-01', color='firebrick',
+                    cfs_max=20, cfs_interval=5,
+                    annual_min=0, annual_max=1000, annual_interval=100, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
 def yaqui_canal(graph=True):
     gage = USGSGage('09523600', start_date='1966-10-01', color='firebrick',
-                    cfs_max=240, cfs_interval=10,
+                    cfs_max=60, cfs_interval=5,
                     annual_min=0, annual_max=12000, annual_interval=2000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
@@ -91,8 +100,8 @@ def yaqui_canal(graph=True):
 
 def pontiac_canal(graph=True):
     gage = USGSGage('09523800', start_date='1966-10-01', color='firebrick',
-                    cfs_max=240, cfs_interval=10,
-                    annual_min=0, annual_max=12000, annual_interval=2000, annual_unit='kaf', year_interval=5)
+                    cfs_max=60, cfs_interval=5,
+                    annual_min=0, annual_max=10000, annual_interval=2000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
@@ -100,7 +109,7 @@ def pontiac_canal(graph=True):
 
 def ypsilanti_canal(graph=True):
     gage = USGSGage('09526200', start_date='1995-01-01', color='firebrick',
-                    cfs_max=240, cfs_interval=10,
+                    cfs_max=80, cfs_interval=10,
                     annual_min=0, annual_max=15000, annual_interval=3000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
@@ -162,9 +171,9 @@ def alamo_river_near_niland(graph=True):
 
 
 def new_river_at_international_boundary_near_calexico(graph=True):
-    gage = USGSGage('0254970', start_date='1979-10-01', color='firebrick',
-                    cfs_max=2100, cfs_interval=200,
-                    annual_min=0, annual_max=800000, annual_interval=100000, annual_unit='kaf', year_interval=5)
+    gage = USGSGage('10254970', start_date='1979-10-01', color='firebrick',
+                    cfs_max=800, cfs_interval=100,
+                    annual_min=0, annual_max=300000, annual_interval=50000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
@@ -179,42 +188,60 @@ def new_river_near_westmorland(graph=True):
     return gage
 
 
-def drain_8_b_near_winterhaven(graph=True):
-    gage = USGSGage('1979-10-01', start_date='1943-01-01', color='firebrick',
+def whitewater_river_near_mecca(graph=True):
+    gage = USGSGage('10259540', start_date='1960-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=200,
-                    annual_min=0, annual_max=600000, annual_interval=100000, annual_unit='kaf', year_interval=5)
+                    annual_min=0, annual_max=125000, annual_interval=25000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def drain_8_b_near_winterhaven(graph=True):
+    gage = USGSGage('09530500', start_date='1979-10-01', color='firebrick',
+                    cfs_max=40, cfs_interval=5,
+                    annual_min=0, annual_max=12000, annual_interval=1000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
 
 def test():
+    test_salton_sea()
+    test_reservation()
+
     # Diversions
     all_american_canal()
     brock_inlet()
     brock_outlet()
     coachella_all_american()
-    reservation_main_canal()
-    yaqui_canal()
-    pontiac_canal()
-    ypsilanti_canal()
+    # 09527594 150-45 CFS COACHELLA CANAL NEAR NILAND, CA  2009-10-17
+    # 09527597 COACHELLA CANAL NEAR DESERT BEACH, CA  2009-10-24
+
+    test_reservation()
     yuma_main_canal_below_colorado_river_siphon_at_yuma()
     yuma_main_canal_at_siphon_drop_PP()
     yuma_main_canal_above_wasteway_near_winterhaven()
     imperial_all_american_drop_2()
 
-    # Salton sea
-    new_river_at_international_boundary_near_calexico()  #  not responding to request
+    test_wasteways_and_drains()
+
+
+def test_reservation():
+    reservation_main_canal()
+    titsink_canal()
+    yaqui_canal()
+    pontiac_canal()
+    ypsilanti_canal()
+
+
+def test_salton_sea():
+    new_river_at_international_boundary_near_calexico()
     new_river_near_westmorland()
     alamo_river_near_niland()
+    whitewater_river_near_mecca()
 
-    # Wasteways and drains
+def test_wasteways_and_drains():
     drain_8_b_near_winterhaven()
     reservation_main_drain_no_4()
     yuma_main_canal_wasteway_at_yuma()
-
-
-    # 09527594 150-45 CFS COACHELLA CANAL NEAR NILAND, CA  2009-10-17
-    # 09527597 COACHELLA CANAL NEAR DESERT BEACH, CA  2009-10-24
-    # 10259540 WHITEWATER R NR MECCA  1960-10-01
-
