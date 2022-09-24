@@ -166,24 +166,27 @@ class USGSGage(object):
         url += end_date
         r = requests.get(url)
         if r.status_code == 200:
-            try:
-                data_path = Path('data/USGS_Gages/')
-                data_path.mkdir(parents=True, exist_ok=True)
+            if r.text.startswith('<!DOCTYPE html>'):
+                print("USGS gage request got HTML response, site number is probably wrong", self.site)
+            else:
+                try:
+                    data_path = Path('data/USGS_Gages/')
+                    data_path.mkdir(parents=True, exist_ok=True)
 
-                file_name = data_path.joinpath(self.site + '.csv')
-                if append:
-                    f = open(file_name, 'a')
-                    strings = r.content.decode("utf-8").split('\n')
-                    for s in strings:
-                        if s.startswith('USGS'):
-                            s += '\n'
-                            f.write(s)
-                else:
-                    f = open(file_name, 'w')
-                    f.write(r.content.decode("utf-8"))
-                f.close()
-            except FileNotFoundError:
-                print("usgs_get_gage_discharge cache file open failed for site: ", self.site)
+                    file_name = data_path.joinpath(self.site + '.csv')
+                    if append:
+                        f = open(file_name, 'a')
+                        strings = r.content.decode("utf-8").split('\n')
+                        for s in strings:
+                            if s.startswith('USGS'):
+                                s += '\n'
+                                f.write(s)
+                    else:
+                        f = open(file_name, 'w')
+                        f.write(r.content.decode("utf-8"))
+                    f.close()
+                except FileNotFoundError:
+                    print("usgs_get_gage_discharge cache file open failed for site: ", self.site)
         else:
             print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
 
