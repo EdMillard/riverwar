@@ -46,7 +46,7 @@ class USGSGage(object):
         self.site = site
         self.site_name = ''
 
-        self.start_date = start_date
+        self.start_date = start_date.strip()
         self.end_date = str(datetime.date.today())
 
         self.cfs_min = cfs_min
