@@ -23,6 +23,20 @@ from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
 
 
+def test():
+    yampa_river_near_maybell()
+    gunnison_grand_junction()
+    test_southwest_colorado()
+
+
+def test_southwest_colorado():
+    mud_creek_cortez()
+    mcelmo_trail_canyon()
+    mcelmo_stateline()
+    dolores_below_rico()
+    dolores_at_dolores()
+
+
 def yampa_river_near_maybell(graph=True):
     gage = USGSGage('09251000', start_date='1916-05-01',
                     cfs_max=25000, cfs_interval=5000,

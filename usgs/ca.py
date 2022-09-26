@@ -23,6 +23,47 @@ from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
 
 
+
+def test():
+    # Diversions
+    all_american_canal()
+    brock_inlet()
+    brock_outlet()
+    coachella_all_american()
+    # 09527594 150-45 CFS COACHELLA CANAL NEAR NILAND, CA  2009-10-17
+    # 09527597 COACHELLA CANAL NEAR DESERT BEACH, CA  2009-10-24
+
+    test_reservation()
+    yuma_main_canal_below_colorado_river_siphon_at_yuma()
+    yuma_main_canal_at_siphon_drop_PP()
+    yuma_main_canal_above_wasteway_near_winterhaven()
+    imperial_all_american_drop_2()
+
+    test_wasteways_and_drains()
+    test_salton_sea()
+
+
+def test_reservation():
+    reservation_main_canal()
+    titsink_canal()
+    yaqui_canal()
+    pontiac_canal()
+    ypsilanti_canal()
+
+
+def test_salton_sea():
+    new_river_at_international_boundary_near_calexico()
+    new_river_near_westmorland()
+    alamo_river_near_niland()
+    whitewater_river_near_mecca()
+
+
+def test_wasteways_and_drains():
+    drain_8_b_near_winterhaven()
+    reservation_main_drain_no_4()
+    yuma_main_canal_wasteway_at_yuma()
+
+
 def all_american_canal(graph=True):
     gage = USGSGage('09523000', start_date='1939-10-01', color='firebrick',
                     cfs_max=15000, cfs_interval=2000,
@@ -204,44 +245,3 @@ def drain_8_b_near_winterhaven(graph=True):
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
-
-
-def test():
-    test_salton_sea()
-    test_reservation()
-
-    # Diversions
-    all_american_canal()
-    brock_inlet()
-    brock_outlet()
-    coachella_all_american()
-    # 09527594 150-45 CFS COACHELLA CANAL NEAR NILAND, CA  2009-10-17
-    # 09527597 COACHELLA CANAL NEAR DESERT BEACH, CA  2009-10-24
-
-    test_reservation()
-    yuma_main_canal_below_colorado_river_siphon_at_yuma()
-    yuma_main_canal_at_siphon_drop_PP()
-    yuma_main_canal_above_wasteway_near_winterhaven()
-    imperial_all_american_drop_2()
-
-    test_wasteways_and_drains()
-
-
-def test_reservation():
-    reservation_main_canal()
-    titsink_canal()
-    yaqui_canal()
-    pontiac_canal()
-    ypsilanti_canal()
-
-
-def test_salton_sea():
-    new_river_at_international_boundary_near_calexico()
-    new_river_near_westmorland()
-    alamo_river_near_niland()
-    whitewater_river_near_mecca()
-
-def test_wasteways_and_drains():
-    drain_8_b_near_winterhaven()
-    reservation_main_drain_no_4()
-    yuma_main_canal_wasteway_at_yuma()

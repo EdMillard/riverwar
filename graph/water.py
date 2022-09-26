@@ -24,7 +24,6 @@ import math
 from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import matplotlib.markers as markers
 import numpy as np
 from matplotlib.dates import YearLocator
 
@@ -98,6 +97,18 @@ class WaterGraph(object):
         ax.annotate(text, xy=(x, 0), xycoords='data', color=color,
                     xytext=(x, y_lim[1] - offset), textcoords='data', horizontalalignment='center',
                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3", color=color))
+
+    def annotate_horizontal_line(self, y, text, sub_plot=0, color='black'):
+        if len(self.fig.axes) > 1:
+            ax = self.ax[sub_plot]
+        else:
+            ax = self.ax
+        x_lim = ax.get_xlim()
+        # x_axis_range = x_lim[1] - x_lim[0]
+        # offset = x_axis_range * (offset_percent*0.01)
+        ax.annotate(text, xy=(x_lim[0], y), xycoords='data', color=color,
+                    xytext=(x_lim[1], y), textcoords='data', verticalalignment='center',
+                    arrowprops=dict(arrowstyle="-", connectionstyle="arc3", color=color))
 
     def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, running_average_years=10,
              ymin=0, ymax=0, yinterval=1,

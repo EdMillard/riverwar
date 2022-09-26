@@ -36,6 +36,7 @@ class USBRRise(object):
     def __init__(self):
         pass
 
+
 def daily_to_water_year(a):
     water_year_month = 10
     dt = datetime.date(1, water_year_month, 1)
