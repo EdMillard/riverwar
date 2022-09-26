@@ -721,7 +721,7 @@ def usbr_lower_basin_states_total_use():
     graph.bars_stacked(bar_data, sub_plot=0, title='Total Lower Basin Consumptive Use (Annual)',
                        ymin=0, ymax=9000000, yinterval=500000,
                        xlabel='Calendar Year', xinterval=year_interval,
-                       ylabel='maf', format_func=WaterGraph.format_maf,)
+                       ylabel='maf', format_func=WaterGraph.format_maf)
     graph.running_average(total_use_annual_af, 10, sub_plot=0)
     graph.fig.waitforbuttonpress()
 
@@ -738,10 +738,23 @@ def keyboardInterruptHandler(sig, frame):
         print("riverwar exit exception:", e)
 
 
+def yuma_area_model():
+    year_interval = 4
+    graph = WaterGraph(nrows=1)
+    data = usbr.az.yuma_area_returns()
+    graph.bars_stacked(data, sub_plot=0, title='Yuma Area Model',
+                       ymin=0, ymax=600000, yinterval=50000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+    #graph.running_average(total_use_annual_af, 10, sub_plot=0)
+    graph.fig.waitforbuttonpress()
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    yuma_area_model()
     usbr_lower_basin_states_total_use()
     lake_mead_inflow()
     lake_powell_inflow()
