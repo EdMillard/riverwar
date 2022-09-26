@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 
 
 def subtract_annual(minuend, subtrahend, start_year=0, end_year=0):
+    subtrahend = reshape_annual_range_to(subtrahend, minuend)
     difference = np.zeros(len(minuend), [('dt', 'i'), ('val', 'f')])
     difference['dt'] = minuend['dt']
     difference['val'] = minuend['val'] - subtrahend['val']
@@ -49,6 +50,13 @@ def running_average(annual_af, window):
         n += 1
 
     return result
+
+
+def reshape_annual_range_to(a, to):
+    if a['dt'][0] == to['dt'][0] and a['dt'][-1] == to['dt'][-1]:
+        return a
+    else:
+        return reshape_annual_range(a, to['dt'][0], to['dt'][-1])
 
 
 def reshape_annual_range(a, year_min, year_max):
