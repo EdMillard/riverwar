@@ -79,12 +79,23 @@ def yuma_area_returns():
     yuma_irrigation_returns = subtract_annual(yuma_irrigation_diversion, yuma_irrigation_cu)
     data.append({'data': yuma_irrigation_returns, 'label': 'Yuma Irrigation', 'color': 'pink'})
 
+    unit_b_diversion = usbr_report.annual_af('az/usbr_az_unit_b_irrigation_diversion.csv')
+    unit_b_cu = usbr_report.annual_af('az/usbr_az_unit_b_irrigation_consumptive_use.csv')
+    unit_b_returns = subtract_annual(unit_b_diversion, unit_b_cu)
+    data.append({'data': unit_b_returns, 'label': 'Unit B', 'color': 'mistyrose'})
+
+    city_of_yuma_diversion = usbr_report.annual_af('az/usbr_az_city_of_yuma_diversion.csv')
+    city_of_yuma_cu = usbr_report.annual_af('az/usbr_az_city_of_yuma_consumptive_use.csv')
+    city_of_yuma_returns = subtract_annual(city_of_yuma_diversion, city_of_yuma_cu)
+    data.append({'data': city_of_yuma_returns, 'label': 'City of Yuma', 'color': 'darkblue'})
+
+    # I think these are mostly further up river, needs research
     # After 2014 Bureau started listing these users individually... sigh
-    others_pumping_diversion = usbr_report.annual_af('az/usbr_az_other_users_pumping_diversion.csv')
-    others_pumping_cu = usbr_report.annual_af('az/usbr_az_other_users_pumping_consumptive_use.csv')
-    others_pumping_returns = subtract_annual(others_pumping_diversion, others_pumping_cu)
-    others_pumping_returns = reshape_annual_range(others_pumping_returns, 1964, current_last_year)
-    data.append({'data': others_pumping_returns, 'label': 'Other Users Pumping', 'color': 'mistyrose'})
+    # others_pumping_diversion = usbr_report.annual_af('az/usbr_az_other_users_pumping_diversion.csv')
+    # others_pumping_cu = usbr_report.annual_af('az/usbr_az_other_users_pumping_consumptive_use.csv')
+    # others_pumping_returns = subtract_annual(others_pumping_diversion, others_pumping_cu)
+    # others_pumping_returns = reshape_annual_range(others_pumping_returns, 1964, current_last_year)
+    # data.append({'data': others_pumping_returns, 'label': 'Other Users Pumping', 'color': 'darkblue'})
 
     wellton_diversion = usbr_report.annual_af('az/usbr_az_yuma_irrigation_diversion.csv')
     wellton_cu = usbr_report.annual_af('az/usbr_az_yuma_irrigation_consumptive_use.csv')
@@ -265,7 +276,7 @@ def north_gila_valley():
     year_interval = 2
 
     monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_north_gila_irrigation_diversion.csv')
-    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af)
+    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af, water_year_month=1)
     monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_north_gila_irrigation_consumptive_use.csv')
     annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
 
@@ -297,7 +308,7 @@ def yuma_irrigation():
     year_interval = 2
 
     monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_irrigation_diversion.csv')
-    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af)
+    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af, water_year_month=1)
     monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_yuma_irrigation_consumptive_use.csv')
     annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
 
@@ -329,17 +340,17 @@ def unit_b():
     year_interval = 2
 
     monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_unit_b_irrigation_diversion.csv')
-    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af)
+    annual_diversion_af = usbr_report.monthly_to_water_year(monthly_diversion_af, water_year_month=1)
     monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_unit_b_irrigation_consumptive_use.csv')
     annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
 
     graph = WaterGraph(nrows=2)
     graph.plot(monthly_diversion_af, sub_plot=0, title='Unit B (Monthly)',
-               xinterval=year_interval, ymax=10000, yinterval=1000, color='darkmagenta',
+               xinterval=year_interval, ymax=6000, yinterval=500, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     graph.plot(monthly_cu_af, sub_plot=0, title='',
-               xinterval=year_interval, ymax=10000, yinterval=1000, color='firebrick',
+               xinterval=year_interval, ymax=6000, yinterval=500, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     bar_data = [
@@ -348,7 +359,7 @@ def unit_b():
     ]
     graph.bars_stacked(bar_data, sub_plot=1,
                        title='Unit B Diversions and Consumptive Use (Annual)',
-                       ymin=0, ymax=75000, yinterval=5000,
+                       ymin=0, ymax=45000, yinterval=5000,
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
@@ -369,7 +380,8 @@ def wellton_mohawk():
     wellton_mohawk_annual_cu_af = usbr_report.monthly_to_water_year(wellton_mohawk_monthly_cu_af,
                                                                     water_year_month=1)
 
-    graph.plot(wellton_mohawk_monthly_diversion_af, sub_plot=0, title='Wellton-Mohawk Diversion (Monthly)',
+    graph.plot(wellton_mohawk_monthly_diversion_af, sub_plot=0,
+               title='Wellton-Mohawk Diversion  and Consumptive Use (Monthly)',
                xinterval=year_interval, ymax=75000, yinterval=5000, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
@@ -401,7 +413,7 @@ def city_of_yuma():
     monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_city_of_yuma_consumptive_use.csv')
     annual_cu_af = usbr_report.monthly_to_water_year(monthly_cu_af, water_year_month=1)
 
-    graph.plot(monthly_diversion_af, sub_plot=0, title='City of Yuma Diversion (Monthly)',
+    graph.plot(monthly_diversion_af, sub_plot=0, title='City of Yuma Diversion and Consumptive Use (Monthly)',
                xinterval=year_interval, ymax=4000, yinterval=500, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
