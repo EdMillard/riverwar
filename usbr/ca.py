@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from source import usbr_report
 from graph.water import WaterGraph
-from util import add_annual, subtract_annual, reshape_annual_range
+from util import add_annual, add_annuals, subtract_annual, reshape_annual_range
 from usbr import lc
 
 current_last_year = 2021
@@ -111,6 +111,57 @@ def total():
     #            xinterval=year_interval, ymax=100000, yinterval=50000, color='darkmagenta',
     #           ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.fig.waitforbuttonpress()
+
+
+def yuma_area_returns():
+    data = []
+
+    # Imperial
+    imperial_diversion = usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_diversion.csv')
+    imperial_cu = usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_consumptive_use.csv')
+    brock_diversion = usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_brock_diversion.csv')
+    imperial_total_diversion = add_annual(imperial_diversion, brock_diversion)
+    imperial_returns = subtract_annual(imperial_total_diversion, imperial_cu)
+    data.append({'data': imperial_returns, 'label': 'Imperial', 'color': 'maroon'})
+
+    # Yuma Project
+    yuma_project_indian_diversion_annual_af = usbr_report.annual_af('ca/usbr_ca_yuma_project_indian_unit_diversion.csv')
+    yuma_project_bard_diversion_annual_af = usbr_report.annual_af('ca/usbr_ca_yuma_project_bard_unit_diversion.csv')
+    yuma_project_returns_annual_af = usbr_report.annual_af('ca/usbr_ca_yuma_project_returns.csv')
+    yuma_project_total_diversion_annual_af = add_annual(yuma_project_indian_diversion_annual_af,
+                                                        yuma_project_bard_diversion_annual_af)
+    yuma_project_total_cu_annual_af = subtract_annual(yuma_project_total_diversion_annual_af,
+                                                      yuma_project_returns_annual_af)
+    yuma_project_returns = subtract_annual(yuma_project_total_diversion_annual_af, yuma_project_total_cu_annual_af)
+    data.append({'data': yuma_project_returns, 'label': 'Yuma Project', 'color': 'firebrick'})
+
+    # Coachella
+    coachella_diversion = usbr_report.annual_af('ca/usbr_ca_coachella_diversion.csv')
+    coachella_cu = usbr_report.annual_af('ca/usbr_ca_coachella_consumptive_use.csv')
+    coachella_returns = subtract_annual(coachella_diversion, coachella_cu)
+    data.append({'data': coachella_returns, 'label': 'Coachella', 'color': 'lightcoral'})
+
+    return data
+
+
+def not_yuma_area_returns():
+    data = []
+
+    palo_verde_diversion = usbr_report.annual_af('ca/usbr_ca_palo_verde_diversion.csv')
+    palo_verde_cu = usbr_report.annual_af('ca/usbr_ca_palo_verde_consumptive_use.csv')
+    palo_verde_returns = subtract_annual(palo_verde_diversion, palo_verde_cu)
+    data.append({'data': palo_verde_returns, 'label': 'Palo Verde', 'color': 'maroon'})
+
+    metropolitan_diversion = usbr_report.annual_af('ca/usbr_ca_metropolitan_diversion.csv')
+    metropolitan_san_diego_exchange = usbr_report.annual_af('ca/usbr_ca_metropolitan_san_diego_exchange.csv')
+    metropolitan_supplemental = usbr_report.annual_af('ca/usbr_ca_metropolitan_supplemental.csv')
+    diversions = [metropolitan_diversion, metropolitan_san_diego_exchange, metropolitan_supplemental]
+    metropolitan_total_diversion = add_annuals(diversions)
+    metropolitan_cu = usbr_report.annual_af('ca/usbr_ca_metropolitan_consumptive_use.csv')
+    metropolitan_returns = subtract_annual(metropolitan_total_diversion, metropolitan_cu)
+    data.append({'data': metropolitan_returns, 'label': 'Metropolitan', 'color': 'firebrick'})
+
+    return data
 
 
 def metropolitan_annotate(graph, sub_plot=0):

@@ -27,6 +27,13 @@ def test():
     mexico()
 
 
+def yuma_area_returns():
+    data = []
+    minute_242_returns = usbr_report.annual_af('mx/usbr_mx_minute_242_bypass.csv')
+    data.append({'data': minute_242_returns, 'label': 'Minute 242', 'color': 'maroon'})
+    return data
+
+
 def mexico():
     year_interval = 3
 

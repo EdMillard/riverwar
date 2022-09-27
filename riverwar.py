@@ -26,7 +26,7 @@ import sys
 import usgs
 from usgs import az, ca, lc, ut, nv   # nm, wy
 import usbr
-from usbr import az, ca, uc, nv
+from usbr import az, ca, uc, nv, mx
 from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
@@ -740,13 +740,94 @@ def keyboardInterruptHandler(sig, frame):
 
 def yuma_area_model():
     year_interval = 4
-    graph = WaterGraph(nrows=1)
+    graph = WaterGraph(nrows=2)
+
+    data = []
+    below_yuma_wasteway_annual = usgs.lc.below_yuma_wasteway(graph=False).annual_af()
+    nib_annual = usgs.lc.northern_international_border(graph=False).annual_af()
+    data.append({'data': nib_annual, 'label': 'USGS Morelos Northern International Border (NIB)', 'color': 'maroon'})
+    data.append({'data': below_yuma_wasteway_annual, 'label': 'USGS Colorado River Below Yuma Wasteway',
+                 'color': 'firebrick'})
+
+    graph.bars_stacked(data, sub_plot=0, title='Lower Colorado Between Yuma and Morelos',
+                       ymin=0, ymax=2000000, yinterval=200000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
+    graph.running_average(nib_annual, 10, sub_plot=0)
+    graph.running_average(below_yuma_wasteway_annual, 10, sub_plot=0)
+
+    difference = subtract_annual(nib_annual, below_yuma_wasteway_annual)
+    graph.bars(difference, sub_plot=1, title='Inflows between Yuma Wasteway and NIB', color='firebrick',
+               ymin=0, ymax=1000000, yinterval=100000,
+               xlabel='Water Year', xinterval=4,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+    graph.fig.waitforbuttonpress()
+
+    graph = WaterGraph(nrows=2)
+    data = usbr.ca.yuma_area_returns()
+    graph.bars_stacked(data, sub_plot=0, title='CA Yuma Area Returns',
+                       ymin=0, ymax=300000, yinterval=50000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+    arrays = []
+    for water_user in data:
+        arrays.append(water_user['data'])
+    ca_total = util.add_annuals(arrays)
+    graph.running_average(ca_total, 10, sub_plot=0)
+
     data = usbr.az.yuma_area_returns()
-    graph.bars_stacked(data, sub_plot=0, title='Yuma Area Model',
+    graph.bars_stacked(data, sub_plot=1, title='AZ Yuma Area Returns',
                        ymin=0, ymax=600000, yinterval=50000,
                        xlabel='Calendar Year', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
-    #graph.running_average(total_use_annual_af, 10, sub_plot=0)
+    arrays = []
+    for water_user in data:
+        arrays.append(water_user['data'])
+    az_total = util.add_annuals(arrays)
+    graph.running_average(az_total, 10, sub_plot=1)
+    graph.fig.waitforbuttonpress()
+
+    graph = WaterGraph(nrows=1)
+    data = usbr.mx.yuma_area_returns()
+    graph.bars_stacked(data, sub_plot=0, title='Mexico Yuma Area Returns',
+                       ymin=0, ymax=200000, yinterval=10000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+    arrays = []
+    for water_user in data:
+        arrays.append(water_user['data'])
+    az_total = util.add_annuals(arrays)
+    graph.running_average(az_total, 10, sub_plot=0)
+    graph.fig.waitforbuttonpress()
+
+
+def not_yuma_area_model():
+    year_interval = 4
+    graph = WaterGraph(nrows=1)
+    data = usbr.ca.not_yuma_area_returns()
+    graph.bars_stacked(data, sub_plot=0, title='CA Returns Not in Yuma Area',
+                       ymin=300000, ymax=600000, yinterval=50000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+    arrays = []
+    for water_user in data:
+        arrays.append(water_user['data'])
+    ca_total = util.add_annuals(arrays)
+    graph.running_average(ca_total, 10, sub_plot=0)
+
+    graph.fig.waitforbuttonpress()
+
+    graph = WaterGraph(nrows=1)
+    data = usbr.az.not_yuma_area_returns()
+    graph.bars_stacked(data, sub_plot=0, title='AZ Returns Not in Yuma Area',
+                       ymin=0, ymax=500000, yinterval=50000,
+                       xlabel='Calendar Year', xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+    arrays = []
+    for water_user in data:
+        arrays.append(water_user['data'])
+    az_total = util.add_annuals(arrays)
+    graph.running_average(az_total, 10, sub_plot=0)
     graph.fig.waitforbuttonpress()
 
 
@@ -754,7 +835,12 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
+    # usbr.az.test()
+
     yuma_area_model()
+    usbr.az.colorado_river_indian_tribes()
+    not_yuma_area_model()
+    usbr.ca.test()
     usbr_lower_basin_states_total_use()
     lake_mead_inflow()
     lake_powell_inflow()
@@ -767,10 +853,6 @@ if __name__ == '__main__':
     usgs.ca.test()
     usgs.nv.test()
     usgs.co.test()
-
-    usbr.az.yuma_mesa()
-    usbr.az.yuma_county_water_users_assoociation()
-    usbr.az.wellton_mohawk()
 
     usbr.nv.test()
     usbr.lc.test()

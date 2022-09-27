@@ -23,7 +23,6 @@ from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
 
 
-
 def test():
     # Diversions
     all_american_canal()
@@ -205,7 +204,7 @@ def yuma_main_canal_wasteway_at_yuma(graph=True):
 def alamo_river_near_niland(graph=True):
     gage = USGSGage('10254730', start_date='1960-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=200,
-                    annual_min=0, annual_max=800000, annual_interval=100000, annual_unit='kaf', year_interval=5)
+                    annual_min=400000, annual_max=750000, annual_interval=50000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
@@ -223,7 +222,7 @@ def new_river_at_international_boundary_near_calexico(graph=True):
 def new_river_near_westmorland(graph=True):
     gage = USGSGage('10255550', start_date='1943-01-01', color='firebrick',
                     cfs_max=2100, cfs_interval=200,
-                    annual_min=0, annual_max=600000, annual_interval=100000, annual_unit='kaf', year_interval=5)
+                    annual_min=300000, annual_max=550000, annual_interval=50000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
