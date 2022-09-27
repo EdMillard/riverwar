@@ -13,7 +13,23 @@ def subtract_annual(minuend, subtrahend, start_year=0, end_year=0):
     return difference
 
 
+def add_annuals(arrays):
+    if len(arrays) > 1:
+        result = add_annual(arrays[0], arrays[1])
+        n = 2
+        while n < len(arrays):
+            result = add_annual(result, arrays[n])
+            n += 1
+        return result
+    elif len(arrays):
+        return arrays[0]
+    else:
+        print('add_annuals failed, no data')
+        return []
+
+
 def add_annual(augend, addend, start_year=0, end_year=0):
+    addend = reshape_annual_range_to(addend, augend)
     summation = np.zeros(len(augend), [('dt', 'i'), ('val', 'f')])
     summation['dt'] = augend['dt']
     summation['val'] = augend['val'] + addend['val']
