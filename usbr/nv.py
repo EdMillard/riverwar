@@ -60,4 +60,4 @@ def southern_nevada_water_authority():
                xlabel='Calendar Year',  xinterval=year_interval, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
