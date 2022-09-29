@@ -50,15 +50,16 @@ def total():
 
 def yuma_area_returns():
     # Yuma Irrigation Pumping
-    # unit_b()
     # gila_monster()
     # Imperial wildlife ?
     # South Gila ?
     # Cocopah
 
-    city_of_yuma()
-
     data = []
+    south_gila_return = usbr_report.annual_af('az/usbr_az_south_gila_returns.csv')
+    south_gila_return = util.reshape_annual_range(south_gila_return, 1964, current_last_year)
+    data.append({'data': south_gila_return, 'label': 'South Gila', 'color': 'darkgray'})
+
     yuma_mesa_diversion = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
     yuma_mesa_cu = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
     yuma_mesa_returns = subtract_annual(yuma_mesa_diversion, yuma_mesa_cu)
@@ -97,10 +98,72 @@ def yuma_area_returns():
     # others_pumping_returns = reshape_annual_range(others_pumping_returns, 1964, current_last_year)
     # data.append({'data': others_pumping_returns, 'label': 'Other Users Pumping', 'color': 'darkblue'})
 
-    wellton_diversion = usbr_report.annual_af('az/usbr_az_yuma_irrigation_diversion.csv')
-    wellton_cu = usbr_report.annual_af('az/usbr_az_yuma_irrigation_consumptive_use.csv')
+    wellton_diversion = usbr_report.annual_af('az/usbr_az_wellton_mohawk_diversion.csv')
+    wellton_cu = usbr_report.annual_af('az/usbr_az_wellton_mohawk_consumptive_use.csv')
     wellton_returns_annual = subtract_annual(wellton_diversion, wellton_cu)
     data.append({'data': wellton_returns_annual, 'label': 'Wellton', 'color': 'royalblue'})
+    return data
+
+
+def yuma_area_diversion():
+    # FIXME
+    data = []
+    yuma_mesa_diversion = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
+    data.append({'data': yuma_mesa_diversion, 'label': 'Yuma Mesa', 'color': 'maroon'})
+
+    yuma_county_diversion = usbr_report.annual_af('az/usbr_az_yuma_county_wua_diversion.csv')
+    data.append({'data': yuma_county_diversion, 'label': 'Yuma County WUA', 'color': 'firebrick'})
+
+    north_gila_diversion = usbr_report.annual_af('az/usbr_az_north_gila_irrigation_diversion.csv')
+    data.append({'data': north_gila_diversion, 'label': 'North Gila', 'color': 'lightcoral'})
+
+    yuma_irrigation_diversion = usbr_report.annual_af('az/usbr_az_yuma_irrigation_diversion.csv')
+    data.append({'data': yuma_irrigation_diversion, 'label': 'Yuma Irrigation', 'color': 'pink'})
+
+    unit_b_diversion = usbr_report.annual_af('az/usbr_az_unit_b_irrigation_diversion.csv')
+    data.append({'data': unit_b_diversion, 'label': 'Unit B', 'color': 'mistyrose'})
+
+    city_of_yuma_diversion = usbr_report.annual_af('az/usbr_az_city_of_yuma_diversion.csv')
+    data.append({'data': city_of_yuma_diversion, 'label': 'City of Yuma', 'color': 'darkblue'})
+
+    # I think these are mostly further up river, needs research
+    # After 2014 Bureau started listing these users individually... sigh
+    # others_pumping_diversion = usbr_report.annual_af('az/usbr_az_other_users_pumping_diversion.csv')
+    # data.append({'data': others_pumping_diversion, 'label': 'Other Users Pumping', 'color': 'darkblue'})
+
+    wellton_diversion = usbr_report.annual_af('az/usbr_az_wellton_mohawk_diversion.csv')
+    data.append({'data': wellton_diversion, 'label': 'Wellton', 'color': 'royalblue'})
+    return data
+
+
+def yuma_area_cu():
+    data = []
+    yuma_mesa_cu = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
+    data.append({'data': yuma_mesa_cu, 'label': 'Yuma Mesa', 'color': 'maroon'})
+
+    yuma_county_cu = usbr_report.annual_af('az/usbr_az_yuma_county_wua_consumptive_use.csv')
+    data.append({'data': yuma_county_cu, 'label': 'Yuma County WUA', 'color': 'firebrick'})
+
+    north_gila_cu = usbr_report.annual_af('az/usbr_az_north_gila_irrigation_consumptive_use.csv')
+    data.append({'data': north_gila_cu, 'label': 'North Gila', 'color': 'lightcoral'})
+
+    yuma_irrigation_cu = usbr_report.annual_af('az/usbr_az_yuma_irrigation_consumptive_use.csv')
+    yuma_irrigation_cu = util.reshape_annual_range(yuma_irrigation_cu, 1964, current_last_year)
+    data.append({'data': yuma_irrigation_cu, 'label': 'Yuma Irrigation', 'color': 'pink'})
+
+    unit_b_cu = usbr_report.annual_af('az/usbr_az_unit_b_irrigation_consumptive_use.csv')
+    data.append({'data': unit_b_cu, 'label': 'Unit B', 'color': 'mistyrose'})
+
+    city_of_yuma_cu = usbr_report.annual_af('az/usbr_az_city_of_yuma_consumptive_use.csv')
+    data.append({'data': city_of_yuma_cu, 'label': 'City of Yuma', 'color': 'darkblue'})
+
+    # I think these are mostly further up river, needs research
+    # After 2014 Bureau started listing these users individually... sigh
+    # others_pumping_cu = usbr_report.annual_af('az/usbr_az_other_users_pumping_consumptive_use.csv')
+    # data.append({'data': others_pumping_cu, 'label': 'Other Users Pumping', 'color': 'darkblue'})
+
+    wellton_cu = usbr_report.annual_af('az/usbr_az_wellton_mohawk_consumptive_use.csv')
+    data.append({'data': wellton_cu, 'label': 'Wellton', 'color': 'royalblue'})
     return data
 
 
@@ -109,7 +172,7 @@ def not_yuma_area_returns():
     # Mohave Valley
     # Havasu Wildlife
     # Cibola Wildlife
-    # Aruzona state land
+    # Arizona state land
     # Lake Havasu City
     # Bullhead City
     # Town of Parker
@@ -119,20 +182,6 @@ def not_yuma_area_returns():
     crit_cu = usbr_report.annual_af('az/usbr_az_crit_consumptive_use.csv')
     crit_returns = subtract_annual(crit_diversion, crit_cu)
     data.append({'data': crit_returns, 'label': 'Colorado River Indian Tribes', 'color': 'maroon'})
-    return data
-
-
-def yuma_area_diversion():
-    data = []
-    yuma_mesa_diversion_annual_af = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
-    data.append({'data': yuma_mesa_diversion_annual_af, 'label': 'Yuma Mesa Diversion', 'color': 'darkmagenta'})
-    return data
-
-
-def yuma_area_cu():
-    data = []
-    yuma_mesa_cu_annual_af = usbr_report.annual_af('az/usbr_az_yuma_mesa_irrigation_consumptive_use.csv')
-    data.append({'data': yuma_mesa_cu_annual_af, 'label': 'Yuma Mesa Diversion', 'color': 'firebrick'})
     return data
 
 
@@ -161,7 +210,7 @@ def central_arizona_project():
     graph.bars_stacked(bar_data, sub_plot=2, title='Lake Havasu CAP Wilmer Pumping Plant + AZ ICS Deposits',
                        ylabel='maf', ymin=0, ymax=1800000, yinterval=100000,
                        xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def colorado_river_indian_tribes():
@@ -188,7 +237,7 @@ def colorado_river_indian_tribes():
                xlabel='',  xinterval=year_interval, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def yuma_mesa():
@@ -237,7 +286,7 @@ def yuma_mesa():
     graph.running_average(yuma_mesa_diversion_annual_af, 10, sub_plot=1)
     graph.running_average(yuma_mesa_cu_annual_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def yuma_county_water_users_association():
@@ -269,7 +318,7 @@ def yuma_county_water_users_association():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def north_gila_valley():
@@ -301,7 +350,7 @@ def north_gila_valley():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def yuma_irrigation():
@@ -333,7 +382,7 @@ def yuma_irrigation():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def unit_b():
@@ -365,7 +414,7 @@ def unit_b():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def wellton_mohawk():
@@ -400,7 +449,7 @@ def wellton_mohawk():
     graph.running_average(wellton_mohawk_annual_diversion_af, 10, sub_plot=1)
     graph.running_average(wellton_mohawk_annual_cu_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def city_of_yuma():
@@ -432,7 +481,7 @@ def city_of_yuma():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def others_users_pumping():
@@ -464,4 +513,4 @@ def others_users_pumping():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()

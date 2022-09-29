@@ -86,6 +86,24 @@ def test_returns():
     south_gila_terminal_canal_wasteway()
 
 
+def yuma_area_wasteways():
+    data = [{'data': yuma_main_canal_wasteway(graph=False).annual_af(start_year=1966),
+             'label': 'Yuma Main Canal Wasteway', 'color': 'maroon'},
+            {'data': wellton_mohawk_main_outlet_drain(graph=False).annual_af(start_year=1966),
+             'label': 'Wellton Mohawk Main Outlet Drain', 'color': 'firebrick'},
+            {'data': levee_canal_wasteway(graph=False).annual_af(start_year=1966),
+             'label': 'Levee Canal Wasteway', 'color': 'pink'},
+            {'data': gila_drain_no_1(graph=False).annual_af(start_year=1966),
+             'label': 'Gila Drain No 1', 'color': 'pink'},
+            {'data': north_gila_main_canal_wasteway(graph=False).annual_af(start_year=1966),
+             'label': 'North Gila Wasteway', 'color': 'lightcoral'},
+            {'data': bruce_church_wasteway(graph=False).annual_af(start_year=1966),
+             'label': 'Bruce Church Wasteway', 'color': 'darkblue'},
+            {'data': south_gila_terminal_canal_wasteway(graph=False).annual_af(start_year=1966),
+             'label': 'South Gila Terminal Canal Wasteway', 'color': 'royalblue'}]
+    return data
+
+
 def lees_ferry(graph=True):
     gage = USGSGage('09380000', start_date='1921-10-01',
                     cfs_max=130000, cfs_interval=5000,

@@ -110,7 +110,7 @@ def total():
     # graph.plot(unmeasured_returns_monthly_af, sub_plot=2,
     #            xinterval=year_interval, ymax=100000, yinterval=50000, color='darkmagenta',
     #           ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def yuma_area_returns():
@@ -178,7 +178,7 @@ def metropolitan():
     #                               'Lake Havasu Metropolitan Whitsett Pumping Plant (Monthly)',
     #                               ylabel='kaf', ymin=0, ymax=120000, yinterval=10000, color='firebrick',
     #                               format_func=WaterGraph.format_kaf)
-    # graph.fig.waitforbuttonpress()
+    # graph.date_and_wait()
 
     whitsett_annual_af = usbr_report.monthly_to_water_year(whitsett_monthly_af, water_year_month=1)
     graph = WaterGraph(nrows=3)
@@ -205,6 +205,7 @@ def metropolitan():
                        xlabel='Calendar Year', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
     metropolitan_annotate(graph, sub_plot=2)
+    graph.date_and_wait()
 
     ics = lc.lake_mead_load_ics()
     ics_ca_delta = ics['CA Delta']
@@ -227,7 +228,7 @@ def metropolitan():
                        ylabel='kaf', ymin=400000, ymax=1400000, yinterval=50000,
                        xlabel='Calendar Year', xinterval=3, format_func=WaterGraph.format_kaf)
     metropolitan_annotate(graph, sub_plot=0)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def palo_verde_annotate(graph, sub_plot=0):
@@ -271,7 +272,7 @@ def palo_verde():
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
     palo_verde_annotate(graph, 1)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def imperial_irrigation_district():
@@ -301,7 +302,7 @@ def imperial_irrigation_district():
     graph.plot(monthly_brock_diversion_af, sub_plot=2, title='Imperial Diversion from Brock (Monthly)',
                xinterval=1, yinterval=5000, color='lightcoral',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
     # graph.bars(annual_diversion_af, sub_plot=1, title='Imperial Irrigation District Diversion (Annual)',
     #            ymin=2200000, ymax=3300000, yinterval=100000,
@@ -344,7 +345,7 @@ def imperial_irrigation_district():
                        ylabel='maf', format_func=WaterGraph.format_maf)
     graph.running_average(annual_cu_af, 10, sub_plot=0)
     graph.annotate_horizontal_line(2600000, 'PPR 3(a), 2.6 maf, 1901 ')
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def coachella():
@@ -377,7 +378,7 @@ def coachella():
     graph.running_average(annual_cu_af, 10, sub_plot=1)
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 # def usbr_ca_yuma_project(graph, sub_plot=0):
@@ -434,4 +435,4 @@ def yuma_project():
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(yuma_project_returns_annual_af, 10, sub_plot=3)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()

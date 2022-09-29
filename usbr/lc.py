@@ -50,7 +50,7 @@ def lake_mead_ics_by_state():
     graph.bars_stacked(bar_data, title='Lower Basin ICS By State',
                        ylabel='maf', ymin=0, ymax=3000000, yinterval=100000,
                        xlabel='Calendar Year', xinterval=1, format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def lake_mead():
@@ -76,7 +76,7 @@ def lake_mead():
                ymin=3000000, ymax=22500000, yinterval=1000000,
                xlabel='Water Year', xinterval=5,
                ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def lake_mohave():
@@ -102,7 +102,7 @@ def lake_mohave():
                ymin=6500000, ymax=23000000, yinterval=1000000,
                xlabel='Water Year', xinterval=4,
                ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def lake_havasu():

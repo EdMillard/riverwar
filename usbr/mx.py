@@ -65,7 +65,7 @@ def mexico():
                        ylabel='maf', format_func=WaterGraph.format_maf)
     graph.running_average(excess_annual_af, 10, sub_plot=2)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
     # Bypass pursuant to minute 242
     bypass_monthly_af = usbr_report.load_monthly_csv('mx/usbr_mx_minute_242_bypass.csv')
@@ -79,7 +79,7 @@ def mexico():
                ymin=0, ymax=160000, yinterval=10000,
                xlabel='',  xinterval=year_interval, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
     graph = WaterGraph(nrows=5)
     graph.plot(treaty_monthly_af, sub_plot=0, title='Satisfaction of Treaty (Monthly)',
@@ -106,4 +106,4 @@ def mexico():
                xinterval=year_interval, yinterval=100, color='firebrick',
                ylabel='af', format_func=WaterGraph.format_af)
 
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()

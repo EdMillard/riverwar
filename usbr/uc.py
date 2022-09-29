@@ -82,7 +82,7 @@ def lake_powell():
                ymin=0, ymax=700000, yinterval=50000,
                xlabel='Water Year', xinterval=year_interval,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
     graph = WaterGraph(nrows=1)
 
@@ -91,7 +91,7 @@ def lake_powell():
                ymin=7000000, ymax=12600000, yinterval=100000,
                xlabel='Water Year', xinterval=1, xmin=2000, xmax=current_last_year,
                ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def navajo_reservoir():
@@ -140,7 +140,7 @@ def navajo_reservoir():
     graph.bars(annual_evaporation_af, sub_plot=3, title='Navajo Evaporation',
                ymin=0, ymax=32000, yinterval=2000, xlabel='Water Year', xinterval=year_interval,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def blue_mesa():
@@ -193,7 +193,7 @@ def blue_mesa():
                ymin=0, ymax=10000, yinterval=1000,
                xlabel='Water Year', xinterval=year_interval,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def flaming_gorge():
@@ -246,7 +246,7 @@ def flaming_gorge():
                ymin=0, ymax=90000, yinterval=10000, xinterval=year_interval,
                xlabel='Water Year',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 def fontenelle():
@@ -295,7 +295,7 @@ def fontenelle():
                ymin=0, ymax=18000, yinterval=2000, xinterval=year_interval,
                xlabel='Water Year',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.fig.waitforbuttonpress()
+    graph.date_and_wait()
 
 
 # noinspection PyUnusedLocal
