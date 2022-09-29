@@ -34,6 +34,8 @@ from source import usbr_report
 # USGS National Water Dashboard
 # https://dashboard.waterdata.usgs.gov/app/nwd/?aoi=default
 
+current_last_year = 2022
+
 
 class USGSGage(object):
     """
@@ -88,6 +90,8 @@ class USGSGage(object):
             annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=water_year_month)
         if start_year > 0 and end_year > 0:
             annual_af = USGSGage.reshape_annual_range(annual_af, start_year, end_year)
+        elif start_year > 0:
+            annual_af = USGSGage.reshape_annual_range(annual_af, start_year, current_last_year)
         return annual_af
 
     def daily_discharge(self, update=True):
