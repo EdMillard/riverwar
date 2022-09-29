@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import datetime
+from datetime import date
 import math
 from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
@@ -54,6 +55,7 @@ class WaterGraph(object):
         else:
             self.ax.grid(True)
 
+
     # noinspection PyUnusedLocal
     @staticmethod
     def format_10maf(value, pos=None):
@@ -85,6 +87,23 @@ class WaterGraph(object):
     @staticmethod
     def format_discharge(value, pos=None):
         return '{0:>6}'.format(value)
+
+    def date_and_wait(self, sub_plot=0, color='black'):
+        self.annotate_date()
+        self.fig.waitforbuttonpress()
+
+    def annotate_date(self, sub_plot=0, color='black'):
+        if len(self.fig.axes) > 1:
+            ax = self.ax[sub_plot]
+        else:
+            ax = self.ax
+        date = datetime.date.today()
+
+        x_lim = ax.get_xlim()
+        y_lim = ax.get_ylim()
+        ax.annotate(str(date), xy=(x_lim[1], y_lim[1]), xycoords='data', color=color,
+                    xytext=(x_lim[1], y_lim[1]), textcoords='data',
+                    verticalalignment='bottom', horizontalalignment='right')
 
     def annotate_vertical_arrow(self, x, text, sub_plot=0, offset_percent=0.025, color='black'):
         if len(self.fig.axes) > 1:
@@ -313,7 +332,7 @@ class WaterGraph(object):
                   xlabel='Water Year', xmin=start_year, xmax=end_year,
                   xinterval=gage.year_interval, running_average_years=10)
 
-        self.fig.waitforbuttonpress()
+        self.date_and_wait()
 
     def running_average(self, annual_af, window, sub_plot=0, label=None):
         running_average = np.zeros(len(annual_af), [('dt', 'i'), ('val', 'f')])
