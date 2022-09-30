@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import datetime
-from datetime import date
 import math
 from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
@@ -55,7 +54,6 @@ class WaterGraph(object):
         else:
             self.ax.grid(True)
 
-
     # noinspection PyUnusedLocal
     @staticmethod
     def format_10maf(value, pos=None):
@@ -89,7 +87,7 @@ class WaterGraph(object):
         return '{0:>6}'.format(value)
 
     def date_and_wait(self, sub_plot=0, color='black'):
-        self.annotate_date()
+        self.annotate_date(sub_plot, color)
         self.fig.waitforbuttonpress()
 
     def annotate_date(self, sub_plot=0, color='black'):
