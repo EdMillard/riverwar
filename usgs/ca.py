@@ -26,6 +26,7 @@ from graph.water import WaterGraph
 def test():
     # Diversions
     all_american_canal()
+    pilot_knob_powerplant_and_wasteway()
     brock_inlet()
     brock_outlet()
     coachella_all_american()
@@ -67,6 +68,16 @@ def all_american_canal(graph=True):
     gage = USGSGage('09523000', start_date='1939-10-01', color='firebrick',
                     cfs_max=15000, cfs_interval=2000,
                     annual_min=3000000, annual_max=9000000, annual_interval=500000, year_interval=3,
+                    annual_unit='maf')
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def pilot_knob_powerplant_and_wasteway(graph=True):
+    gage = USGSGage('09527000', start_date='1939-04-26', color='firebrick',
+                    cfs_max=10000, cfs_interval=2000,
+                    annual_min=0, annual_max=1000000, annual_interval=100000, year_interval=3,
                     annual_unit='maf')
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
