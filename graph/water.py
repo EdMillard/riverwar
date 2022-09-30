@@ -202,7 +202,7 @@ class WaterGraph(object):
         ax.bar(b_x+0.2, b_y, width=0.4, color=color_b, label=label_b)
         ax.legend()
 
-    def bars_stacked(self, bar_data, sub_plot=0, title='',
+    def bars_stacked(self, bar_data, sub_plot=0, title='', width=0.9,
                      ylabel='', ymin=0, ymax=0, yinterval=1,
                      xlabel='', xmin=0, xmax=0, xinterval=1, format_func=format_af, vertical=True):
         if len(self.fig.axes) > 1:
@@ -254,14 +254,14 @@ class WaterGraph(object):
             y = a['val']
             if vertical:
                 if first:
-                    ax.bar(x, y, width=0.9, color=color, label=label)
+                    ax.bar(x, y, width=width, color=color, label=label)
                     first = False
                     bottom = y
                 else:
-                    ax.bar(x, y, bottom=bottom, width=0.9, color=color, label=label)
+                    ax.bar(x, y, bottom=bottom, width=width, color=color, label=label)
                     bottom = bottom + positive_values(y)
             else:
-                ax.bar(x, y, width=0.9, color=color, label=label)
+                ax.bar(x, y, width=width, color=color, label=label)
         ax.legend()
 
     def plot(self, a, sub_plot=0, title='', color='royalblue',
@@ -332,7 +332,7 @@ class WaterGraph(object):
 
         self.date_and_wait()
 
-    def running_average(self, annual_af, window, sub_plot=0, label=None):
+    def running_average(self, annual_af, window, sub_plot=0, label=None, color='goldenrod'):
         running_average = np.zeros(len(annual_af), [('dt', 'i'), ('val', 'f')])
         if len(self.fig.axes) > 1:
             ax = self.ax[sub_plot]
@@ -355,10 +355,10 @@ class WaterGraph(object):
         x = running_average['dt']
         y = running_average['val']
         if label:
-            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod', label=label)
+            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color=color, label=label)
             ax.legend()
         else:
-            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color='goldenrod')
+            ax.plot(x, y, linestyle='-', linewidth=3, marker='None', color=color)
         return running_average
 
     @staticmethod
