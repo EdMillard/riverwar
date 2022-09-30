@@ -297,14 +297,23 @@ def hoover_to_imperial_model():
                 {'data': parker_release, 'label': 'Parker', 'color': 'lightcoral'},
                 {'data': rock_release, 'label': 'Rock', 'color': 'indianred'},
                 {'data': palo_verde_release, 'label': 'Palo Verde', 'color': 'firebrick'},
+                {'data': laguna_release, 'label': 'Laguna', 'color': 'black'},
                 {'data': imperial_release, 'label': 'Imperial', 'color': 'maroon'},
-                {'data': laguna_release, 'label': 'Imperial', 'color': 'black'},
                 ]
-    graph.bars_stacked(bar_data, sub_plot=0, title='USBR AR CRIT Diversion & Consumptive Use (Annual)',
-                       xinterval=year_interval, ymin=0, ymax=12000000, yinterval=1000000,
+    graph.bars_stacked(bar_data, sub_plot=0, title='Lower Colorado Dam Releases (Annual)',
+                       xinterval=year_interval, ymin=0, ymax=23000000, yinterval=1000000, width=0.9,
                        ylabel='maf',  format_func=WaterGraph.format_maf, vertical=False)
-    graph.running_average(hoover_release, 10, sub_plot=0)
-    graph.running_average(parker_release, 10, sub_plot=0)
+    graph.running_average(hoover_release, 10, sub_plot=0, color='goldenrod', label='10Y Hoover')
+    graph.running_average(parker_release, 10, sub_plot=0, color='darkgoldenrod', label='10Y Parker')
+    graph.date_and_wait()
+
+    graph = WaterGraph(nrows=1)
+    # FIXME Graph against Met and CAP diversions
+    hoover_minus_parker = subtract_annual(hoover_release, parker_release)
+    graph.bars(hoover_minus_parker, sub_plot=0, title='Hoover Release minus Parker Release (aka Havasu Diversions)',
+               xinterval=year_interval, ymin=0, ymax=3500000, yinterval=250000, color='firebrick',
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
+    graph.running_average(hoover_minus_parker, 10, sub_plot=0)
     graph.date_and_wait()
 
     # Colorado River Indian Tribe (CRIT) and Rock Dam Release
@@ -317,7 +326,7 @@ def hoover_to_imperial_model():
                 {'data': crit_cu_annual_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
                 ]
     graph.bars_stacked(bar_data, sub_plot=0, title='USBR AR CRIT Diversion & Consumptive Use (Annual)',
-                       xinterval=year_interval, ymin=150000, ymax=750000, yinterval=100000,
+                       xinterval=year_interval, ymin=150000, ymax=750000, yinterval=100000, width=0.9,
                        ylabel='kaf',  format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(crit_diversion_annual_af, 10, sub_plot=0)
     graph.running_average(crit_cu_annual_af, 10, sub_plot=0)
