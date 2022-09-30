@@ -53,80 +53,89 @@ def lake_mead_ics_by_state():
     graph.date_and_wait()
 
 
-def lake_mead():
+def lake_mead(graph=True):
     usbr_lake_mead_release_total_af = 6122
     # usbr_lake_mead_elevation_ft = 6123
     usbr_lake_mead_storage_af = 6124
     # usbr_lake_mead_release_total_cfs = 6125
-    graph = WaterGraph(nrows=2)
     # info, daily_elevation_ft = usbr_rise.load(usbr_lake_mead_elevation_ft)
     # graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Mead Elevation', color='firebrick',
     #            ylabel='ft', ymin=900, ymax=1230, yinterval=20,
     #            format_func=WaterGraph.format_elevation)
 
-    info, daily_storage_af = usbr_rise.load(usbr_lake_mead_storage_af)
-    graph.plot(daily_storage_af, sub_plot=0, title='Lake Mead Storage (Hoover Dam)', color='firebrick',
-               ymax=32000000, yinterval=2000000,
-               ylabel='maf', format_func=WaterGraph.format_10maf)
-    # usbr.lake_mead.ics_by_state(graph)
+    if graph:
+        graph = WaterGraph(nrows=2)
+        info, daily_storage_af = usbr_rise.load(usbr_lake_mead_storage_af)
+        graph.plot(daily_storage_af, sub_plot=0, title='Lake Mead Storage (Hoover Dam)', color='firebrick',
+                   ymax=32000000, yinterval=2000000,
+                   ylabel='maf', format_func=WaterGraph.format_10maf)
+        # usbr.lake_mead.ics_by_state(graph)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph.bars(annual_release_af, sub_plot=1, title='Lake Mead Release (Hoover Dam)', color='firebrick',
-               ymin=3000000, ymax=22500000, yinterval=1000000,
-               xlabel='Water Year', xinterval=5,
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.date_and_wait()
+    if graph:
+        graph.bars(annual_release_af, sub_plot=1, title='Lake Mead Release (Hoover Dam)', color='firebrick',
+                   ymin=3000000, ymax=22500000, yinterval=1000000,
+                   xlabel='Water Year', xinterval=5,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+        graph.date_and_wait()
+    return annual_release_af
 
 
-def lake_mohave():
+def lake_mohave(graph=True):
     usbr_lake_mohave_release_total_af = 6131
     # usbr_lake_mohave_water_temperature_degf = 6132
     # usbr_lake_mohave_elevation_ft = 6133
     usbr_lake_mohave_storage_af = 6134
     # usbr_lake_mohave_release_total_cfs = 6135
 
-    graph = WaterGraph(nrows=2)
-    # info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft)
-    # graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Mohave Elevation', color='firebrick',
-    #            ymin=620, ymax=647, yinterval=2,
-    #            ylabel='ft', format_func=WaterGraph.format_elevation)
-    info, daily_storage_af = usbr_rise.load(usbr_lake_mohave_storage_af)
-    graph.plot(daily_storage_af, sub_plot=0, title='Lake Mohave Storage (Davis Dam)', color='firebrick',
-               ymin=1000000, ymax=1900000, yinterval=100000,
-               ylabel='maf', format_func=WaterGraph.format_maf)
+    if graph:
+        graph = WaterGraph(nrows=2)
+        # info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft)
+        # graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Mohave Elevation', color='firebrick',
+        #            ymin=620, ymax=647, yinterval=2,
+        #            ylabel='ft', format_func=WaterGraph.format_elevation)
+        info, daily_storage_af = usbr_rise.load(usbr_lake_mohave_storage_af)
+        graph.plot(daily_storage_af, sub_plot=0, title='Lake Mohave Storage (Davis Dam)', color='firebrick',
+                   ymin=1000000, ymax=1900000, yinterval=100000,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph.bars(annual_release_af, sub_plot=1, title='Lake Mohave Release (Davis Dam)', color='firebrick',
-               ymin=6500000, ymax=23000000, yinterval=1000000,
-               xlabel='Water Year', xinterval=4,
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.date_and_wait()
+    if graph:
+        graph.bars(annual_release_af, sub_plot=1, title='Lake Mohave Release (Davis Dam)', color='firebrick',
+                   ymin=6500000, ymax=23000000, yinterval=1000000,
+                   xlabel='Water Year', xinterval=4,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+        graph.date_and_wait()
+    return annual_release_af
 
 
-def lake_havasu():
+def lake_havasu(graph=True):
     usbr_lake_havasu_release_total_af = 6126
     # usbr_lake_havasu_water_temperature_degf = 6127
     # usbr_lake_havasu_elevation_ft = 6128
     usbr_lake_havasu_storage_af = 6129
     # usbr_lake_havasu_release_total_cfs = 6130
 
-    graph = WaterGraph(nrows=2)
-    # info, daily_elevation_ft = usbr_rise.load(usbr_lake_havasu_elevation_ft)
-    # graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Havasu Elevation', color='firebrick',
-    #            ymin=440, ymax=451, yinterval=1,
-    #            ylabel='ft', format_func=WaterGraph.format_elevation)
+    if graph:
+        graph = WaterGraph(nrows=2)
+        # info, daily_elevation_ft = usbr_rise.load(usbr_lake_havasu_elevation_ft)
+        # graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Havasu Elevation', color='firebrick',
+        #            ymin=440, ymax=451, yinterval=1,
+        #            ylabel='ft', format_func=WaterGraph.format_elevation)
 
-    info, daily_storage_af = usbr_rise.load(usbr_lake_havasu_storage_af)
-    graph.plot(daily_storage_af, sub_plot=0, title='Lake Havasu Storage (Parker Dam)', color='firebrick',
-               ymax=700000, yinterval=50000,
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
+        info, daily_storage_af = usbr_rise.load(usbr_lake_havasu_storage_af)
+        graph.plot(daily_storage_af, sub_plot=0, title='Lake Havasu Storage (Parker Dam)', color='firebrick',
+                   ymax=700000, yinterval=50000,
+                   ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
-    graph.bars(annual_release_af, sub_plot=1, title='Lake Havasu Release (Parker Dam)', color='firebrick',
-               ymin=4000000, ymax=19200000, yinterval=1000000,
-               xlabel='Water Year', xinterval=4,
-               ylabel='maf',  format_func=WaterGraph.format_maf)
-    graph.fig.waitforbuttonpress()
+    if graph:
+        graph.bars(annual_release_af, sub_plot=1, title='Lake Havasu Release (Parker Dam)', color='firebrick',
+                   ymin=4000000, ymax=19200000, yinterval=1000000,
+                   xlabel='Water Year', xinterval=4,
+                   ylabel='maf',  format_func=WaterGraph.format_maf)
+        graph.fig.waitforbuttonpress()
+    return annual_release_af
