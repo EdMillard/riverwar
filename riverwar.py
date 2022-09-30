@@ -280,10 +280,32 @@ def glen_canyon_analysis():
     graph.date_and_wait()
 
 
-def all_american_model():
+def hoover_to_imperial_model():
     year_interval = 4
 
-    # FIXME Hoover, Parker, Davis
+    # Lower Colorado Dam Releases
+    graph = WaterGraph(nrows=1)
+    hoover_release = usbr.lc.lake_mead(graph=False)
+    davis_release = usbr.lc.lake_mohave(graph=False)
+    parker_release = usbr.lc.lake_havasu(graph=False)
+    rock_release = usbr_report.annual_af('releases/usbr_releases_rock_dam.csv')
+    palo_verde_release = usbr_report.annual_af('releases/usbr_releases_palo_verde_dam.csv')
+    imperial_release = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
+    laguna_release = usbr_report.annual_af('releases/usbr_releases_laguna_dam.csv')
+    bar_data = [{'data': hoover_release, 'label': 'Hoover', 'color': 'mistyrose'},
+                {'data': davis_release, 'label': 'Davis', 'color': 'pink'},
+                {'data': parker_release, 'label': 'Parker', 'color': 'lightcoral'},
+                {'data': rock_release, 'label': 'Rock', 'color': 'indianred'},
+                {'data': palo_verde_release, 'label': 'Palo Verde', 'color': 'firebrick'},
+                {'data': imperial_release, 'label': 'Imperial', 'color': 'maroon'},
+                {'data': laguna_release, 'label': 'Imperial', 'color': 'black'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=0, title='USBR AR CRIT Diversion & Consumptive Use (Annual)',
+                       xinterval=year_interval, ymin=0, ymax=12000000, yinterval=1000000,
+                       ylabel='maf',  format_func=WaterGraph.format_maf, vertical=False)
+    graph.running_average(hoover_release, 10, sub_plot=0)
+    graph.running_average(parker_release, 10, sub_plot=0)
+    graph.date_and_wait()
 
     # Colorado River Indian Tribe (CRIT) and Rock Dam Release
     graph = WaterGraph(nrows=4)
@@ -359,6 +381,9 @@ def all_american_model():
 
     graph.date_and_wait()
 
+
+def all_american_model():
+    year_interval = 4
     # All American Canal Above Imperial Dam
     graph = WaterGraph(nrows=3)
 
@@ -885,9 +910,10 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     # usbr_catalog()
-    # usbr.az.test()
-    yuma_area_model()
+    hoover_to_imperial_model()
     all_american_model()
+    yuma_area_model()
+    usgs.ca.test()
     usbr.az.colorado_river_indian_tribes()
     not_yuma_area_model()
     usbr.ca.test()
