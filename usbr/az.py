@@ -213,13 +213,17 @@ def central_arizona_project():
     graph.date_and_wait()
 
 
+def cap_diversion():
+    return usbr_report.annual_af('az/usbr_az_central_arizona_project_diversion.csv')
+
+
 def colorado_river_indian_tribes():
     year_interval = 3
 
     graph = WaterGraph(nrows=2)
 
-    diversion_annual = usbr_report.annual_af('az/usbr_az_crit_diversion.csv')
-    cu_annual = usbr_report.annual_af('az/usbr_az_crit_consumptive_use.csv')
+    diversion_annual = crit_diversion()
+    cu_annual = crit_cu()
 
     bar_data = [{'data': diversion_annual, 'label': 'Diversion', 'color': 'darkmagenta'},
                 {'data': cu_annual, 'label': 'Consumptive Use', 'color': 'firebrick'},
@@ -238,6 +242,18 @@ def colorado_river_indian_tribes():
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     graph.date_and_wait()
+
+
+def crit_diversion():
+    return usbr_report.annual_af('az/usbr_az_crit_diversion.csv')
+
+
+def crit_cu():
+    return usbr_report.annual_af('az/usbr_az_crit_consumptive_use.csv')
+
+
+def crit_returns():
+    return subtract_annual(crit_diversion(), crit_cu())
 
 
 def yuma_mesa():

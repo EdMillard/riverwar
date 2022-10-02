@@ -146,17 +146,15 @@ def yuma_area_returns():
 
 def not_yuma_area_returns():
     data = []
-
-    palo_verde_diversion = usbr_report.annual_af('ca/usbr_ca_palo_verde_diversion.csv')
-    palo_verde_cu = usbr_report.annual_af('ca/usbr_ca_palo_verde_consumptive_use.csv')
-    palo_verde_returns = subtract_annual(palo_verde_diversion, palo_verde_cu)
-    data.append({'data': palo_verde_returns, 'label': 'Palo Verde', 'color': 'maroon'})
+    data.append({'data': palo_verde_returns(), 'label': 'Palo Verde', 'color': 'maroon'})
 
     metropolitan_diversion = usbr_report.annual_af('ca/usbr_ca_metropolitan_diversion.csv')
     metropolitan_san_diego_exchange = usbr_report.annual_af('ca/usbr_ca_metropolitan_san_diego_exchange.csv')
     metropolitan_supplemental = usbr_report.annual_af('ca/usbr_ca_metropolitan_supplemental.csv')
+
     diversions = [metropolitan_diversion, metropolitan_san_diego_exchange, metropolitan_supplemental]
     metropolitan_total_diversion = add_annuals(diversions)
+
     metropolitan_cu = usbr_report.annual_af('ca/usbr_ca_metropolitan_consumptive_use.csv')
     metropolitan_returns = subtract_annual(metropolitan_total_diversion, metropolitan_cu)
     data.append({'data': metropolitan_returns, 'label': 'Metropolitan', 'color': 'firebrick'})
@@ -231,6 +229,19 @@ def metropolitan():
     graph.date_and_wait()
 
 
+def metropolitan_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_metropolitan_diversion.csv', water_year_month=water_year_month)
+
+
+def metropolitan_cu(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_metropolitan_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def metropolitan_returns(water_year_month=1):
+    return subtract_annual(metropolitan_diversion(water_year_month=water_year_month),
+                           metropolitan_cu(water_year_month=water_year_month))
+
+
 def palo_verde_annotate(graph, sub_plot=0):
     graph.annotate_horizontal_line(219780, 'PPR 1, 219.78 kaf, 1877\n3(b) 16,000 acres, 1933', sub_plot=sub_plot)
 
@@ -273,6 +284,19 @@ def palo_verde():
     graph.running_average(annual_cu_af, 10, sub_plot=1)
     palo_verde_annotate(graph, 1)
     graph.date_and_wait()
+
+
+def palo_verde_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_palo_verde_diversion.csv', water_year_month=water_year_month)
+
+
+def palo_verde_cu(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_palo_verde_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def palo_verde_returns(water_year_month=1):
+    return subtract_annual(palo_verde_diversion(water_year_month=water_year_month),
+                           palo_verde_cu(water_year_month=water_year_month))
 
 
 def imperial_irrigation_district():
@@ -348,6 +372,27 @@ def imperial_irrigation_district():
     graph.date_and_wait()
 
 
+def brock_diversion(water_year_month=1):
+    brock_annual_af = usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_brock_diversion.csv',
+                                            water_year_month=water_year_month)
+    return brock_annual_af
+
+
+def imperial_diversion(water_year_month=1):
+    imperial = usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_diversion.csv', water_year_month=water_year_month)
+    brock = brock_diversion(water_year_month)
+    return add_annual(imperial, brock)
+
+
+def imperial_cu(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def imperial_returns(water_year_month=1):
+    return subtract_annual(imperial_diversion(water_year_month=water_year_month),
+                           imperial_cu(water_year_month=water_year_month))
+
+
 def coachella():
     year_interval = 3
     graph = WaterGraph(nrows=2)
@@ -379,6 +424,19 @@ def coachella():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
 
     graph.date_and_wait()
+
+
+def coachella_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_coachella_diversion.csv', water_year_month=water_year_month)
+
+
+def coachella_cu(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_coachella_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def coachella_returns(water_year_month=1):
+    return subtract_annual(coachella_diversion(water_year_month=water_year_month),
+                           coachella_cu(water_year_month=water_year_month))
 
 
 # def usbr_ca_yuma_project(graph, sub_plot=0):
@@ -436,3 +494,21 @@ def yuma_project():
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(yuma_project_returns_annual_af, 10, sub_plot=3)
     graph.date_and_wait()
+
+
+def yuma_project_diversion(water_year_month=1):
+    yuma_project_indian_diversion_annual_af = usbr_report.annual_af('ca/usbr_ca_yuma_project_indian_unit_diversion.csv',
+                                                                    water_year_month=water_year_month)
+    yuma_project_bard_diversion_annual_af = usbr_report.annual_af('ca/usbr_ca_yuma_project_bard_unit_diversion.csv',
+                                                                  water_year_month=water_year_month)
+    return add_annual(yuma_project_indian_diversion_annual_af, yuma_project_bard_diversion_annual_af)
+
+
+def yuma_project_cu(water_year_month=1):
+    cu = subtract_annual(yuma_project_diversion(water_year_month=water_year_month),
+                         yuma_project_returns(water_year_month=water_year_month))
+    return cu
+
+
+def yuma_project_returns(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_yuma_project_returns.csv', water_year_month=water_year_month)
