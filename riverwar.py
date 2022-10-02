@@ -52,127 +52,6 @@ current_last_year = 2021
 # https://www.usbr.gov/lc/region/g4000/contracts/entitlements.html
 
 
-# noinspection PyUnusedLocal
-def usbr_catalog():
-    # unified_region_north_atlantic_appalachian = 1
-    # unified_region_south_atlantic_gulf = 2
-    # unified_region_great_lakes = 3
-    # unified_region_mississippi = 4
-    # unified_region_missouri = 5
-    # unified_region_arkansas_rio_grande_texas_gulf = 6
-    unified_region_upper_colorado = 7
-    unified_region_lower_colorado = 8
-    # unified_region_columbia_pacific_northwest = 9
-    # unified_region_california_great_basin = 10
-    # unified_region_alaska = 11
-    # unified_region_pacific_islands = 12
-
-    theme_water = 1
-    # theme_water_quality = 2
-    # theme_biological = 3
-    # theme_environmental = 4
-    # theme_infrastructure_and_assets = 5
-    # theme_hydropower = 7
-    # theme_safety_health_and_industrial_hygiene = 10
-
-    catalog_path = Path('data/USBR_RISE/')
-    catalog_path.mkdir(parents=True, exist_ok=True)
-
-    upper_colorado_catalog_path = catalog_path.joinpath('Upper_Colorado_Catalog.json')
-    records = usbr_rise.load_catalog(upper_colorado_catalog_path, unified_region_upper_colorado, theme_id=theme_water)
-    for record in records:
-        attributes = record['attributes']
-        record_title = attributes['recordTitle']
-        if record_title.startswith('Navajo Reservoir'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_navajo')
-        elif record_title.startswith('Lake Powell') and not record_title.endswith('Evaporation Pan'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_powell')
-        elif record_title.startswith('Fontenelle Reservoir'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_fontenelle')
-        elif record_title.startswith('Blue Mesa'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_blue_mesa')
-        elif record_title.startswith('Flaming Gorge'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_flaming_gorge')
-        elif record_title.startswith('Green Mountain'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_green_mountain')
-        elif record_title.startswith('Ruedi'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_ruedi')
-        elif record_title.startswith('Lake Granby'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_granby')
-        elif record_title.startswith('Grand Lake'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_grand_lake')
-        elif record_title.startswith('Willow Creek'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_willow_creek')
-        elif record_title.startswith('Shadow Mountain'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_shadow_mountain')
-        elif record_title.startswith('Mcphee'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_mcphee')
-        elif record_title.startswith('Taylor Park'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_taylor_park')
-        # else:
-        #    print(record_title)
-
-    lower_colorado_catalog_path = catalog_path.joinpath('Lower_Colorado_Catalog.json')
-    records = usbr_rise.load_catalog(lower_colorado_catalog_path, unified_region_lower_colorado, theme_id=theme_water)
-    for record in records:
-        attributes = record['attributes']
-        record_title = attributes['recordTitle']
-        if record_title.startswith('Lake Mead'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_mead')
-        elif record_title.startswith('Lake Mohave'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_mohave')
-        elif record_title.startswith('Lake Havasu'):
-            catalog_items = usbr_rise.load_catalog_items(record, 'usbr_lake_havasu')
-        else:
-            print(record_title)
-
-
-'''
-    SW Colorado
-    Lemon Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
-    Jackson Gulch Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
-    Vallecito Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
-
-    Ridgway Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
-    Paonia Reservoir and Dam Water Operations Monitoring Data from Upper Colorado Hydrologic Database
-    Fruitgrowers Reservoir - Orchard, CO
-    Silver Jack Reservoir - Gunnison, CO
-    Morrow Point Reservoir Dam and Powerplant Water Operations Monitoring Data from Upper Colorado Hydrologic Database
-    Crystal Reservoir Dam and Powerplant Water Operations Monitoring Data from Upper Colorado Hydrologic Database
-    Taylor Park Reservoir - Uncompaghre
-    Utah:
-        Strawberry Reservoir - East Slope of Wasatch
-        Starvation Reservoir - West of Duschesne
-        Moon Lake Reservoir - North of Duschesne
-        Stateline Reservoir - Wyoming Border, Smiths Fork
-        Scofield Reservoir - Price River
-        Rockport Reservoir - Weber River
-        Lost Creek Reservoir - Weber
-        Red Fleet Reservoir - Vernal
-        Steinaker Reservoir - Vernal
-        Trial Lake - Wasatch
-        Pineview Reservoir - Ogden
-        Willard Bay Reservoir - Ogden
-        Upper Stillwater Reservoir - Bonneville
-    Wyoming:
-        Meeks Cabin Reservoir
-
-
-'''
-'''
-    Colorado River Below Davis Dam Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River At Water Wheel Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River At Taylor Ferry Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River At River Section 41 Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River At Parker Gage Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River At Cibola Gage Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River Below Oxbow Bridge Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River Below Mcintyre Park Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River Below Interstate Bridge Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-    Colorado River Below Big Bend Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
-'''
-
-
 def usbr_glen_canyon_annual_release_af(graph=False, start_year=None, end_year=None):
     usbr_lake_powell_release_total_af = 4354
     info, daily_usbr_glen_canyon_daily_release_af = usbr_rise.load(usbr_lake_powell_release_total_af)
@@ -1064,7 +943,7 @@ def model_not_yuma_area():
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-    # usbr_catalog()
+    usbr_rise.catalog()
     model_all_american()
     model_hoover_to_imperial()
     model_all_american_extras()
