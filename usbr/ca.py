@@ -504,6 +504,14 @@ def yuma_project_diversion(water_year_month=1):
     return add_annual(yuma_project_indian_diversion_annual_af, yuma_project_bard_diversion_annual_af)
 
 
+def yuma_project_indian_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_yuma_project_indian_unit_diversion.csv', water_year_month=water_year_month)
+
+
+def yuma_project_bard_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_yuma_project_bard_unit_diversion.csv', water_year_month=water_year_month)
+
+
 def yuma_project_cu(water_year_month=1):
     cu = subtract_annual(yuma_project_diversion(water_year_month=water_year_month),
                          yuma_project_returns(water_year_month=water_year_month))
