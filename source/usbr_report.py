@@ -231,12 +231,12 @@ def positive_values(a):
 
 def monthly_to_water_year(a, water_year_month=10):
     dt = datetime.date(1, water_year_month, 1)
-    total = 0
+    total = -1
     result = []
     for o in a:
         obj = o['dt'].astype(object)
         if obj.month == water_year_month:
-            if total > 0:
+            if total >= 0:
                 result.append([dt, total])
                 total = 0
             dt = datetime.date(obj.year+1, water_year_month, 1)
