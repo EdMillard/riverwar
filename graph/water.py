@@ -27,6 +27,8 @@ import matplotlib.ticker as ticker
 import numpy as np
 from matplotlib.dates import YearLocator
 
+# gridspec to resize subplots
+# https://www.geeksforgeeks.org/how-to-create-different-subplot-sizes-in-matplotlib/
 
 class WaterGraph(object):
     """
