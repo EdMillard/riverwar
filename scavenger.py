@@ -161,6 +161,8 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
         image_file_paths = tmp_paths
 
     if len(image_file_paths):
+        output_path = Path(Path(output_file_path).parent)
+        output_path.mkdir(parents=True, exist_ok=True)
         f = output_file_path.open(mode='w')
         f.write('# USBR Lower Colorado Basin Annual reports: ' + water_user + ' ' + field_id + '\n')
         f.write('Year Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec Total\n')
@@ -302,14 +304,40 @@ def scavenge_ca(image_dir, out_path):
 
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
+    # Sturges, Hopi
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='pump')
 
-    # City of Yuma
-    # Second diversion from gila around 1995
-    output_path = out_path.joinpath('az/usbr_az_city_of_yuma_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='city of yuma', field_id='diversion')
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_well_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Well', start_year=2008, end_year=2013)
 
-    output_path = out_path.joinpath('az/usbr_az_city_of_yuma_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='city of yuma', field_id='Consumptive Us')
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_topock_inlet_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Inlet', start_year=2005)
+
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_farm_ditch_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Farm Ditch', start_year=2005)
+
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Pump', start_year=2003)
+
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_measured_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Meas', start_year=2003)
+
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_unmeasured_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Unmeas', start_year=2003)
+
+    # These need CU and returns
+    # Marine Corps Air Station Yuma
+    output_path = out_path.joinpath('az/usbr_az_marine_corp_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Marine Corps', field_id='Diversion', start_year=1983)
+
+    # Town of Parker
+    output_path = out_path.joinpath('az/usbr_az_town_of_parker_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Town of Parker', field_id='Diversion')
+
+    # Gila Monster
+    output_path = out_path.joinpath('az/usbr_az_gila_monster_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Gila Monster', field_id='Diversion', start_year=2001)
 
     # AZ Totals
     output_path = out_path.joinpath('az/usbr_az_total_diversion.csv')
@@ -347,6 +375,24 @@ def scavenge_az(image_dir, out_path):
     output_path = out_path.joinpath('az/usbr_az_crit_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Consumptive Us')
 
+    # Cibola National Wildlife Refuge
+    output_path = out_path.joinpath('az/usbr_az_cibola_national_wildlife_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Cibola National', field_id='Diversion', start_year=1976)
+
+    output_path = out_path.joinpath('az/usbr_az_cibola_national_wildlife_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Cibola National', field_id='Consumptive Us', start_year=1987)
+
+    # Cibola Valley IID
+    output_path = out_path.joinpath('az/usbr_az_cibola_valley_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Cibola Valley', field_id='Diversion', start_year=1983)
+
+    output_path = out_path.joinpath('az/usbr_az_cibola_valley_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Cibola Valley', field_id='Consumptive Us', start_year=2003)
+    # Mohave County Water Authority Diversion
+    # Hopi Tribe Diversion
+    # Arizona Recreational Facilities Diversion
+    # Arizona Game and Fish Diversion
+
     # Yuma Mesa
     output_path = out_path.joinpath('az/usbr_az_yuma_mesa_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Mesa I', field_id='Diversion')
@@ -375,6 +421,9 @@ def scavenge_az(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='', field_id='yuma mesa outlet drain', end_year=1983)
 
     # Yuma County Water Users Association
+    output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='pump')
+
     output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Diversion')
 
@@ -382,20 +431,22 @@ def scavenge_az(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Consumptive Us')
 
     output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_pumped_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Pumped from wells')
+    ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='Pumped from wells',
+                start_year=1966)
 
     # Yuma Irrigation
-    output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_private_well_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Irrigation', field_id='private wells')
-
     output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Irrigation', field_id='Diversion', start_year=1965)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_pumped_diversion.csv', start_year=1967)
+    ocr_reports(image_path, output_path, water_user='Yuma Irrigation', field_id='pump')
 
     output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Irrigation', field_id='Consumptive Us', start_year=1983)
 
     output_path = out_path.joinpath('az/usbr_az_yuma_irrigation_return.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Irrigation', field_id='Return', start_year=1983, end_year=2002)
+    ocr_reports(image_path, output_path, water_user='Yuma Irrigation', field_id='Return',
+                start_year=1983, end_year=2002)
     # FIXME Meas. and Unmeas. returns start 2003, with pumped it gets complicated
 
     # Unit B
@@ -418,8 +469,43 @@ def scavenge_az(image_dir, out_path):
     output_path = out_path.joinpath('az/usbr_az_north_gila_irrigation_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='North Gila', field_id='Consumptive Us')
 
+    # South Gila area, Yuma Mesa, Yuma Irrigation, Unit B jumbled together
+    # Also 'Returns from South Gila"
     output_path = out_path.joinpath('az/usbr_az_south_gila_returns.csv')
-    ocr_reports(image_path, output_path, water_user='', field_id='returns from south gila')
+    ocr_reports(image_path, output_path, water_user='', field_id='returns from south gila', end_year=1982)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_outlet_drain.csv')
+    ocr_reports(image_path, output_path, water_user='', field_id='yuma mesa outlet drain',
+                start_year=1982, end_year=1982)
+
+    output_path = out_path.joinpath('az/usbr_az_south_gila_well_return.csv')
+    ocr_reports(image_path, output_path, water_user='', field_id='south gila wells', start_year=1983, end_year=2004)
+
+    # This catches everything, not sure this works
+    output_path = out_path.joinpath('az/usbr_az_south_gila.csv')
+    ocr_reports(image_path, output_path, water_user='', field_id='south gila')
+
+    # Cocopah
+    output_path = out_path.joinpath('az/usbr_az_cocopah_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Cocopah Indian R', field_id='Diversion')
+
+    output_path = out_path.joinpath('az/usbr_az_cocopah_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Cocopah Indian R', field_id='Consumptive Us', start_year=1984)
+
+    output_path = out_path.joinpath('az/usbr_az_cocopah_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Cocopah Indian R', field_id='Return', start_year=1984)
+
+    output_path = out_path.joinpath('az/usbr_az_cocopah_pumped.csv')
+    ocr_reports(image_path, output_path, water_user='Cocopah Indian R', field_id='Pumped')
+
+    output_path = out_path.joinpath('az/usbr_az_cocopah_west_pumped.csv')
+    ocr_reports(image_path, output_path, water_user='Cocopah Indian R', field_id='West Cocopah', start_year=1997)
+
+    output_path = out_path.joinpath('az/usbr_az_cocoapah_west_pumped.csv')  # Misspelled
+    ocr_reports(image_path, output_path, water_user='Cocopah Indian R', field_id='West Cocoapah', start_year=1999)
+
+    output_path = out_path.joinpath('az/usbr_az_cocopah_north_pumped.csv')
+    ocr_reports(image_path, output_path, water_user='Cocopah Indian R', field_id='North Cocopah', start_year=1997)
 
     # Pumping
     output_path = out_path.joinpath('az/usbr_az_other_users_pumping_diversion.csv')
@@ -435,34 +521,102 @@ def scavenge_az(image_dir, out_path):
 
     # Fort Mohave
     output_path = out_path.joinpath('az/usbr_az_fort_mohave_indian_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Fort Mohave Indian', field_id='Diversion')
-    # Need CU here
+    ocr_reports(image_path, output_path, water_user='Fort Mohave', field_id='Diversion', start_year=1975, end_year=1998)
+
+    output_path = out_path.joinpath('az/usbr_az_fort_mojave_indian_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='Diversion', start_year=1999)
+
+    output_path = out_path.joinpath('az/usbr_az_fort_mojave_indian_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='Consumptive Us', start_year=2000)
 
     # Mohave Valley
     output_path = out_path.joinpath('az/usbr_az_mohave_valley_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Mohave Valley', field_id='Diversion')
-    # Need CU here
+    ocr_reports(image_path, output_path, water_user='Mohave Valley', field_id='Diversion', start_year=1975)
+
+    output_path = out_path.joinpath('az/usbr_az_mohave_valley_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Mohave Valley', field_id='Consumptive Us', start_year=1975)
+
+    # GM Gabrych
+    output_path = out_path.joinpath('az/usbr_az_gabrych_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Gabrych', field_id='Diversion', start_year=2018)
+
+    output_path = out_path.joinpath('az/usbr_az_gabrych_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Gabrych', field_id='Consumptive Us', start_year=2018)
+
+    # Arizona Game and Fish
+    output_path = out_path.joinpath('az/usbr_az_arizona_game_and_fish_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona Game', field_id='Diversion', start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_arizona_game_and_fish_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona Game', field_id='Consumptive Us', start_year=2013)
+
+    # Arizona State Land Development
+    output_path = out_path.joinpath('az/usbr_az_arizona_state_land_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona State Land', field_id='Diversion', start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_arizona_state_land_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona State Land', field_id='Consumptive Us', start_year=2013)
+
+    # Havasu National Wildlife Reguge, "Havasu Lake National" until 1967 1/2
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_wildlife_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Diversion', start_year=1969)
+
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_wildlife_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Consumptive Us', start_year=1987)
+
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_wildlife_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Return', start_year=1990)
+
+    # Doesnt work
+    output_path = out_path.joinpath('az/usbr_az_havasu_lake_wildlife_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu Lake', field_id='Diversion', end_year=1968)
 
     # Lake Havasu
     output_path = out_path.joinpath('az/usbr_az_lake_havasu_city_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Lake Havasu City', field_id='Diversion')
-    # Need CU here
+    ocr_reports(image_path, output_path, water_user='Lake Havasu', field_id='Diversion', start_year=1969)
+
+    output_path = out_path.joinpath('az/usbr_az_lake_havasu_city_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Lake Havasu', field_id='Consumptive Us', start_year=1987)
 
     # Bullhead City
-    output_path = out_path.joinpath('az/usbr_az_bull_head_city_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Bull Head City', field_id='Diversion')
-    # Need CU here
+    output_path = out_path.joinpath('az/usbr_az_bullhead_city_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bullhead City', field_id='Diversion', start_year=1987)
 
-    # Havasu Wildlife
-    # Mohave Valley I.D.D.
-    # Fort Mojave Indian
-    # Cibola Valley I.D.D.
-    # Hopi Tribe
-    # Gila Monster Farms
+    output_path = out_path.joinpath('az/usbr_az_bullhead_city_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Bullhead City', field_id='Consumptive Us', start_year=1987)
+
+    # Imperial National Wildlife Refuge, record is spotty especially pre 1991, some years have total only
+    output_path = out_path.joinpath('az/usbr_az_imperial_national_wildlife_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Imperial National', field_id='Diversion', start_year=1983)
+
+    output_path = out_path.joinpath('az/usbr_az_imperial_national_wildlife_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Imperial National', field_id='Consumptive Us', start_year=2003)
+
     # City of Yuma
-    # Arizona State Land Development
+    # Second diversion from gila around 1995
+    output_path = out_path.joinpath('az/usbr_az_city_of_yuma_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='city of yuma', field_id='diversion')
+
+    output_path = out_path.joinpath('az/usbr_az_city_of_yuma_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='city of yuma', field_id='Consumptive Us')
+
+    # Mohave Water Conservation District
+    # Hopi Tribe
     # Fort Yuma Indian
-    # Cocopah Indian
+    # Golden Shores WCD
+    # Ehrenburg Improvement Association
+    # Sturges diversion at Imperial Dam
+    # University of Arizona
+    # Camille
+    # Desert Lawn
+    # Southern Pacific
+    # Yuma Mesa Fruit growers
+    # Yuma Area Office, USBR
+    # Brooke Water
+    # Lower Colorado River Dams Project
+    # Lake Mead National Recreation Area, Lake Mead
+    # Lake Mead National Recreation Area, Lake Mohave
+    # Yuma Proving Ground
 
 
 def scavenge_nv(image_dir, out_path):
@@ -503,6 +657,7 @@ def scavenge_nv(image_dir, out_path):
     output_path = out_path.joinpath('nv/usbr_nv_big_bend_water_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Big Bend Water', field_id='Diversion')
 
+    # Lake Havasu Irrigation and Drainage in the 80's at least
     # Bureau of Reclamation
     # Lake Mead National Recreational Area
     # Big Bend Conservation Area
@@ -613,8 +768,8 @@ def ocr_print(image_file_path):
         print("File not found: ", str(image_file_path))
 
 
-def ocr_debug(image_dir, state='ca'):
-    image_path = image_dir.joinpath(state + '/consumptive_use')
+def ocr_debug(image_dir, path1='ca', path2=''):
+    image_path = image_dir.joinpath(path1 + path2)
     while 1:
         print("Enter image name:")
         image_name = input()
@@ -629,10 +784,9 @@ def ocr_debug(image_dir, state='ca'):
 
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
-
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-
-    ocr_debug(image_directory, state='az')
+    ocr_debug(image_directory, path1='az', path2='/consumptive_use')
+    # ocr_debug(image_directory, path1='releases')
     scavenge_az(image_directory, outputs_path)
     scavenge_ca(image_directory, outputs_path)
     scavenge_releases(image_directory, outputs_path)
