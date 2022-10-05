@@ -33,7 +33,6 @@ from source import usbr_rise
 import util
 from util import subtract_annual, reshape_annual_range
 from graph.water import WaterGraph
-from pathlib import Path
 
 interrupted = False
 
@@ -305,10 +304,105 @@ def model_hoover_to_imperial():
     graph.date_and_wait()
 
 
+def model_imperial_to_mexico():
+    year_interval = 4
+    # All American Canal Above Imperial Dam
+    graph = WaterGraph(nrows=3)
+
+    all_american_annual_gage = usgs.ca.all_american_canal(graph=False)
+    all_american = all_american_annual_gage.annual_af(start_year=1964, end_year=current_last_year, water_year_month=1)
+    graph.bars(all_american, sub_plot=0, title='USGS All American Canal Diversion',
+               xinterval=year_interval, ymin=3000000, ymax=6500000, yinterval=500000, color='firebrick',
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+
+    # Gila Gravity Main Canal
+    gila_gravity_gage = usgs.az.gila_gravity_main_canal(graph=False)
+    gila_gravity = gila_gravity_gage.annual_af(start_year=1964, end_year=current_last_year, water_year_month=1)
+    graph.bars(gila_gravity, sub_plot=1, title='USGS Gila Gravity Main Canal Diversion',
+               xinterval=year_interval, ymin=0, ymax=1000000, yinterval=100000, color='firebrick',
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+
+    # Imperial Dam Release
+    imperial_dam_release_annual_af = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
+    imperial_dam_release_annual_af = util.reshape_annual_range(imperial_dam_release_annual_af, 1964, current_last_year)
+    graph.bars(imperial_dam_release_annual_af, sub_plot=2, title='Imperial Dam Release',
+               xinterval=year_interval, ymax=500000, yinterval=50000,
+               color='firebrick',
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    graph.date_and_wait()
+
+    graph = WaterGraph(nrows=4)
+    below_yuma_wasteway_annual = usgs.lc.below_yuma_wasteway(graph=False).annual_af()
+    graph.bars(below_yuma_wasteway_annual, sub_plot=0, title='Colorado River Below Yuma Wasteway',
+               xinterval=year_interval, ymax=1000000, yinterval=100000,
+               color='firebrick',
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
+    nib = nib_morelos_gage.annual_af(water_year_month=1, start_year=1964, end_year=current_last_year)
+    graph.bars(nib, sub_plot=1, xinterval=year_interval, ymax=2400000, yinterval=200000,
+               color='goldenrod', label='USGS NIB at Morelos',
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    pilot_knob_gage = usgs.ca.pilot_knob_powerplant_and_wasteway(graph=False)
+    pilot_knob = pilot_knob_gage.annual_af(water_year_month=1, start_year=1964, end_year=current_last_year)
+
+    colorado_below_yuma_wasteway_gage = usgs.lc.below_yuma_wasteway(graph=False)
+    colorado_below_yuma_wasteway = colorado_below_yuma_wasteway_gage.annual_af(water_year_month=1,
+                                                                               start_year=1964,
+                                                                               end_year=current_last_year)
+    yuma_wasteway_gage = usgs.ca.yuma_main_canal_wasteway_at_yuma(graph=False)
+    yuma_wasteway = yuma_wasteway_gage.annual_af(water_year_month=1, start_year=1964, end_year=current_last_year)
+
+    reservation_main_drain_gage = usgs.ca.reservation_main_drain_no_4(graph=False)
+    reservation_main_drain = reservation_main_drain_gage.annual_af(water_year_month=1,
+                                                                   start_year=1964, end_year=current_last_year)
+    yuma_wasteway_estimated = util.subtract_annual(colorado_below_yuma_wasteway, imperial_dam_release_annual_af)
+
+    data = [{'data': imperial_dam_release_annual_af, 'label': 'USBR Imperial Dam Release', 'color': 'maroon'},
+            {'data': yuma_wasteway_estimated, 'label': 'USGS Yuma Wasteway', 'color': 'firebrick'},
+            {'data': pilot_knob, 'label': 'USGS All American Pilot Knob Return Flow', 'color': 'indianred'}]
+    graph.bars_stacked(data, sub_plot=1, title='Lower Colorado Between Yuma Wasteway and Morelos',
+                       ymin=0, ymax=2400000, yinterval=200000, xinterval=year_interval,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=True)
+    graph.running_average(imperial_dam_release_annual_af, 10, sub_plot=1)
+    graph.running_average(colorado_below_yuma_wasteway, 10, sub_plot=1)
+
+    flows = util.add_annual(colorado_below_yuma_wasteway, pilot_knob)
+    morelos_minus_breakdown = util.subtract_annual(nib, flows)
+    graph.bars(morelos_minus_breakdown, sub_plot=2, title='Morelos minus Flow Breakdown',
+               xinterval=year_interval, ymin=-50000, ymax=200000, yinterval=50000,
+               color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    graph.bars(yuma_wasteway_estimated, sub_plot=3, title='Colorado Below Yuma Wasteway minus Imperial Release',
+               xinterval=year_interval, ymin=0, ymax=700000, yinterval=50000,
+               color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    graph.date_and_wait()
+
+    graph = WaterGraph(nrows=3)
+    #yuma_wasteway_diff = util.subtract_annual(yuma_wasteway_estimated, yuma_wasteway)
+    graph.bars(yuma_wasteway, sub_plot=0, title='Yuma Wasteway',
+               xinterval=year_interval, ymin=0, ymax=400000, yinterval=50000,
+               color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    graph.bars(reservation_main_drain, sub_plot=1, title='Reservation Main Drain',
+               xinterval=year_interval, ymin=0, ymax=75000, yinterval=10000,
+               color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    drain_8B_gage = usgs.ca.drain_8_b_near_winterhaven(graph=False)
+    drain_8B = drain_8B_gage.annual_af(water_year_month=1,
+                                                     start_year=1964, end_year=current_last_year)
+    graph.bars(drain_8B, sub_plot=2, title='Drain 8B',
+               xinterval=year_interval, ymin=0, ymax=75000, yinterval=10000,
+               color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    graph.date_and_wait()
+
+
 def model_all_american():
     year_interval = 3
-    # All American Canal Above Imperial Dam
-    graph = WaterGraph(nrows=1)
 
     usbr_imperial_diversion = usbr.ca.imperial_diversion()
     usbr_imperial_cu = usbr.ca.imperial_cu()
@@ -322,9 +416,9 @@ def model_all_american():
     # usbr_yuma_project_cu = usbr.ca.yuma_project_cu()
     usbr_yuma_project_returns = usbr.ca.yuma_project_returns()
 
-    # reservation_main_canal_gage = usgs.ca.reservation_main_canal(graph=False)
-    # reservation_main_annual_af = reservation_main_canal_gage.annual_af(water_year_month=1,
-    #                                                                    start_year=1964, end_year=current_last_year)
+    reservation_main_canal_gage = usgs.ca.reservation_main_canal(graph=False)
+    reservation_main_annual_af = reservation_main_canal_gage.annual_af(water_year_month=1,
+                                                                       start_year=1964, end_year=current_last_year)
     yuma_project_indian_diversion = usbr.ca.yuma_project_indian_diversion()
 
     yuma_main_canal_gage = usgs.ca.yuma_main_canal_at_siphon_drop_PP(graph=False)
@@ -339,6 +433,13 @@ def model_all_american():
     usgs_all_american_gage = usgs.ca.all_american_canal(graph=False)
     usgs_all_american_annual_af = usgs_all_american_gage.annual_af(water_year_month=1,
                                                                    start_year=1964, end_year=current_last_year)
+    graph = WaterGraph(nrows=1)
+    graph.bars(usgs_all_american_annual_af, sub_plot=0, title='USGS All American Canal Gage',
+               xinterval=year_interval, ymin=0, ymax=8000000, yinterval=500000, color='firebrick',
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
+    graph.date_and_wait()
+
+    graph = WaterGraph(nrows=1)
     bar_data = [{'data': usbr_imperial_cu, 'label': 'Imperial CU (USBR AR)', 'color': 'maroon'},
                 {'data': usbr_coachella_cu, 'label': 'Coachella CU (USBR AR)', 'color': 'firebrick'},
                 {'data': yuma_main_annual_af, 'label': 'Yuma Main Canal (USGS)', 'color': 'indianred'},
@@ -396,9 +497,12 @@ def model_all_american():
     graph.date_and_wait()
 
     graph = WaterGraph(nrows=3)
-    graph.bars(yuma_project_indian_diversion, sub_plot=0, title='Yuma Project Indian Diversion',
+    graph.bars(reservation_main_annual_af, sub_plot=0, title='Reservation Main Canal to Yuma Project Indian Diversion',
                xinterval=year_interval, ymin=0, ymax=60000, yinterval=10000, color='firebrick',
                ylabel='kaf',  format_func=WaterGraph.format_kaf)
+    #graph.bars(yuma_project_indian_diversion, sub_plot=0, title='Yuma Project Indian Diversion',
+    #           xinterval=year_interval, ymin=0, ymax=60000, yinterval=10000, color='firebrick',
+    #           ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
     # reservation_diff = util.subtract_annual(reservation_main_annual_af, usbr.ca.yuma_project_indian_diversion())
     # graph.bars(reservation_diff, sub_plot=0, title='USGS Reservation Main Canal (Annual)',
@@ -423,7 +527,7 @@ def model_all_american():
     #            ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
 
-def model_all_american_extras():
+def all_american_extras():
     year_interval = 4
     # All American Canal Above Imperial Dam
     graph = WaterGraph(nrows=3)
@@ -527,7 +631,7 @@ def model_all_american_extras():
     graph.date_and_wait()
 
 
-def lake_powell_inflow():
+def model_lake_powell_inflow():
     start_year = 1963
     end_year = 2022
 
@@ -943,19 +1047,21 @@ def model_not_yuma_area():
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-    usbr_rise.catalog()
-    model_all_american()
+    usbr.az.test()
+    # usbr_rise.catalog()
+    # usgs.az.test_returns()
     model_hoover_to_imperial()
-    model_all_american_extras()
+    model_all_american()
+    model_imperial_to_mexico()
     model_yuma_area()
     model_not_yuma_area()
+    model_lake_powell_inflow()
 
     usgs.ca.test()
     usbr.az.colorado_river_indian_tribes()
     usbr.ca.test()
     usbr_lower_basin_states_total_use()
     lake_mead_inflow()
-    lake_powell_inflow()
     usbr_glen_canyon_annual_release_af()
     model_glen_canyon()
 
@@ -971,3 +1077,5 @@ if __name__ == '__main__':
     usbr.az.test()
     usbr.ca.test()
     usbr.uc.test()
+
+    all_american_extras()
