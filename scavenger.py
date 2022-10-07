@@ -304,7 +304,39 @@ def scavenge_ca(image_dir, out_path):
 
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
-    # Sturges, Hopi
+    # Sturges, Warren Act 1995-1996 at least
+    # Hopi
+
+    # Sturges, Warren Act
+    output_path = out_path.joinpath('az/usbr_az_sturges_warren_act_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Sturges', field_id='Consumptive Us', start_year=1993, end_year=2000)
+
+    output_path = out_path.joinpath('az/usbr_az_sturges_warren_act_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Sturges', field_id='Diversion', start_year=1990, end_year=2000)
+
+    # FIXME, Warren Act contractor diversions in 1964, at least
+
+    output_path = out_path.joinpath('az/usbr_az_central_arizona_project_snwa_diversion.csv')
+    # Can be "Central Arizona Project or  "Central Arizona Water Conservation District" ie 2021
+    ocr_reports(image_path, output_path, water_user='Central Arizona', field_id='snwa', start_year=2004, end_year=2006)
+
+    output_path = out_path.joinpath('az/usbr_az_gila_monster_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Gila Monster', field_id='Consumptive Us', start_year=2001)
+
+    output_path = out_path.joinpath('az/usbr_az_bullhead_city_davis_dam_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bullhead City', field_id='Davis Dam',
+                start_year=1991, end_year=2013)
+
+    # Also Yuma East Wetlands
+    output_path = out_path.joinpath('az/usbr_az_city_of_yuma_ggmc_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='city of yuma', field_id='ggmc', start_year=1991)
+
+    output_path = out_path.joinpath('az/usbr_az_city_of_yuma_gila_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='city of yuma', field_id='gila', start_year=1991)
+
+    output_path = out_path.joinpath('az/usbr_az_crit_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='pump')
+
     output_path = out_path.joinpath('az/usbr_az_yuma_county_wua_pumped_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma County Water User', field_id='pump')
 
@@ -572,10 +604,10 @@ def scavenge_az(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='Havasu Lake', field_id='Diversion', end_year=1968)
 
     # Lake Havasu
-    output_path = out_path.joinpath('az/usbr_az_lake_havasu_city_diversion.csv')
+    output_path = out_path.joinpath('az/usbr_az_lake_havasu_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Lake Havasu', field_id='Diversion', start_year=1969)
 
-    output_path = out_path.joinpath('az/usbr_az_lake_havasu_city_consumptive_use.csv')
+    output_path = out_path.joinpath('az/usbr_az_lake_havasu_consumptive_use.csv')  # really starts in 2003
     ocr_reports(image_path, output_path, water_user='Lake Havasu', field_id='Consumptive Us', start_year=1987)
 
     # Bullhead City
