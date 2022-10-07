@@ -49,7 +49,7 @@ def year_from_file_path(file_path):
     return int(year)
 
 
-def ocr_report(image_file_path, water_user='', field_id=''):
+def ocr_report(image_file_path, water_user='', field_id='', loop=None):
     water_user_lower = water_user.lower()
     field_id_lower = field_id.lower()
     year = year_from_file_path(image_file_path)
@@ -57,6 +57,8 @@ def ocr_report(image_file_path, water_user='', field_id=''):
     text = image_to_text(image_file_path)
     strings = text.split('\n')
     look_for_diversion = False
+    if loop:
+        print(loop)
     for string in strings:
         if not water_user_lower or water_user_lower in string.lower():
             look_for_diversion = True
@@ -76,16 +78,22 @@ def ocr_report(image_file_path, water_user='', field_id=''):
                     # Did we get enough numbers to potentially be twelve month + total
                     if len(values) > 10:
                         return year, result
+                    elif len(values) > 1:
+                        print("Number of fields came up short: ", len(values))
                 else:
                     break
 
     return year, ''
 
 
-def ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin=0, kaf_end=0):
+def ocr_image_file(image_file_path, water_user, field_id, f, loop, kaf_begin=0, kaf_end=0):
+    year, data = ocr_report(image_file_path, water_user, field_id, loop)
+    return process_line_item(year, data, image_file_path, f, kaf_begin, kaf_end)
+
+
+def process_line_item(year, data, image_file_path, f, kaf_begin, kaf_end):
     error_tolerance = 2  # af error allowed between summation of months and annual total
 
-    year, data = ocr_report(image_file_path, water_user, field_id)
     print_file_name_prefix = '\t' + image_file_path.name + ': '
     if year > 1900 and len(data) > 0:
         values = data.split(' ')
@@ -133,7 +141,7 @@ def ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin=0, kaf_en
 
 
 def ocr_reports(image_directory_path, output_file_path, water_user='', field_id='',
-                start_year=None, end_year=None, kaf_begin=0, kaf_end=0):
+                start_year=None, end_year=None, loop=None, kaf_begin=0, kaf_end=0):
     print('ocr_report: ', water_user + ', ' + field_id)
     image_file_paths = []
     for image_file_path in image_directory_path.iterdir():
@@ -179,7 +187,7 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
                     print('\t', year_prev)
                     f.write(str(year_prev) + '\n')
                 year_prev = year
-            year_written = ocr_image_file(image_file_path, water_user, field_id, f, kaf_begin, kaf_end)
+            year_written = ocr_image_file(image_file_path, water_user, field_id, f, loop, kaf_begin, kaf_end)
 
         f.close()
     else:
@@ -188,6 +196,83 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 
 def scavenge_ca(image_dir, out_path):
     image_path = image_dir.joinpath('ca/consumptive_use')
+    
+    output_path = out_path.joinpath('ca/usbr_ca_crit_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Diversion', start_year=1973,
+                loop='Diversion')
+
+    output_path = out_path.joinpath('ca/usbr_ca_fort_mojave_well_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='wells',  start_year=2009)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_island_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Island', field_id='Consumptive Use', start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_island_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Island', field_id='Diversion', start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unit_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Consumptive Us',
+                start_year=1984, end_year=1989)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unit_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Consumptive Us',
+                start_year=1984, end_year=1989)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_total_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Total Yuma Project Reservation Division',
+                field_id='Consumptive Us', start_year=2014)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_sum_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='RETURNS FROM YUMA PROJECT', field_id='Consumptive Us',
+                start_year=1990)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_sum_returns.csv')
+    ocr_reports(image_path, output_path, water_user='RETURNS FROM YUMA PROJECT', field_id='Return')
+
+    output_path = out_path.joinpath('ca/usbr_ca_fort_mojave_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='Consumptive Us', start_year=1999)
+
+    output_path = out_path.joinpath('ca/usbr_ca_crit_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Consumptive Us', start_year=1987)
+
+    output_path = out_path.joinpath('ca/usbr_ca_fort_mojave_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='Pumped',  start_year=1999)
+
+    output_path = out_path.joinpath('ca/usbr_ca_fort_mojave_needles_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='Needles',  start_year=1999, end_year=2008)
+
+    output_path = out_path.joinpath('ca/usbr_ca_fort_mohave_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mohave', field_id='Diversion',  start_year=1975)
+
+    output_path = out_path.joinpath('ca/usbr_ca_metropolitan_for_snwa.csv')
+    ocr_reports(image_path, output_path, water_user='Metropolitan Water District', field_id='SNWA',
+                start_year=2004, end_year=2005)
+
+    # City of Blythe
+    output_path = out_path.joinpath('ca/usbr_ca_city_of_blythe_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Blythe', field_id='Diversion', end_year=1978)
+
+    # City of Needles
+    output_path = out_path.joinpath('ca/usbr_ca_city_of_needles_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='City of Needles', field_id='Diversion')
+
+    output_path = out_path.joinpath('ca/usbr_ca_city_of_needles_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='City of Needles', field_id='Consumptive Us')
+
+    output_path = out_path.joinpath('ca/usbr_ca_city_of_needles_returns.csv')
+    ocr_reports(image_path, output_path, water_user='City of Needles', field_id='Returns')
+
+    # Pumping
+    output_path = out_path.joinpath('ca/usbr_ca_other_users_pumping_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='other users pumping', field_id='diversion', end_year=2015)
+
+    output_path = out_path.joinpath('ca/usbr_ca_other_users_pumping_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='other users pumping', field_id='Consumptive Us',
+                start_year=2003, end_year=2015)
+
+    output_path = out_path.joinpath('ca/usbr_ca_via_pumps_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='via pumps', field_id='diversion',
+                start_year=2014, end_year=2015)  # Bureau started listing individual users in 2016...sigh
 
     output_path = out_path.joinpath('ca/usbr_ca_metropolitan_slrsp.csv')
     ocr_reports(image_path, output_path, water_user='Metropolitan Water District', field_id='SLRSP',
@@ -285,9 +370,6 @@ def scavenge_ca(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='Metropolitan Water District', field_id='Consumptive Us',
                 start_year=1977)  # small returns in 1964 being ignored
 
-    output_path = out_path.joinpath('ca/usbr_ca_needles_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Needles', field_id='Diversion')
-
     output_path = out_path.joinpath('ca/usbr_ca_blythe_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Blythe', field_id='Diversion')
 
@@ -309,7 +391,8 @@ def scavenge_az(image_dir, out_path):
 
     # Sturges, Warren Act
     output_path = out_path.joinpath('az/usbr_az_sturges_warren_act_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Sturges', field_id='Consumptive Us', start_year=1993, end_year=2000)
+    ocr_reports(image_path, output_path, water_user='Sturges', field_id='Consumptive Us',
+                start_year=1993, end_year=2000)
 
     output_path = out_path.joinpath('az/usbr_az_sturges_warren_act_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Sturges', field_id='Diversion', start_year=1990, end_year=2000)
@@ -817,10 +900,10 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    ocr_debug(image_directory, path1='az', path2='/consumptive_use')
+    # ocr_debug(image_directory, path1='az', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='releases')
-    scavenge_az(image_directory, outputs_path)
     scavenge_ca(image_directory, outputs_path)
+    scavenge_az(image_directory, outputs_path)
     scavenge_releases(image_directory, outputs_path)
     scavenge_nv(image_directory, outputs_path)
     scavenge_mx(image_directory, outputs_path)
