@@ -49,6 +49,15 @@ def add3_annual(augend, addend, addend2, start_year=0, end_year=0):
     return summation
 
 
+def replace_annual(a, b):
+    for source in b:
+        source_dt = source['dt']
+        for target in a:
+            if target['dt'] == source_dt:
+                target['val'] = source['val']
+                break
+
+
 def running_average(annual_af, window):
     result = np.zeros(len(annual_af), [('dt', 'i'), ('val', 'f')])
 
