@@ -31,10 +31,10 @@ def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
         {'data': user_total_diversion()},
-        {'y_min': -5000, 'y_max': 40000, 'y_interval': 5000},
+        {'y_min': -1000, 'y_max': 8000, 'y_interval': 1000},
         {'data': state_total_cu(), 'y_min': 3500000, 'y_max': 5500000, 'y_interval': 500000},
         {'data': user_total_cu()},
-        {'y_min': -25000, 'y_max': 160000, 'y_interval': 25000},
+        {'y_min': -5000, 'y_max': 155000, 'y_interval': 5000},
     ]
     state_total_vs_user_total_graph('CA', data)
 
@@ -185,14 +185,16 @@ def state_total_cu():
 def user_total_diversion():
     data = [city_of_needles_diversion(),
             city_of_blythe_diversion(),
+            east_blythe_diversion(),
             fort_mojave_diversion(),
             metropolitan_diversion(),
+            crit_diversion(),
             palo_verde_diversion(),
             imperial_diversion(),
             coachella_diversion(),
             yuma_project_diversion(),
             other_users_pumping_diversion(),
-            yuma_island_cu()
+            yuma_island_diversion()
             ]
     data[0] = reshape_annual_range(data[0], 1964, current_last_year)
     return add_annuals(data)
@@ -204,6 +206,7 @@ def user_total_cu():
         fort_mojave_cu(),
         city_of_needles_cu(),
         city_of_blythe_cu(),
+        east_blythe_cu(),
         crit_cu(),
         palo_verde_cu(),
         imperial_cu(),
@@ -289,6 +292,14 @@ def city_of_blythe_diversion(water_year_month=1):
 
 def city_of_blythe_cu(water_year_month=1):
     return city_of_blythe_diversion(water_year_month)
+
+
+def east_blythe_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_east_blythe_diversion.csv', water_year_month=water_year_month)
+
+
+def east_blythe_cu(water_year_month=1):
+    return east_blythe_diversion(water_year_month)
 
 
 def metropolitan_annotate(graph, sub_plot=0):
@@ -431,6 +442,10 @@ def palo_verde_cu(water_year_month=1):
 def palo_verde_returns(water_year_month=1):
     return subtract_annual(palo_verde_diversion(water_year_month=water_year_month),
                            palo_verde_cu(water_year_month=water_year_month))
+
+
+def crit_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_crit_pumped_diversion.csv', water_year_month=water_year_month)
 
 
 def crit_cu(water_year_month=1):
