@@ -49,7 +49,7 @@ def year_from_file_path(file_path):
     return int(year)
 
 
-def ocr_report(image_file_path, water_user='', field_id='', loop=None):
+def ocr_report(image_file_path, f, water_user='', field_id='', loop=None, kaf_begin=None, kaf_end=None):
     water_user_lower = water_user.lower()
     field_id_lower = field_id.lower()
     year = year_from_file_path(image_file_path)
@@ -57,14 +57,15 @@ def ocr_report(image_file_path, water_user='', field_id='', loop=None):
     text = image_to_text(image_file_path)
     strings = text.split('\n')
     look_for_diversion = False
-    if loop:
-        print(loop)
+    looping = False
     for string in strings:
         if not water_user_lower or water_user_lower in string.lower():
             look_for_diversion = True
         if look_for_diversion:
             string_lower = string.lower()
-            if field_id_lower in string_lower:
+            if looping and loop in string_lower:
+                return year, False
+            elif field_id_lower in string_lower or looping:
                 parts = string_lower.rsplit(field_id_lower, 1)
                 if len(parts) > 0:
                     clean_string = ''
@@ -76,26 +77,30 @@ def ocr_report(image_file_path, water_user='', field_id='', loop=None):
                     result = result.strip()
                     values = result.split(' ')
                     # Did we get enough numbers to potentially be twelve month + total
-                    if len(values) > 10:
-                        return year, result
+                    # FIXME, Needs to be higher on cleaned data, lower on new OCR data
+                    if len(values) > 1:
+                        year = process_line_item(year, result, image_file_path, f, kaf_begin, kaf_end)
+                        if not loop:
+                            return year, False
+                        else:
+                            looping = True
                     elif len(values) > 1:
                         print("Number of fields came up short: ", len(values))
                 else:
                     break
 
-    return year, ''
+    return None, False
 
 
-def ocr_image_file(image_file_path, water_user, field_id, f, loop, kaf_begin=0, kaf_end=0):
-    year, data = ocr_report(image_file_path, water_user, field_id, loop)
-    return process_line_item(year, data, image_file_path, f, kaf_begin, kaf_end)
+def ocr_image_file(image_file_path, f, water_user, field_id, loop, kaf_begin=0, kaf_end=0):
+    return ocr_report(image_file_path, f, water_user, field_id, loop, kaf_begin, kaf_end)
 
 
 def process_line_item(year, data, image_file_path, f, kaf_begin, kaf_end):
     error_tolerance = 2  # af error allowed between summation of months and annual total
 
     print_file_name_prefix = '\t' + image_file_path.name + ': '
-    if year > 1900 and len(data) > 0:
+    if year and year > 1900 and len(data) > 0:
         values = data.split(' ')
         # Footnotes in older reports end in '/'
         if values[0].endswith('/'):
@@ -177,6 +182,7 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 
         year_prev = int(re.split(r'\D+', image_file_paths[0].name)[0])
         year_written = 0
+        looping = False
         for image_file_path in image_file_paths:
             year = int(re.split(r'\D+', image_file_path.name)[0])
 
@@ -187,7 +193,7 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
                     print('\t', year_prev)
                     f.write(str(year_prev) + '\n')
                 year_prev = year
-            year_written = ocr_image_file(image_file_path, water_user, field_id, f, loop, kaf_begin, kaf_end)
+            year_written, looping = ocr_image_file(image_file_path, f, water_user, field_id, loop, kaf_begin, kaf_end)
 
         f.close()
     else:
@@ -196,10 +202,14 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 
 def scavenge_ca(image_dir, out_path):
     image_path = image_dir.joinpath('ca/consumptive_use')
-    
+
+    # East Blythe
+    output_path = out_path.joinpath('ca/usbr_ca_east_blythe_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='East Blythe', field_id='Diversion', end_year=1978)
+
     output_path = out_path.joinpath('ca/usbr_ca_crit_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='Diversion', start_year=1973,
-                loop='Diversion')
+                loop='return')
 
     output_path = out_path.joinpath('ca/usbr_ca_fort_mojave_well_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='wells',  start_year=2009)
@@ -386,8 +396,11 @@ def scavenge_ca(image_dir, out_path):
 
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
-    # Sturges, Warren Act 1995-1996 at least
     # Hopi
+
+    output_path = out_path.joinpath('az/usbr_az_crit_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='pump', start_year=1964,
+                loop='return')
 
     # Sturges, Warren Act
     output_path = out_path.joinpath('az/usbr_az_sturges_warren_act_consumptive_use.csv')
@@ -900,7 +913,7 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    # ocr_debug(image_directory, path1='az', path2='/consumptive_use')
+    ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='releases')
     scavenge_ca(image_directory, outputs_path)
     scavenge_az(image_directory, outputs_path)
