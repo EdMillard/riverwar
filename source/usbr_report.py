@@ -40,6 +40,7 @@ class USBRReport(object):
 def pre_process_csv(strings, sep):
     line = 0
     years = 0
+    year_previous = 0
     headers = []
     for s in strings:
         if not len(s):
@@ -50,7 +51,16 @@ def pre_process_csv(strings, sep):
             headers = s.split(sep)
             pass
         elif len(s) > 0:
-            years += 1
+            fields = s.split(sep)
+            if len(fields) > 0:
+                year = int(fields[0])
+                if year != year_previous:
+                    if year_previous != 0 and year != year_previous+1:
+                        print("year discontinuity in csv preprocessor:", year, year_previous)
+                    year_previous = year
+                    years += 1
+            else:
+                print("empty fields in csv preprocessor")
         line += 1
 
     return headers, years
@@ -72,9 +82,9 @@ def load_monthly_csv(file_name, sep=' '):
     strings = content.split('\n')
     headers, years = pre_process_csv(strings, sep)
 
-    a = np.zeros(years*12, [('dt', 'datetime64[s]'), ('val', 'f')])
+    a = np.zeros(years*12+1, [('dt', 'datetime64[s]'), ('val', 'f')])
     months = 0
-
+    year = 0
     line = 0
     for s in strings:
         if not len(s):
@@ -91,33 +101,44 @@ def load_monthly_csv(file_name, sep=' '):
             fields = s.strip().split(sep)
             if 1 < len(fields) < 14:
                 print("Not enough fields for year, 12 months and total", file_name, fields)
+            elif len(fields) > 15:
+                print("Too many fields for year, 12 months and total", file_name, fields)
             if len(fields) > 1:
                 month = 1
-                year = fields[0]
-                total = int(fields[-1].replace(',', ''))
+                year_previous = year
+                year = int(fields[0])
+                if year == year_previous:
+                    months -= 12
+                    accumulate = True
+                else:
+                    accumulate = False
                 sum_year = 0
+                total = int(fields[-1].replace(',', ''))
                 for m in fields[1:-1]:
                     monthly_flow = int(m.replace(',', ''))
-                    if month <= 12:
-                        last_day = calendar.monthrange(int(year), month)[1]
+                    if not accumulate:
+                        if month <= 12:
+                            last_day = calendar.monthrange(year, month)[1]
+                        else:
+                            last_day = 30
+                            print('Invalid month: ', fields)
+                        year_month_last_day = str(year) + '-' + str(month) + '-' + str(last_day)
+                        date_time = datetime.datetime.strptime(year_month_last_day, date_time_format)
+                        a[months][0] = date_time
+                        a[months][1] = monthly_flow
                     else:
-                        last_day = 30
-                        print('Invalid month: ', fields)
-                    year_month_last_day = str(year) + '-' + str(month) + '-' + str(last_day)
-                    date_time = datetime.datetime.strptime(year_month_last_day, date_time_format)
-                    a[months][0] = date_time
-                    a[months][1] = monthly_flow
+                        a[months][1] += monthly_flow
                     sum_year += monthly_flow
                     month += 1
                     months += 1
                 if sum_year != total:
-                    print(year, 'total & sum mismatch diff =', sum_year-total,
+                    print(str(year), 'total & sum mismatch diff =', sum_year-total,
                           'expected = ', total, ' got = ', sum_year, fields)
             elif len(fields) == 1:
-                year = fields[0]
+                year = int(fields[0])
                 monthly_flow = 0
                 for month in range(1, 13):
-                    last_day = calendar.monthrange(int(year), month)[1]
+                    last_day = calendar.monthrange(year, month)[1]
                     year_month_last_day = str(year) + '-' + str(month) + '-' + str(last_day)
                     date_time = datetime.datetime.strptime(year_month_last_day, date_time_format)
                     a[months][0] = date_time
