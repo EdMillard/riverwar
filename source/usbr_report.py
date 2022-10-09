@@ -82,7 +82,7 @@ def load_monthly_csv(file_name, sep=' '):
     strings = content.split('\n')
     headers, years = pre_process_csv(strings, sep)
 
-    a = np.zeros(years*12+1, [('dt', 'datetime64[s]'), ('val', 'f')])
+    a = np.zeros(years*12, [('dt', 'datetime64[s]'), ('val', 'f')])
     months = 0
     year = 0
     line = 0
@@ -101,7 +101,7 @@ def load_monthly_csv(file_name, sep=' '):
             fields = s.strip().split(sep)
             if 1 < len(fields) < 14:
                 print("Not enough fields for year, 12 months and total", file_name, fields)
-            elif len(fields) > 15:
+            elif len(fields) > 14:
                 print("Too many fields for year, 12 months and total", file_name, fields)
             if len(fields) > 1:
                 month = 1
