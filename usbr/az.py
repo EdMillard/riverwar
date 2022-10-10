@@ -28,7 +28,7 @@ current_last_year = 2021
 
 
 def test():
-
+    arizona_state_land_diversion()
     state_total_vs_user_total_graph()
     others_users_pumping()
     total_returns()
@@ -91,7 +91,7 @@ def state_total_vs_user_total_graph():
 
     difference = subtract_annual(az_total_diversion, users_total_diversion)
     graph.bars(difference, sub_plot=1, title='AZ State Total Diversion minus User Total', color='firebrick',
-               ymin=-10000, ymax=250000, yinterval=10000,
+               ymin=-10000, ymax=50000, yinterval=10000,
                xlabel='Calendar Year', xinterval=4,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.date_and_wait()
@@ -113,7 +113,7 @@ def state_total_vs_user_total_graph():
 
     difference = subtract_annual(az_total_cu, users_total_cu)
     graph.bars(difference, sub_plot=1, title='AZ State Total Consumptive Use minus User Total', color='firebrick',
-               ymin=-10000, ymax=250000, yinterval=10000,
+               ymin=-10000, ymax=170000, yinterval=10000,
                xlabel='Calendar Year', xinterval=4,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.date_and_wait()
@@ -132,6 +132,7 @@ def state_total_cu(state_code, name):
 def total_diversion():
     data = [fort_mojave_diversion(),  # Davis Dam, Lake Mohave
             mohave_valley_diversion(),
+            town_of_parker_diversion(),
             cibola_valley_diversion(),
             cibola_national_wildlife_diversion(),
             bullhead_city_diversion(),
@@ -153,7 +154,13 @@ def total_diversion():
             city_of_yuma_diversion(),
             wellton_mohawk_diversion(),
             sturges_diversion(),
-            others_users_pumping_diversion()
+            marine_corp_diversion(),
+            arizona_state_land_diversion(),
+            arizona_game_and_fish_diversion(),
+            university_of_arizona_diversion(),
+            warren_act_diversion(),
+            others_users_pumping_diversion(),
+            gabrych_diversion()
             ]
     data[0] = reshape_annual_range(data[0], 1964, current_last_year)
     return add_annuals(data)
@@ -162,6 +169,7 @@ def total_diversion():
 def total_cu():
     data = [fort_mojave_cu(),  # Davis Dam, Lake Mohave
             mohave_valley_cu(),
+            town_of_parker_cu(),
             cibola_valley_cu(),
             cibola_national_wildlife_cu(),
             bullhead_city_cu(),
@@ -182,7 +190,13 @@ def total_cu():
             city_of_yuma_cu(),
             wellton_mohawk_cu(),
             sturges_cu(),
-            others_users_pumping_cu()
+            marine_corp_cu(),
+            arizona_state_land_cu(),
+            arizona_game_and_fish_cu(),
+            university_of_arizona_cu(),
+            warren_act_cu(),
+            others_users_pumping_cu(),
+            gabrych_cu()
             ]
     data[0] = reshape_annual_range(data[0], 1964, current_last_year)
     return add_annuals(data)
@@ -191,6 +205,7 @@ def total_cu():
 def total_returns():
     data = [fort_mojave_returns(),  # Davis Dam, Lake Mohave
             mohave_valley_returns(),
+            town_of_parker_returns(),
             cibola_valley_returns(),
             cibola_national_wildlife_returns(),
             bullhead_city_returns(),
@@ -211,7 +226,12 @@ def total_returns():
             cocopah_returns(),
             city_of_yuma_returns(),
             wellton_mohawk_returns(),
-            sturges_returns()
+            arizona_state_land_returns(),
+            arizona_game_and_fish_returns(),
+            university_of_arizona_returns(),
+            sturges_returns(),
+            marine_corp_returns(),
+            gabrych_returns()
             ]
     data[0] = reshape_annual_range(data[0], 1964, current_last_year)
     return add_annuals(data)
@@ -276,7 +296,7 @@ def not_yuma_area_returns():
             {'data': bullhead_city_returns(), 'label': 'Bullhead City', 'color': 'mistyrose'},
             {'data': havasu_national_wildlife_returns(), 'label': 'Havasu National Wildlife Refuge',
              'color': 'darkblue'},
-            {'data': sturges_returns(), 'label': 'Sturges', 'color': 'darkblue'} # FIXME color
+            {'data': sturges_returns(), 'label': 'Sturges', 'color': 'darkblue'}  # FIXME color
             ]
     return data
 
@@ -361,6 +381,18 @@ def mohave_valley_cu():
 
 def mohave_valley_returns():
     return subtract_annual(north_gila_irrigation_diversion(), north_gila_irrigation_cu())
+
+
+def town_of_parker_diversion():
+    return usbr_report.annual_af('az/usbr_az_town_of_parker_diversion.csv')
+
+
+def town_of_parker_cu():
+    return usbr_report.annual_af('az/usbr_az_town_of_parker_consumptive_use.csv')
+
+
+def town_of_parker_returns():
+    return subtract_annual(town_of_parker_diversion(), town_of_parker_cu())
 
 
 def cibola_valley():
@@ -763,10 +795,10 @@ def gila_monster():
     monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_gila_monster_diversion.csv')
     monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_gila_monster_consumptive_use.csv')
     graph.plot(monthly_diversion_af, sub_plot=0, title='Gila Monster (Monthly)',
-               xinterval=year_interval, ymax=10000, yinterval=1000, color='darkmagenta',
+               xinterval=year_interval, ymax=3000, yinterval=500, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.plot(monthly_cu_af, sub_plot=0, title='',
-               xinterval=year_interval, ymax=10000, yinterval=1000, color='firebrick',
+               xinterval=year_interval, ymax=3000, yinterval=500, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     annual_diversion_af = gila_monster_diversion()
@@ -777,7 +809,7 @@ def gila_monster():
     ]
     graph.bars_stacked(bar_data, sub_plot=1,
                        title='Gila Monster Diversions and Consumptive Use (Annual)',
-                       ymin=0, ymax=75000, yinterval=5000,
+                       ymin=0, ymax=15000, yinterval=1000,
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
@@ -798,15 +830,15 @@ def gila_monster_returns():
 
 
 def south_gila_diversion():
-    south_gila_diversion = usbr_report.annual_af('az/usbr_az_south_gila_pump_diversion.csv')
-    south_gila_diversion = reshape_annual_range(south_gila_diversion, 1964, current_last_year)
-    return south_gila_diversion
+    diversion = usbr_report.annual_af('az/usbr_az_south_gila_pump_diversion.csv')
+    diversion = reshape_annual_range(diversion, 1964, current_last_year)
+    return diversion
 
 
 def south_gila_returns():
-    south_gila_return = usbr_report.annual_af('az/usbr_az_south_gila_returns.csv')
-    south_gila_return = reshape_annual_range(south_gila_return, 1964, current_last_year)
-    return south_gila_return
+    returns = usbr_report.annual_af('az/usbr_az_south_gila_returns.csv')
+    returns = reshape_annual_range(returns, 1964, current_last_year)
+    return returns
 
 
 def yuma_irrigation():
@@ -831,7 +863,7 @@ def yuma_irrigation():
     ]
     graph.bars_stacked(bar_data, sub_plot=1,
                        title='Yuma Irrigation Diversions and Consumptive Use (Annual)',
-                       ymin=0, ymax=75000, yinterval=5000,
+                       ymin=0, ymax=100000, yinterval=5000,
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
@@ -1001,7 +1033,7 @@ def cocopah():
         {'data': annual_cu_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
     ]
     graph.bars_stacked(bar_data, sub_plot=1, title='Cocopah Diversion and Consumptive Use (Annual)',
-                       ymin=0, ymax=20000, yinterval=2000,
+                       ymin=0, ymax=18000, yinterval=2000,
                        xlabel='', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=False)
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
@@ -1098,6 +1130,18 @@ def sturges():
     graph.date_and_wait()
 
 
+def marine_corp_diversion():
+    return usbr_report.annual_af('az/usbr_az_marine_corp_diversion.csv')
+
+
+def marine_corp_cu():
+    return usbr_report.annual_af('az/usbr_az_marine_corp_consumptive_use.csv')
+
+
+def marine_corp_returns():
+    return subtract_annual(marine_corp_diversion(), marine_corp_cu())
+
+
 def sturges_diversion():
     return usbr_report.annual_af('az/usbr_az_sturges_diversion.csv')
 
@@ -1108,6 +1152,50 @@ def sturges_cu():
 
 def sturges_returns():
     return subtract_annual(sturges_diversion(), sturges_cu())
+
+
+def warren_act_diversion():
+    return usbr_report.annual_af('az/usbr_az_warren_act_diversion.csv')
+
+
+def warren_act_cu():
+    return usbr_report.annual_af('az/usbr_az_warren_act_consumptive_use.csv')
+
+
+def arizona_state_land_diversion():
+    return usbr_report.annual_af('az/usbr_az_arizona_state_land_diversion.csv')
+
+
+def arizona_state_land_cu():
+    return usbr_report.annual_af('az/usbr_az_arizona_state_land_consumptive_use.csv')
+
+
+def arizona_state_land_returns():
+    return subtract_annual(arizona_state_land_diversion(), arizona_state_land_cu())
+
+
+def arizona_game_and_fish_diversion():
+    return usbr_report.annual_af('az/usbr_az_arizona_game_and_fish_diversion.csv')
+
+
+def arizona_game_and_fish_cu():
+    return usbr_report.annual_af('az/usbr_az_arizona_game_and_fish_consumptive_use.csv')
+
+
+def arizona_game_and_fish_returns():
+    return subtract_annual(arizona_game_and_fish_diversion(), arizona_game_and_fish_cu())
+
+
+def university_of_arizona_diversion():
+    return usbr_report.annual_af('az/usbr_az_university_of_arizona_diversion.csv')
+
+
+def university_of_arizona_cu():
+    return usbr_report.annual_af('az/usbr_az_university_of_arizona_consumptive_use.csv')
+
+
+def university_of_arizona_returns():
+    return subtract_annual(university_of_arizona_diversion(), arizona_game_and_fish_returns())
 
 
 def others_users_pumping():
@@ -1148,3 +1236,15 @@ def others_users_pumping_cu():
 
 def others_users_pumping_returns():
     return subtract_annual(others_users_pumping_diversion(), others_users_pumping_cu())
+
+
+def gabrych_diversion():
+    return usbr_report.annual_af('az/usbr_az_gabrych_diversion.csv')
+
+
+def gabrych_cu():
+    return usbr_report.annual_af('az/usbr_az_gabrych_consumptive_use.csv')
+
+
+def gabrych_returns():
+    return subtract_annual(gabrych_diversion(), gabrych_cu())
