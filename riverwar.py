@@ -637,13 +637,15 @@ def all_american_extras():
 def model_lake_powell_inflow():
     start_year = 1963
     end_year = 2022
+    water_year_month = 10
 
     show_graph = False
     show_annotated = False
 
     usgs_colorado_cisco_gage = usgs.ut.colorado_cisco(graph=show_graph)
+    colorado_cisco_af = usgs_colorado_cisco_gage.annual_af(start_year=start_year, end_year=end_year,
+                                                           water_year_month=water_year_month)
     if show_annotated:
-        colorado_cisco_af = usgs_colorado_cisco_gage.annual_af()
         graph = WaterGraph(nrows=1)
         graph.bars(colorado_cisco_af, sub_plot=0, title=usgs_colorado_cisco_gage.site_name, color='royalblue',
                    ymin=0, ymax=11500000, yinterval=500000, xinterval=4,
@@ -655,11 +657,11 @@ def model_lake_powell_inflow():
         graph.annotate_vertical_arrow(1963, "Dillon", offset_percent=2.5)
         graph.annotate_vertical_arrow(1966, "Blue Mesa", offset_percent=5)
         graph.date_and_wait()
-    colorado_cisco_af = usgs_colorado_cisco_gage.annual_af(start_year=start_year, end_year=end_year)
 
     usgs_green_river_gage = usgs.ut.green_river_at_green_river(graph=show_graph)
+    green_river_af = usgs_green_river_gage.annual_af(start_year=start_year, end_year=end_year,
+                                                     water_year_month=water_year_month)
     if show_annotated:
-        green_river_af = usgs_green_river_gage.annual_af()
         graph = WaterGraph(nrows=1)
         graph.bars(green_river_af, sub_plot=0, title=usgs_green_river_gage.site_name, color='royalblue',
                    ymin=0, ymax=9000000, yinterval=500000, xinterval=4,
@@ -668,11 +670,11 @@ def model_lake_powell_inflow():
         graph.annotate_vertical_arrow(1962, "Flaming Gorge", offset_percent=2.5)
         graph.annotate_vertical_arrow(1963, "Fontenelle", offset_percent=5)
         graph.date_and_wait()
-    green_river_af = usgs_green_river_gage.annual_af(start_year=start_year, end_year=end_year)
 
     usgs_san_juan_bluff_gage = usgs.ut.san_juan_bluff(graph=show_graph)
+    san_juan_af = usgs_san_juan_bluff_gage.annual_af(start_year=start_year, end_year=end_year,
+                                                     water_year_month=water_year_month)
     if show_annotated:
-        san_juan_af = usgs_san_juan_bluff_gage.annual_af()
         graph = WaterGraph(nrows=1)
         graph.bars(san_juan_af, sub_plot=0, title=usgs_san_juan_bluff_gage.site_name, color='royalblue',
                    ymin=0, ymax=3250000, yinterval=250000, xinterval=4,
@@ -680,10 +682,10 @@ def model_lake_powell_inflow():
                    ylabel='maf', format_func=WaterGraph.format_maf)
         graph.annotate_vertical_arrow(1962, "Navajo", offset_percent=2.5)
         graph.date_and_wait()
-    san_juan_af = usgs_san_juan_bluff_gage.annual_af(start_year=start_year, end_year=end_year)
 
     usgs_dirty_devil_gage = usgs.ut.dirty_devil(graph=True)
-    dirty_devil_af = usgs_dirty_devil_gage.annual_af(start_year=start_year, end_year=end_year)
+    dirty_devil_af = usgs_dirty_devil_gage.annual_af(start_year=start_year, end_year=end_year,
+                                                     water_year_month=water_year_month)
     # Only around 8 kaf annually
     # usgs_escalante_gage = usgs_escalante(graph=True)
     # escalante_af = usgs_escalante_gage.annual_af(start_year=start_year, end_year=end_year)
@@ -693,6 +695,7 @@ def model_lake_powell_inflow():
     usbr_lake_powell_inflow_af = 4288
     usbr_lake_powell_inflow_volume_unregulated_af = 4301
     annual_inflow_af = usbr_rise.annual_af(usbr_lake_powell_inflow_af)
+    annual_inflow_af = reshape_annual_range(annual_inflow_af, 1963, 2022)
     # graph.bars(annual_inflow_af, sub_plot=0, title='Lake Powell Inflow',
     #            ymin=3000000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
     #           ylabel='maf',  format_func=WaterGraph.format_maf)
@@ -710,7 +713,7 @@ def model_lake_powell_inflow():
     #                    ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
 
     graph.bars_two(annual_inflow_af, annual_inflow_unregulated_af,
-                   title='Lake Powell Inflow & Unregulated Inflow',
+                   title='Lake Powell Inflow & Unregulated Inflow, 10 yr moving avg',
                    label_a='Inflow', color_a='royalblue',
                    label_b='Unregulated Inflow', color_b='darkblue',
                    ylabel='af', ymin=0, ymax=21000000, yinterval=2000000,
@@ -730,10 +733,11 @@ def model_lake_powell_inflow():
                        xlabel='Water Year', xinterval=year_interval,
                        ylabel='maf', format_func=WaterGraph.format_maf, vertical=True)
     total = util.add3_annual(colorado_cisco_af, green_river_af, san_juan_af)
-    graph.running_average(total, 10, sub_plot=0)
+    graph.running_average(total, 5, sub_plot=0, label='5 yr moving avg', color='goldenrod')
+    graph.running_average(total, 7, sub_plot=0, label='7 yr moving avg', color='gold')
 
-    graph.bars(annual_inflow_af, sub_plot=1, title='USBR RISE Lake Powell Inflow',
-               ymin=0, ymax=22000000, yinterval=1000000, xinterval=year_interval,
+    graph.bars(annual_inflow_af, sub_plot=1, title='USBR RISE Lake Powell Inflow, 10 yr moving avg',
+               ymin=0, ymax=22000000, yinterval=1000000, xinterval=year_interval, xlabel='Water Year',
                ylabel='maf',  format_func=WaterGraph.format_maf)
     graph.date_and_wait()
 
@@ -1049,7 +1053,6 @@ def model_not_yuma_area():
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
-
     usbr.az.test()
     usbr.ca.test()
     usbr.nv.test()
