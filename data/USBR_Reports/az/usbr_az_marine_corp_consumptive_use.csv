@@ -1,7 +1,7 @@
 # USBR Lower Colorado Basin Annual reports: Marine Corps Diversion
 Year Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec Total
 # This is diversion data
-1987 66 121 165 217 266 309 374 333 298 216 36 48 2459
+1987 66 121 165 217 266 309 374 333 298 216 36 48 2459  # diff = -10 expected =  2459  got =  2449
 1988 50 61 176 180 261 225 321 305 267 165 101 6 2118
 1989 12 48 156 194 185 245 237 231 221 185 77 48 1839
 1990
