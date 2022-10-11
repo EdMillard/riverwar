@@ -38,6 +38,9 @@ interrupted = False
 
 current_last_year = 2021
 
+# FIXME Revision 1967_0, 1967_1, 1968_0, 1968_1, 1970_0, 1971_0, 1973_1
+# Fixed 1969_0, 1969_1, 1970_1, 1971_1, 1972_1,1980_1, 1984_1
+
 # matplotlib colors
 # https://i.stack.imgur.com/lFZum.png
 #
@@ -1048,14 +1051,17 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     usbr.az.test()
+    usbr.ca.test()
+    usbr.nv.test()
+
     # usbr_rise.catalog()
     # usgs.az.test_returns()
+    model_lake_powell_inflow()
     model_hoover_to_imperial()
     model_all_american()
     model_imperial_to_mexico()
     model_yuma_area()
     model_not_yuma_area()
-    model_lake_powell_inflow()
 
     usgs.ca.test()
     usbr.az.colorado_river_indian_tribes()

@@ -203,6 +203,9 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 def scavenge_ca(image_dir, out_path):
     image_path = image_dir.joinpath('ca/consumptive_use')
 
+    output_path = out_path.joinpath('ca/usbr_ca_total_returns.csv')
+    ocr_reports(image_path, output_path, water_user='California Totals', field_id='Return', end_year=2009)
+
     # East Blythe
     output_path = out_path.joinpath('ca/usbr_ca_east_blythe_diversion.csv')
     ocr_reports(image_path, output_path, water_user='East Blythe', field_id='Diversion', end_year=1978)
@@ -396,7 +399,62 @@ def scavenge_ca(image_dir, out_path):
 
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
-    # Hopi
+    # FIXME Lake Mead, Hopi, Havasu Wildlife pumps, Yuma Proving Grounds
+    # FIXME Gabrych, Cibola Vally (Hopi, et al)
+    # FIXME 1982 Protective and Regulatory Pumping Unit, Yuma Mesa Outlet Drain
+
+    output_path = out_path.joinpath('az/usbr_az_hopi_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Hopi', field_id='Consumptive Us', start_year=2005)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_union_high_school_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Union High School', field_id='Diversion', start_year=1984)
+
+    output_path = out_path.joinpath('az/usbr_az_fort_yuma_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Yuma', field_id='Consumptive Us', start_year=2006)
+
+    output_path = out_path.joinpath('az/usbr_az_fort_yuma_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Yuma', field_id='Diversion', start_year=1984)
+
+    output_path = out_path.joinpath('az/usbr_az_hopi_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Hopi', field_id='Diversion', start_year=2005)
+
+    output_path = out_path.joinpath('az/usbr_az_protective_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Protective', field_id='Diversion')
+
+    output_path = out_path.joinpath('az/usbr_az_total_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona Totals', field_id='Return', end_year=2009)
+
+    output_path = out_path.joinpath('az/usbr_az_havasu_national_wildlife_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu National', field_id='Consumptive Us',
+                start_year=1969, end_year=1982)
+
+    output_path = out_path.joinpath('az/usbr_az_protective_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Protective', field_id='Diversion')
+
+    # Town of Parker
+    output_path = out_path.joinpath('az/usbr_az_town_of_parker_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Town of Parker', field_id='Diversion', end_year=1978,
+                loop='return')
+
+    # Town of Parker
+    output_path = out_path.joinpath('az/usbr_az_town_of_parker_pumped_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Town of Parker', field_id='Diversion', start_year=1990,
+                loop='return')
+
+    output_path = out_path.joinpath('az/usbr_az_university_of_arizona_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='University of Arizona', field_id='Diversion', start_year=1983)
+
+    output_path = out_path.joinpath('az/usbr_az_university_of_arizona_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='University of Arizona', field_id='Consumptive Us', start_year=1983)
+
+    output_path = out_path.joinpath('az/usbr_az_marine_corp_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Marine Corps', field_id='Consumptive Us', start_year=2003)
+
+    output_path = out_path.joinpath('az/usbr_az_warren_act_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Warren Act', field_id='Consumptive Us', end_year=1990)
+
+    output_path = out_path.joinpath('az/usbr_az_warren_act_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Warren Act', field_id='Diversion', end_year=1990)
 
     output_path = out_path.joinpath('az/usbr_az_crit_pumped_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Colorado River Indian', field_id='pump', start_year=1964,
@@ -409,8 +467,6 @@ def scavenge_az(image_dir, out_path):
 
     output_path = out_path.joinpath('az/usbr_az_sturges_warren_act_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Sturges', field_id='Diversion', start_year=1990, end_year=2000)
-
-    # FIXME, Warren Act contractor diversions in 1964, at least
 
     output_path = out_path.joinpath('az/usbr_az_central_arizona_project_snwa_diversion.csv')
     # Can be "Central Arizona Project or  "Central Arizona Water Conservation District" ie 2021
@@ -750,6 +806,10 @@ def scavenge_az(image_dir, out_path):
 def scavenge_nv(image_dir, out_path):
     image_path = image_dir.joinpath('nv/consumptive_use')
     # FIXME Run "CITY OF HENDERSON" "Basic Management"
+
+    output_path = out_path.joinpath('nv/usbr_nv_total_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Nevada Totals', field_id='Return', end_year=2009)
+
     output_path = out_path.joinpath('nv/usbr_nv_total_measured_returns.csv')
     ocr_reports(image_path, output_path, water_user='Nevada Totals', field_id='Measured Returns')
 
@@ -913,10 +973,10 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
+    # ocr_debug(image_directory, path1='az', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='releases')
-    scavenge_ca(image_directory, outputs_path)
     scavenge_az(image_directory, outputs_path)
-    scavenge_releases(image_directory, outputs_path)
     scavenge_nv(image_directory, outputs_path)
+    scavenge_ca(image_directory, outputs_path)
+    scavenge_releases(image_directory, outputs_path)
     scavenge_mx(image_directory, outputs_path)
