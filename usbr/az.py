@@ -91,8 +91,8 @@ def state_total_vs_user_total_graph():
 
     difference = subtract_annual(az_total_diversion, users_total_diversion)
     graph.bars(difference, sub_plot=1, title='AZ State Total Diversion minus User Total', color='firebrick',
-               ymin=-2000, ymax=42000, yinterval=2000,
-               xlabel='Calendar Year', xinterval=4,
+               ymin=-2000, ymax=34000, yinterval=2000,
+               xlabel='Calendar Year', xinterval=year_interval,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.date_and_wait()
 
@@ -113,8 +113,8 @@ def state_total_vs_user_total_graph():
 
     difference = subtract_annual(az_total_cu, users_total_cu)
     graph.bars(difference, sub_plot=1, title='AZ State Total Consumptive Use minus User Total', color='firebrick',
-               ymin=-2000, ymax=20000, yinterval=2000,
-               xlabel='Calendar Year', xinterval=4,
+               ymin=-1000, ymax=13500, yinterval=1000,
+               xlabel='Calendar Year', xinterval=year_interval,
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.date_and_wait()
 
@@ -132,18 +132,18 @@ def state_total_cu(state_code, name):
 def total_diversion():
     data = [
         # 2021 list in order
-        # Marble Canyon
+        # Marble Canyon                         # 2016
         # Lake mead rec from Lake Mead
         # Lake mead rec from Lake Mohave
         # McAlister
         # Lower Colorado River Dams Project/USBR
         bullhead_city_diversion(),              # 1987
-        # Mohave Water Conservation
-        # Brooke Water/Epcore
+        mohave_water_diversion(),               # 1980
+        brooke_water_diversion(),               # 1995
         mohave_valley_diversion(),              # 1969
-        # Mohave County Water Authority
+        # Mohave County Water Authority         # 2005 in Cibola Valley, 2013 standalone
         fort_mojave_diversion(),                # 1975
-        # Golden Shores
+        golden_shores_diversion(),              # 1989/2003 really
         havasu_national_wildlife_diversion(),   # 1969
         # Crystal Beach
         lake_havasu_diversion(),                # 1969
@@ -160,15 +160,15 @@ def total_diversion():
         cibola_valley_diversion(),              # 1983
         # Red River
         # Western Water
-        # Hopi Tribe
+        hopi_diversion(),                       # 2005 in Cibola Valley, 2013 standalone
         arizona_game_and_fish_diversion(),      # 2013
         # Cibola Island
         cibola_national_wildlife_diversion(),   # 1976
-        imperial_national_wildlife_diversion(), # 1967
+        imperial_national_wildlife_diversion(),  # 1967
         # BLM
         # Fisher's Landing
         # Shephard Water
-        # Yuma Proving Ground
+        # Yuma Proving Ground                   # 1964
         # JRJ
         # Cha Cha
         # Beattie Farms
@@ -181,24 +181,24 @@ def total_diversion():
         university_of_arizona_diversion(),      # 1983
         yuma_union_high_school_diversion(),     # 1984
         # Camille, Alec
-        # Desert Lawn
+        # Desert Lawn                           # 1984
         north_gila_irrigation_diversion(),      # 1964
         yuma_irrigation_diversion(),            # 1965
         yuma_mesa_diversion(),                  # 1964
         unit_b_diversion(),                     # 1964
         arizona_state_land_diversion(),         # 2013
-        # Ott Familyt
+        # Ott Family
         # Ogram Boys
         fort_yuma_diversion(),                  # 1984
         # Armon Curtis
         yuma_county_wua_diversion(),            # 1964
         # R Griffith
         # Power
-        # Cocopa PPR No 7
+        # Cocopah PPR No 7
         # Griffith Ranches
         # Milton Phillips
         cocopah_diversion(),                    # 1964
-        # Yuma area office USBR
+        yuma_area_office_diversion(),           # 1994
         # Arizona Public Service
         # Gary Pasquinelli
         # Misc out of order
@@ -220,12 +220,12 @@ def total_cu():
         # McAlister
         # Lower Colorado River Dams Project/USBR
         bullhead_city_cu(),                     # 1987
-        # Mohave Water Conservation
-        # Brooke Water/Epcore
+        mohave_water_cu(),                      # 1980/2003 really
+        brooke_water_cu(),                      # 1995/2003 really
         mohave_valley_cu(),                     # 1969
         # Mohave County Water Authority
         fort_mojave_cu(),                       # 1975
-        # Golden Shores
+        golden_shores_cu(),                     # 1989/2003 really
         havasu_national_wildlife_cu(),          # 1969
         # Crystal Beach
         lake_havasu_cu(),                       # 1969
@@ -242,7 +242,7 @@ def total_cu():
         cibola_valley_cu(),                     # 1983
         # Red River
         # Western Water
-        # Hopi Tribe
+        hopi_cu(),                              # 2005 in Cibola Valley, 2013 standalone
         arizona_game_and_fish_cu(),             # 2013
         # Cibola Island
         cibola_national_wildlife_cu(),          # 1976
@@ -269,18 +269,18 @@ def total_cu():
         yuma_mesa_cu(),                         # 1964
         unit_b_cu(),                            # 1964
         arizona_state_land_cu(),                # 2013
-        # Ott Familyt
+        # Ott Family
         # Ogram Boys
         fort_yuma_cu(),                         # 2006
         # Armon Curtis
         yuma_county_wua_cu(),                   # 1964
         # R Griffith
         # Power
-        # Cocopa PPR No 7
+        # Cocopah PPR No 7
         # Griffith Ranches
         # Milton Phillips
         cocopah_cu(),                           # 1964
-        # Yuma area office USBR
+        yuma_area_office_cu(),                  # 1994, same as diversion
         # Arizona Public Service
         # Gary Pasquinelli
         # Misc out of order
@@ -303,12 +303,12 @@ def total_returns():
         # McAlister
         # Lower Colorado River Dams Project/USBR
         bullhead_city_returns(),
-        # Mohave Water Conservation
-        # Brooke Water/Epcore
+        mohave_water_returns(),
+        brooke_water_returns(),
         mohave_valley_returns(),
         # Mohave County Water Authority
         fort_mojave_returns(),  # Davis Dam, Lake Mohave
-        # Golden Shores
+        golden_shores_returns(),
         havasu_national_wildlife_returns(),
         # Crystal Beach
         lake_havasu_returns(),
@@ -325,7 +325,7 @@ def total_returns():
         cibola_valley_returns(),
         # Red River
         # Western Water
-        # Hopi Tribe
+        hopi_returns(),                         # 2005 in Cibola Valley, 2013 standalone
         arizona_game_and_fish_returns(),
         # Cibola Island
         cibola_national_wildlife_returns(),
@@ -352,18 +352,18 @@ def total_returns():
         yuma_mesa_returns(),
         unit_b_returns(),
         arizona_state_land_returns(),
-        # Ott Familyt
+        # Ott Family
         # Ogram Boys
         fort_yuma_returns(),
         # Armon Curtis
         yuma_county_wua_returns(),
         # R Griffith
         # Power
-        # Cocopa PPR No 7
+        # Cocopah PPR No 7
         # Griffith Ranches
         # Milton Phillips
         cocopah_returns(),
-        # Yuma area office USBR
+        yuma_area_office_returns(),
         # Arizona Public Service
         # Gary Pasquinelli
         # Misc out of order
@@ -510,6 +510,42 @@ def mohave_valley_irrigation():
     graph.date_and_wait()
 
 
+def brooke_water_diversion():
+    return usbr_report.annual_af('az/usbr_az_brooke_water_diversion.csv')
+
+
+def brooke_water_cu():
+    return usbr_report.annual_af('az/usbr_az_brooke_water_consumptive_use.csv')
+
+
+def brooke_water_returns():
+    return subtract_annual(brooke_water_diversion(), brooke_water_cu())
+
+
+def mohave_water_diversion():
+    return usbr_report.annual_af('az/usbr_az_mohave_water_diversion.csv')
+
+
+def mohave_water_cu():
+    return usbr_report.annual_af('az/usbr_az_mohave_water_consumptive_use.csv')
+
+
+def mohave_water_returns():
+    return subtract_annual(mohave_water_diversion(), mohave_water_cu())
+
+
+def golden_shores_diversion():
+    return usbr_report.annual_af('az/usbr_az_golden_shores_diversion.csv')
+
+
+def golden_shores_cu():
+    return usbr_report.annual_af('az/usbr_az_golden_shores_consumptive_use.csv')
+
+
+def golden_shores_returns():
+    return subtract_annual(golden_shores_diversion(), golden_shores_cu())
+
+
 def mohave_valley_diversion():
     return usbr_report.annual_af('az/usbr_az_mohave_valley_diversion.csv')
 
@@ -519,7 +555,7 @@ def mohave_valley_cu():
 
 
 def mohave_valley_returns():
-    return subtract_annual(north_gila_irrigation_diversion(), north_gila_irrigation_cu())
+    return subtract_annual(mohave_valley_diversion(), mohave_valley_cu())
 
 
 def town_of_parker_diversion():
@@ -998,6 +1034,18 @@ def yuma_union_high_school_returns():
     return subtract_annual(yuma_union_high_school_diversion(), yuma_union_high_school_cu())
 
 
+def yuma_area_office_diversion():
+    return usbr_report.annual_af('az/usbr_az_yuma_area_office_diversion.csv')
+
+
+def yuma_area_office_cu():
+    return usbr_report.annual_af('az/usbr_az_yuma_area_office_consumptive_use.csv')
+
+
+def yuma_area_office_returns():
+    return subtract_annual(yuma_area_office_diversion(), yuma_area_office_cu())
+
+
 def south_gila_diversion():
     diversion = usbr_report.annual_af('az/usbr_az_south_gila_pump_diversion.csv')
     diversion = reshape_annual_range(diversion, 1964, current_last_year)
@@ -1380,6 +1428,18 @@ def arizona_game_and_fish_cu():
 
 def arizona_game_and_fish_returns():
     return subtract_annual(arizona_game_and_fish_diversion(), arizona_game_and_fish_cu())
+
+
+def hopi_diversion():
+    return usbr_report.annual_af('az/usbr_az_hopi_diversion.csv')
+
+
+def hopi_cu():
+    return usbr_report.annual_af('az/usbr_az_hopi_consumptive_use.csv')
+
+
+def hopi_returns():
+    return subtract_annual(hopi_diversion(), hopi_cu())
 
 
 def university_of_arizona_diversion():
