@@ -23,15 +23,24 @@ import usbr
 from source import usbr_report
 from graph.water import WaterGraph
 from util import add_annual, add_annuals, subtract_annual, reshape_annual_range
+from usbr import lc, util
 
 current_last_year = 2021
 
 
 def test():
-    arizona_state_land_diversion()
-    state_total_vs_user_total_graph()
+    data = [
+        {'data': state_total_diversion('az', 'total'), 'y_min': 0, 'y_max': 3800000, 'y_interval': 200000},
+        {'data': user_total_diversion()},
+        {'y_min': -1000, 'y_max': 35000, 'y_interval': 2000},
+        {'data': state_total_cu('az', 'total'), 'y_min': 0, 'y_max': 3000000, 'y_interval': 200000},
+        {'data': user_total_cu()},
+        {'y_min': -1000, 'y_max': 14000, 'y_interval': 1000},
+    ]
+    util.state_total_vs_user_total_graph('AZ', data)
+
     others_users_pumping()
-    total_returns()
+    user_total_returns()
 
     total_graph()
 
@@ -71,54 +80,6 @@ def total_graph():
                                        ymin2=550000, ymax2=900000, yinterval2=25000)
 
 
-def state_total_vs_user_total_graph():
-    year_interval = 3
-    graph = WaterGraph(nrows=2)
-
-    az_total_diversion = state_total_diversion('az', 'total')
-    users_total_diversion = total_diversion()
-    bar_data = [
-        {'data': az_total_diversion, 'label': 'State Total', 'color': 'darkmagenta'},
-        {'data': users_total_diversion, 'label': 'Users', 'color': 'firebrick'},
-    ]
-    graph.bars_stacked(bar_data, sub_plot=0,
-                       title='AZ State Total Diversion vs User Total',
-                       ymin=1500000, ymax=3750000, yinterval=200000,
-                       xlabel='', xinterval=year_interval,
-                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
-    graph.running_average(az_total_diversion, 10, sub_plot=0)
-    graph.running_average(users_total_diversion, 10, sub_plot=0)
-
-    difference = subtract_annual(az_total_diversion, users_total_diversion)
-    graph.bars(difference, sub_plot=1, title='AZ State Total Diversion minus User Total', color='firebrick',
-               ymin=-2000, ymax=34000, yinterval=2000,
-               xlabel='Calendar Year', xinterval=year_interval,
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.date_and_wait()
-
-    graph = WaterGraph(nrows=2)
-    az_total_cu = state_total_cu('az', 'total')
-    users_total_cu = total_cu()
-    bar_data = [
-        {'data': az_total_cu, 'label': 'State', 'color': 'darkmagenta'},
-        {'data': users_total_cu, 'label': 'Users', 'color': 'firebrick'},
-    ]
-    graph.bars_stacked(bar_data, sub_plot=0,
-                       title='AZ State Total Consumptive Use vs Users Total Consumptive Use',
-                       ymin=800000, ymax=3000000, yinterval=200000,
-                       xlabel='', xinterval=year_interval,
-                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
-    graph.running_average(az_total_cu, 10, sub_plot=0)
-    graph.running_average(users_total_cu, 10, sub_plot=0)
-
-    difference = subtract_annual(az_total_cu, users_total_cu)
-    graph.bars(difference, sub_plot=1, title='AZ State Total Consumptive Use minus User Total', color='firebrick',
-               ymin=-1000, ymax=13500, yinterval=1000,
-               xlabel='Calendar Year', xinterval=year_interval,
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.date_and_wait()
-
-
 def state_total_diversion(state_code, name):
     diversion_file_name = state_code + '/usbr_' + state_code + '_' + name + '_diversion.csv'
     return usbr_report.annual_af(diversion_file_name)
@@ -129,7 +90,7 @@ def state_total_cu(state_code, name):
     return usbr_report.annual_af(diversion_file_name)
 
 
-def total_diversion():
+def user_total_diversion():
     data = [
         # 2021 list in order
         # Marble Canyon                         # 2016
@@ -211,7 +172,7 @@ def total_diversion():
     return add_annuals(data)
 
 
-def total_cu():
+def user_total_cu():
     data = [
         # 2021 list in order
         # Marble Canyon
@@ -294,7 +255,7 @@ def total_cu():
     return total
 
 
-def total_returns():
+def user_total_returns():
     data = [
         # 2021 list in order
         # Marble Canyon
@@ -1461,10 +1422,10 @@ def others_users_pumping():
     monthly_diversion_af = usbr_report.load_monthly_csv('az/usbr_az_other_users_pumping_diversion.csv')
     monthly_cu_af = usbr_report.load_monthly_csv('az/usbr_az_other_users_pumping_consumptive_use.csv')
     graph.plot(monthly_diversion_af, sub_plot=0, title='Other Users Pumping Diversion (Monthly)',
-               xinterval=year_interval, ymax=10000, yinterval=1000, color='darkmagenta',
+               xinterval=year_interval, ymax=15000, yinterval=1000, color='darkmagenta',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.plot(monthly_cu_af, sub_plot=0, title='',
-               xinterval=year_interval, ymax=10000, yinterval=1000, color='firebrick',
+               xinterval=year_interval, ymax=15000, yinterval=1000, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     annual_diversion_af = others_users_pumping_diversion()

@@ -22,7 +22,7 @@ SOFTWARE.
 from source import usbr_report
 from graph.water import WaterGraph
 from util import add_annual, add_annuals, subtract_annual, replace_annual, reshape_annual_range
-from usbr import lc
+from usbr import lc, util
 
 current_last_year = 2021
 
@@ -36,7 +36,7 @@ def test():
         {'data': user_total_cu()},
         {'y_min': -5000, 'y_max': 155000, 'y_interval': 5000},
     ]
-    state_total_vs_user_total_graph('CA', data)
+    util.state_total_vs_user_total_graph('CA', data)
 
     total()
     metropolitan()
@@ -120,54 +120,6 @@ def total():
     # graph.plot(unmeasured_returns_monthly_af, sub_plot=2,
     #            xinterval=year_interval, ymax=100000, yinterval=50000, color='darkmagenta',
     #           ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.date_and_wait()
-
-
-def state_total_vs_user_total_graph(state_abbreviation, data):
-    year_interval = 3
-    graph = WaterGraph(nrows=2)
-
-    state_total_diversion_af = data[0]['data']
-    users_total_diversion_af = data[1]['data']
-    bar_data = [
-        {'data': state_total_diversion_af, 'label': 'State Total', 'color': 'darkmagenta'},
-        {'data': users_total_diversion_af, 'label': 'Users', 'color': 'firebrick'},
-    ]
-    graph.bars_stacked(bar_data, sub_plot=0,
-                       title=state_abbreviation+' State Total Diversion vs User Total',
-                       ymin=data[0]['y_min'], ymax=data[0]['y_max'], yinterval=data[0]['y_interval'],
-                       xlabel='', xinterval=year_interval,
-                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
-    graph.running_average(state_total_diversion_af, 10, sub_plot=0)
-    graph.running_average(users_total_diversion_af, 10, sub_plot=0)
-
-    difference = subtract_annual(state_total_diversion_af, users_total_diversion_af)
-    graph.bars(difference, sub_plot=1, title=state_abbreviation+' State Total Diversion minus User Total',
-               color='firebrick', ymin=data[2]['y_min'], ymax=data[2]['y_max'], yinterval=data[2]['y_interval'],
-               xlabel='Calendar Year', xinterval=4,
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.date_and_wait()
-
-    graph = WaterGraph(nrows=2)
-    state_total_cu_af = data[3]['data']
-    users_total_cu_af = data[4]['data']
-    bar_data = [
-        {'data': state_total_cu_af, 'label': 'State', 'color': 'darkmagenta'},
-        {'data': users_total_cu_af, 'label': 'Users', 'color': 'firebrick'},
-    ]
-    graph.bars_stacked(bar_data, sub_plot=0,
-                       title=state_abbreviation+' State Total Consumptive Use vs Users Total Consumptive Use',
-                       ymin=data[3]['y_min'], ymax=data[3]['y_max'], yinterval=data[3]['y_interval'],
-                       xlabel='', xinterval=year_interval,
-                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
-    graph.running_average(state_total_cu_af, 10, sub_plot=0)
-    graph.running_average(users_total_cu_af, 10, sub_plot=0)
-
-    difference = subtract_annual(state_total_cu_af, users_total_cu_af)
-    graph.bars(difference, sub_plot=1, title=state_abbreviation+' State Total Consumptive Use minus User Total',
-               color='firebrick', ymin=data[5]['y_min'], ymax=data[5]['y_max'], yinterval=data[5]['y_interval'],
-               xlabel='Calendar Year', xinterval=4,
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.date_and_wait()
 
 
