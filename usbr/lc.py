@@ -139,3 +139,23 @@ def lake_havasu(graph=True):
                    ylabel='maf',  format_func=WaterGraph.format_maf)
         graph.fig.waitforbuttonpress()
     return annual_release_af
+
+
+def rock_dam(graph=True):
+    rock_release = usbr_report.annual_af('releases/usbr_releases_rock_dam.csv')
+    return rock_release
+
+
+def palo_verde_dam(graph=True):
+    palo_verde_release = usbr_report.annual_af('releases/usbr_releases_palo_verde_dam.csv')
+    return palo_verde_release
+
+
+def imperial_dam(graph=True):
+    imperial_release = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
+    return imperial_release
+
+
+def laguna_dam(graph=True):
+    laguna_release = usbr_report.annual_af('releases/usbr_releases_laguna_dam.csv')
+    return laguna_release

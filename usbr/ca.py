@@ -19,12 +19,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from sys import modules
 from source import usbr_report
 from graph.water import WaterGraph
-from util import add_annual, add_annuals, subtract_annual, replace_annual, reshape_annual_range
 from usbr import lc, util
+from rw.util import add_annual, add_annuals, subtract_annual, replace_annual, reshape_annual_range
+from rw import state
 
 current_last_year = 2021
+
+
+def init(ca):
+    module = modules[__name__]
+    ca.user(module, 'city_of_needles')
+    ca.user(module, 'city_of_blythe')
+    ca.user(module, 'east_blythe')
+    ca.user(module, 'fort_mojave')
+    ca.user(module, 'metropolitan')
+    ca.user(module, 'crit')
+    ca.user(module, 'palo_verde')
+    ca.user(module, 'imperial')
+    ca.user(module, 'coachella')
+    ca.user(module, 'yuma_project')
+    ca.user(module, 'other_users_pumping')
+    ca.user(module, 'yuma_island')
 
 
 def test():
@@ -135,56 +153,18 @@ def state_total_cu():
 
 
 def user_total_diversion():
-    data = [city_of_needles_diversion(),
-            city_of_blythe_diversion(),
-            east_blythe_diversion(),
-            fort_mojave_diversion(),
-            metropolitan_diversion(),
-            crit_diversion(),
-            palo_verde_diversion(),
-            imperial_diversion(),
-            coachella_diversion(),
-            yuma_project_diversion(),
-            other_users_pumping_diversion(),
-            yuma_island_diversion()
-            ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    california = state.state_by_abbreviation('ca')
+    return california.total_user_diversion()
 
 
 def user_total_cu():
-    data = [
-        metropolitan_cu(),
-        fort_mojave_cu(),
-        city_of_needles_cu(),
-        city_of_blythe_cu(),
-        east_blythe_cu(),
-        crit_cu(),
-        palo_verde_cu(),
-        imperial_cu(),
-        coachella_cu(),
-        yuma_project_cu(),
-        other_users_pumping_cu(),
-        yuma_island_cu()
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    california = state.state_by_abbreviation('ca')
+    return california.total_user_cu()
 
 
 def user_total_returns():
-    data = [
-        # Parker, Havasu
-        metropolitan_returns(),
-        fort_mojave_returns(),
-        city_of_needles_returns(),
-        # Rock
-        palo_verde_returns(),
-        # Yuma Area
-        yuma_area_returns(),
-        # others_users_pumping_returns()
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    california = state.state_by_abbreviation('ca')
+    return california.total_user_returns()
 
 
 def yuma_area_returns():
@@ -246,12 +226,22 @@ def city_of_blythe_cu(water_year_month=1):
     return city_of_blythe_diversion(water_year_month)
 
 
+def city_of_blythe_returns():
+    # City of Blythe has no return flows so cu is the same as diversion
+    return subtract_annual(city_of_blythe_diversion(), city_of_blythe_cu())
+
+
 def east_blythe_diversion(water_year_month=1):
     return usbr_report.annual_af('ca/usbr_ca_east_blythe_diversion.csv', water_year_month=water_year_month)
 
 
 def east_blythe_cu(water_year_month=1):
     return east_blythe_diversion(water_year_month)
+
+
+def east_blythe_returns():
+    #  East_Blythe has no return flows so cu is the same as diversion
+    return subtract_annual(east_blythe_diversion(), east_blythe_cu())
 
 
 def metropolitan_annotate(graph, sub_plot=0):
@@ -402,6 +392,11 @@ def crit_diversion(water_year_month=1):
 
 def crit_cu(water_year_month=1):
     return usbr_report.annual_af('ca/usbr_ca_crit_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def crit_returns():
+    # CRIT has no return flows so cu is the same as diversion
+    return subtract_annual(crit_diversion(), crit_cu())
 
 
 def imperial_irrigation_district():
@@ -643,9 +638,19 @@ def other_users_pumping_cu(water_year_month=1):
                                  water_year_month=water_year_month)
 
 
+def other_users_pumping_returns():
+    # Other Users Pumping has no return flows so cu is the same as diversion
+    return subtract_annual(other_users_pumping_diversion(), other_users_pumping_cu())
+
+
 def yuma_island_diversion(water_year_month=1):
     return usbr_report.annual_af('ca/usbr_ca_yuma_island_diversion.csv', water_year_month=water_year_month)
 
 
 def yuma_island_cu(water_year_month=1):
     return usbr_report.annual_af('ca/usbr_ca_yuma_island_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def yuma_island_returns():
+    # Yuma Island has no return flows so cu is the same as diversion
+    return subtract_annual(yuma_island_diversion(), yuma_island_cu())

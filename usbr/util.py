@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from source import usbr_report
 from graph.water import WaterGraph
-from util import subtract_annual, reshape_annual_range
+from rw.util import subtract_annual, reshape_annual_range
 current_last_year = 2021
 
 

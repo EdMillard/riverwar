@@ -83,7 +83,7 @@ class USGSGage(object):
         return b
 
     def annual_af(self, start_year=0, end_year=0, water_year_month=1):
-        monthly_af = daily_cfs_to_monthly_af(self.daily_discharge(update=True))
+        monthly_af = daily_cfs_to_monthly_af(self.daily_discharge(update=False), start_year=start_year, end_year=end_year)
         if water_year_month == 1:
             annual_af = usbr_report.monthly_to_calendar_year(monthly_af)
         else:
@@ -94,7 +94,10 @@ class USGSGage(object):
             annual_af = USGSGage.reshape_annual_range(annual_af, start_year, current_last_year)
         return annual_af
 
-    def daily_discharge(self, update=True):
+    def monthly_af(self, start_year=0, end_year=0):
+        return daily_cfs_to_monthly_af(self.daily_discharge(update=False), start_year, end_year)
+
+    def daily_discharge(self, update=False):
         file_path = Path('data/USGS_Gages/')
         file_name = file_path.joinpath(self.site + '.csv')
         if not file_name.exists():
@@ -263,25 +266,36 @@ def daily_to_water_year(a):
     return a
 
 
-def daily_cfs_to_monthly_af(a):
+def daily_cfs_to_monthly_af(a, start_year=0, end_year=0):
     obj = a[0]['dt'].astype(object)
     dt = datetime.date(obj.year, obj.month, obj.day)
     month = obj.month
+    year = obj.year
 
     total = 0
     result = []
     for o in a:
         obj = o['dt'].astype(object)
         if obj.month != month:
-            result.append([dt, round(total)])
+            if start_year == 0 and end_year == 0:
+                result.append([dt, round(total)])
+            else:
+                if start_year <= year <= end_year:
+                    result.append([dt, round(total)])
             total = 0
             month = obj.month
+        if obj.year != year:
+            year = obj.year
         af = o['val'] * 1.983459
         total += af
         dt = datetime.date(obj.year, obj.month, obj.day)
 
     if total > 0:
-        result.append([dt, round(total)])
+        if start_year == 0 and end_year == 0:
+            result.append([dt, round(total)])
+        else:
+            if start_year <= obj.year <= end_year:
+                result.append([dt, round(total)])
 
     a = np.empty(len(result), [('dt', 'datetime64[s]'), ('val', 'f')])
     month = 0

@@ -19,13 +19,93 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from sys import modules
 import usbr
 from source import usbr_report
 from graph.water import WaterGraph
-from util import add_annual, add_annuals, subtract_annual, reshape_annual_range
 from usbr import lc, util
+from rw.util import add_annual, add_annuals, subtract_annual, reshape_annual_range
+from rw import state
 
 current_last_year = 2021
+
+
+def init(az):
+    module = modules[__name__]
+    # Marble Canyon                         # 2016
+    # Lake mead rec from Lake Mead
+    # Lake mead rec from Lake Mohave
+    # McAlister
+    # Lower Colorado River Dams Project/USBR
+    az.user(module, 'bullhead_city')                    # 1987
+    az.user(module, 'mohave_water')                     # 1980
+    az.user(module, 'brooke_water')                     # 1995
+    az.user(module, 'mohave_valley')                    # 1969
+    # Mohave County Water Authority                     # 2005 in Cibola Valley, 2013 standalone
+    az.user(module, 'fort_mojave')                      # 1975
+    az.user(module, 'golden_shores')                    # 1989/2003 really
+    az.user(module, 'havasu_national_wildlife')         # 1969
+    # Crystal Beach
+    az.user(module, 'lake_havasu')                      # 1969
+    # Arizona Parks
+    az.user(module, 'cap')                              # 1985
+    # Hillcrest
+    # Springs Del Sol
+    az.user(module, 'town_of_parker')                   # 1964
+    az.user(module, 'crit')                             # 1964
+    az.user(module, 'gabrych')                          # 2018
+    # Ehrenburg
+    # B & F
+    # North Baja
+    az.user(module, 'cibola_valley')                    # 1983
+    # Red River
+    # Western Water
+    az.user(module, 'hopi')                             # 2005 in Cibola Valley, 2013 standalone
+    az.user(module, 'arizona_game_and_fish')            # 2013
+    # Cibola Island
+    az.user(module, 'cibola_national_wildlife')         # 1976
+    az.user(module, 'imperial_national_wildlife')       # 1967
+    # BLM
+    # Fisher's Landing
+    # Shephard Water
+    # Yuma Proving Ground                               # 1964
+    # JRJ
+    # Cha Cha
+    # Beattie Farms
+    az.user(module, 'gila_monster')                     # 2001
+    az.user(module, 'wellton_mohawk')                   # 1964
+    az.user(module, 'city_of_yuma')                     # 1964
+    az.user(module, 'marine_corp')                      # 1983
+    # Union/Southern Pacific
+    # Yuma Mesa Fruit
+    az.user(module, 'university_of_arizona')            # 1983
+    az.user(module, 'yuma_union_high_school')           # 1984
+    # Camille, Alec
+    # Desert Lawn                                       # 1984
+    az.user(module, 'north_gila_irrigation')            # 1964
+    az.user(module, 'yuma_irrigation')                  # 1965
+    az.user(module, 'yuma_mesa')                        # 1964
+    az.user(module, 'unit_b')                           # 1964
+    az.user(module, 'arizona_state_land')               # 2013
+    # Ott Family
+    # Ogram Boys
+    az.user(module, 'fort_yuma')                        # 1984
+    # Armon Curtis
+    az.user(module, 'yuma_county_wua')                  # 1964
+    # R Griffith
+    # Power
+    # Cocopah PPR No 7
+    # Griffith Ranches
+    # Milton Phillips
+    az.user(module, 'cocopah')                          # 1964
+    az.user(module, 'yuma_area_office')                 # 1994
+    # Arizona Public Service
+    # Gary Pasquinelli
+    # Misc out of order
+    az.user(module, 'others_users_pumping')             # 1944
+    az.user(module, 'south_gila')                       # 1964
+    az.user(module, 'sturges')                          # 1990
+    az.user(module, 'warren_act')                       # 1964
 
 
 def test():
@@ -57,6 +137,7 @@ def test():
     lake_havasu()
 
     # Rock Dam Area
+    colorado_river_indian_tribes()
     colorado_river_indian_tribes()
 
     # Imperial Dam Area
@@ -91,250 +172,18 @@ def state_total_cu(state_code, name):
 
 
 def user_total_diversion():
-    data = [
-        # 2021 list in order
-        # Marble Canyon                         # 2016
-        # Lake mead rec from Lake Mead
-        # Lake mead rec from Lake Mohave
-        # McAlister
-        # Lower Colorado River Dams Project/USBR
-        bullhead_city_diversion(),              # 1987
-        mohave_water_diversion(),               # 1980
-        brooke_water_diversion(),               # 1995
-        mohave_valley_diversion(),              # 1969
-        # Mohave County Water Authority         # 2005 in Cibola Valley, 2013 standalone
-        fort_mojave_diversion(),                # 1975
-        golden_shores_diversion(),              # 1989/2003 really
-        havasu_national_wildlife_diversion(),   # 1969
-        # Crystal Beach
-        lake_havasu_diversion(),                # 1969
-        # Arizona Parks
-        cap_diversion(),                        # 1985
-        # Hillcrest
-        # Springs Del Sol
-        town_of_parker_diversion(),             # 1964
-        crit_diversion(),                       # 1964
-        gabrych_diversion(),                    # 2018
-        # Ehrenburg
-        # B & F
-        # North Baja
-        cibola_valley_diversion(),              # 1983
-        # Red River
-        # Western Water
-        hopi_diversion(),                       # 2005 in Cibola Valley, 2013 standalone
-        arizona_game_and_fish_diversion(),      # 2013
-        # Cibola Island
-        cibola_national_wildlife_diversion(),   # 1976
-        imperial_national_wildlife_diversion(),  # 1967
-        # BLM
-        # Fisher's Landing
-        # Shephard Water
-        # Yuma Proving Ground                   # 1964
-        # JRJ
-        # Cha Cha
-        # Beattie Farms
-        gila_monster_diversion(),               # 2001
-        wellton_mohawk_diversion(),             # 1964
-        city_of_yuma_diversion(),               # 1964
-        marine_corp_diversion(),                # 1983
-        # Union/Southern Pacific
-        # Yuma Mesa Fruit
-        university_of_arizona_diversion(),      # 1983
-        yuma_union_high_school_diversion(),     # 1984
-        # Camille, Alec
-        # Desert Lawn                           # 1984
-        north_gila_irrigation_diversion(),      # 1964
-        yuma_irrigation_diversion(),            # 1965
-        yuma_mesa_diversion(),                  # 1964
-        unit_b_diversion(),                     # 1964
-        arizona_state_land_diversion(),         # 2013
-        # Ott Family
-        # Ogram Boys
-        fort_yuma_diversion(),                  # 1984
-        # Armon Curtis
-        yuma_county_wua_diversion(),            # 1964
-        # R Griffith
-        # Power
-        # Cocopah PPR No 7
-        # Griffith Ranches
-        # Milton Phillips
-        cocopah_diversion(),                    # 1964
-        yuma_area_office_diversion(),           # 1994
-        # Arizona Public Service
-        # Gary Pasquinelli
-        # Misc out of order
-        others_users_pumping_diversion(),       # 1944
-        south_gila_diversion(),                 # 1964
-        sturges_diversion(),                    # 1990
-        warren_act_diversion(),                 # 1964
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    arizona = state.state_by_abbreviation('az')
+    return arizona.total_user_diversion()
 
 
 def user_total_cu():
-    data = [
-        # 2021 list in order
-        # Marble Canyon
-        # Lake mead rec from Lake Mead
-        # Lake mead rec from Lake Mohave
-        # McAlister
-        # Lower Colorado River Dams Project/USBR
-        bullhead_city_cu(),                     # 1987
-        mohave_water_cu(),                      # 1980/2003 really
-        brooke_water_cu(),                      # 1995/2003 really
-        mohave_valley_cu(),                     # 1969
-        # Mohave County Water Authority
-        fort_mojave_cu(),                       # 1975
-        golden_shores_cu(),                     # 1989/2003 really
-        havasu_national_wildlife_cu(),          # 1969
-        # Crystal Beach
-        lake_havasu_cu(),                       # 1969
-        # Arizona Parks
-        cap_cu(),                               # 1985
-        # Hillcrest
-        # Springs Del Sol
-        town_of_parker_cu(),                    # 1964
-        crit_cu(),                              # 1964
-        gabrych_cu(),                           # 2018
-        # Ehrenburg
-        # B & F
-        # North Baja
-        cibola_valley_cu(),                     # 1983
-        # Red River
-        # Western Water
-        hopi_cu(),                              # 2005 in Cibola Valley, 2013 standalone
-        arizona_game_and_fish_cu(),             # 2013
-        # Cibola Island
-        cibola_national_wildlife_cu(),          # 1976
-        imperial_national_wildlife_cu(),        # 1967
-        # BLM
-        # Fisher's Landing
-        # Shephard Water
-        # Yuma Proving Ground
-        # JRJ
-        # Cha Cha
-        # Beattie Farms
-        gila_monster_cu(),                      # 2001
-        wellton_mohawk_cu(),                    # 1964
-        city_of_yuma_cu(),                      # 1964
-        marine_corp_cu(),                       # 1987
-        # Union/Southern Pacific
-        # Yuma Mesa Fruit
-        university_of_arizona_cu(),             # 2003
-        yuma_union_high_school_cu(),            # 2003
-        # Camille, Alec
-        # Desert Lawn
-        north_gila_irrigation_cu(),             # 1964
-        yuma_irrigation_cu(),                   # 1964
-        yuma_mesa_cu(),                         # 1964
-        unit_b_cu(),                            # 1964
-        arizona_state_land_cu(),                # 2013
-        # Ott Family
-        # Ogram Boys
-        fort_yuma_cu(),                         # 2006
-        # Armon Curtis
-        yuma_county_wua_cu(),                   # 1964
-        # R Griffith
-        # Power
-        # Cocopah PPR No 7
-        # Griffith Ranches
-        # Milton Phillips
-        cocopah_cu(),                           # 1964
-        yuma_area_office_cu(),                  # 1994, same as diversion
-        # Arizona Public Service
-        # Gary Pasquinelli
-        # Misc out of order
-        others_users_pumping_cu(),              # 1964
-        south_gila_cu(),                        # 1964
-        sturges_cu(),                           # 1993
-        warren_act_cu(),                        # 1964
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    total = add_annuals(data)
-    return total
+    arizona = state.state_by_abbreviation('az')
+    return arizona.total_user_cu()
 
 
 def user_total_returns():
-    data = [
-        # 2021 list in order
-        # Marble Canyon
-        # Lake mead rec from Lake Mead
-        # Lake mead rec from Lake Mohave
-        # McAlister
-        # Lower Colorado River Dams Project/USBR
-        bullhead_city_returns(),
-        mohave_water_returns(),
-        brooke_water_returns(),
-        mohave_valley_returns(),
-        # Mohave County Water Authority
-        fort_mojave_returns(),  # Davis Dam, Lake Mohave
-        golden_shores_returns(),
-        havasu_national_wildlife_returns(),
-        # Crystal Beach
-        lake_havasu_returns(),
-        # Arizona Parks
-        # CAP Has not returns
-        # Hillcrest
-        # Springs Del Sol
-        town_of_parker_returns(),
-        crit_returns(),
-        gabrych_returns(),
-        # Ehrenburg
-        # B & F
-        # North Baja
-        cibola_valley_returns(),
-        # Red River
-        # Western Water
-        hopi_returns(),                         # 2005 in Cibola Valley, 2013 standalone
-        arizona_game_and_fish_returns(),
-        # Cibola Island
-        cibola_national_wildlife_returns(),
-        imperial_national_wildlife_returns(),
-        # BLM
-        # Fisher's Landing
-        # Shephard Water
-        # Yuma Proving Ground
-        # JRJ
-        # Cha Cha
-        # Beattie Farms
-        gila_monster_returns(),
-        wellton_mohawk_returns(),
-        city_of_yuma_returns(),
-        marine_corp_returns(),
-        # Union/Southern Pacific
-        # Yuma Mesa Fruit
-        university_of_arizona_returns(),
-        yuma_union_high_school_returns(),
-        # Camille, Alec
-        # Desert Lawn
-        north_gila_irrigation_returns(),
-        yuma_irrigation_returns(),
-        yuma_mesa_returns(),
-        unit_b_returns(),
-        arizona_state_land_returns(),
-        # Ott Family
-        # Ogram Boys
-        fort_yuma_returns(),
-        # Armon Curtis
-        yuma_county_wua_returns(),
-        # R Griffith
-        # Power
-        # Cocopah PPR No 7
-        # Griffith Ranches
-        # Milton Phillips
-        cocopah_returns(),
-        yuma_area_office_returns(),
-        # Arizona Public Service
-        # Gary Pasquinelli
-        # Misc out of order
-        others_users_pumping_returns(),
-        south_gila_returns(),
-        sturges_returns(),
-        warren_act_returns(),
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    arizona = state.state_by_abbreviation('az')
+    return arizona.total_user_returns()
 
 
 def yuma_area_returns():
@@ -735,6 +584,11 @@ def cap_diversion():
 def cap_cu():
     # CAP has no return flows so cu is the same as diversion
     return cap_diversion()
+
+
+def cap_returns():
+    # CAP has no return flows so cu is the same as diversion
+    return subtract_annual(cap_diversion(), cap_diversion())
 
 
 def colorado_river_indian_tribes():

@@ -19,22 +19,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from sys import modules
 from source import usbr_report
 from graph.water import WaterGraph
-from util import add_annuals, subtract_annual, reshape_annual_range, reshape_annual_range_to
 from usbr import util
+from rw.util import add_annuals, subtract_annual, reshape_annual_range, reshape_annual_range_to
+from rw import state
 
 current_last_year = 2021
+
+
+def init(nv):
+    module = modules[__name__]
+    nv.user(module, 'boulder_city')
+    nv.user(module, 'lake_mead_national')
+    nv.user(module, 'snwa_griffith')
+    nv.user(module, 'basic')
+    nv.user(module, 'city_of_henderson')
+    nv.user(module, 'nevada_dept_of_wildlife')
+    nv.user(module, 'las_vegas_valley')
+    nv.user(module, 'north_las_vegas')
+    nv.user(module, 'nellis')
+    nv.user(module, 'pacific_coast')
+    nv.user(module, 'socal_edison')
+    nv.user(module, 'big_bend')
+    nv.user(module, 'fort_mojave_indian')
 
 
 def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 0, 'y_max': 550000, 'y_interval': 50000},
         {'data': user_total_diversion()},
-        {'y_min': -500, 'y_max': 4500, 'y_interval': 500},
+        {'y_min': -500, 'y_max': 2500, 'y_interval': 500},
         {'data': state_total_cu(), 'y_min': 0, 'y_max': 350000, 'y_interval': 50000},
         {'data': user_total_cu()},
-        {'y_min': -1000, 'y_max': 9000, 'y_interval': 1000},
+        {'y_min': -1000, 'y_max': 8000, 'y_interval': 1000},
     ]
     util.state_total_vs_user_total_graph('NV', data, y_formatter='kaf')
     total()
@@ -50,54 +69,18 @@ def state_total_cu():
 
 
 def user_total_diversion():
-    data = [
-        boulder_city_diversion(),
-        snwa_griffith_diversion(),
-        basic_diversion(),
-        city_of_henderson_diversion(),
-        nevada_dept_of_wildlife_diversion(),
-        las_vegas_valley_diversion(),
-        north_las_vegas_diversion(),
-        socal_edison_diversion(),
-        big_bend_diversion(),
-        fort_mojave_indian_diversion()
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    nevada = state.state_by_abbreviation('nv')
+    return nevada.total_user_diversion()
 
 
 def user_total_cu():
-    data = [
-        boulder_city_cu(),
-        snwa_griffith_cu(),
-        basic_cu(),
-        city_of_henderson_cu(),
-        nevada_dept_of_wildlife_cu(),
-        las_vegas_valley_cu(),
-        north_las_vegas_cu(),
-        socal_edison_cu(),
-        big_bend_cu(),
-        fort_mojave_indian_cu()
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    nevada = state.state_by_abbreviation('nv')
+    return nevada.total_user_cu()
 
 
 def user_total_returns():
-    data = [
-        boulder_city_returns(),
-        snwa_griffith_returns(),
-        basic_returns(),
-        city_of_henderson_returns(),
-        nevada_dept_of_wildlife_returns(),
-        las_vegas_valley_returns(),
-        north_las_vegas_returns(),
-        socal_edison_returns(),
-        big_bend_returns(),
-        fort_mojave_indian_returns()
-    ]
-    data[0] = reshape_annual_range(data[0], 1964, current_last_year)
-    return add_annuals(data)
+    nevada = state.state_by_abbreviation('nv')
+    return nevada.total_user_returns()
 
 
 def total():
@@ -147,6 +130,19 @@ def snwa_griffith_returns():
     return reshape_annual_range_to(las_vegas_wash_returns, snwa_griffith_diversion())
 
 
+def lake_mead_national_diversion():
+    return usbr_report.annual_af('nv/usbr_nv_lake_mead_national_diversion.csv')
+
+
+def lake_mead_national_cu():
+    # FIXME, are returns in Las Vegas Wash or is this all consumptive use
+    return subtract_annual(lake_mead_national_diversion(), lake_mead_national_diversion())
+
+
+def lake_mead_national_returns():
+    return subtract_annual(lake_mead_national_diversion(), lake_mead_national_cu())
+
+
 def boulder_city_diversion():
     return usbr_report.annual_af('nv/usbr_nv_boulder_city_diversion.csv')
 
@@ -184,6 +180,18 @@ def city_of_henderson_cu():
 
 def city_of_henderson_returns():
     return subtract_annual(city_of_henderson_diversion(), city_of_henderson_cu())
+
+
+def pacific_coast_diversion():
+    return usbr_report.annual_af('nv/usbr_nv_pacific_coast_diversion.csv')
+
+
+def pacific_coast_cu():
+    return lake_mead_national_diversion()
+
+
+def pacific_coast_returns():
+    return subtract_annual(pacific_coast_diversion(), pacific_coast_cu())
 
 
 def basic_diversion():
@@ -233,6 +241,19 @@ def north_las_vegas_cu():
 
 def north_las_vegas_returns():
     return subtract_annual(north_las_vegas_diversion(), north_las_vegas_cu())
+
+
+def nellis_diversion():
+    return usbr_report.annual_af('nv/usbr_nv_nellis_diversion.csv')
+
+
+def nellis_cu():
+    # FIXME, are returns in Las Vegas Wash or is this all consumptive use
+    return nellis_diversion()
+
+
+def nellis_returns():
+    return subtract_annual(nellis_diversion(), nellis_cu())
 
 
 def fort_mojave_indian_diversion():

@@ -23,16 +23,24 @@ import datetime
 import numpy as np
 import signal
 import sys
+
+from rw.state import State
+from rw.lake import Lake
+from rw.reach import Reach
+from rw.dam import Dam
+from rw.util import add_annual, add_annuals, subtract_annual, reshape_annual_range
+from graph.water import WaterGraph
+
 import usgs
-from usgs import az, ca, lc, ut, nv   # nm, wy
+from usgs import lc
+from usgs import az, ca, ut, nv   # nm, wy
+
 import usbr
 from usbr import az, ca, uc, nv, mx
+
 from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
-import util
-from util import subtract_annual, reshape_annual_range
-from graph.water import WaterGraph
 
 interrupted = False
 
@@ -44,14 +52,16 @@ current_last_year = 2021
 # matplotlib colors
 # https://i.stack.imgur.com/lFZum.png
 #
+# USBR  24 month reports
+#   https://www.usbr.gov/lc/region/g4000/24mo/index.html
 # Yuma area info
-# https://www.usbr.gov/lc/yuma/
-# https://www.usbr.gov/lc/yuma/programs/YAWMS/GROUNDWATER_maps.cfm
-# https://www.usbr.gov/lc/yuma/environmental_docs/environ_docs.html
-# estinates of evaporation on lower colorado
-# https://eros.usgs.gov/doi-remote-sensing-activities/2020/bor/estimates-evapotranspiration-and-evaporation-along-lower-colorado-river
-# https://usbr.gov/lc/region/g4000/4200Rpts/LCRASRpt/2009/report09.pdf
-# https://www.usbr.gov/lc/region/g4000/contracts/entitlements.html
+#   https://www.usbr.gov/lc/yuma/
+#   https://www.usbr.gov/lc/yuma/programs/YAWMS/GROUNDWATER_maps.cfm
+#   https://www.usbr.gov/lc/yuma/environmental_docs/environ_docs.html
+#   estinates of evaporation on lower colorado
+#   https://eros.usgs.gov/doi-remote-sensing-activities/2020/bor/estimates-evapotranspiration-and-evaporation-along-lower-colorado-river
+#   https://usbr.gov/lc/region/g4000/4200Rpts/LCRASRpt/2009/report09.pdf
+#   https://www.usbr.gov/lc/region/g4000/contracts/entitlements.html
 
 
 def usbr_glen_canyon_annual_release_af(graph=False, start_year=None, end_year=None):
@@ -208,7 +218,7 @@ def model_hoover_to_imperial():
                ylabel='maf',  format_func=WaterGraph.format_maf)
     graph.running_average(parker_minus_rock, 10, sub_plot=2)
 
-    # crit_release_returns = util.add_annual(rock_release, usbr.az.crit_returns())
+    # crit_release_returns = add_annual(rock_release, usbr.az.crit_returns())
     rock_minus_palo_verde = subtract_annual(rock_release, palo_verde_release)
     graph.bars(rock_minus_palo_verde, sub_plot=3, title='Rock minus Palo Verde Release ',
                xinterval=year_interval, ymin=0, ymax=1600000, yinterval=250000, color='firebrick',
@@ -218,7 +228,7 @@ def model_hoover_to_imperial():
     graph.date_and_wait()
 
     graph = WaterGraph(nrows=2)
-    palo_verde_release_returns = util.add_annual(palo_verde_release, usbr.ca.palo_verde_returns())
+    palo_verde_release_returns = add_annual(palo_verde_release, usbr.ca.palo_verde_returns())
     palo_verde_minus_imperial = subtract_annual(palo_verde_release_returns, imperial_release)
     graph.bars(palo_verde_minus_imperial, sub_plot=0, title='(Palo Verde Release & Returns) minus Imperial Release',
                xinterval=year_interval, ymin=3000000, ymax=8000000, yinterval=1000000, color='firebrick',
@@ -263,8 +273,8 @@ def model_hoover_to_imperial():
     graph.bars_stacked(bar_data, sub_plot=3, title='USBR AR Flow below Rock Dam with CRIT Return Flows (Annual)',
                        xinterval=year_interval, ymin=4500000, ymax=8000000, yinterval=500000, xlabel='Calendar Year',
                        ylabel='maf',  format_func=WaterGraph.format_maf)
-    flows_below_rock_annual = util.add_annual(rock_dam_release_annual_af, crit_return_flows_annual,
-                                              1965, current_last_year)
+    flows_below_rock_annual = add_annual(rock_dam_release_annual_af, crit_return_flows_annual,
+                                         1965, current_last_year)
     graph.running_average(flows_below_rock_annual, 10, sub_plot=3)
 
     graph.date_and_wait()
@@ -288,8 +298,8 @@ def model_hoover_to_imperial():
                xinterval=year_interval, ymin=3500000, ymax=7000000, yinterval=500000, color='firebrick',
                ylabel='maf',  format_func=WaterGraph.format_maf)
 
-    palo_verde_return_flows_annual = util.subtract_annual(palo_verde_diversion_annual_af, palo_verde_cu_annual_af,
-                                                          1965, current_last_year)
+    palo_verde_return_flows_annual = subtract_annual(palo_verde_diversion_annual_af, palo_verde_cu_annual_af,
+                                                     1965, current_last_year)
     graph.bars(palo_verde_return_flows_annual, sub_plot=2, title='Palo Verde Return Flows(Annual)',
                xinterval=year_interval, ymin=200000, ymax=600000, yinterval=50000, color='darkmagenta',
                ylabel='kaf',  format_func=WaterGraph.format_kaf)
@@ -300,8 +310,8 @@ def model_hoover_to_imperial():
     graph.bars_stacked(bar_data, sub_plot=3, title='Flow below Palo Verde Dam with PV Return Flows (Annual)',
                        xinterval=year_interval, ymin=3500000, ymax=7000000, yinterval=500000, xlabel='Calendar Year',
                        ylabel='maf', format_func=WaterGraph.format_maf)
-    flows_below_rock_annual = util.add_annual(palo_verde_dam_release_annual_af, palo_verde_return_flows_annual,
-                                              1965, current_last_year)
+    flows_below_rock_annual = add_annual(palo_verde_dam_release_annual_af, palo_verde_return_flows_annual,
+                                         1965, current_last_year)
     graph.running_average(flows_below_rock_annual, 10, sub_plot=3)
 
     graph.date_and_wait()
@@ -327,7 +337,7 @@ def model_imperial_to_mexico():
 
     # Imperial Dam Release
     imperial_dam_release_annual_af = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
-    imperial_dam_release_annual_af = util.reshape_annual_range(imperial_dam_release_annual_af, 1964, current_last_year)
+    imperial_dam_release_annual_af = reshape_annual_range(imperial_dam_release_annual_af, 1964, current_last_year)
     graph.bars(imperial_dam_release_annual_af, sub_plot=2, title='Imperial Dam Release',
                xinterval=year_interval, ymax=500000, yinterval=50000,
                color='firebrick',
@@ -361,7 +371,7 @@ def model_imperial_to_mexico():
     reservation_main_drain_gage = usgs.ca.reservation_main_drain_no_4(graph=False)
     reservation_main_drain = reservation_main_drain_gage.annual_af(water_year_month=1,
                                                                    start_year=1964, end_year=current_last_year)
-    yuma_wasteway_estimated = util.subtract_annual(colorado_below_yuma_wasteway, imperial_dam_release_annual_af)
+    yuma_wasteway_estimated = subtract_annual(colorado_below_yuma_wasteway, imperial_dam_release_annual_af)
 
     data = [{'data': imperial_dam_release_annual_af, 'label': 'USBR Imperial Dam Release', 'color': 'maroon'},
             {'data': yuma_wasteway_estimated, 'label': 'USGS Yuma Wasteway', 'color': 'firebrick'},
@@ -372,8 +382,8 @@ def model_imperial_to_mexico():
     graph.running_average(imperial_dam_release_annual_af, 10, sub_plot=1)
     graph.running_average(colorado_below_yuma_wasteway, 10, sub_plot=1)
 
-    flows = util.add_annual(colorado_below_yuma_wasteway, pilot_knob)
-    morelos_minus_breakdown = util.subtract_annual(nib, flows)
+    flows = add_annual(colorado_below_yuma_wasteway, pilot_knob)
+    morelos_minus_breakdown = subtract_annual(nib, flows)
     graph.bars(morelos_minus_breakdown, sub_plot=2, title='Morelos minus Flow Breakdown',
                xinterval=year_interval, ymin=-50000, ymax=200000, yinterval=50000,
                color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
@@ -385,7 +395,7 @@ def model_imperial_to_mexico():
     graph.date_and_wait()
 
     graph = WaterGraph(nrows=3)
-    #yuma_wasteway_diff = util.subtract_annual(yuma_wasteway_estimated, yuma_wasteway)
+    # yuma_wasteway_diff = subtract_annual(yuma_wasteway_estimated, yuma_wasteway)
     graph.bars(yuma_wasteway, sub_plot=0, title='Yuma Wasteway',
                xinterval=year_interval, ymin=0, ymax=400000, yinterval=50000,
                color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
@@ -394,10 +404,9 @@ def model_imperial_to_mexico():
                xinterval=year_interval, ymin=0, ymax=75000, yinterval=10000,
                color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
-    drain_8B_gage = usgs.ca.drain_8_b_near_winterhaven(graph=False)
-    drain_8B = drain_8B_gage.annual_af(water_year_month=1,
-                                                     start_year=1964, end_year=current_last_year)
-    graph.bars(drain_8B, sub_plot=2, title='Drain 8B',
+    drain_8b_gage = usgs.ca.drain_8_b_near_winterhaven(graph=False)
+    drain_8b = drain_8b_gage.annual_af(water_year_month=1, start_year=1964, end_year=current_last_year)
+    graph.bars(drain_8b, sub_plot=2, title='Drain 8B',
                xinterval=year_interval, ymin=0, ymax=75000, yinterval=10000,
                color='firebrick', ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
@@ -431,7 +440,7 @@ def model_all_american():
     pilot_knob_gage = usgs.ca.pilot_knob_powerplant_and_wasteway(graph=False)
     pilot_knob_annual_af = pilot_knob_gage.annual_af(water_year_month=1, start_year=1964, end_year=current_last_year)
     returns = [usbr_imperial_returns, usbr_coachella_returns, usbr_yuma_project_returns]
-    return_flows = util.add_annuals(returns)
+    return_flows = add_annuals(returns)
 
     usgs_all_american_gage = usgs.ca.all_american_canal(graph=False)
     usgs_all_american_annual_af = usgs_all_american_gage.annual_af(water_year_month=1,
@@ -459,14 +468,14 @@ def model_all_american():
              yuma_main_annual_af,
              return_flows,
              pilot_knob_annual_af]
-    total_flow = util.add_annuals(flows)
+    total_flow = add_annuals(flows)
     graph.running_average(total_flow, 10, sub_plot=0)
 
     graph.date_and_wait()
 
     graph = WaterGraph(nrows=4)
 
-    difference = util.subtract_annual(usgs_all_american_annual_af, total_flow)
+    difference = subtract_annual(usgs_all_american_annual_af, total_flow)
     graph.bars(difference, sub_plot=0, title='Error in All American Flow Breakdown vs USGS Gage',
                xinterval=year_interval, ymin=0, ymax=250000, yinterval=25000, color='firebrick',
                ylabel='kaf',  format_func=WaterGraph.format_kaf)
@@ -496,18 +505,18 @@ def model_all_american():
                        ymin=0, ymax=225000, yinterval=25000, xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=True)
     graph.running_average(usbr_imperial_returns, 10, sub_plot=3)
-    graph.running_average(util.add_annual(usbr_imperial_returns, usbr_coachella_returns), 10, sub_plot=3)
+    graph.running_average(add_annual(usbr_imperial_returns, usbr_coachella_returns), 10, sub_plot=3)
     graph.date_and_wait()
 
     graph = WaterGraph(nrows=3)
     graph.bars(reservation_main_annual_af, sub_plot=0, title='Reservation Main Canal to Yuma Project Indian Diversion',
                xinterval=year_interval, ymin=0, ymax=60000, yinterval=10000, color='firebrick',
                ylabel='kaf',  format_func=WaterGraph.format_kaf)
-    #graph.bars(yuma_project_indian_diversion, sub_plot=0, title='Yuma Project Indian Diversion',
+    # graph.bars(yuma_project_indian_diversion, sub_plot=0, title='Yuma Project Indian Diversion',
     #           xinterval=year_interval, ymin=0, ymax=60000, yinterval=10000, color='firebrick',
     #           ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
-    # reservation_diff = util.subtract_annual(reservation_main_annual_af, usbr.ca.yuma_project_indian_diversion())
+    # reservation_diff = subtract_annual(reservation_main_annual_af, usbr.ca.yuma_project_indian_diversion())
     # graph.bars(reservation_diff, sub_plot=0, title='USGS Reservation Main Canal (Annual)',
     #            xinterval=year_interval, ymin=-70000, ymax=70000, yinterval=10000, color='firebrick',
     #            ylabel='kaf',  format_func=WaterGraph.format_kaf)
@@ -524,7 +533,7 @@ def model_all_american():
     # Desilting Water
     # imperial_release = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv', water_year_month=1)
     # laguna_release = usbr_report.annual_af('releases/usbr_releases_laguna_dam.csv', water_year_month=1)
-    # desilting_water = util.subtract_annual(laguna_release, imperial_release)
+    # desilting_water = subtract_annual(laguna_release, imperial_release)
     # graph.bars(desilting_water, sub_plot=2, title='Imperial Dam Desilting water...maybe',
     #            xinterval=year_interval, ymin=-50000, ymax=175000, yinterval=50000, color='firebrick',
     #            ylabel='kaf',  format_func=WaterGraph.format_kaf)
@@ -732,7 +741,7 @@ def model_lake_powell_inflow():
                        ymin=0, ymax=22000000, yinterval=1000000,
                        xlabel='Water Year', xinterval=year_interval,
                        ylabel='maf', format_func=WaterGraph.format_maf, vertical=True)
-    total = util.add3_annual(colorado_cisco_af, green_river_af, san_juan_af)
+    total = add_annuals([colorado_cisco_af, green_river_af, san_juan_af])
     graph.running_average(total, 5, sub_plot=0, label='5 yr moving avg', color='goldenrod')
     graph.running_average(total, 7, sub_plot=0, label='7 yr moving avg', color='gold')
 
@@ -751,8 +760,13 @@ def lake_mead_inflow():
     usgs_little_colorado_gage = usgs.az.little_colorado_cameron(graph=show_graph)
     little_colorado_af = usgs_little_colorado_gage.annual_af(water_year_month=10,
                                                              start_year=start_year, end_year=end_year)
+
+    usgs_havasu_creek_gage = usgs.az.havasu_creek_near_supai(graph=show_graph)
+    havasu_creek_af = usgs_havasu_creek_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+
     usgs_virgin_gage = usgs.az.virgin_at_littlefield(graph=show_graph)
     virgin_af = usgs_virgin_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+
     usgs_muddy_gage = usgs.nv.muddy_near_glendale(graph=show_graph)
     muddy_af = usgs_muddy_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
 
@@ -764,8 +778,8 @@ def lake_mead_inflow():
     paria_annual_af = usgs.az.paria_lees_ferry(graph=show_graph).annual_af(water_year_month=10,
                                                                            start_year=start_year, end_year=end_year)
 
-    glen_canyon_plus_paria_af = util.add_annual(glen_canyon_annual_release_af, paria_annual_af)
-    glen_canyon_seep_af = util.subtract_annual(lees_ferry_af, glen_canyon_plus_paria_af)
+    glen_canyon_plus_paria_af = add_annual(glen_canyon_annual_release_af, paria_annual_af)
+    glen_canyon_seep_af = subtract_annual(lees_ferry_af, glen_canyon_plus_paria_af)
 
     # Add paria to Glen Canyon
     # Subtract from Lee's Ferry
@@ -779,14 +793,15 @@ def lake_mead_inflow():
     bar_data = [{'data': glen_canyon_seep_af, 'label': 'Theoretical Glen Canyon Seep', 'color': 'royalblue'},
                 {'data': little_colorado_af, 'label': 'Little Colorado at Cameron', 'color': 'darkred'},
                 {'data': virgin_af, 'label': 'Virgin at Littlefield', 'color': 'firebrick'},
-                {'data': muddy_af, 'label': 'Muddy at Glendale', 'color': 'lightcoral'},
+                {'data': muddy_af, 'label': 'Muddy at Glendale', 'color': 'indianred'},
+                {'data': havasu_creek_af, 'label': 'Havasu Creek at Supai', 'color': 'lightcoral'},
                 ]
     graph.bars_stacked(bar_data, sub_plot=1, title='Lake Mead Inflows Excluding Glen Canyon Release',
                        ymin=0, ymax=1150000, yinterval=100000,
                        xlabel='Water Year', xinterval=year_interval,
                        ylabel='kaf', format_func=WaterGraph.format_kaf, vertical=True)
-    total = util.add3_annual(little_colorado_af, virgin_af, muddy_af)
-    total = util.add_annual(total, glen_canyon_seep_af)
+    total = add_annuals([little_colorado_af, virgin_af, muddy_af])
+    total = add_annual(total, glen_canyon_seep_af)
     graph.annotate_vertical_arrow(2005, "Big Monsoon", sub_plot=1, offset_percent=5.0)
     graph.annotate_vertical_arrow(2017, "May Rain", sub_plot=1, offset_percent=40.0)
     graph.annotate_vertical_arrow(2019, "Spring Bomb Cyclone", sub_plot=1, offset_percent=30.0)
@@ -926,7 +941,7 @@ def model_yuma_area():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    ca_total = util.add_annuals(arrays)
+    ca_total = add_annuals(arrays)
     graph.running_average(ca_total, 10, sub_plot=0)
 
     # AZ Yuma Area Returns
@@ -938,7 +953,7 @@ def model_yuma_area():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    az_return_total = util.add_annuals(arrays)
+    az_return_total = add_annuals(arrays)
     graph.running_average(az_return_total, 10, sub_plot=1)
     graph.date_and_wait()
 
@@ -952,7 +967,7 @@ def model_yuma_area():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    az_diversion_total = util.add_annuals(arrays)
+    az_diversion_total = add_annuals(arrays)
     graph.running_average(az_diversion_total, 10, sub_plot=0)
 
     # Yuma Area Consumptive Use
@@ -964,7 +979,7 @@ def model_yuma_area():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    az_cu_total = util.add_annuals(arrays)
+    az_cu_total = add_annuals(arrays)
     graph.running_average(az_cu_total, 10, sub_plot=1)
     graph.date_and_wait()
 
@@ -978,7 +993,7 @@ def model_yuma_area():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    az_total = util.add_annuals(arrays)
+    az_total = add_annuals(arrays)
     graph.running_average(az_total, 10, sub_plot=0)
     graph.date_and_wait()
 
@@ -1016,7 +1031,7 @@ def yuma_area_wasteways():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    total = util.add_annuals(arrays)
+    total = add_annuals(arrays)
     graph.running_average(total, 10, sub_plot=0)
     graph.date_and_wait()
 
@@ -1032,7 +1047,7 @@ def model_not_yuma_area():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    ca_total = util.add_annuals(arrays)
+    ca_total = add_annuals(arrays)
     graph.running_average(ca_total, 10, sub_plot=0)
 
     graph.date_and_wait()
@@ -1046,16 +1061,138 @@ def model_not_yuma_area():
     arrays = []
     for water_user in data:
         arrays.append(water_user['data'])
-    az_total = util.add_annuals(arrays)
+    az_total = add_annuals(arrays)
     graph.running_average(az_total, 10, sub_plot=0)
     graph.date_and_wait()
 
 
+def model_lower_colorado_1905_1964():
+    year_interval = 2
+    water_year_month = 10
+
+    show_graph = False
+    lees_ferry_gage = usgs.az.lees_ferry(graph=show_graph)
+    lees_ferry_annual_af = lees_ferry_gage.annual_af(water_year_month=water_year_month, start_year=1922, end_year=1964)
+
+    # usgs_little_colorado_gage = usgs.az.little_colorado_cameron(graph=show_graph)
+    # little_colorado_af = usgs_little_colorado_gage.annual_af(water_year_month=water_year_month)
+
+    # usgs_virgin_gage = usgs.az.virgin_at_littlefield(graph=show_graph)
+    # virgin_af = usgs_virgin_gage.annual_af(water_year_month=water_year_month)
+
+    # usgs_muddy_gage = usgs.nv.muddy_near_glendale(graph=show_graph)
+    # muddy_af = usgs_muddy_gage.annual_af(water_year_month=water_year_month)
+
+    gila_dome_gage = usgs.az.gila_dome(graph=show_graph)
+    gila_dome_af = gila_dome_gage.annual_af(water_year_month=water_year_month, start_year=1922, end_year=1964)
+
+    graph = WaterGraph(nrows=2)
+    yuma_gage = usgs.lc.yuma(graph=show_graph)
+    daily_discharge_cfs = yuma_gage.daily_discharge()
+    graph.plot(daily_discharge_cfs, title=yuma_gage.site_name, sub_plot=0, ylabel='CFS',
+               xinterval=year_interval,
+               ymin=yuma_gage.cfs_min, ymax=yuma_gage.cfs_max, yinterval=yuma_gage.cfs_interval,
+               format_func=WaterGraph.format_discharge, color=yuma_gage.color)
+
+    yuma_annual_af = yuma_gage.annual_af(water_year_month=water_year_month)
+    graph.bars(yuma_annual_af, sub_plot=1,
+               xinterval=year_interval, ymin=0, ymax=27000000, yinterval=2000000, color='firebrick',
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.date_and_wait()
+
+    # usgs_all_american_gage = usgs.ca.all_american_canal(graph=show_graph)
+    # all_american_af = usgs_all_american_gage.annual_af(water_year_month=water_year_month)
+
+    # nib_gage = usgs.lc.northern_international_border(graph=False)
+    # nib_annual_af = nib_gage.annual_af()
+
+    # below_davis_gage = usgs.lc.below_davis(graph=False)
+    # below_davis_annual_af = below_davis_gage.annual_af()
+
+    hoover_release = usbr.lc.lake_mead(graph=show_graph)
+    hoover_release = reshape_annual_range(hoover_release, 1922, 1964)
+    # davis_release = usbr.lc.lake_mohave(graph=False)
+    # parker_release = usbr.lc.lake_havasu(graph=False)
+
+    graph = WaterGraph(nrows=4)
+    graph.bars(lees_ferry_annual_af, sub_plot=0, title='USGS Lees Ferry',
+               xinterval=year_interval, ymin=0, ymax=20000000, yinterval=2000000, color='firebrick',
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.bars(hoover_release, sub_plot=1, title='USBR RISE Hoover Release',
+               xinterval=year_interval, ymin=0, ymax=20000000, yinterval=2000000, color='firebrick',
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.bars(gila_dome_af, sub_plot=2, title='USGS Gila Dome',
+               xinterval=year_interval, ymin=0, ymax=1000000, yinterval=200000, color='firebrick',
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+    graph.bars(yuma_annual_af, sub_plot=3, title='USGS Yuma',
+               xinterval=year_interval, ymin=0, ymax=20000000, yinterval=2000000, color='firebrick',
+               ylabel='maf',  format_func=WaterGraph.format_maf)
+
+    # graph.bars(nib_annual_af, sub_plot=3, title='USGS NIB',
+    #           xinterval=year_interval, ymin=0, ymax=18000000, yinterval=2000000, color='firebrick',
+    #            ylabel='maf',  format_func=WaterGraph.format_maf)
+
+    graph.date_and_wait()
+
+    # graph = WaterGraph(nrows=4)
+
+    # graph.bars(below_davis_annual_af, sub_plot=1, title='USGS Below Davis',
+    #            xinterval=year_interval, ymin=0, ymax=24000000, yinterval=5000000, color='firebrick',
+    #            ylabel='maf',  format_func=WaterGraph.format_maf)
+    # graph.bars(davis_release, sub_plot=2, title='USBR RISE Davis Release',
+    #            xinterval=year_interval, ymin=0, ymax=24000000, yinterval=5000000, color='firebrick',
+    #            ylabel='maf',  format_func=WaterGraph.format_maf)
+    # graph.bars(parker_release, sub_plot=3, title='USBR RISE Parker Release',
+    #            xinterval=year_interval, ymin=0, ymax=24000000, yinterval=5000000, color='firebrick',
+    #            ylabel='maf',  format_func=WaterGraph.format_maf)
+    # graph.date_and_wait()
+
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
-    usbr.az.test()
-    usbr.ca.test()
+
+    lake_powell = Lake('lake_powell', uc)
+    lake_mead = Lake('lake_mead', lc)
+    lake_mohave = Lake('lake_mohave', lc)
+    lake_havasu = Lake('lake_havasu', lc)
+    rock_dam = Dam('rock_dam', lc)
+    palo_verde_dam = Dam('palo_verde_dam', lc)
+    imperial_dam = Dam('imperial_dam', lc)
+    laguna_dam = Dam('laguna_dam', lc)
+
+    reach1 = Reach('reach1', lake_powell, lake_mead)
+    reach2 = Reach('reach2', lake_mead, lake_mohave)
+    reach3 = Reach('reach3', lake_mohave, lake_havasu)
+    reach4 = Reach('reach4', lake_havasu, rock_dam)
+    reach5 = Reach('reach5', rock_dam, palo_verde_dam)
+    reach6 = Reach('reach6', palo_verde_dam, imperial_dam)
+
+    State('Arizona', 'az', az)
+    State('California', 'ca', ca)
+    State('Nevada', 'nv', nv)
+    # State("Mexico", "mx")
+    # State("Colorado", "co")
+    # State("New Mexico", "nm")
+    # State("Utah", "ut")
+    # State("Wyoming", "wy")
+
     usbr.nv.test()
+    lake_mead_inflow()
+    usgs.az.test_middle_colorado()
+
+    usbr.lc.lake_mead()
+    usgs.lc.test()
+    usbr.ca.palo_verde()
+    usbr.az.colorado_river_indian_tribes()
+
+    # lake_mead_inflow()
+    model_lower_colorado_1905_1964()
+
+    # gage = usgs.nv.las_vegas_wash_below_lake_las_vegas()
+    # monthly_af = gage.monthly_af(start_year=1975, end_year=1975)
+    usbr.az.test()
+    usbr.nv.test()
+    usbr.ca.test()
 
     # usbr_rise.catalog()
     # usgs.az.test_returns()
