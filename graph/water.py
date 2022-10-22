@@ -308,7 +308,7 @@ class WaterGraph(object):
         daily_discharge_cfs = gage.daily_discharge()
 
         self.plot(daily_discharge_cfs, title=gage.site_name, sub_plot=0, ylabel='CFS',
-                  ymin=gage.cfs_min, ymax=gage.cfs_max, yinterval=gage.cfs_interval,
+                  xinterval=gage.year_interval, ymin=gage.cfs_min, ymax=gage.cfs_max, yinterval=gage.cfs_interval,
                   format_func=WaterGraph.format_discharge, color=gage.color)
 
         daily_discharge_af = WaterGraph.convert_cfs_to_af_per_day(daily_discharge_cfs)
