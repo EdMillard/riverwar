@@ -22,8 +22,16 @@ SOFTWARE.
 from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
 
+# Some history on Lower Colorado flows and gages
+# https://www.researchgate.net/publication/308133114_Geomorphic_change_and_sediment_transport_during_a_small_artificial_flood_in_a_transformed_post-dam_delta_The_Colorado_River_delta_United_States_and_Mexico
+
 
 def test():
+    # above_little_colorado()
+    # above_national_canyon_near_supai()
+    near_grand_canyon()
+    above_diamond_creek_near_peach_springs()
+    below_hoover()
     below_davis()
     below_parker()
     below_palo_verde()
@@ -33,7 +41,55 @@ def test():
     northern_international_border()
 
 
+def above_little_colorado(graph=True):
+    # Ends 2002
+    gage = USGSGage('09383100', start_date='1985-09-28', color='firebrick',
+                    cfs_max=55000, cfs_interval=5000,
+                    annual_min=6000000, annual_max=15000000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def above_national_canyon_near_supai(graph=True):
+    # Ends 1993
+    gage = USGSGage('09404120', start_date='1983-07-31', color='firebrick',
+                    cfs_max=55000, cfs_interval=5000,
+                    annual_min=6000000, annual_max=15000000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def near_grand_canyon(graph=True):
+    gage = USGSGage('09402500', start_date='1922-10-01', color='firebrick',
+                    cfs_max=125000, cfs_interval=5000,
+                    annual_min=4000000, annual_max=21000000, annual_interval=1000000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def above_diamond_creek_near_peach_springs(graph=True):
+    gage = USGSGage('09404200', start_date='1990-08-29', color='firebrick',
+                    cfs_max=55000, cfs_interval=5000,
+                    annual_min=6000000, annual_max=15000000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def below_hoover(graph=True):
+    gage = USGSGage('09421500', start_date='1934-04-01', color='firebrick',
+                    cfs_max=120000, cfs_interval=5000,
+                    annual_min=6000000, annual_max=23000000, annual_interval=500000, annual_unit='maf', year_interval=6)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
 def below_davis(graph=True):
+    # Three years, 1905-1907 pre dam; then 1949-present when dam was built
     gage = USGSGage('09423000', start_date='1905-05-11', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,
                     annual_min=6000000, annual_max=23000000, annual_interval=500000, annual_unit='maf', year_interval=6)
@@ -71,10 +127,28 @@ def northern_international_border(graph=True):
 
 
 def below_imperial(graph=True):
-    # Bogus gage
     gage = USGSGage('09429500', start_date='2018-11-29', color='firebrick',
                     cfs_max=3000, cfs_interval=500,
                     annual_min=0, annual_max=500000, annual_interval=20000, annual_unit='kaf', year_interval=1)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def southern_international_border(graph=True):
+    gage = USGSGage('09522200', start_date='1960-10-01', color='firebrick',  # end_date='1986-09-29'
+                    cfs_max=40000, cfs_interval=50000,
+                    annual_min=0, annual_max=14000000, annual_interval=1000000, annual_unit='maf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def yuma(graph=True):
+    # Bogus gage
+    gage = USGSGage('09521000', start_date='1904-01-01', color='firebrick',  # end_date='1983-11-01'
+                    cfs_max=250000, cfs_interval=10000,
+                    annual_min=0, annual_max=27000000, annual_interval=1000000, annual_unit='maf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage

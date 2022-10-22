@@ -34,6 +34,8 @@ def test_middle_colorado():
     lees_ferry()
     paria_lees_ferry()
     little_colorado_cameron()
+    kanab_creek_near_fredonia()
+    havasu_creek_near_supai()
     virgin_at_littlefield()
 
     bill_williams_parker()
@@ -128,6 +130,26 @@ def little_colorado_cameron(graph=True):
     gage = USGSGage('09402000', start_date='1947-06-1', color='firebrick',
                     cfs_max=19000, cfs_interval=1000,
                     annual_min=0, annual_max=850000, annual_interval=50000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def kanab_creek_near_fredonia(graph=True):
+    # Ends 1980-1981
+    gage = USGSGage('09403780', start_date='1963-10-01', color='firebrick',
+                    cfs_max=1200, cfs_interval=200,
+                    annual_min=0, annual_max=15000, annual_interval=1000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def havasu_creek_near_supai(graph=True):
+    # Discontinued in 9/30/2022
+    gage = USGSGage('09404115', start_date='1995-10-01', color='firebrick',
+                    cfs_max=1000, cfs_interval=100,
+                    annual_min=0, annual_max=70000, annual_interval=5000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
