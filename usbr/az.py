@@ -68,7 +68,7 @@ def init(az):
     # BLM
     # Fisher's Landing
     # Shephard Water
-    # Yuma Proving Ground                               # 1964
+    az.user(module, 'yuma_proving')                     # 1964
     # JRJ
     # Cha Cha
     # Beattie Farms
@@ -1155,6 +1155,19 @@ def imperial_national_wildlife_cu():
 
 def imperial_national_wildlife_returns():
     return subtract_annual(imperial_national_wildlife_diversion(), imperial_national_wildlife_cu())
+
+
+def yuma_proving_diversion():
+    return usbr_report.annual_af('az/usbr_az_yuma_proving_diversion.csv')
+
+
+def yuma_proving_cu():
+    # No returns, all cu
+    return yuma_proving_diversion()
+
+
+def yuma_proving_returns():
+    return subtract_annual(yuma_proving_diversion(), yuma_proving_wildlife_cu())
 
 
 def sturges():
