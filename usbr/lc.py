@@ -81,8 +81,6 @@ def lake_mead(graph=True):
         graph.date_and_wait()
     return annual_release_af
 
-def lake_mead_side_flows(graph=True):
-    load_csv()
 
 def lake_mohave(graph=True):
     usbr_lake_mohave_release_total_af = 6131
