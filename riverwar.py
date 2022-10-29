@@ -28,7 +28,7 @@ from rw.state import State
 from rw.lake import Lake
 from rw.reach import Reach
 from rw.dam import Dam
-from rw.util import add_annual, add_annuals, subtract_annual, reshape_annual_range
+from rw.util import add_annual, add_annuals, subtract_annual, multiply_annual, reshape_annual_range
 from graph.water import WaterGraph
 
 import usgs
@@ -752,39 +752,71 @@ def model_lake_powell_inflow():
 
 
 def lake_mead_inflow():
-    start_year = 1964
+    start_year = 1995
+    water_year_month = 10
     end_year = current_last_year
     year_interval = 3
 
     show_graph = False
-    usgs_little_colorado_gage = usgs.az.little_colorado_cameron(graph=show_graph)
-    little_colorado_af = usgs_little_colorado_gage.annual_af(water_year_month=10,
-                                                             start_year=start_year, end_year=end_year)
+    colorado_near_grand_canyon_af = usgs.az.colorado_near_grand_canyon(graph=False).annual_af(
+        water_year_month=water_year_month, start_year=1995, end_year=end_year)
+    # colorado_above_diamond_creek = usgs.az.colorado_above_diamond_creek_near_peach_springs(graph=False).annual_af(
+    #   water_year_month=water_year_month, start_year=1995, end_year=end_year)
+    colorado_lees_ferry_af = usgs.az.lees_ferry(graph=False).annual_af(
+        water_year_month=water_year_month, start_year=1995, end_year=end_year)
+    little_colorado_af = usgs.az.little_colorado_cameron(graph=False).annual_af(
+        water_year_month=water_year_month, start_year=1995, end_year=end_year)
+    paria_annual_af = usgs.az.paria_lees_ferry(graph=False).annual_af(
+        water_year_month=water_year_month, start_year=1995, end_year=end_year)
+    upper_grand_canyon_af = add_annuals([colorado_lees_ferry_af, little_colorado_af, paria_annual_af])
+    usgs_havasu_creek_gage = usgs.az.havasu_creek_above_the_mouth_near_supai(graph=show_graph)
+    havasu_creek_af = usgs_havasu_creek_gage.annual_af(
+        water_year_month=water_year_month, start_year=start_year, end_year=end_year)
 
-    usgs_havasu_creek_gage = usgs.az.havasu_creek_near_supai(graph=show_graph)
-    havasu_creek_af = usgs_havasu_creek_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+    graph = WaterGraph(nrows=3)
+    bar_data = [{'data': colorado_near_grand_canyon_af, 'label': 'Colorado nr Grand Canyon Resort', 'color': 'darkred'},
+                {'data': upper_grand_canyon_af, 'label': 'Lees Ferry + Paria + Little Colorado', 'color': 'firebrick'},
+                ]
+    graph.bars_stacked(bar_data, sub_plot=0, title='Colorado River Gages Above Lake Mead',
+                       ymin=7000000, ymax=14500000, yinterval=500000,
+                       xinterval=year_interval,
+                       ylabel='maf', format_func=WaterGraph.format_maf, vertical=False)
+    graph.running_average(colorado_near_grand_canyon_af, 10, sub_plot=1)
+    graph.running_average(upper_grand_canyon_af, 10, sub_plot=1)
+
+    difference = subtract_annual(colorado_near_grand_canyon_af, upper_grand_canyon_af)
+    graph.bars(difference, sub_plot=1,
+               title='Difference between Grand Canyon Resort Gage & Lees Ferry+Paria+Little Colorado',
+               ymin=0, ymax=400000, yinterval=25000, xinterval=year_interval,
+               ylabel='kaf',  format_func=WaterGraph.format_kaf)
+
+    lake_mead_side_inflow_af = usbr_report.annual_af(
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_side_inflow.csv')
+    lake_mead_side_inflow_af = multiply_annual(lake_mead_side_inflow_af, 1000)
+    # lake_mead_side_inflow_af = reshape_annual_range(lake_mead_side_inflow_af, start_year, end_year)
+    graph.bars(lake_mead_side_inflow_af, sub_plot=2, title='Lake Mead Side Inflow (USBR 24 month studies)',
+               ymin=0, ymax=1200000, yinterval=100000, xinterval=year_interval,
+               xlabel='Water Year', ylabel='kaf',  format_func=WaterGraph.format_kaf)
+    graph.date_and_wait()
 
     usgs_virgin_gage = usgs.az.virgin_at_littlefield(graph=show_graph)
-    virgin_af = usgs_virgin_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+    virgin_af = usgs_virgin_gage.annual_af(water_year_month=water_year_month, start_year=start_year, end_year=end_year)
 
     usgs_muddy_gage = usgs.nv.muddy_near_glendale(graph=show_graph)
-    muddy_af = usgs_muddy_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+    muddy_af = usgs_muddy_gage.annual_af(water_year_month=water_year_month, start_year=start_year, end_year=end_year)
 
     lees_ferry_gage = usgs.az.lees_ferry(graph=show_graph)
-    lees_ferry_af = lees_ferry_gage.annual_af(water_year_month=10, start_year=start_year, end_year=end_year)
+    lees_ferry_af = lees_ferry_gage.annual_af(water_year_month=water_year_month, start_year=start_year, end_year=end_year)
 
     glen_canyon_annual_release_af = usbr_glen_canyon_annual_release_af(graph=show_graph,
                                                                        start_year=start_year, end_year=end_year)
-    paria_annual_af = usgs.az.paria_lees_ferry(graph=show_graph).annual_af(water_year_month=10,
+    paria_annual_af = usgs.az.paria_lees_ferry(graph=show_graph).annual_af(water_year_month=water_year_month,
                                                                            start_year=start_year, end_year=end_year)
 
     glen_canyon_plus_paria_af = add_annual(glen_canyon_annual_release_af, paria_annual_af)
     glen_canyon_seep_af = subtract_annual(lees_ferry_af, glen_canyon_plus_paria_af)
 
-    # Add paria to Glen Canyon
-    # Subtract from Lee's Ferry
-
-    # Stacked graph of the four inputs
+    # Stacked graph of the inflows
     # Compare to USBR side flows from 24 month
     graph = WaterGraph(nrows=2)
     graph.bars(glen_canyon_seep_af, sub_plot=0, title='Glen Canyon + Paria - Lees Ferry Gage',
@@ -805,7 +837,6 @@ def lake_mead_inflow():
     graph.annotate_vertical_arrow(2005, "Big Monsoon", sub_plot=1, offset_percent=5.0)
     graph.annotate_vertical_arrow(2017, "May Rain", sub_plot=1, offset_percent=40.0)
     graph.annotate_vertical_arrow(2019, "Spring Bomb Cyclone", sub_plot=1, offset_percent=30.0)
-
     graph.running_average(total, 10, sub_plot=1)
     graph.date_and_wait()
 
@@ -1176,9 +1207,7 @@ if __name__ == '__main__':
     # State("Utah", "ut")
     # State("Wyoming", "wy")
 
-    usbr.nv.test()
     lake_mead_inflow()
-    usgs.az.test_middle_colorado()
 
     usbr.lc.lake_mead()
     usgs.lc.test()
