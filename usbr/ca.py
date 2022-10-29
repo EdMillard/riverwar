@@ -152,6 +152,10 @@ def state_total_cu():
     return usbr_report.annual_af('ca/usbr_ca_total_consumptive_use.csv')
 
 
+def state_total_returns():
+    return usbr_report.annual_af('ca/usbr_ca_total_returns.csv')
+
+
 def user_total_diversion():
     california = state.state_by_abbreviation('ca')
     return california.total_user_diversion()
