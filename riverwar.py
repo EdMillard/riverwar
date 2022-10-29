@@ -790,9 +790,31 @@ def lake_mead_inflow():
                ymin=0, ymax=400000, yinterval=25000, xinterval=year_interval,
                ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
+    # USBR 24 month study numbers, some of these are generated (i.e. Davis evap) or may be from models
     lake_mead_side_inflow_af = usbr_report.annual_af(
         '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_side_inflow.csv')
     lake_mead_side_inflow_af = multiply_annual(lake_mead_side_inflow_af, 1000)
+
+    lake_mead_evap_af = usbr_report.annual_af(
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_evap_losses.csv')
+    lake_mead_evap_af = multiply_annual(lake_mead_evap_af, 1000)
+
+    lake_mohave_side_inflow_af = usbr_report.annual_af(
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mohave_side_inflow.csv')
+    lake_mohave_evap_af = multiply_annual(lake_mohave_side_inflow_af, 1000)
+
+    lake_mohave_evap_af = usbr_report.annual_af(
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mohave_evap_losses.csv')
+    lake_mohave_evap_af = multiply_annual(lake_mohave_evap_af, 1000)
+
+    lake_havasu_side_inflow_af = usbr_report.annual_af(
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_havasu_side_inflow.csv')
+    lake_mohave_evap_af = multiply_annual(lake_havasu_side_inflow_af, 1000)
+
+    lake_havasu_evap_af = usbr_report.annual_af(
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_havasu_evap_losses.csv')
+    lake_havasu_evap_af = multiply_annual(lake_havasu_evap_af, 1000)
+
     # lake_mead_side_inflow_af = reshape_annual_range(lake_mead_side_inflow_af, start_year, end_year)
     graph.bars(lake_mead_side_inflow_af, sub_plot=2, title='Lake Mead Side Inflow (USBR 24 month studies)',
                ymin=0, ymax=1200000, yinterval=100000, xinterval=year_interval,
