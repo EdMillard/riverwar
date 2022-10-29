@@ -114,6 +114,7 @@ def load_monthly_csv(file_name, sep=' '):
                     accumulate = False
                 sum_year = 0
                 total = int(fields[-1].replace(',', ''))
+
                 for m in fields[1:-1]:
                     monthly_flow = int(m.replace(',', ''))
                     if not accumulate:
