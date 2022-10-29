@@ -13,6 +13,15 @@ def subtract_annual(minuend, subtrahend, start_year=0, end_year=0):
     return difference
 
 
+def multiply_annual(a, multiplier, start_year=0, end_year=0):
+    result = np.zeros(len(a), [('dt', 'i'), ('val', 'f')])
+    result['dt'] = a['dt']
+    result['val'] = a['val'] * multiplier
+    if start_year and end_year:
+        result = reshape_annual_range(result, start_year, end_year)
+    return result
+
+
 def add_annuals(arrays):
     if len(arrays) > 1:
         result = add_annual(arrays[0], arrays[1])
