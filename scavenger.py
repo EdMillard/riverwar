@@ -400,8 +400,57 @@ def scavenge_ca(image_dir, out_path):
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
     # FIXME Lake Mead, Hopi, Havasu Wildlife pumps, Yuma Proving Grounds
-    # FIXME Gabrych, Cibola Vally (Hopi, et al)
+    # FIXME Cibola Vally (Hopi, et al)
     # FIXME 1982 Protective and Regulatory Pumping Unit, Yuma Mesa Outlet Drain
+    output_path = out_path.joinpath('az/usbr_az_yuma_proving_well_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Proving', field_id='Wells', start_year=1995)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_proving_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Proving', field_id='Diversion', start_year=1964)
+
+    output_path = out_path.joinpath('az/usbr_az_mohave_water_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Mohave Water', field_id='Consumptive Us', start_year=2003)
+
+    output_path = out_path.joinpath('az/usbr_az_golden_shores_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Golden Shores', field_id='Consumptive Us', start_year=2003)
+
+    output_path = out_path.joinpath('az/usbr_az_brooke_water_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Brooke Water', field_id='Consumptive Us', start_year=2003)
+
+    output_path = out_path.joinpath('az/usbr_az_cibola_valley_all_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Cibola Valley', field_id='Diversion',
+                start_year=2005, end_year=2012, loop='Returns')
+
+    output_path = out_path.joinpath('az/usbr_az_mohave_water_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Mohave Water', field_id='Diversion', start_year=1980)
+
+    output_path = out_path.joinpath('az/usbr_az_lake_mead_national_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Lake Mead Nat', field_id='Diversion', start_year=1964)
+
+    output_path = out_path.joinpath('az/usbr_az_brooke_water_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Brooke Water', field_id='Diversion', start_year=1995)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_area_office_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Area Office', field_id='Diversion', start_year=1976)
+
+    output_path = out_path.joinpath('az/usbr_az_golden_shores_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Golden Shores', field_id='Diversion', start_year=1989)
+
+    output_path = out_path.joinpath('az/usbr_az_camille_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Camille', field_id='Diversion', start_year=1976)
+
+    output_path = out_path.joinpath('az/usbr_az_desert_lawn_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Desert Lawn', field_id='Diversion', start_year=1984)
+
+    output_path = out_path.joinpath('az/usbr_az_ehrenberg_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Ehrenberg', field_id='Diversion', start_year=1976)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_proving_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Proving', field_id='Diversion', start_year=1964, loop='Returns')
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_union_high_school_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Union High School', field_id='Consumptive Us',
+                start_year=2003)
 
     output_path = out_path.joinpath('az/usbr_az_hopi_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Hopi', field_id='Consumptive Us', start_year=2005)
@@ -805,7 +854,73 @@ def scavenge_az(image_dir, out_path):
 
 def scavenge_nv(image_dir, out_path):
     image_path = image_dir.joinpath('nv/consumptive_use')
-    # FIXME Run "CITY OF HENDERSON" "Basic Management"
+
+    output_path = out_path.joinpath('nv/usbr_nv_pacific_coast_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Pacific Coast', field_id='Diversion', start_year=1978)
+
+    output_path = out_path.joinpath('nv/usbr_nv_johns_manville_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Johns', field_id='Diversion', start_year=1968)
+
+    # Name changed to Johns Manville in 1968
+    output_path = out_path.joinpath('nv/usbr_nv_fiberboard_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fiberboard', field_id='Diversion', end_year=1967)
+
+    output_path = out_path.joinpath('nv/usbr_nv_lake_mead_national_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Lake Mead Nat', field_id='Diversion', start_year=1964)
+
+    output_path = out_path.joinpath('nv/usbr_nv_nevada_fish_and_game_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user=' fish ', field_id='Consumptive Us',
+                start_year=1973, end_year=2014)
+
+    output_path = out_path.joinpath('nv/usbr_nv_nevada_dept_of_wildlife_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='wildlife', field_id='Diversion', start_year=2015)
+
+    output_path = out_path.joinpath('nv/usbr_nv_nevada_dept_of_wildlife_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='wildlife', field_id='Consumptive Us', start_year=2015)
+
+    output_path = out_path.joinpath('nv/usbr_nv_nevada_fish_and_game_diversion.csv')
+    ocr_reports(image_path, output_path, water_user=' fish ', field_id='Diversion', start_year=1973, end_year=2014)
+
+    output_path = out_path.joinpath('nv/usbr_nv_fort_mojave_indian_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave Indian', field_id='Consumptive Us', start_year=2003)
+
+    output_path = out_path.joinpath('nv/usbr_nv_north_las_vegas_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='North Las Vegas', field_id='Diversion', end_year=1984)
+
+    output_path = out_path.joinpath('nv/usbr_nv_nellis_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Nellis', field_id='Diversion')
+
+    output_path = out_path.joinpath('nv/usbr_nv_big_bend_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Big Bend Water', field_id='Consumptive Us', start_year=1995)
+
+    output_path = out_path.joinpath('nv/usbr_nv_city_of_henderson_diversion.csv')  # Add diversion loop
+    ocr_reports(image_path, output_path, water_user='City of Henderson', field_id='Diversion', start_year=1984, end_year=2001)
+
+    # Las Valley Water District Changed to Robert B. Griffith in 1984
+    output_path = out_path.joinpath('nv/usbr_nv_las_vegas_valley_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Las Vegas Valley', field_id='Diversion',
+                start_year=1964, end_year=1983)
+
+    output_path = out_path.joinpath('nv/usbr_nv_henderson_diversion.csv')  # Add diversion loop
+    ocr_reports(image_path, output_path, water_user='Henderson', field_id='Diversion', start_year=1972)
+
+    output_path = out_path.joinpath('nv/usbr_nv_so_cal_edison_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Edison', field_id='Diversion')
+
+    output_path = out_path.joinpath('nv/usbr_nv_basic_water_company_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Basic ', field_id='Diversion')
+
+    output_path = out_path.joinpath('nv/usbr_nv_boulder_city_diversion.csv')  # Add diversion loop
+    ocr_reports(image_path, output_path, water_user='Boulder ', field_id='Diversion')
+
+    output_path = out_path.joinpath('nv/usbr_nv_fort_mojave_indian_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave Indian', field_id='Diversion', start_year=1996)
+
+    output_path = out_path.joinpath('nv/usbr_nv_big_bend_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Big Bend Water', field_id='Diversion')
+
+    output_path = out_path.joinpath('nv/usbr_nv_las_vegas_wash_returns.csv')
+    ocr_reports(image_path, output_path,  water_user='Las Vegas Wash', field_id='Returns', start_year=1977)
 
     output_path = out_path.joinpath('nv/usbr_nv_total_returns.csv')
     ocr_reports(image_path, output_path, water_user='Nevada Totals', field_id='Return', end_year=2009)
@@ -824,26 +939,6 @@ def scavenge_nv(image_dir, out_path):
 
     output_path = out_path.joinpath('nv/usbr_nv_snwa_griffith_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Griffith Water Project', field_id='Diversion', start_year=1984)
-
-    # Las Valley Water District Changed to Robert B. Griffith in 1984
-    output_path = out_path.joinpath('nv/usbr_nv_las_vegas_valley_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Las Vegas Valley Water District', field_id='Diversion',
-                end_year=1983)
-
-    output_path = out_path.joinpath('nv/usbr_nv_las_vegas_wash_diversion.csv')
-    ocr_reports(image_path, output_path,  water_user='Las Vegas Wash', field_id='Returns')
-
-    output_path = out_path.joinpath('nv/usbr_nv_henderson_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Henderson', field_id='Diversion')
-
-    output_path = out_path.joinpath('nv/usbr_nv_basic_water_company_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Basic Water Company', field_id='Diversion')
-
-    output_path = out_path.joinpath('nv/usbr_nv_fort_mojave_indian_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Fort Mojave Indian', field_id='Diversion')
-
-    output_path = out_path.joinpath('nv/usbr_nv_big_bend_water_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Big Bend Water', field_id='Diversion')
 
     # Lake Havasu Irrigation and Drainage in the 80's at least
     # Bureau of Reclamation
@@ -942,8 +1037,8 @@ def ocr_print(image_file_path):
         print(text)
 
         fig, ax = plt.subplots(nrows=1, ncols=1)
-        fig.set_figwidth(60)
-        fig.set_figheight(15)
+        fig.set_figwidth(40)
+        fig.set_figheight(25)
         ax.set_title(image_file_path)
         ax.set_xlabel('')
         ax.set_ylabel('')
@@ -973,7 +1068,7 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    # ocr_debug(image_directory, path1='az', path2='/consumptive_use')
+    ocr_debug(image_directory, path1='az', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='releases')
     scavenge_az(image_directory, outputs_path)
     scavenge_nv(image_directory, outputs_path)
