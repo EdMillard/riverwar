@@ -61,24 +61,6 @@ def above_national_canyon_near_supai(graph=True):
     return gage
 
 
-def near_grand_canyon(graph=True):
-    gage = USGSGage('09402500', start_date='1922-10-01', color='firebrick',
-                    cfs_max=125000, cfs_interval=5000,
-                    annual_min=4000000, annual_max=21000000, annual_interval=1000000, annual_unit='maf', year_interval=6)
-    if graph:
-        WaterGraph(nrows=2).plot_gage(gage)
-    return gage
-
-
-def above_diamond_creek_near_peach_springs(graph=True):
-    gage = USGSGage('09404200', start_date='1990-08-29', color='firebrick',
-                    cfs_max=55000, cfs_interval=5000,
-                    annual_min=6000000, annual_max=15000000, annual_interval=500000, annual_unit='maf', year_interval=6)
-    if graph:
-        WaterGraph(nrows=2).plot_gage(gage)
-    return gage
-
-
 def below_hoover(graph=True):
     gage = USGSGage('09421500', start_date='1934-04-01', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,

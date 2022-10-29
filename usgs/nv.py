@@ -38,6 +38,16 @@ def muddy_near_glendale(graph=True):
     return gage
 
 
+def virgin_abv_lake_mead_nr_overton(graph=True):
+    gage = USGSGage('09415250', start_date='2006-04-21',
+                    cfs_max=3000, cfs_interval=500,
+                    annual_min=0, annual_max=250000, annual_interval=10000, annual_unit='kaf',
+                    year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
 def las_vegas_wash_below_lake_las_vegas(graph=True):
     gage = USGSGage('09419800', start_date='1969-08-01',
                     cfs_max=3000, cfs_interval=500,

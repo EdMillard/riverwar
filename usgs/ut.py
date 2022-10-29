@@ -75,3 +75,21 @@ def escalante(graph=True):
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
+
+
+def virgin_river_at_virgin(graph=True):
+    gage = USGSGage('09406000', start_date='1950-10-01',
+                    cfs_max=1000, cfs_interval=100,
+                    annual_max=30000, annual_interval=2000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def virgin_river_near_st_george(graph=True):
+    gage = USGSGage('09413500', start_date='1909-05-01',
+                    cfs_max=1000, cfs_interval=100,
+                    annual_max=30000, annual_interval=2000, annual_unit='kaf', year_interval=5)
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
