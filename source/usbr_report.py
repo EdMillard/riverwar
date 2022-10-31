@@ -133,8 +133,10 @@ def load_monthly_csv(file_name, sep=' '):
                     month += 1
                     months += 1
                 if sum_year != total:
-                    print(str(year), 'total & sum mismatch diff =', sum_year-total,
-                          'expected = ', total, ' got = ', sum_year, fields)
+                    diff = sum_year-total
+                    if diff < -1 or diff > 1:
+                        print(str(year), 'total & sum mismatch diff =', sum_year-total,
+                              'expected = ', total, ' got = ', sum_year, fields)
             elif len(fields) == 1:
                 year = int(fields[0])
                 monthly_flow = 0
