@@ -43,8 +43,9 @@ def init(nv, reaches):
     reaches[1].add_user(nv.user(module, 'nellis'))
     reaches[1].add_user(nv.user(module, 'pacific_coast'))
     reaches[1].add_user(nv.user(module, 'socal_edison'))
-    reaches[2].add_user(nv.user(module, 'big_bend'))
-    reaches[2].add_user(nv.user(module, 'fort_mojave_indian'))
+    reaches[2].add_user(nv.user(module, 'lake_mead_national_lake_mohave'))
+    reaches[3].add_user(nv.user(module, 'big_bend'))
+    reaches[3].add_user(nv.user(module, 'fort_mojave_indian'))
 
 
 def test():
@@ -136,12 +137,23 @@ def lake_mead_national_diversion():
 
 
 def lake_mead_national_cu():
-    # FIXME, are returns in Las Vegas Wash or is this all consumptive use
-    return subtract_annual(lake_mead_national_diversion(), lake_mead_national_diversion())
+    return lake_mead_national_diversion()
 
 
 def lake_mead_national_returns():
     return subtract_annual(lake_mead_national_diversion(), lake_mead_national_cu())
+
+
+def lake_mead_national_lake_mohave_diversion():
+    return usbr_report.annual_af('nv/usbr_nv_lake_mead_national_lake_mohave_diversion.csv')
+
+
+def lake_mead_national_lake_mohave_cu():
+    return lake_mead_national_lake_mohave_diversion()
+
+
+def lake_mead_national_lake_mohave_returns():
+    return subtract_annual(lake_mead_national_lake_mohave_diversion(), lake_mead_national_lake_mohave_cu())
 
 
 def boulder_city_diversion():

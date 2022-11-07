@@ -33,28 +33,33 @@ current_last_year = 2021
 def init(az, reaches):
     module = modules[__name__]
     # Marble Canyon                         # 2016
-    # Lake mead rec from Lake Mead
-    # Lake mead rec from Lake Mohave
+    reaches[1].add_user(az.user(module, 'lake_mead_national'))               # 1993
+
+    reaches[2].add_user(az.user(module, 'lake_mead_national_lake_mohave'))   # 2017
+    reaches[2].add_user(az.user(module, 'mcalister'))                        # 2017
+
     # McAlister
     # Lower Colorado River Dams Project/USBR
     reaches[3].add_user(az.user(module, 'mohave_water'))                     # 1980
-    reaches[3].add_user(az.user(module, 'bullhead_city'))  # 1987
+    reaches[3].add_user(az.user(module, 'bullhead_city'))                    # 1987
 
-    reaches[2].add_user(az.user(module, 'brooke_water'))                     # 1995
     reaches[3].add_user(az.user(module, 'mohave_valley'))                    # 1969
-    # Mohave County Water Authority                     # 2005 in Cibola Valley, 2013 standalone
+    # Mohave County Water Authority                                          # 2005 in Cibola Valley, 2013 standalone
     reaches[3].add_user(az.user(module, 'fort_mojave'))                      # 1975
     reaches[3].add_user(az.user(module, 'havasu_national_wildlife'))         # 1969
     reaches[3].add_user(az.user(module, 'golden_shores'))                    # 1989/2003 really
     # Crystal Beach
+    reaches[3].add_user(az.user(module, 'epcor'))                            # 2016 includes Brooke 2021 reaches 3 & 4
     reaches[3].add_user(az.user(module, 'lake_havasu'))                      # 1969
     # Arizona Parks
     reaches[3].add_user(az.user(module, 'cap'))                              # 1985
     # Hillcrest
     # Springs Del Sol
+    reaches[4].add_user(az.user(module, 'brooke_water'))                     # 1995  EPCOR 2021, in reaches 3 & 4 then
     reaches[4].add_user(az.user(module, 'town_of_parker'))                   # 1964
     reaches[4].add_user(az.user(module, 'crit'))                             # 1964
     reaches[4].add_user(az.user(module, 'gabrych'))                          # 2018
+
     # Ehrenburg
     # B & F
     # North Baja
@@ -113,10 +118,10 @@ def test():
     data = [
         {'data': state_total_diversion('az', 'total'), 'y_min': 0, 'y_max': 3800000, 'y_interval': 200000},
         {'data': user_total_diversion()},
-        {'y_min': -1000, 'y_max': 35000, 'y_interval': 2000},
+        {'y_min': -1000, 'y_max': 33000, 'y_interval': 2000},
         {'data': state_total_cu('az', 'total'), 'y_min': 0, 'y_max': 3000000, 'y_interval': 200000},
         {'data': user_total_cu()},
-        {'y_min': -1000, 'y_max': 14000, 'y_interval': 1000},
+        {'y_min': -1000, 'y_max': 12500, 'y_interval': 1000},
     ]
     util.state_total_vs_user_total_graph('AZ', data)
 
@@ -251,6 +256,42 @@ def not_yuma_area_returns():
     return data
 
 
+def lake_mead_national_diversion():
+    return usbr_report.annual_af('az/usbr_az_lake_mead_national_diversion.csv')
+
+
+def lake_mead_national_cu():
+    return usbr_report.annual_af('az/usbr_az_lake_mead_national_consumptive_use.csv')
+
+
+def lake_mead_national_returns():
+    return subtract_annual(lake_mead_national_diversion(), lake_mead_national_cu())
+
+
+def lake_mead_national_lake_mohave_diversion():
+    return usbr_report.annual_af('az/usbr_az_lake_mead_national_lake_mohave_diversion.csv')
+
+
+def lake_mead_national_lake_mohave_cu():
+    return usbr_report.annual_af('az/usbr_az_lake_mead_national_lake_mohave_consumptive_use.csv')
+
+
+def lake_mead_national_lake_mohave_returns():
+    return subtract_annual(lake_mead_national_lake_mohave_diversion(), lake_mead_national_lake_mohave_cu())
+
+
+def mcalister_diversion():
+    return usbr_report.annual_af('az/usbr_az_mcalister_diversion.csv')
+
+
+def mcalister_cu():
+    return usbr_report.annual_af('az/usbr_az_mcalister_consumptive_use.csv')
+
+
+def mcalister_returns():
+    return subtract_annual(mcalister_diversion(), mcalister_cu())
+
+
 def fort_mojave():
     year_interval = 2
 
@@ -319,6 +360,18 @@ def mohave_valley_irrigation():
     graph.running_average(annual_diversion_af, 10, sub_plot=1)
     graph.running_average(annual_cu_af, 10, sub_plot=1)
     graph.date_and_wait()
+
+
+def epcor_diversion():
+    return usbr_report.annual_af('az/usbr_az_epcor_diversion.csv')
+
+
+def epcor_cu():
+    return usbr_report.annual_af('az/usbr_az_epcor_consumptive_use.csv')
+
+
+def epcor_returns():
+    return subtract_annual(epcor_diversion(), epcor_cu())
 
 
 def brooke_water_diversion():

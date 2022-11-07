@@ -187,6 +187,12 @@ class LakeMohave(Lake):
         pass
 
 
+def lake_mohave_release():
+    usbr_lake_mohave_release_total_af = 6131
+    info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
+    return WaterGraph.daily_to_water_year(daily_release_af)
+
+
 def lake_mohave(graph=False):
     usbr_lake_mohave_release_total_af = 6131
     # usbr_lake_mohave_water_temperature_degf = 6132
@@ -221,7 +227,8 @@ class LakeHavasu(Lake):
         Lake.__init__(self, 'lake_havasu', water_month)
 
     def inflow(self, year_begin, year_end):
-        pass
+        # FIXME remove diversions, get losses from 24 month study?
+        return reshape_annual_range(lake_mohave_release(), year_begin, year_end)
 
     def release(self, year_begin, year_end):
         usbr_lake_havasu_release_total_af = 6126
