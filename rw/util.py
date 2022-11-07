@@ -13,6 +13,13 @@ def subtract_annual(minuend, subtrahend, start_year=0, end_year=0):
     return difference
 
 
+def flow_for_year(a, year):
+    for target in a:
+        if target['dt'] == year:
+            return target['val']
+    return 0
+
+
 def multiply_annual(a, multiplier, start_year=0, end_year=0):
     result = np.zeros(len(a), [('dt', 'i'), ('val', 'f')])
     result['dt'] = a['dt']
