@@ -83,7 +83,8 @@ class USGSGage(object):
         return b
 
     def annual_af(self, start_year=0, end_year=0, water_year_month=1):
-        monthly_af = daily_cfs_to_monthly_af(self.daily_discharge(update=False), start_year=start_year, end_year=end_year)
+        monthly_af = daily_cfs_to_monthly_af(self.daily_discharge(update=False),
+                                             start_year=start_year, end_year=end_year)
         if water_year_month == 1:
             annual_af = usbr_report.monthly_to_calendar_year(monthly_af)
         else:
@@ -215,7 +216,7 @@ class USGSGage(object):
                 self.request_daily_discharge(str(end_date), str(yesterdays_date), append=True)
                 self.daily_discharge_cfs = self.load_time_series_csv(file_name)
 
-            #daily_discharge_af = convert_cfs_to_af_per_day(self.daily_discharge_cfs)
+            # daily_discharge_af = convert_cfs_to_af_per_day(self.daily_discharge_cfs)
         return self.daily_discharge_cfs
 
 
