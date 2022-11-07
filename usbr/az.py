@@ -30,82 +30,83 @@ from rw import state
 current_last_year = 2021
 
 
-def init(az):
+def init(az, reaches):
     module = modules[__name__]
     # Marble Canyon                         # 2016
     # Lake mead rec from Lake Mead
     # Lake mead rec from Lake Mohave
     # McAlister
     # Lower Colorado River Dams Project/USBR
-    az.user(module, 'bullhead_city')                    # 1987
-    az.user(module, 'mohave_water')                     # 1980
-    az.user(module, 'brooke_water')                     # 1995
-    az.user(module, 'mohave_valley')                    # 1969
+    reaches[3].add_user(az.user(module, 'mohave_water'))                     # 1980
+    reaches[3].add_user(az.user(module, 'bullhead_city'))  # 1987
+
+    reaches[2].add_user(az.user(module, 'brooke_water'))                     # 1995
+    reaches[3].add_user(az.user(module, 'mohave_valley'))                    # 1969
     # Mohave County Water Authority                     # 2005 in Cibola Valley, 2013 standalone
-    az.user(module, 'fort_mojave')                      # 1975
-    az.user(module, 'golden_shores')                    # 1989/2003 really
-    az.user(module, 'havasu_national_wildlife')         # 1969
+    reaches[3].add_user(az.user(module, 'fort_mojave'))                      # 1975
+    reaches[3].add_user(az.user(module, 'havasu_national_wildlife'))         # 1969
+    reaches[3].add_user(az.user(module, 'golden_shores'))                    # 1989/2003 really
     # Crystal Beach
-    az.user(module, 'lake_havasu')                      # 1969
+    reaches[3].add_user(az.user(module, 'lake_havasu'))                      # 1969
     # Arizona Parks
-    az.user(module, 'cap')                              # 1985
+    reaches[3].add_user(az.user(module, 'cap'))                              # 1985
     # Hillcrest
     # Springs Del Sol
-    az.user(module, 'town_of_parker')                   # 1964
-    az.user(module, 'crit')                             # 1964
-    az.user(module, 'gabrych')                          # 2018
+    reaches[4].add_user(az.user(module, 'town_of_parker'))                   # 1964
+    reaches[4].add_user(az.user(module, 'crit'))                             # 1964
+    reaches[4].add_user(az.user(module, 'gabrych'))                          # 2018
     # Ehrenburg
     # B & F
     # North Baja
-    az.user(module, 'cibola_valley')                    # 1983
+    reaches[4].add_user(az.user(module, 'cibola_valley'))                    # 1983
     # Red River
     # Western Water
-    az.user(module, 'hopi')                             # 2005 in Cibola Valley, 2013 standalone
-    az.user(module, 'arizona_game_and_fish')            # 2013
+    reaches[4].add_user(az.user(module, 'hopi'))                             # 2005 in Cibola Valley, 2013 standalone
+    reaches[4].add_user(az.user(module, 'arizona_game_and_fish'))            # 2013
     # Cibola Island
-    az.user(module, 'cibola_national_wildlife')         # 1976
-    az.user(module, 'imperial_national_wildlife')       # 1967
+    reaches[4].add_user(az.user(module, 'cibola_national_wildlife'))         # 1976
+    reaches[4].add_user(az.user(module, 'imperial_national_wildlife'))       # 1967
     # BLM
     # Fisher's Landing
     # Shephard Water
-    az.user(module, 'yuma_proving')                     # 1964
+    reaches[4].add_user(az.user(module, 'yuma_proving'))                     # 1964
     # JRJ
     # Cha Cha
     # Beattie Farms
-    az.user(module, 'gila_monster')                     # 2001
-    az.user(module, 'wellton_mohawk')                   # 1964
-    az.user(module, 'city_of_yuma')                     # 1964
-    az.user(module, 'marine_corp')                      # 1983
+    reaches[4].add_user(az.user(module, 'gila_monster'))                     # 2001
+    reaches[4].add_user(az.user(module, 'wellton_mohawk'))                   # 1964
+    reaches[4].add_user(az.user(module, 'city_of_yuma'))                     # 1964
+    reaches[4].add_user(az.user(module, 'marine_corp'))                      # 1983
     # Union/Southern Pacific
     # Yuma Mesa Fruit
-    az.user(module, 'university_of_arizona')            # 1983
-    az.user(module, 'yuma_union_high_school')           # 1984
+    reaches[4].add_user(az.user(module, 'university_of_arizona'))            # 1983
+    reaches[4].add_user(az.user(module, 'yuma_union_high_school'))           # 1984
     # Camille, Alec
     # Desert Lawn                                       # 1984
-    az.user(module, 'north_gila_irrigation')            # 1964
-    az.user(module, 'yuma_irrigation')                  # 1965
-    az.user(module, 'yuma_mesa')                        # 1964
-    az.user(module, 'unit_b')                           # 1964
-    az.user(module, 'arizona_state_land')               # 2013
+    reaches[4].add_user(az.user(module, 'north_gila_irrigation'))            # 1964
+    reaches[4].add_user(az.user(module, 'yuma_irrigation'))                  # 1965
+    reaches[4].add_user(az.user(module, 'yuma_mesa'))                        # 1964
+    reaches[4].add_user(az.user(module, 'unit_b'))                           # 1964
+    reaches[4].add_user(az.user(module, 'arizona_state_land'))               # 2013
     # Ott Family
     # Ogram Boys
-    az.user(module, 'fort_yuma')                        # 1984
+    reaches[4].add_user(az.user(module, 'fort_yuma'))                        # 1984
     # Armon Curtis
-    az.user(module, 'yuma_county_wua')                  # 1964
+    reaches[4].add_user(az.user(module, 'yuma_county_wua'))                  # 1964
     # R Griffith
     # Power
     # Cocopah PPR No 7
     # Griffith Ranches
     # Milton Phillips
-    az.user(module, 'cocopah')                          # 1964
-    az.user(module, 'yuma_area_office')                 # 1994
+    reaches[4].add_user(az.user(module, 'cocopah'))                          # 1964
+    reaches[4].add_user(az.user(module, 'yuma_area_office'))                 # 1994
     # Arizona Public Service
     # Gary Pasquinelli
+    reaches[4].add_user(az.user(module, 'south_gila'))                       # 1964
     # Misc out of order
-    az.user(module, 'others_users_pumping')             # 1944
-    az.user(module, 'south_gila')                       # 1964
-    az.user(module, 'sturges')                          # 1990
-    az.user(module, 'warren_act')                       # 1964
+    az.user(module, 'others_users_pumping')                                  # 1944
+    az.user(module, 'sturges')                                               # 1990
+    az.user(module, 'warren_act')                                            # 1964
 
 
 def test():
@@ -1167,7 +1168,7 @@ def yuma_proving_cu():
 
 
 def yuma_proving_returns():
-    return subtract_annual(yuma_proving_diversion(), yuma_proving_wildlife_cu())
+    return subtract_annual(yuma_proving_diversion(), yuma_proving_cu())
 
 
 def sturges():

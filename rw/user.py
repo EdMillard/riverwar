@@ -22,8 +22,10 @@ SOFTWARE.
 
 
 class User(object):
-    def __init__(self, module, name):
+    def __init__(self, module, name, state):
         self.name = name
+        self.state = state
+        self.active = False
         try:
             self.diversion = getattr(module, name + '_diversion')
         except AttributeError:

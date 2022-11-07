@@ -21,6 +21,9 @@ SOFTWARE.
 """
 from source import usbr_rise
 from graph.water import WaterGraph
+from rw.lake import Lake
+import usgs
+
 current_last_year = 2021
 
 
@@ -36,7 +39,48 @@ def test():
     mcphee()
 
 
-def lake_powell():
+class LakePowell(Lake):
+    def __init__(self, water_month):
+        Lake.__init__(self, 'lake_powell', water_month)
+
+    def inflow(self, year_begin, year_end):
+        pass
+
+    def release(self, year_begin, year_end):
+        return usgs.az.lees_ferry(graph=False).annual_af(year_begin, year_end, water_year_month=self.water_year_month)
+
+    def storage(self):
+        pass
+
+    def evaporation(self, year_begin, year_end):
+        pass
+
+
+def lake_powell_inflow():
+    usbr_lake_powell_inflow_af = 4288
+    annual_inflow_af = usbr_rise.annual_af(usbr_lake_powell_inflow_af)
+    return annual_inflow_af
+
+
+def lake_powell_release():
+    usbr_lake_powell_release_total_af = 4354
+    annual_release_total_af = usbr_rise.annual_af(usbr_lake_powell_release_total_af)
+    return annual_release_total_af
+
+
+def lake_powell_evaporation():
+    usbr_lake_powell_evaporation_af = 510
+    annual_evaporation_af = usbr_rise.annual_af(usbr_lake_powell_evaporation_af)
+    return annual_evaporation_af
+
+
+def lake_powell_storage():
+    usbr_lake_powell_storage_af = 509
+    info, daily_storage_af = usbr_rise.load(usbr_lake_powell_storage_af)
+    return daily_storage_af
+
+
+def lake_powell(show_graph=True):
     # usbr_lake_powell_release_powerplant_cfs = 507
     # usbr_lake_powell_elevation_ft = 508
     usbr_lake_powell_storage_af = 509
@@ -55,43 +99,44 @@ def lake_powell():
     # usbr_lake_powell_change_in_storage_af = 4404
     # usbr_lake_powell_area_acres = 4784
 
-    year_interval = 3
-    graph = WaterGraph(nrows=4)
-
     # info, daily_elevation_ft = usbr_rise.load(usbr_lake_powell_elevation_ft)
     # graph.plot(daily_elevation_ft, sub_plot=0, title='Lake Powell Elevation', ymin=3350, ymax=3725, yinterval=25,
     #            ylabel='ft', format_func=WaterGraph.format_elevation)
 
     info, daily_storage_af = usbr_rise.load(usbr_lake_powell_storage_af)
-    graph.plot(daily_storage_af, sub_plot=0, title='Lake Powell Storage',
-               ymax=26000000, yinterval=2000000,
-               ylabel='maf', format_func=WaterGraph.format_10maf)
-
     annual_inflow_af = usbr_rise.annual_af(usbr_lake_powell_inflow_af)
-    graph.bars(annual_inflow_af, sub_plot=1, title='Lake Powell Inflow',
-               ymin=3000000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
-               ylabel='maf', format_func=WaterGraph.format_maf)
-
     annual_inflow_unregulated_af = usbr_rise.annual_af(usbr_lake_powell_inflow_volume_unregulated_af)
-    graph.bars(annual_inflow_unregulated_af, sub_plot=2, title='Lake Powell Unregulated Inflow',
-               ymin=2500000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
-               ylabel='maf', format_func=WaterGraph.format_maf)
-
     annual_evaporation_af = usbr_rise.annual_af(usbr_lake_powell_evaporation_af)
-    graph.bars(annual_evaporation_af, sub_plot=3, title='Lake Powell Evaporation',
-               ymin=0, ymax=700000, yinterval=50000,
-               xlabel='Water Year', xinterval=year_interval,
-               ylabel='kaf', format_func=WaterGraph.format_kaf)
-    graph.date_and_wait()
-
-    graph = WaterGraph(nrows=1)
-
     annual_release_total_af = usbr_rise.annual_af(usbr_lake_powell_release_total_af)
-    graph.bars(annual_release_total_af, sub_plot=0, title='Lake Powell Release',
-               ymin=7000000, ymax=12600000, yinterval=100000,
-               xlabel='Water Year', xinterval=1, xmin=2000, xmax=current_last_year,
-               ylabel='maf', format_func=WaterGraph.format_maf)
-    graph.date_and_wait()
+    if show_graph:
+        year_interval = 3
+        graph = WaterGraph(nrows=4)
+        graph.plot(daily_storage_af, sub_plot=0, title='Lake Powell Storage',
+                   ymax=26000000, yinterval=2000000,
+                   ylabel='maf', format_func=WaterGraph.format_10maf)
+
+        graph.bars(annual_inflow_af, sub_plot=1, title='Lake Powell Inflow',
+                   ymin=3000000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+
+        graph.bars(annual_inflow_unregulated_af, sub_plot=2, title='Lake Powell Unregulated Inflow',
+                   ymin=2500000, ymax=21000000, yinterval=2000000, xinterval=year_interval,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+
+        graph.bars(annual_evaporation_af, sub_plot=3, title='Lake Powell Evaporation',
+                   ymin=0, ymax=700000, yinterval=50000,
+                   xlabel='Water Year', xinterval=year_interval,
+                   ylabel='kaf', format_func=WaterGraph.format_kaf)
+        graph.date_and_wait()
+
+        graph = WaterGraph(nrows=1)
+
+        graph.bars(annual_release_total_af, sub_plot=0, title='Lake Powell Release',
+                   ymin=7000000, ymax=12600000, yinterval=100000,
+                   xlabel='Water Year', xinterval=1, xmin=2000, xmax=current_last_year,
+                   ylabel='maf', format_func=WaterGraph.format_maf)
+        graph.date_and_wait()
+    return annual_release_total_af
 
 
 def navajo_reservoir():

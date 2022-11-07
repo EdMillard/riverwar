@@ -29,30 +29,35 @@ from rw import state
 current_last_year = 2021
 
 
-def init(ca):
+def init(ca, reaches):
     module = modules[__name__]
-    ca.user(module, 'city_of_needles')
-    ca.user(module, 'city_of_blythe')
-    ca.user(module, 'east_blythe')
-    ca.user(module, 'fort_mojave')
-    ca.user(module, 'metropolitan')
-    ca.user(module, 'crit')
-    ca.user(module, 'palo_verde')
-    ca.user(module, 'imperial')
-    ca.user(module, 'coachella')
-    ca.user(module, 'yuma_project')
+    reaches[3].add_user(ca.user(module, 'city_of_needles'))
+    reaches[3].add_user(ca.user(module, 'fort_mojave'))
+    reaches[3].add_user(ca.user(module, 'metropolitan'))
+    reaches[3].add_user(ca.user(module, 'chemehuevi'))
+
+    reaches[4].add_user(ca.user(module, 'crit'))
+    reaches[4].add_user(ca.user(module, 'city_of_blythe'))
+    reaches[4].add_user(ca.user(module, 'east_blythe'))
+    reaches[4].add_user(ca.user(module, 'palo_verde'))
+    reaches[4].add_user(ca.user(module, 'imperial'))
+    reaches[4].add_user(ca.user(module, 'coachella'))
+    reaches[4].add_user(ca.user(module, 'yuma_project'))
+    reaches[4].add_user(ca.user(module, 'winterhaven'))
+    reaches[4].add_user(ca.user(module, 'fort_yuma'))
+    reaches[4].add_user(ca.user(module, 'yuma_island'))
+    # FIXME
     ca.user(module, 'other_users_pumping')
-    ca.user(module, 'yuma_island')
 
 
 def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
         {'data': user_total_diversion()},
-        {'y_min': -1000, 'y_max': 8000, 'y_interval': 1000},
+        {'y_min': -100, 'y_max': 2000, 'y_interval': 100},
         {'data': state_total_cu(), 'y_min': 3500000, 'y_max': 5500000, 'y_interval': 500000},
         {'data': user_total_cu()},
-        {'y_min': -5000, 'y_max': 155000, 'y_interval': 5000},
+        {'y_min': -5000, 'y_max': 60000, 'y_interval': 5000},
     ]
     util.state_total_vs_user_total_graph('CA', data)
 
@@ -333,6 +338,17 @@ def metropolitan_returns(water_year_month=1):
                            metropolitan_cu(water_year_month=water_year_month))
 
 
+def chemehuevi_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_chemehuevi_diversion.csv', water_year_month=water_year_month)
+
+
+def chemehuevi_cu(water_year_month=1):
+    return chemehuevi_diversion()
+
+
+def chemehuevi_returns():
+    return subtract_annual(chemehuevi_diversion(), chemehuevi_diversion())
+
 def palo_verde_annotate(graph, sub_plot=0):
     graph.annotate_horizontal_line(219780, 'PPR 1, 219.78 kaf, 1877\n3(b) 16,000 acres, 1933', sub_plot=sub_plot)
 
@@ -493,8 +509,10 @@ def imperial_diversion(water_year_month=1):
 
 
 def imperial_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_consumptive_use.csv',
-                                 water_year_month=water_year_month)
+    cu = usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_consumptive_use.csv', water_year_month=water_year_month)
+    cu_sdcwa = usbr_report.annual_af('ca/usbr_ca_imperial_irrigation_sdcwa_consumptive_use.csv',
+                                     water_year_month=water_year_month)
+    return add_annuals([cu, cu_sdcwa])
 
 
 def imperial_returns(water_year_month=1):
@@ -647,6 +665,30 @@ def other_users_pumping_returns():
     return subtract_annual(other_users_pumping_diversion(), other_users_pumping_cu())
 
 
+def winterhaven_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_winterhaven_diversion.csv', water_year_month=water_year_month)
+
+
+def winterhaven_cu(water_year_month=1):
+    return winterhaven_diversion()
+
+
+def winterhaven_returns():
+    return subtract_annual(winterhaven_diversion(), winterhaven_diversion())
+
+
+def fort_yuma_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_fort_yuma_diversion.csv', water_year_month=water_year_month)
+
+
+def fort_yuma_cu(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_fort_yuma_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def fort_yuma_returns():
+    return subtract_annual(fort_yuma_diversion(), fort_yuma_cu())
+
+
 def yuma_island_diversion(water_year_month=1):
     return usbr_report.annual_af('ca/usbr_ca_yuma_island_diversion.csv', water_year_month=water_year_month)
 
@@ -656,5 +698,4 @@ def yuma_island_cu(water_year_month=1):
 
 
 def yuma_island_returns():
-    # Yuma Island has no return flows so cu is the same as diversion
     return subtract_annual(yuma_island_diversion(), yuma_island_cu())

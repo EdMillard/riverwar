@@ -31,19 +31,20 @@ def state_by_abbreviation(abbreviation):
 
 
 class State(object):
-    def __init__(self, name, abbreviation, module):
+    def __init__(self, name, abbreviation, module, reaches):
         self.name = name
         self.abbreviation = abbreviation
         self.module = module
         self.users = {}
         self.init = getattr(module, 'init')
-        self.init(self)
+        self.init(self, reaches)
 
         states[abbreviation] = self
 
     def user(self, module, name):
-        user = User(module, name)
+        user = User(module, name, self.abbreviation)
         self.users[name] = user
+        return user
 
     def total_user_diversion(self):
         user_diversions = []

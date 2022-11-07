@@ -29,28 +29,29 @@ from rw import state
 current_last_year = 2021
 
 
-def init(nv):
+def init(nv, reaches):
     module = modules[__name__]
-    nv.user(module, 'boulder_city')
-    nv.user(module, 'lake_mead_national')
-    nv.user(module, 'snwa_griffith')
-    nv.user(module, 'basic')
-    nv.user(module, 'city_of_henderson')
-    nv.user(module, 'nevada_dept_of_wildlife')
-    nv.user(module, 'las_vegas_valley')
-    nv.user(module, 'north_las_vegas')
-    nv.user(module, 'nellis')
-    nv.user(module, 'pacific_coast')
-    nv.user(module, 'socal_edison')
-    nv.user(module, 'big_bend')
-    nv.user(module, 'fort_mojave_indian')
+    reaches[1].add_user(nv.user(module, 'bureau_of_reclamation'))  # aka Boulder Canyon Project and Hoover Dam
+    reaches[1].add_user(nv.user(module, 'boulder_city'))
+    reaches[1].add_user(nv.user(module, 'lake_mead_national'))
+    reaches[1].add_user(nv.user(module, 'snwa_griffith'))
+    reaches[1].add_user(nv.user(module, 'basic'))
+    reaches[1].add_user(nv.user(module, 'city_of_henderson'))
+    reaches[1].add_user(nv.user(module, 'nevada_dept_of_wildlife'))
+    reaches[1].add_user(nv.user(module, 'las_vegas_valley'))
+    reaches[1].add_user(nv.user(module, 'north_las_vegas'))
+    reaches[1].add_user(nv.user(module, 'nellis'))
+    reaches[1].add_user(nv.user(module, 'pacific_coast'))
+    reaches[1].add_user(nv.user(module, 'socal_edison'))
+    reaches[2].add_user(nv.user(module, 'big_bend'))
+    reaches[2].add_user(nv.user(module, 'fort_mojave_indian'))
 
 
 def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 0, 'y_max': 550000, 'y_interval': 50000},
         {'data': user_total_diversion()},
-        {'y_min': -500, 'y_max': 2500, 'y_interval': 500},
+        {'y_min': -100, 'y_max': 1400, 'y_interval': 100},
         {'data': state_total_cu(), 'y_min': 0, 'y_max': 350000, 'y_interval': 50000},
         {'data': user_total_cu()},
         {'y_min': -1000, 'y_max': 8000, 'y_interval': 1000},
@@ -254,6 +255,18 @@ def nellis_cu():
 
 def nellis_returns():
     return subtract_annual(nellis_diversion(), nellis_cu())
+
+
+def bureau_of_reclamation_diversion():
+    return usbr_report.annual_af('nv/usbr_nv_bureau_of_reclamation_diversion.csv')
+
+
+def bureau_of_reclamation_cu():
+    return usbr_report.annual_af('nv/usbr_nv_bureau_of_reclamation_consumptive_use.csv')
+
+
+def bureau_of_reclamation_returns():
+    return subtract_annual(bureau_of_reclamation_diversion(), bureau_of_reclamation_cu())
 
 
 def fort_mojave_indian_diversion():

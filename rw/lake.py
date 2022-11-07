@@ -19,10 +19,50 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from datetime import datetime
+import numpy as np
 
 
 class Lake(object):
-    def __init__(self, name, module):
+    def __init__(self, name, water_year_month):
         self.name = name
-        self.module = module
+        self.water_year_month = water_year_month
+
+    def inflow(self, year_begin, year_end):
+        pass
+
+    def release(self, year_begin, year_end):
+        pass
+
+    def storage(self):
+        pass
+
+    def ___convert_to_datetime(self, d):
+        return datetime.strptime(np.datetime_as_string(d, unit='s'), '%Y-%m-%dT%H:%M:%S')
+
+    def storage_delta(self, year_begin, year_end):
+        delta = []
+        date_time_format = "%Y-%m-%d"
+        daily_storage = self.storage()
+        for year in range(year_begin, year_end+1):
+            storage_begin = None
+            storage_end = None
+            water_year_month_str = '-' + str(self.water_year_month) + '-'
+            date_begin = datetime.strptime(str(year) + water_year_month_str + '1', date_time_format).date()
+            date_end = datetime.strptime(str(year+1) + water_year_month_str + '1', date_time_format).date()
+            for l in daily_storage:
+                date = self.___convert_to_datetime(l[0]).date()
+                if date == date_begin:
+                    storage_begin = l[1]
+                elif date == date_end:
+                    storage_end = l[1]
+                    break
+            if storage_begin and storage_end:
+                delta.append(storage_end - storage_begin)
+            else:
+                print(self.name, 'storage_delta failed')
+        return delta
+
+    def evaporation(self, year_begin, year_end):
+        pass
 

@@ -70,7 +70,7 @@ def dirty_devil(graph=True):
 
 def escalante(graph=True):
     gage = USGSGage('09337500', start_date='1911-01-01',
-                    cfs_max=1000, cfs_interval=100,
+                    cfs_max=10000, cfs_interval=100,
                     annual_max=30000, annual_interval=2000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
@@ -79,8 +79,8 @@ def escalante(graph=True):
 
 def virgin_river_at_virgin(graph=True):
     gage = USGSGage('09406000', start_date='1950-10-01',
-                    cfs_max=1000, cfs_interval=100,
-                    annual_max=30000, annual_interval=2000, annual_unit='kaf', year_interval=5)
+                    cfs_max=10000, cfs_interval=1000,
+                    annual_max=400000, annual_interval=20000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage

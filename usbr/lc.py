@@ -22,6 +22,10 @@ SOFTWARE.
 from source import usbr_report
 from graph.water import WaterGraph
 from source import usbr_rise
+from rw.lake import Lake
+from rw.reach import Reach
+from rw.util import reshape_annual_range, add_annuals, subtract_annual
+import usgs
 
 
 def test():
@@ -29,6 +33,36 @@ def test():
     lake_mead_ics_by_state()
     lake_mohave()
     lake_havasu()
+
+
+class Reach1(Reach):
+    def __init__(self, upper_lake, lower_lake, water_month):
+        Reach.__init__(self, 'Reach1', upper_lake, lower_lake, water_month)
+
+    def model(self, year_begin, year_end):
+        if year_begin < 1991:
+            print('Reach 1 model only works from 1991-Present, Colorado Gage above Diamond Creek record limited')
+        Reach.model(self, year_begin, year_end)
+
+
+class Reach2(Reach):
+    def __init__(self, upper_lake, lower_lake, water_month):
+        Reach.__init__(self, 'Reach2', upper_lake, lower_lake, water_month)
+
+
+class Reach3(Reach):
+    def __init__(self, upper_lake, lower_lake, water_month):
+        Reach.__init__(self, 'Reach3', upper_lake, lower_lake, water_month)
+
+
+class Reach4(Reach):
+    def __init__(self, upper_lake, lower_lake, water_month):
+        Reach.__init__(self, 'Reach4', upper_lake, lower_lake, water_month)
+
+
+class Reach5(Reach):
+    def __init__(self, upper_lake, lower_lake, water_month):
+        Reach.__init__(self, 'Reach5', upper_lake, lower_lake, water_month)
 
 
 def lake_mead_load_ics():
@@ -51,6 +85,53 @@ def lake_mead_ics_by_state():
                        ylabel='maf', ymin=0, ymax=3000000, yinterval=100000,
                        xlabel='Calendar Year', xinterval=1, format_func=WaterGraph.format_maf)
     graph.date_and_wait()
+
+
+class LakeMead(Lake):
+    def __init__(self, water_month):
+        Lake.__init__(self, 'lake_mead', water_month)
+
+    def inflow(self, year_begin, year_end):
+        colorado_above_diamond_creek = usgs.az.colorado_above_diamond_creek_near_peach_springs(graph=False)
+        colorado_above_diamond_creek_annual_af = colorado_above_diamond_creek.annual_af(year_begin, year_end)
+        virgin_river = usgs.ut.virgin_river_at_virgin(graph=False)
+        virgin_river_annual_af = virgin_river.annual_af(year_begin, year_end)
+
+        virgin_river_overton = usgs.nv.virgin_abv_lake_mead_nr_overton(graph=False)
+        virgin_river_overton_annual_af = virgin_river_overton.annual_af(year_begin, year_end)
+        virgin_diff = subtract_annual(virgin_river_annual_af, virgin_river_overton_annual_af)
+
+        muddy_river_annual_af = usgs.nv.muddy_near_glendale(graph=False).annual_af(year_begin, year_end)
+
+        inflow = add_annuals([colorado_above_diamond_creek_annual_af, virgin_river_annual_af, muddy_river_annual_af])
+        return inflow
+
+    def release(self, year_begin, year_end):
+        usbr_lake_mead_release_total_af = 6122
+        info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
+        annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
+        return reshape_annual_range(annual_release_af, year_begin, year_end)
+
+    def storage(self):
+        usbr_lake_mead_storage_af = 6124
+        info, daily_storage_af = usbr_rise.load(usbr_lake_mead_storage_af)
+        return daily_storage_af
+
+    def evaporation(self, year_begin, year_end):
+        pass
+
+
+def lake_mead_release():
+    usbr_lake_mead_release_total_af = 6122
+    info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
+    annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
+    return annual_release_af
+
+
+def lake_mead_storage():
+    usbr_lake_mead_storage_af = 6124
+    info, daily_storage_af = usbr_rise.load(usbr_lake_mead_storage_af)
+    return daily_storage_af
 
 
 def lake_mead(graph=True):
@@ -82,7 +163,31 @@ def lake_mead(graph=True):
     return annual_release_af
 
 
-def lake_mohave(graph=True):
+class LakeMohave(Lake):
+    def __init__(self, water_month):
+        Lake.__init__(self, 'lake_mohave', water_month)
+
+    def inflow(self, year_begin, year_end):
+        # FIXME remove diversions, get losses from 24 month study?
+        return reshape_annual_range(lake_mead_release(), year_begin, year_end)
+
+    def release(self, year_begin, year_end):
+        usbr_lake_mohave_release_total_af = 6131
+        info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
+        annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
+        return reshape_annual_range(annual_release_af, year_begin, year_end)
+
+    def storage(self):
+        usbr_lake_mohave_storage_af = 6134
+        info, daily_storage_af = usbr_rise.load(usbr_lake_mohave_storage_af)
+        return daily_storage_af
+
+    def evaporation(self, year_begin, year_end):
+        # FIXME get evap from 24 month study?
+        pass
+
+
+def lake_mohave(graph=False):
     usbr_lake_mohave_release_total_af = 6131
     # usbr_lake_mohave_water_temperature_degf = 6132
     # usbr_lake_mohave_elevation_ft = 6133
@@ -109,6 +214,28 @@ def lake_mohave(graph=True):
                    ylabel='maf', format_func=WaterGraph.format_maf)
         graph.date_and_wait()
     return annual_release_af
+
+
+class LakeHavasu(Lake):
+    def __init__(self, water_month):
+        Lake.__init__(self, 'lake_havasu', water_month)
+
+    def inflow(self, year_begin, year_end):
+        pass
+
+    def release(self, year_begin, year_end):
+        usbr_lake_havasu_release_total_af = 6126
+        info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
+        annual_release_af = WaterGraph.daily_to_water_year(daily_release_af)
+        return reshape_annual_range(annual_release_af, year_begin, year_end)
+
+    def storage(self):
+        usbr_lake_havasu_storage_af = 6129
+        info, daily_storage_af = usbr_rise.load(usbr_lake_havasu_storage_af)
+        return daily_storage_af
+
+    def evaporation(self, year_begin, year_end):
+        pass
 
 
 def lake_havasu(graph=True):
@@ -141,21 +268,39 @@ def lake_havasu(graph=True):
     return annual_release_af
 
 
-def rock_dam(graph=True):
+def parker_dam_release():
+    rock_release = usbr_report.annual_af('releases/usbr_releases_parker.csv')
+    return rock_release
+
+
+def rock_dam_release():
     rock_release = usbr_report.annual_af('releases/usbr_releases_rock_dam.csv')
     return rock_release
 
 
-def palo_verde_dam(graph=True):
+def palo_verde_dam_release():
     palo_verde_release = usbr_report.annual_af('releases/usbr_releases_palo_verde_dam.csv')
     return palo_verde_release
 
 
-def imperial_dam(graph=True):
-    imperial_release = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
-    return imperial_release
+class ImperialDam(Lake):
+    def __init__(self, water_month):
+        Lake.__init__(self, 'imperial_dam', water_month)
+
+    def inflow(self, year_begin, year_end):
+        pass
+
+    def release(self, year_begin, year_end):
+        imperial_release = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
+        return reshape_annual_range(imperial_release, year_begin, year_end)
+
+    def storage(self):
+        pass
+
+    def evaporation(self, year_begin, year_end):
+        pass
 
 
-def laguna_dam(graph=True):
+def laguna_dam_release():
     laguna_release = usbr_report.annual_af('releases/usbr_releases_laguna_dam.csv')
     return laguna_release

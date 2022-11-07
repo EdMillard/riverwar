@@ -21,10 +21,29 @@ SOFTWARE.
 """
 from source import usbr_report
 from graph.water import WaterGraph
+from rw.lake import Lake
 
 
 def test():
     mexico()
+
+
+class Morelos(Lake):
+    def __init__(self, water_month):
+        Lake.__init__(self, 'lake_mohave', water_month)
+
+    def inflow(self, year_begin, year_end):
+        # FIXME nib and stuff
+        return None
+
+    def release(self, year_begin, year_end):
+        return None
+
+    def storage(self):
+        return None
+
+    def evaporation(self, year_begin, year_end):
+        return None
 
 
 def yuma_area_returns():

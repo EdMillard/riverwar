@@ -41,7 +41,7 @@ def test():
     northern_international_border()
 
 
-def above_little_colorado(graph=True):
+def above_little_colorado(graph=False):
     # Ends 2002
     gage = USGSGage('09383100', start_date='1985-09-28', color='firebrick',
                     cfs_max=55000, cfs_interval=5000,
@@ -51,7 +51,7 @@ def above_little_colorado(graph=True):
     return gage
 
 
-def above_national_canyon_near_supai(graph=True):
+def above_national_canyon_near_supai(graph=False):
     # Ends 1993
     gage = USGSGage('09404120', start_date='1983-07-31', color='firebrick',
                     cfs_max=55000, cfs_interval=5000,
@@ -61,7 +61,7 @@ def above_national_canyon_near_supai(graph=True):
     return gage
 
 
-def below_hoover(graph=True):
+def below_hoover(graph=False):
     gage = USGSGage('09421500', start_date='1934-04-01', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,
                     annual_min=6000000, annual_max=23000000, annual_interval=500000, annual_unit='maf', year_interval=6)
@@ -70,7 +70,7 @@ def below_hoover(graph=True):
     return gage
 
 
-def below_davis(graph=True):
+def below_davis(graph=False):
     # Three years, 1905-1907 pre dam; then 1949-present when dam was built
     gage = USGSGage('09423000', start_date='1905-05-11', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,
@@ -80,7 +80,7 @@ def below_davis(graph=True):
     return gage
 
 
-def below_parker(graph=True):
+def below_parker(graph=False):
     gage = USGSGage('09427520', start_date='1934-11-16', color='firebrick',
                     cfs_max=41000, cfs_interval=5000,
                     annual_min=4000000, annual_max=22000000, annual_interval=1000000, annual_unit='maf',
@@ -90,7 +90,7 @@ def below_parker(graph=True):
     return gage
 
 
-def below_palo_verde(graph=True):
+def below_palo_verde(graph=False):
     gage = USGSGage('09429100', start_date='1956-03-24', color='firebrick',
                     cfs_max=17000, cfs_interval=1000,
                     annual_min=0, annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=4)
@@ -99,7 +99,7 @@ def below_palo_verde(graph=True):
     return gage
 
 
-def northern_international_border(graph=True):
+def northern_international_border(graph=False):
     gage = USGSGage('09522000', start_date='1950-01-01', color='firebrick',
                     cfs_max=3000, cfs_interval=500,
                     annual_min=0, annual_max=4000000, annual_interval=200000, annual_unit='maf', year_interval=5)
@@ -108,7 +108,7 @@ def northern_international_border(graph=True):
     return gage
 
 
-def below_imperial(graph=True):
+def below_imperial(graph=False):
     gage = USGSGage('09429500', start_date='2018-11-29', color='firebrick',
                     cfs_max=3000, cfs_interval=500,
                     annual_min=0, annual_max=500000, annual_interval=20000, annual_unit='kaf', year_interval=1)
@@ -117,7 +117,7 @@ def below_imperial(graph=True):
     return gage
 
 
-def southern_international_border(graph=True):
+def southern_international_border(graph=False):
     gage = USGSGage('09522200', start_date='1960-10-01', color='firebrick',  # end_date='1986-09-29'
                     cfs_max=40000, cfs_interval=50000,
                     annual_min=0, annual_max=14000000, annual_interval=1000000, annual_unit='maf', year_interval=5)
@@ -126,7 +126,7 @@ def southern_international_border(graph=True):
     return gage
 
 
-def yuma(graph=True):
+def yuma(graph=False):
     # Bogus gage
     gage = USGSGage('09521000', start_date='1904-01-01', color='firebrick',  # end_date='1983-11-01'
                     cfs_max=250000, cfs_interval=10000,
@@ -136,7 +136,7 @@ def yuma(graph=True):
     return gage
 
 
-def below_laguna(graph=True):
+def below_laguna(graph=False):
     gage = USGSGage('09429600', start_date='1971-12-16', color='firebrick',
                     cfs_max=32000, cfs_interval=2000,
                     annual_min=0, annual_max=11000000, annual_interval=500000, annual_unit='maf', year_interval=4)
@@ -145,7 +145,7 @@ def below_laguna(graph=True):
     return gage
 
 
-def below_yuma_wasteway(graph=True):
+def below_yuma_wasteway(graph=False):
     gage = USGSGage('09521100', start_date='1963-10-01', color='firebrick',
                     cfs_max=2100, cfs_interval=100,
                     annual_min=0, annual_max=1500000, annual_interval=100000, annual_unit='maf', year_interval=5)
