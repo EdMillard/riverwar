@@ -26,6 +26,8 @@ import calendar
 
 current_last_year = 2021
 
+debug = False
+debug_threshold_af = 2
 
 class USBRReport(object):
     """
@@ -67,7 +69,8 @@ def pre_process_csv(strings, sep):
 
 
 def load_monthly_csv(file_name, sep=' '):
-    print("load_monthly_csv: ", file_name)
+    if debug:
+        print("load_monthly_csv: ", file_name)
     date_time_format = "%Y-%m-%d"
 
     file_path = Path('data/USBR_Reports').joinpath(file_name)
@@ -132,10 +135,10 @@ def load_monthly_csv(file_name, sep=' '):
                     sum_year += monthly_flow
                     month += 1
                     months += 1
-                if sum_year != total:
+                if sum_year != total and debug:
                     diff = sum_year-total
-                    if diff < -1 or diff > 1:
-                        print(str(year), 'total & sum mismatch diff =', sum_year-total,
+                    if diff < -debug_threshold_af or diff > debug_threshold_af:
+                        print('\t' + str(year), 'total & sum mismatch diff =', sum_year-total,
                               'expected = ', total, ' got = ', sum_year, fields)
             elif len(fields) == 1:
                 year = int(fields[0])
