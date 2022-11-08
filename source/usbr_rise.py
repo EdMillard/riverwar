@@ -261,8 +261,8 @@ def load_json(file_path):
 
     try:
         location = data['Location']
-        print('units:  {0}  timestep: {1}   {2:<50} {3}'.format(data['Units'], data['Timestep'],
-                                                                data['Parameter Name:'], location['Name']))
+        # print('units:  {0}  timestep: {1}   {2:<50} {3}'.format(data['Units'], data['Timestep'],
+        #                                                         data['Parameter Name:'], location['Name']))
     except KeyError:
         print("usbr_rise JSON invalid key", file_path)
 
