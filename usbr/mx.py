@@ -22,6 +22,7 @@ SOFTWARE.
 from source import usbr_report
 from graph.water import WaterGraph
 from rw.lake import Lake
+import usgs
 
 
 def test():
@@ -30,11 +31,13 @@ def test():
 
 class Morelos(Lake):
     def __init__(self, water_month):
-        Lake.__init__(self, 'lake_mohave', water_month)
+        Lake.__init__(self, 'morelos', water_month)
 
     def inflow(self, year_begin, year_end):
-        # FIXME nib and stuff
-        return None
+        nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
+        nib = nib_morelos_gage.annual_af(water_year_month=self.water_year_month,
+                                         start_year=year_begin, end_year=year_end)
+        return nib
 
     def release(self, year_begin, year_end):
         return None
