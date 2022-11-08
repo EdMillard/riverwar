@@ -93,6 +93,16 @@ def running_average(annual_af, window):
     return result
 
 
+def annual_zeroed_for_years(year_min, year_max):
+    years = year_max - year_min + 1
+    a = np.zeros(years, [('dt', 'i'), ('val', 'f')])
+    for year in range(year_min, year_max + 1):
+        year_index = year - year_min
+        a[year_index][0] = year
+        a[year_index][1] = 0
+    return a
+
+
 def reshape_annual_range_to(a, to):
     if a['dt'][0] == to['dt'][0] and a['dt'][-1] == to['dt'][-1]:
         return a
@@ -101,18 +111,11 @@ def reshape_annual_range_to(a, to):
 
 
 def reshape_annual_range(a, year_min, year_max):
-    years = year_max - year_min + 1
-    b = np.zeros(years, [('dt', 'i'), ('val', 'f')])
-
-    for year in range(year_min, year_max + 1):
-        b[year - year_min][0] = year
-        b[year - year_min][1] = 0
-
+    b = annual_zeroed_for_years(year_min, year_max)
     for year_val in a:
         year = year_val[0]
         if year_min <= year <= year_max:
             b[year - year_min][1] = year_val[1]
-
     return b
 
 
