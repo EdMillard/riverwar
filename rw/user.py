@@ -19,13 +19,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+from rw.util import reshape_annual_range
 
 class User(object):
     def __init__(self, module, name, state):
         self.name = name
         self.state = state
         self.active = False
+        self.cu_for_years = None
         try:
             self.diversion = getattr(module, name + '_diversion')
         except AttributeError:
@@ -38,3 +39,14 @@ class User(object):
             self.cu = getattr(module, name + '_cu')
         except AttributeError:
             print('User ', name, ' has no cu method')
+
+    def get_cu_for_years(self, year_begin, year_end):
+        user_cu = self.cu()
+        cu_for_years = reshape_annual_range(user_cu, year_begin, year_end)
+        for cu in cu_for_years:
+            if cu[1] != 0:
+                self.cu_for_years = cu_for_years
+                return self.cu_for_years
+
+        self.cu_for_years = None
+        return None

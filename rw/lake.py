@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from datetime import datetime
 import numpy as np
-
+from rw.util import annual_zeroed_for_years
 
 class Lake(object):
     def __init__(self, name, water_year_month):
@@ -29,12 +29,13 @@ class Lake(object):
         self.water_year_month = water_year_month
 
     def inflow(self, year_begin, year_end):
-        pass
+        return annual_zeroed_for_years(year_begin, year_end)
 
     def release(self, year_begin, year_end):
-        pass
+        return annual_zeroed_for_years(year_begin, year_end)
 
     def storage(self):
+        print("FIXME Lake.storage() not implemented")
         pass
 
     def ___convert_to_datetime(self, d):
@@ -44,25 +45,29 @@ class Lake(object):
         delta = []
         date_time_format = "%Y-%m-%d"
         daily_storage = self.storage()
-        for year in range(year_begin, year_end+1):
-            storage_begin = None
-            storage_end = None
-            water_year_month_str = '-' + str(self.water_year_month) + '-'
-            date_begin = datetime.strptime(str(year) + water_year_month_str + '1', date_time_format).date()
-            date_end = datetime.strptime(str(year+1) + water_year_month_str + '1', date_time_format).date()
-            for l in daily_storage:
-                date = self.___convert_to_datetime(l[0]).date()
-                if date == date_begin:
-                    storage_begin = l[1]
-                elif date == date_end:
-                    storage_end = l[1]
-                    break
-            if storage_begin and storage_end:
-                delta.append(storage_end - storage_begin)
-            else:
-                print(self.name, 'storage_delta failed')
+        if daily_storage is not None:
+            for year in range(year_begin, year_end+1):
+                storage_begin = None
+                storage_end = None
+                water_year_month_str = '-' + str(self.water_year_month) + '-'
+                date_begin = datetime.strptime(str(year) + water_year_month_str + '1', date_time_format).date()
+                date_end = datetime.strptime(str(year+1) + water_year_month_str + '1', date_time_format).date()
+                for l in daily_storage:
+                    date = self.___convert_to_datetime(l[0]).date()
+                    if date == date_begin:
+                        storage_begin = l[1]
+                    elif date == date_end:
+                        storage_end = l[1]
+                        break
+                if storage_begin and storage_end:
+                    delta.append(storage_end - storage_begin)
+                else:
+                    print(self.name, 'storage_delta failed')
+        else:
+            print(self.name + " storage delta not implemented")
+            for year in range(year_begin, year_end+1):
+                delta.append(0)
         return delta
 
     def evaporation(self, year_begin, year_end):
-        pass
-
+        return annual_zeroed_for_years(year_begin, year_end)
