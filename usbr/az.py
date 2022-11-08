@@ -32,17 +32,15 @@ current_last_year = 2021
 
 def init(az, reaches):
     module = modules[__name__]
-    # Marble Canyon                         # 2016
+    reaches[1].add_user(az.user(module, 'marble_canyon'))                    # 2016
     reaches[1].add_user(az.user(module, 'lake_mead_national'))               # 1993
 
     reaches[2].add_user(az.user(module, 'lake_mead_national_lake_mohave'))   # 2017
-    reaches[2].add_user(az.user(module, 'mcalister'))                        # 2017
+    reaches[2].add_user(az.user(module, 'mcalister'))                        # 2016
+    reaches[2].add_user(az.user(module, 'bureau_of_reclamation_davis'))      # 2014
 
-    # McAlister
-    # Lower Colorado River Dams Project/USBR
     reaches[3].add_user(az.user(module, 'mohave_water'))                     # 1980
     reaches[3].add_user(az.user(module, 'bullhead_city'))                    # 1987
-
     reaches[3].add_user(az.user(module, 'mohave_valley'))                    # 1969
     # Mohave County Water Authority                                          # 2005 in Cibola Valley, 2013 standalone
     reaches[3].add_user(az.user(module, 'fort_mojave'))                      # 1975
@@ -55,11 +53,11 @@ def init(az, reaches):
     reaches[3].add_user(az.user(module, 'cap'))                              # 1985
     # Hillcrest
     # Springs Del Sol
-    reaches[4].add_user(az.user(module, 'brooke_water'))                     # 1995  EPCOR 2021, in reaches 3 & 4 then
+
+    reaches[4].add_user(az.user(module, 'brooke_water'))                     # 1995  EPCOR bought in 2021
     reaches[4].add_user(az.user(module, 'town_of_parker'))                   # 1964
     reaches[4].add_user(az.user(module, 'crit'))                             # 1964
     reaches[4].add_user(az.user(module, 'gabrych'))                          # 2018
-
     # Ehrenburg
     # B & F
     # North Baja
@@ -256,6 +254,18 @@ def not_yuma_area_returns():
     return data
 
 
+def marble_canyon_diversion():
+    return usbr_report.annual_af('az/usbr_az_marble_canyon_diversion.csv')
+
+
+def marble_canyon_cu():
+    return usbr_report.annual_af('az/usbr_az_marble_canyon_consumptive_use.csv')
+
+
+def marble_canyon_returns():
+    return subtract_annual(marble_canyon_diversion(), marble_canyon_cu())
+
+
 def lake_mead_national_diversion():
     return usbr_report.annual_af('az/usbr_az_lake_mead_national_diversion.csv')
 
@@ -290,6 +300,18 @@ def mcalister_cu():
 
 def mcalister_returns():
     return subtract_annual(mcalister_diversion(), mcalister_cu())
+
+
+def bureau_of_reclamation_davis_diversion():
+    return usbr_report.annual_af('az/usbr_az_bureau_of_reclamation_davis_diversion.csv')
+
+
+def bureau_of_reclamation_davis_cu():
+    return usbr_report.annual_af('az/usbr_az_bureau_of_reclamation_davis_consumptive_use.csv')
+
+
+def bureau_of_reclamation_davis_returns():
+    return subtract_annual(bureau_of_reclamation_davis_diversion(), bureau_of_reclamation_davis_cu())
 
 
 def fort_mojave():
