@@ -43,7 +43,9 @@ def init(nv, reaches):
     reaches[1].add_user(nv.user(module, 'nellis'))
     reaches[1].add_user(nv.user(module, 'pacific_coast'))
     reaches[1].add_user(nv.user(module, 'socal_edison'))
+
     reaches[2].add_user(nv.user(module, 'lake_mead_national_lake_mohave'))
+
     reaches[3].add_user(nv.user(module, 'big_bend'))
     reaches[3].add_user(nv.user(module, 'fort_mojave_indian'))
 
