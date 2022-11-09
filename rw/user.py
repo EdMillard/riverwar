@@ -20,6 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from rw.util import reshape_annual_range
+from pathlib import Path
+from source import usbr_report
+
 
 class User(object):
     def __init__(self, module, name, state):
@@ -27,18 +30,75 @@ class User(object):
         self.state = state
         self.active = False
         self.cu_for_years = None
-        try:
-            self.diversion = getattr(module, name + '_diversion')
-        except AttributeError:
-            print('User ', name, ' has no diversion method')
-        try:
-            self.returns = getattr(module, name + '_returns')
-        except AttributeError:
-            print('User ', name, ' has no returns method')
-        try:
-            self.cu = getattr(module, name + '_cu')
-        except AttributeError:
-            print('User ', name, ' has no cu method')
+        if module:
+            try:
+                self.diversion_func = getattr(module, name + '_diversion')
+            except AttributeError:
+                print('User ', name, ' has no diversion method')
+                self.diversion_func = None
+            try:
+                self.cu_func = getattr(module, name + '_cu')
+            except AttributeError:
+                self.cu_func = None
+                print('User ', name, ' has no cu method')
+            try:
+                self.returns_func = getattr(module, name + '_returns')
+            except AttributeError:
+                self.returns_func = None
+                print('User ', name, ' has no returns method')
+        else:
+            self.diversion_func = None
+            self.cu_func = None
+            self.returns_func = None
+
+    def make_path(self, file_suffix):
+        return Path(self.state + '/usbr_' + self.state + '_' + self.name + file_suffix)
+
+    @staticmethod
+    def path_exists(path):
+        full_path = Path('data/USBR_Reports/').joinpath(path)
+        return full_path.exists()
+
+    def diversion(self):
+        if self.diversion_func:
+            return self.diversion_func()
+        else:
+            path = self.make_path('_diversion.csv')
+            if User.path_exists(path):
+                return usbr_report.annual_af(path)  # FIXME need water_year_month here
+            else:
+                print("user diversion file not found: ", path)
+                return None
+
+    def cu(self):
+        if self.cu_func:
+            return self.cu_func()
+        else:
+            path = self.make_path('_consumptive_use.csv')
+            if User.path_exists(path):
+                return usbr_report.annual_af(path)  # FIXME need water_year_month here
+            else:
+                returns_path = self.make_path('_returns.csv')
+                if User.path_exists(returns_path):
+                    print("FIXME User Returns to compute cu: ", self.name)
+                else:
+                    diversion_path = self.make_path('_diversion.csv')
+                    if User.path_exists(diversion_path):
+                        return usbr_report.annual_af(diversion_path)
+                    else:
+                        print("user consumptive use file not found: ", path)
+                        return None
+
+    def returns(self):
+        if self.returns_func:
+            return self.returns_func()
+        else:
+            path = self.make_path('_returns.csv')
+            if User.path_exists(path):
+                return usbr_report.annual_af(path)  # FIXME need water_year_month here
+            else:
+                print("user returns file not found: ", path)
+                return None
 
     def get_cu_for_years(self, year_begin, year_end):
         user_cu = self.cu()
