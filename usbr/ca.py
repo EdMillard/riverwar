@@ -31,42 +31,42 @@ current_last_year = 2021
 
 def init(ca, reaches):
     module = modules[__name__]
-    reaches[3].add_user(ca.user(module, 'fort_mojave'))                   # 1999
-    reaches[3].add_user(ca.user(module, 'city_of_needles'))               # 1964
-    reaches[3].add_user(ca.user(module, 'southern_california_gas'))       # 2016
-    reaches[3].add_user(ca.user(module, 'pacific_gas'))                   # 2016
-    reaches[3].add_user(ca.user(module, 'havasu_water'))                  # 2016
-    reaches[3].add_user(ca.user(module, 'vista_del_lago'))                # 2016
-    reaches[3].add_user(ca.user(module, 'non_federal_subcontractors'))    # 2016
-    reaches[3].add_user(ca.user(module, 'ppr_30_stephenson'))             # 2020
-    reaches[3].add_user(ca.user(module, 'ppr_38_andrade'))                # 2020
-    reaches[3].add_user(ca.user(module, 'ppr_40_cooper'))                 # 2021
-    reaches[3].add_user(ca.user(module, 'chemehuevi'))                    # 1996
-    reaches[3].add_user(ca.user(module, 'metropolitan'))                  # 1964
-    reaches[3].add_user(ca.user(module, 'bureau_of_reclamation_parker'))  # 2017
+    reaches[3].add_user(ca.user(module, 'fort_mojave'))                 # 1999
+    reaches[3].add_user(ca.user(None, 'city_of_needles'))               # 1964
+    reaches[3].add_user(ca.user(None, 'southern_california_gas'))       # 2016
+    reaches[3].add_user(ca.user(None, 'pacific_gas'))                   # 2016
+    reaches[3].add_user(ca.user(None, 'havasu_water'))                  # 2016
+    reaches[3].add_user(ca.user(None, 'vista_del_lago'))                # 2016
+    reaches[3].add_user(ca.user(None, 'non_federal_subcontractors'))    # 2016
+    reaches[3].add_user(ca.user(None, 'ppr_30_stephenson'))             # 2020
+    reaches[3].add_user(ca.user(None, 'ppr_38_andrade'))                # 2020
+    reaches[3].add_user(ca.user(None, 'ppr_40_cooper'))                 # 2021
+    reaches[3].add_user(ca.user(module, 'chemehuevi'))                  # 1996
+    reaches[3].add_user(ca.user(module, 'metropolitan'))                # 1964
+    reaches[3].add_user(ca.user(None, 'bureau_of_reclamation_parker'))  # 2017
 
-    reaches[4].add_user(ca.user(module, 'crit'))                          # 1973
-    reaches[4].add_user(ca.user(module, 'city_of_blythe'))                # 1964-1978
-    reaches[4].add_user(ca.user(module, 'east_blythe'))                   # 1965-1977
-    reaches[4].add_user(ca.user(module, 'palo_verde'))                    # 1964
-    reaches[4].add_user(ca.user(module, 'lake_enterprises'))              # 2016
-    reaches[4].add_user(ca.user(module, 'bureau_of_land_management'))     # 2016
-    reaches[4].add_user(ca.user(module, 'yuma_project'))                  # 1964
-    reaches[4].add_user(ca.user(module, 'fort_yuma'))                     # 2016
-    reaches[4].add_user(ca.user(module, 'yuma_island'))                   # 2016
-    reaches[4].add_user(ca.user(module, 'winterhaven'))                   # FIXME
-    reaches[4].add_user(ca.user(module, 'imperial'))                      # 1964
-    reaches[4].add_user(ca.user(module, 'coachella'))                     # 1964
+    reaches[4].add_user(ca.user(module, 'crit'))                        # 1973
+    reaches[4].add_user(ca.user(module, 'city_of_blythe'))              # 1964-1978
+    reaches[4].add_user(ca.user(module, 'east_blythe'))                 # 1965-1977
+    reaches[4].add_user(ca.user(module, 'palo_verde'))                  # 1964
+    reaches[4].add_user(ca.user(None, 'lake_enterprises'))              # 2016
+    reaches[4].add_user(ca.user(None, 'bureau_of_land_management'))     # 2016
+    reaches[4].add_user(ca.user(module, 'yuma_project'))                # 1964
+    reaches[4].add_user(ca.user(None, 'fort_yuma'))                     # 2016
+    reaches[4].add_user(ca.user(None, 'yuma_island'))                   # 2016
+    reaches[4].add_user(ca.user(module, 'winterhaven'))                 # FIXME
+    reaches[4].add_user(ca.user(module, 'imperial'))                    # 1964
+    reaches[4].add_user(ca.user(None, 'coachella'))                     # 1964
 
-    # FIXME
-    ca.user(module, 'other_users_pumping')
+    # FIXME, getting reaches out of this before 2016 will be complicated
+    ca.user(None, 'other_users_pumping')
 
 
 def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
         {'data': user_total_diversion()},
-        {'y_min': -100, 'y_max': 1100, 'y_interval': 100},
+        {'y_min': -100, 'y_max': 1000, 'y_interval': 100},
         {'data': state_total_cu(), 'y_min': 3500000, 'y_max': 5500000, 'y_interval': 500000},
         {'data': user_total_cu()},
         {'y_min': -1000, 'y_max': 60000, 'y_interval': 5000},
@@ -226,139 +226,6 @@ def fort_mojave_returns(water_year_month=1):
                            fort_mojave_cu(water_year_month=water_year_month))
 
 
-def city_of_needles_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_city_of_needles_diversion.csv', water_year_month=water_year_month)
-
-
-def city_of_needles_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_city_of_needles_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def city_of_needles_returns(water_year_month=1):
-    return subtract_annual(city_of_needles_diversion(water_year_month=water_year_month),
-                           city_of_needles_cu(water_year_month=water_year_month))
-
-
-def southern_california_gas_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_southern_california_gas_diversion.csv', water_year_month=water_year_month)
-
-
-def southern_california_gas_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_southern_california_gas_consumptive_use.csv',
-                                 water_year_month=water_year_month)
-
-
-def southern_california_gas_returns(water_year_month=1):
-    return subtract_annual(southern_california_gas_diversion(water_year_month=water_year_month),
-                           southern_california_gas_cu(water_year_month=water_year_month))
-
-
-def pacific_gas_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_pacific_gas_diversion.csv', water_year_month=water_year_month)
-
-
-def pacific_gas_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_pacific_gas_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def pacific_gas_returns(water_year_month=1):
-    return subtract_annual(pacific_gas_diversion(water_year_month=water_year_month),
-                           pacific_gas_cu(water_year_month=water_year_month))
-
-
-def havasu_water_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_havasu_water_diversion.csv', water_year_month=water_year_month)
-
-
-def havasu_water_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_havasu_water_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def havasu_water_returns(water_year_month=1):
-    return subtract_annual(havasu_water_diversion(water_year_month=water_year_month),
-                           havasu_water_cu(water_year_month=water_year_month))
-
-
-def vista_del_lago_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_vista_del_lago_diversion.csv', water_year_month=water_year_month)
-
-
-def vista_del_lago_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_vista_del_lago_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def vista_del_lago_returns(water_year_month=1):
-    return subtract_annual(vista_del_lago_diversion(water_year_month=water_year_month),
-                           vista_del_lago_cu(water_year_month=water_year_month))
-
-
-def non_federal_subcontractors_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_non_federal_subcontractors_diversion.csv', water_year_month=water_year_month)
-
-
-def non_federal_subcontractors_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_non_federal_subcontractors_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def non_federal_subcontractors_returns(water_year_month=1):
-    return subtract_annual(non_federal_subcontractors_diversion(water_year_month=water_year_month),
-                           non_federal_subcontractors_cu(water_year_month=water_year_month))
-
-
-def ppr_30_stephenson_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_ppr_30_stephenson_diversion.csv', water_year_month=water_year_month)
-
-
-def ppr_30_stephenson_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_ppr_30_stephenson_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def ppr_30_stephenson_returns(water_year_month=1):
-    return subtract_annual(ppr_30_stephenson_diversion(water_year_month=water_year_month),
-                           ppr_30_stephenson_cu(water_year_month=water_year_month))
-
-
-def ppr_38_andrade_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_ppr_38_andrade_diversion.csv', water_year_month=water_year_month)
-
-
-def ppr_38_andrade_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_ppr_38_andrade_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def ppr_38_andrade_returns(water_year_month=1):
-    return subtract_annual(ppr_38_andrade_diversion(water_year_month=water_year_month),
-                           ppr_38_andrade_cu(water_year_month=water_year_month))
-
-
-def ppr_40_cooper_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_ppr_40_cooper_diversion.csv', water_year_month=water_year_month)
-
-
-def ppr_40_cooper_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_ppr_40_cooper_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def ppr_40_cooper_returns(water_year_month=1):
-    return subtract_annual(ppr_40_cooper_diversion(water_year_month=water_year_month),
-                           ppr_40_cooper_cu(water_year_month=water_year_month))
-
-
-def bureau_of_reclamation_parker_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_bureau_of_reclamation_parker_diversion.csv',
-                                 water_year_month=water_year_month)
-
-
-def bureau_of_reclamation_parker_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_bureau_of_reclamation_parker_consumptive_use.csv',
-                                 water_year_month=water_year_month)
-
-
-def bureau_of_reclamation_parker_returns(water_year_month=1):
-    return subtract_annual(bureau_of_reclamation_parker_diversion(water_year_month=water_year_month),
-                           bureau_of_reclamation_parker_cu(water_year_month=water_year_month))
-
-
 def metropolitan_annotate(graph, sub_plot=0):
     graph.annotate_horizontal_line(550000, 'p4 550 maf 1930-1946', sub_plot=sub_plot)
     graph.annotate_horizontal_line(1100000, 'p5a 550 maf 1930-1931', sub_plot=sub_plot)
@@ -445,11 +312,13 @@ def metropolitan_returns(water_year_month=1):
 
 
 def chemehuevi_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_chemehuevi_diversion.csv', water_year_month=water_year_month)
+    diversion = usbr_report.annual_af('ca/usbr_ca_chemehuevi_diversion.csv', water_year_month=water_year_month)
+    domestic = usbr_report.annual_af('ca/usbr_ca_chemehuevi_domestic_diversion.csv', water_year_month=water_year_month)
+    return add_annual(diversion, domestic)
 
 
 def chemehuevi_cu(water_year_month=1):
-    return chemehuevi_diversion()
+    return usbr_report.annual_af('ca/usbr_ca_chemehuevi_consumptive_use.csv', water_year_month=water_year_month)
 
 
 def chemehuevi_returns():
@@ -480,36 +349,6 @@ def east_blythe_cu(water_year_month=1):
 def east_blythe_returns():
     #  East_Blythe has no return flows so cu is the same as diversion
     return subtract_annual(east_blythe_diversion(), east_blythe_cu())
-
-
-def lake_enterprises_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_lake_enterprises_diversion.csv',
-                                 water_year_month=water_year_month)
-
-
-def lake_enterprises_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_lake_enterprises_consumptive_use.csv',
-                                 water_year_month=water_year_month)
-
-
-def lake_enterprises_returns(water_year_month=1):
-    return subtract_annual(lake_enterprises_diversion(water_year_month=water_year_month),
-                           lake_enterprises_cu(water_year_month=water_year_month))
-
-
-def bureau_of_land_management_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_bureau_of_land_management_diversion.csv',
-                                 water_year_month=water_year_month)
-
-
-def bureau_of_land_management_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_bureau_of_land_management_consumptive_use.csv',
-                                 water_year_month=water_year_month)
-
-
-def bureau_of_land_management_returns(water_year_month=1):
-    return subtract_annual(bureau_of_land_management_diversion(water_year_month=water_year_month),
-                           bureau_of_land_management_cu(water_year_month=water_year_month))
 
 
 def palo_verde_annotate(graph, sub_plot=0):
@@ -787,11 +626,13 @@ def yuma_project():
 
 
 def yuma_project_diversion(water_year_month=1):
-    yuma_project_indian_diversion_annual_af = usbr_report.annual_af('ca/usbr_ca_yuma_project_indian_unit_diversion.csv',
-                                                                    water_year_month=water_year_month)
-    yuma_project_bard_diversion_annual_af = usbr_report.annual_af('ca/usbr_ca_yuma_project_bard_unit_diversion.csv',
-                                                                  water_year_month=water_year_month)
-    return add_annual(yuma_project_indian_diversion_annual_af, yuma_project_bard_diversion_annual_af)
+    indian_diversion_annual_af = usbr_report.annual_af(
+        'ca/usbr_ca_yuma_project_indian_unit_diversion.csv',  water_year_month=water_year_month)
+    indian_domestic_diversion_annual_af = usbr_report.annual_af(
+        'ca/usbr_ca_yuma_project_indian_unit_domestic_diversion.csv', water_year_month=water_year_month)
+    bard_diversion_annual_af = usbr_report.annual_af(
+        'ca/usbr_ca_yuma_project_bard_unit_diversion.csv', water_year_month=water_year_month)
+    return add_annuals([indian_diversion_annual_af, indian_domestic_diversion_annual_af, bard_diversion_annual_af])
 
 
 def yuma_project_indian_diversion(water_year_month=1):
@@ -814,51 +655,13 @@ def yuma_project_returns(water_year_month=1):
     return usbr_report.annual_af('ca/usbr_ca_yuma_project_returns.csv', water_year_month=water_year_month)
 
 
-def other_users_pumping_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_other_users_pumping_diversion.csv', water_year_month=water_year_month)
-
-
-def other_users_pumping_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_other_users_pumping_consumptive_use.csv',
-                                 water_year_month=water_year_month)
-
-
-def other_users_pumping_returns():
-    # Other Users Pumping has no return flows so cu is the same as diversion
-    return subtract_annual(other_users_pumping_diversion(), other_users_pumping_cu())
-
-
 def winterhaven_diversion(water_year_month=1):
     return usbr_report.annual_af('ca/usbr_ca_winterhaven_diversion.csv', water_year_month=water_year_month)
 
 
 def winterhaven_cu(water_year_month=1):
-    return winterhaven_diversion()
+    return winterhaven_diversion(water_year_month)
 
 
 def winterhaven_returns():
     return subtract_annual(winterhaven_diversion(), winterhaven_diversion())
-
-
-def fort_yuma_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_fort_yuma_diversion.csv', water_year_month=water_year_month)
-
-
-def fort_yuma_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_fort_yuma_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def fort_yuma_returns():
-    return subtract_annual(fort_yuma_diversion(), fort_yuma_cu())
-
-
-def yuma_island_diversion(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_yuma_island_diversion.csv', water_year_month=water_year_month)
-
-
-def yuma_island_cu(water_year_month=1):
-    return usbr_report.annual_af('ca/usbr_ca_yuma_island_consumptive_use.csv', water_year_month=water_year_month)
-
-
-def yuma_island_returns():
-    return subtract_annual(yuma_island_diversion(), yuma_island_cu())
