@@ -62,7 +62,7 @@ class State(object):
 
     def total_user_returns(self):
         user_returns = []
-        for key, value in self.users.items():
-            user_returns.append(value.returns())
+        for key, user in self.users.items():
+            user_returns.append(user.returns())
         user_returns[0] = reshape_annual_range(user_returns[0], 1964, current_last_year)
         return add_annuals(user_returns)

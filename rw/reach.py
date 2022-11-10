@@ -64,7 +64,11 @@ class Reach(object):
             cu_avg = sum(reach_cu) / len(reach_cu)
         else:
             print("No consumptive use in reach")
-        print()
+
+        users_in_reach_by_state = self.users_in_reach_by_state()
+        for state in users_in_reach_by_state:
+            users_in_state = users_in_reach_by_state.get(state)
+            print('\t' + state, ':', len(users_in_state))
         print(self.name + '{0: <40}'.format(' inflow: '), reach_inflow)
         print(self.name + '{0: <40}'.format(' side inflows: '), reach_side_inflows)
         print(self.name + ' ' + self.lower_lake.name + '{0: <30}'.format(' inflow '), lower_lake_inflow)
@@ -83,3 +87,19 @@ class Reach(object):
                 active_users.append(user)
 
         return active_users
+
+    def users_in_reach_by_state(self, state=None):
+        users_by_state = {}
+        for user in self.active_users_in_reach:
+            try:
+                users_for_state = users_by_state[user.state]
+            except KeyError:
+                users_for_state = []
+                users_by_state[user.state] = users_for_state
+
+            users_for_state.append(user)
+        return users_by_state
+
+
+
+

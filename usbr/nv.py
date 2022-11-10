@@ -20,9 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from sys import modules
+from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
-from usbr import util
+from usbr import lc, util
 from rw.util import add_annuals, subtract_annual, reshape_annual_range, reshape_annual_range_to
 from rw import state
 
@@ -57,7 +58,7 @@ def test():
         {'y_min': -100, 'y_max': 1400, 'y_interval': 100},
         {'data': state_total_cu(), 'y_min': 0, 'y_max': 350000, 'y_interval': 50000},
         {'data': user_total_cu()},
-        {'y_min': -1000, 'y_max': 8000, 'y_interval': 1000},
+        {'y_min': -2000, 'y_max': 7000, 'y_interval': 1000},
     ]
     util.state_total_vs_user_total_graph('NV', data, y_formatter='kaf')
     total()
@@ -305,3 +306,10 @@ def nevada_dept_of_wildlife_cu():
 
 def nevada_dept_of_wildlife_returns():
     return subtract_annual(nevada_dept_of_wildlife_diversion(), nevada_dept_of_wildlife_cu())
+
+
+if __name__ == '__main__':
+    chdir('../')
+    reaches = lc.initialize()
+    print(reaches)
+    test()

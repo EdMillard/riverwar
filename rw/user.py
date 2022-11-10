@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from rw.util import reshape_annual_range
+from rw.util import reshape_annual_range, subtract_annual
 from pathlib import Path
 from source import usbr_report
 
@@ -59,23 +59,37 @@ class User(object):
         full_path = Path('data/USBR_Reports/').joinpath(path)
         return full_path.exists()
 
+    def diversion_path(self):
+        path = self.make_path('_diversion.csv')
+        if User.path_exists(path):
+            return path
+        else:
+            return None
+
     def diversion(self):
         if self.diversion_func:
             return self.diversion_func()
         else:
-            path = self.make_path('_diversion.csv')
-            if User.path_exists(path):
+            path = self.diversion_path()
+            if path:
                 return usbr_report.annual_af(path)  # FIXME need water_year_month here
             else:
                 print("user diversion file not found: ", path)
                 return None
 
+    def cu_path(self):
+        path = self.make_path('_consumptive_use.csv')
+        if User.path_exists(path):
+            return path
+        else:
+            return None
+
     def cu(self):
         if self.cu_func:
             return self.cu_func()
         else:
-            path = self.make_path('_consumptive_use.csv')
-            if User.path_exists(path):
+            path = self.cu_path()
+            if path:
                 return usbr_report.annual_af(path)  # FIXME need water_year_month here
             else:
                 returns_path = self.make_path('_returns.csv')
@@ -89,16 +103,27 @@ class User(object):
                         print("user consumptive use file not found: ", path)
                         return None
 
+    def returns_path(self):
+        path = self.make_path('_returns.csv')
+        if User.path_exists(path):
+            return path
+        else:
+            return None
+
     def returns(self):
         if self.returns_func:
             return self.returns_func()
         else:
-            path = self.make_path('_returns.csv')
-            if User.path_exists(path):
+            path = self.returns_path()
+            if path:
                 return usbr_report.annual_af(path)  # FIXME need water_year_month here
             else:
-                print("user returns file not found: ", path)
-                return None
+                diversion = self.diversion()
+                cu = self.cu()
+                if diversion is not None and cu is not None:
+                    return subtract_annual(diversion, cu)
+                else:
+                    print(self.name, "gas no returns implementation")
 
     def get_cu_for_years(self, year_begin, year_end):
         user_cu = self.cu()

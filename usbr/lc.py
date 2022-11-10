@@ -22,10 +22,39 @@ SOFTWARE.
 from source import usbr_report
 from graph.water import WaterGraph
 from source import usbr_rise
-from rw.lake import Lake
-from rw.reach import Reach
 from rw.util import reshape_annual_range, add_annuals, subtract_annual
 import usgs
+from rw.state import State
+from rw.lake import Lake
+from rw.reach import Reach
+import usbr
+from usbr import az, ca, uc, nv, mx
+
+
+def initialize():
+    water_year_month = 1
+    lake_powell = usbr.uc.LakePowell(water_year_month)
+    lake_mead = usbr.lc.LakeMead(water_year_month)
+    lake_mohave = usbr.lc.LakeMohave(water_year_month)
+    lake_havasu = usbr.lc.LakeHavasu(water_year_month)
+    # rock_dam = Dam('rock_dam', usbr.lc)
+    # palo_verde_dam = Dam('palo_verde_dam', usbr.lc)
+    imperial_dam = usbr.lc.ImperialDam(water_year_month)
+    # laguna_dam = Dam('laguna_dam', usbr.lc)
+    morelos = usbr.mx.Morelos(water_year_month)
+
+    reaches = [Reach('Reach0', None, lake_powell, water_year_month),
+               usbr.lc.Reach1(lake_powell, lake_mead, water_year_month),
+               usbr.lc.Reach2(lake_mead, lake_mohave, water_year_month),
+               usbr.lc.Reach3(lake_mohave, lake_havasu, water_year_month),
+               usbr.lc.Reach4(lake_havasu, imperial_dam, water_year_month),
+               usbr.lc.Reach5(imperial_dam, morelos, water_year_month)
+              ]
+
+    State('Arizona', 'az', az, reaches)
+    State('California', 'ca', ca, reaches)
+    State('Nevada', 'nv', nv, reaches)
+    return reaches
 
 
 def test():

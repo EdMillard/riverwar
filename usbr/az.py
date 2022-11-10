@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from sys import modules
-import usbr
+from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from usbr import lc, util
@@ -32,94 +32,98 @@ current_last_year = 2021
 
 def init(az, reaches):
     module = modules[__name__]
-    reaches[1].add_user(az.user(module, 'marble_canyon'))                    # 2016
-    reaches[1].add_user(az.user(module, 'lake_mead_national'))               # 1993
+    reaches[1].add_user(az.user(None, 'marble_canyon'))                      # 2016
+    reaches[1].add_user(az.user(None, 'lake_mead_national'))                 # 1993
 
-    reaches[2].add_user(az.user(module, 'lake_mead_national_lake_mohave'))   # 2017
-    reaches[2].add_user(az.user(module, 'mcalister'))                        # 2016
-    reaches[2].add_user(az.user(module, 'bureau_of_reclamation_davis'))      # 2014
+    reaches[2].add_user(az.user(None, 'lake_mead_national_lake_mohave'))     # 2017
+    reaches[2].add_user(az.user(None, 'mcalister'))                          # 2016
+    reaches[2].add_user(az.user(None, 'bureau_of_reclamation_davis'))        # 2014
 
-    reaches[3].add_user(az.user(module, 'mohave_water'))                     # 1980
     reaches[3].add_user(az.user(module, 'bullhead_city'))                    # 1987
+    reaches[3].add_user(az.user(module, 'mohave_water'))                     # 1980
+    reaches[3].add_user(az.user(module, 'epcor'))                            # 2016 Bought Brooke 2021 so reaches 3 & 4
     reaches[3].add_user(az.user(module, 'mohave_valley'))                    # 1969
-    # Mohave County Water Authority                                          # 2005 in Cibola Valley, 2013 standalone
+    reaches[3].add_user(az.user(None,   'mohave_county_water_authority'))    # 2005 in Cibola Valley, 2013 standalone
     reaches[3].add_user(az.user(module, 'fort_mojave'))                      # 1975
+    reaches[3].add_user(az.user(None,   'golden_shores'))                    # 1989/2003 really
     reaches[3].add_user(az.user(module, 'havasu_national_wildlife'))         # 1969
-    reaches[3].add_user(az.user(module, 'golden_shores'))                    # 1989/2003 really
-    # Crystal Beach
-    reaches[3].add_user(az.user(module, 'epcor'))                            # 2016 includes Brooke 2021 reaches 3 & 4
+    reaches[3].add_user(az.user(None,   'crystal_beach'))                    # 2016
     reaches[3].add_user(az.user(module, 'lake_havasu'))                      # 1969
-    # Arizona Parks
+    reaches[3].add_user(az.user(None,   'arizona_state_parks'))              # 2016
     reaches[3].add_user(az.user(module, 'cap'))                              # 1985
-    # Hillcrest
-    # Springs Del Sol
+    reaches[3].add_user(az.user(None,   'hillcrest'))                        # 2016
 
+    reaches[4].add_user(az.user(None,   'springs_del_sol'))                  # 2016
     reaches[4].add_user(az.user(module, 'brooke_water'))                     # 1995  EPCOR bought in 2021
-    reaches[4].add_user(az.user(module, 'town_of_parker'))                   # 1964
+    reaches[4].add_user(az.user(None,   'town_of_parker'))                   # 1964
     reaches[4].add_user(az.user(module, 'crit'))                             # 1964
-    reaches[4].add_user(az.user(module, 'gabrych'))                          # 2018
-    # Ehrenburg
-    # B & F
-    # North Baja
+    reaches[4].add_user(az.user(None,   'gabrych'))                          # 2018
+    reaches[4].add_user(az.user(None,   'ehrenberg'))                        # 2019
+    reaches[4].add_user(az.user(None,   'b_and_f_investment'))               # 2020
+    reaches[4].add_user(az.user(None,   'north_baja_pipeline'))              # 2016
     reaches[4].add_user(az.user(module, 'cibola_valley'))                    # 1983
-    # Red River
-    # Western Water
-    reaches[4].add_user(az.user(module, 'hopi'))                             # 2005 in Cibola Valley, 2013 standalone
-    reaches[4].add_user(az.user(module, 'arizona_game_and_fish'))            # 2013
-    # Cibola Island
+    reaches[4].add_user(az.user(None,   'red_river'))                        # 2018
+    reaches[4].add_user(az.user(None,   'western_water'))                    # 2018
+    reaches[4].add_user(az.user(None,   'hopi'))                             # 2005 in Cibola Valley, 2013 standalone
+    reaches[4].add_user(az.user(None,   'gsc_farm'))                         # 2013
+    reaches[4].add_user(az.user(None,   'arizona_game_and_fish'))            # 2013
+    reaches[4].add_user(az.user(None,   'cibola_island'))                    # 2013
     reaches[4].add_user(az.user(module, 'cibola_national_wildlife'))         # 1976
     reaches[4].add_user(az.user(module, 'imperial_national_wildlife'))       # 1967
-    # BLM
-    # Fisher's Landing
-    # Shephard Water
+    reaches[4].add_user(az.user(None,   'blm'))                              # 2016
+    reaches[4].add_user(az.user(None,   'fishers_landing'))                  # 2016
+    reaches[4].add_user(az.user(None,   'shepard_water'))                    # 2016
     reaches[4].add_user(az.user(module, 'yuma_proving'))                     # 1964
-    # JRJ
-    # Cha Cha
-    # Beattie Farms
+    reaches[4].add_user(az.user(None,   'jrj_partners'))                     # 2016
+    reaches[4].add_user(az.user(None,   'cha_cha'))                          # 2016
+    reaches[4].add_user(az.user(None,   'beattie_farms'))                    # 2016
     reaches[4].add_user(az.user(module, 'gila_monster'))                     # 2001
     reaches[4].add_user(az.user(module, 'wellton_mohawk'))                   # 1964
     reaches[4].add_user(az.user(module, 'city_of_yuma'))                     # 1964
-    reaches[4].add_user(az.user(module, 'marine_corp'))                      # 1983
-    # Union/Southern Pacific
-    # Yuma Mesa Fruit
-    reaches[4].add_user(az.user(module, 'university_of_arizona'))            # 1983
-    reaches[4].add_user(az.user(module, 'yuma_union_high_school'))           # 1984
-    # Camille, Alec
-    # Desert Lawn                                       # 1984
+    reaches[4].add_user(az.user(None,   'marine_corp'))                      # 1983
+    reaches[4].add_user(az.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
+    reaches[4].add_user(az.user(None,   'union_pacific'))                    # 2008
+    reaches[4].add_user(az.user(None,   'yuma_mesa_fruit'))                  # 1983
+    reaches[4].add_user(az.user(None,   'university_of_arizona'))            # 1983
+    reaches[4].add_user(az.user(None,   'yuma_union_high_school'))           # 1984
+    reaches[4].add_user(az.user(None,   'camille'))                          # 1983-2010
+    reaches[4].add_user(az.user(None,   'desert_lawn'))                      # 1984
     reaches[4].add_user(az.user(module, 'north_gila_irrigation'))            # 1964
     reaches[4].add_user(az.user(module, 'yuma_irrigation'))                  # 1965
     reaches[4].add_user(az.user(module, 'yuma_mesa'))                        # 1964
     reaches[4].add_user(az.user(module, 'unit_b'))                           # 1964
-    reaches[4].add_user(az.user(module, 'arizona_state_land'))               # 2013
-    # Ott Family
-    # Ogram Boys
+    reaches[4].add_user(az.user(None,   'arizona_state_land'))               # 2013
+    reaches[4].add_user(az.user(None,   'ott_family'))                       # 2018
+    reaches[4].add_user(az.user(None,   'ogram_boys'))                       # 2016
     reaches[4].add_user(az.user(module, 'fort_yuma'))                        # 1984
     # Armon Curtis
     reaches[4].add_user(az.user(module, 'yuma_county_wua'))                  # 1964
     # R Griffith
     # Power
-    # Cocopah PPR No 7
-    # Griffith Ranches
-    # Milton Phillips
+    # Cocopah Indian Tribe (PPR No 7)
+    # Griffin Ranches (PPR No. 7)
+    # Milton Phillips (PPR No.7)
+    # Griffin Family Ltd. Partnership (PPR No. 7)
     reaches[4].add_user(az.user(module, 'cocopah'))                          # 1964
     reaches[4].add_user(az.user(module, 'yuma_area_office'))                 # 1994
     # Arizona Public Service
     # Gary Pasquinelli
     reaches[4].add_user(az.user(module, 'south_gila'))                       # 1964
+
     # Misc out of order
     az.user(module, 'others_users_pumping')                                  # 1944
     az.user(module, 'sturges')                                               # 1990
-    az.user(module, 'warren_act')                                            # 1964
+    az.user(None,   'warren_act')                                            # 1964
 
 
 def test():
     data = [
         {'data': state_total_diversion('az', 'total'), 'y_min': 0, 'y_max': 3800000, 'y_interval': 200000},
         {'data': user_total_diversion()},
-        {'y_min': -1000, 'y_max': 33000, 'y_interval': 2000},
+        {'y_min': -1000, 'y_max': 24000, 'y_interval': 1000},
         {'data': state_total_cu('az', 'total'), 'y_min': 0, 'y_max': 3000000, 'y_interval': 200000},
         {'data': user_total_cu()},
-        {'y_min': -1000, 'y_max': 12500, 'y_interval': 1000},
+        {'y_min': -1000, 'y_max': 9000, 'y_interval': 1000},
     ]
     util.state_total_vs_user_total_graph('AZ', data)
 
@@ -254,66 +258,6 @@ def not_yuma_area_returns():
     return data
 
 
-def marble_canyon_diversion():
-    return usbr_report.annual_af('az/usbr_az_marble_canyon_diversion.csv')
-
-
-def marble_canyon_cu():
-    return usbr_report.annual_af('az/usbr_az_marble_canyon_consumptive_use.csv')
-
-
-def marble_canyon_returns():
-    return subtract_annual(marble_canyon_diversion(), marble_canyon_cu())
-
-
-def lake_mead_national_diversion():
-    return usbr_report.annual_af('az/usbr_az_lake_mead_national_diversion.csv')
-
-
-def lake_mead_national_cu():
-    return usbr_report.annual_af('az/usbr_az_lake_mead_national_consumptive_use.csv')
-
-
-def lake_mead_national_returns():
-    return subtract_annual(lake_mead_national_diversion(), lake_mead_national_cu())
-
-
-def lake_mead_national_lake_mohave_diversion():
-    return usbr_report.annual_af('az/usbr_az_lake_mead_national_lake_mohave_diversion.csv')
-
-
-def lake_mead_national_lake_mohave_cu():
-    return usbr_report.annual_af('az/usbr_az_lake_mead_national_lake_mohave_consumptive_use.csv')
-
-
-def lake_mead_national_lake_mohave_returns():
-    return subtract_annual(lake_mead_national_lake_mohave_diversion(), lake_mead_national_lake_mohave_cu())
-
-
-def mcalister_diversion():
-    return usbr_report.annual_af('az/usbr_az_mcalister_diversion.csv')
-
-
-def mcalister_cu():
-    return usbr_report.annual_af('az/usbr_az_mcalister_consumptive_use.csv')
-
-
-def mcalister_returns():
-    return subtract_annual(mcalister_diversion(), mcalister_cu())
-
-
-def bureau_of_reclamation_davis_diversion():
-    return usbr_report.annual_af('az/usbr_az_bureau_of_reclamation_davis_diversion.csv')
-
-
-def bureau_of_reclamation_davis_cu():
-    return usbr_report.annual_af('az/usbr_az_bureau_of_reclamation_davis_consumptive_use.csv')
-
-
-def bureau_of_reclamation_davis_returns():
-    return subtract_annual(bureau_of_reclamation_davis_diversion(), bureau_of_reclamation_davis_cu())
-
-
 def fort_mojave():
     year_interval = 2
 
@@ -420,18 +364,6 @@ def mohave_water_returns():
     return subtract_annual(mohave_water_diversion(), mohave_water_cu())
 
 
-def golden_shores_diversion():
-    return usbr_report.annual_af('az/usbr_az_golden_shores_diversion.csv')
-
-
-def golden_shores_cu():
-    return usbr_report.annual_af('az/usbr_az_golden_shores_consumptive_use.csv')
-
-
-def golden_shores_returns():
-    return subtract_annual(golden_shores_diversion(), golden_shores_cu())
-
-
 def mohave_valley_diversion():
     return usbr_report.annual_af('az/usbr_az_mohave_valley_diversion.csv')
 
@@ -442,18 +374,6 @@ def mohave_valley_cu():
 
 def mohave_valley_returns():
     return subtract_annual(mohave_valley_diversion(), mohave_valley_cu())
-
-
-def town_of_parker_diversion():
-    return usbr_report.annual_af('az/usbr_az_town_of_parker_diversion.csv')
-
-
-def town_of_parker_cu():
-    return usbr_report.annual_af('az/usbr_az_town_of_parker_consumptive_use.csv')
-
-
-def town_of_parker_returns():
-    return subtract_annual(town_of_parker_diversion(), town_of_parker_cu())
 
 
 def cibola_valley():
@@ -913,18 +833,6 @@ def fort_yuma_returns():
     return subtract_annual(fort_yuma_diversion(), fort_yuma_cu())
 
 
-def yuma_union_high_school_diversion():
-    return usbr_report.annual_af('az/usbr_az_yuma_union_high_school_diversion.csv')
-
-
-def yuma_union_high_school_cu():
-    return usbr_report.annual_af('az/usbr_az_yuma_union_high_school_consumptive_use.csv')
-
-
-def yuma_union_high_school_returns():
-    return subtract_annual(yuma_union_high_school_diversion(), yuma_union_high_school_cu())
-
-
 def yuma_area_office_diversion():
     return usbr_report.annual_af('az/usbr_az_yuma_area_office_diversion.csv')
 
@@ -1274,18 +1182,6 @@ def sturges():
     graph.date_and_wait()
 
 
-def marine_corp_diversion():
-    return usbr_report.annual_af('az/usbr_az_marine_corp_diversion.csv')
-
-
-def marine_corp_cu():
-    return usbr_report.annual_af('az/usbr_az_marine_corp_consumptive_use.csv')
-
-
-def marine_corp_returns():
-    return subtract_annual(marine_corp_diversion(), marine_corp_cu())
-
-
 def sturges_diversion():
     return usbr_report.annual_af('az/usbr_az_sturges_diversion.csv')
 
@@ -1296,66 +1192,6 @@ def sturges_cu():
 
 def sturges_returns():
     return subtract_annual(sturges_diversion(), sturges_cu())
-
-
-def warren_act_diversion():
-    return usbr_report.annual_af('az/usbr_az_warren_act_diversion.csv')
-
-
-def warren_act_cu():
-    return usbr_report.annual_af('az/usbr_az_warren_act_consumptive_use.csv')
-
-
-def warren_act_returns():
-    return subtract_annual(warren_act_diversion(), warren_act_cu())
-
-
-def arizona_state_land_diversion():
-    return usbr_report.annual_af('az/usbr_az_arizona_state_land_diversion.csv')
-
-
-def arizona_state_land_cu():
-    return usbr_report.annual_af('az/usbr_az_arizona_state_land_consumptive_use.csv')
-
-
-def arizona_state_land_returns():
-    return subtract_annual(arizona_state_land_diversion(), arizona_state_land_cu())
-
-
-def arizona_game_and_fish_diversion():
-    return usbr_report.annual_af('az/usbr_az_arizona_game_and_fish_diversion.csv')
-
-
-def arizona_game_and_fish_cu():
-    return usbr_report.annual_af('az/usbr_az_arizona_game_and_fish_consumptive_use.csv')
-
-
-def arizona_game_and_fish_returns():
-    return subtract_annual(arizona_game_and_fish_diversion(), arizona_game_and_fish_cu())
-
-
-def hopi_diversion():
-    return usbr_report.annual_af('az/usbr_az_hopi_diversion.csv')
-
-
-def hopi_cu():
-    return usbr_report.annual_af('az/usbr_az_hopi_consumptive_use.csv')
-
-
-def hopi_returns():
-    return subtract_annual(hopi_diversion(), hopi_cu())
-
-
-def university_of_arizona_diversion():
-    return usbr_report.annual_af('az/usbr_az_university_of_arizona_diversion.csv')
-
-
-def university_of_arizona_cu():
-    return usbr_report.annual_af('az/usbr_az_university_of_arizona_consumptive_use.csv')
-
-
-def university_of_arizona_returns():
-    return subtract_annual(university_of_arizona_diversion(), arizona_game_and_fish_returns())
 
 
 def others_users_pumping():
@@ -1398,13 +1234,8 @@ def others_users_pumping_returns():
     return subtract_annual(others_users_pumping_diversion(), others_users_pumping_cu())
 
 
-def gabrych_diversion():
-    return usbr_report.annual_af('az/usbr_az_gabrych_diversion.csv')
-
-
-def gabrych_cu():
-    return usbr_report.annual_af('az/usbr_az_gabrych_consumptive_use.csv')
-
-
-def gabrych_returns():
-    return subtract_annual(gabrych_diversion(), gabrych_cu())
+if __name__ == '__main__':
+    chdir('../')
+    reaches = lc.initialize()
+    print(reaches)
+    test()

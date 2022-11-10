@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from sys import modules
+from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from usbr import lc, util
@@ -665,3 +666,10 @@ def winterhaven_cu(water_year_month=1):
 
 def winterhaven_returns():
     return subtract_annual(winterhaven_diversion(), winterhaven_diversion())
+
+
+if __name__ == '__main__':
+    chdir('../')
+    reaches = lc.initialize()
+    print(reaches)
+    test()
