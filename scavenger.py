@@ -182,7 +182,6 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 
         year_prev = int(re.split(r'\D+', image_file_paths[0].name)[0])
         year_written = 0
-        looping = False
         for image_file_path in image_file_paths:
             year = int(re.split(r'\D+', image_file_path.name)[0])
 
@@ -203,6 +202,181 @@ def ocr_reports(image_directory_path, output_file_path, water_user='', field_id=
 def scavenge_ca(image_dir, out_path):
     image_path = image_dir.joinpath('ca/consumptive_use')
 
+    output_path = out_path.joinpath('ca/usbr_ca_parker_dam_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Parker Dam and Gov', field_id='Diversion',
+                start_year=1972, end_year=2013)
+
+    output_path = out_path.joinpath('ca/usbr_ca_bureau_of_reclamation_parker_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Reclamation - Parker Dam', field_id='Diversion',
+                start_year=2017)
+
+    output_path = out_path.joinpath('ca/usbr_ca_bureau_of_reclamation_parker_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Reclamation - Parker Dam', field_id='Consumptive Us',
+                start_year=2017)
+
+    # Yuma project has two water users, Indian and Bard
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unit_domestic_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Project Reservation',
+                start_year=2014, field_id='Pumped from wells for domestic use')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Project Reservation', field_id='Consumptive Us')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Returns from Yuma Project', field_id='Return')
+
+    # Dont think this is used, yuma_project_sum_consumptive_use instead
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unit_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Consumptive Us',
+                start_year=1984, end_year=1989)
+
+    # Dont think this is used, yuma_project_sum_consumptive_use instead
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unit_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Consumptive Us',
+                start_year=1984, end_year=1989)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_total_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Total Yuma Project Reservation Division',
+                field_id='Consumptive Us', start_year=2014)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_sum_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='RETURNS FROM YUMA PROJECT', field_id='Consumptive Us',
+                start_year=1990)
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_sum_returns.csv')
+    ocr_reports(image_path, output_path, water_user='RETURNS FROM YUMA PROJECT', field_id='Return')
+
+    # In 2000's this turns into 'Unassigned Yuma Project Reservation Division Measured Returns'
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Reservation Division', field_id='Return')
+
+    # Small 'Returns' and 'cu' show up around 1982 under indian and bard on top of overall Reservation return above
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unit_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Returns')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_measured_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Measured')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_measured_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Measured')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unmeasured_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Unmeasured')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unmeasured_returns.csv')
+    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Unmeasured')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unit_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Diversion')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unit_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Diversion')
+
+    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_consumptive_use.csv')
+    ocr_reports(image_path, output_path, field_id='Yuma Project Reservation Division Consumptive Use')
+
+    output_path = out_path.joinpath('ca/usbr_ca_chemehuevi_domestic_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Chemehuevi', field_id='for domestic use', start_year=2018)
+
+    output_path = out_path.joinpath('ca/usbr_ca_chemehuevi_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Chemehuevi', field_id='Consumptive Us', start_year=2003)
+
+    output_path = out_path.joinpath('ca/usbr_ca_chemehuevi_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Chemehuevi', field_id='Diversion', start_year=1996)
+
+    output_path = out_path.joinpath('ca/usbr_ca_bureau_of_land_management_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Land Management', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_bureau_of_land_management_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Land Management', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_lake_enterprises_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Lake Enterprises', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_lake_enterprises_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Lake Enterprises', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_non_federal_subcontractors_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Non-Federal Subcontractors to the LCWSP', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_non_federal_subcontractors_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Non-Federal Subcontractors to the LCWSP',
+                field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_ppr_30_stephenson_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='PPR No. 30 (Stephenson)', field_id='Diversion',
+                start_year=2020)
+
+    output_path = out_path.joinpath('ca/usbr_ca_ppr_30_stephenson_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='PPR No. 30 (Stephenson)', field_id='Consumptive Us',
+                start_year=2020)
+
+    output_path = out_path.joinpath('ca/usbr_ca_ppr_38_andrade_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='PPR No. 38 (Andrade)', field_id='Diversion',
+                start_year=2020)
+
+    output_path = out_path.joinpath('ca/usbr_ca_ppr_38_andrade_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='PPR No. 38 (Andrade)', field_id='Consumptive Us',
+                start_year=2020)
+
+    output_path = out_path.joinpath('ca/usbr_ca_ppr_40_cooper_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='PPR No. 40 (Cooper)', field_id='Diversion',
+                start_year=2021)
+
+    output_path = out_path.joinpath('ca/usbr_ca_ppr_40_cooper_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='PPR No. 40 (Cooper)', field_id='Consumptive Us',
+                start_year=2021)
+
+    output_path = out_path.joinpath('ca/usbr_ca_vista_del_lago_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Vista Del Lago', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_havasu_water_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu Water Company', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_havasu_water_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Havasu Water Company', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_pacific_gas_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Pacific Gas', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_pacific_gas_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Pacific Gas', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_southern_california_gas_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Southern California Gas', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_southern_california_gas_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Southern California Gas', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_imperial_irrigation_sdcwa_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Water Transferred to SDCWA', field_id='Consumptive Us',
+                start_year=2004)
+
+    output_path = out_path.joinpath('ca/usbr_ca_fort_yuma_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Yuma', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_fort_yuma_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Yuma', field_id='Sum of Diversions for the FYIR Ranches',
+                start_year=2016)
+
+    output_path = out_path.joinpath('ca/usbr_ca_winterhaven_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Winterhaven', field_id='Diversion')
+
+    output_path = out_path.joinpath('ca/usbr_ca_bureau_of_land_management_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Land Management', field_id='Diversion')
+
     output_path = out_path.joinpath('ca/usbr_ca_total_returns.csv')
     ocr_reports(image_path, output_path, water_user='California Totals', field_id='Return', end_year=2009)
 
@@ -222,25 +396,6 @@ def scavenge_ca(image_dir, out_path):
 
     output_path = out_path.joinpath('ca/usbr_ca_yuma_island_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Island', field_id='Diversion', start_year=2016)
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unit_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Consumptive Us',
-                start_year=1984, end_year=1989)
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unit_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Consumptive Us',
-                start_year=1984, end_year=1989)
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_total_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Total Yuma Project Reservation Division',
-                field_id='Consumptive Us', start_year=2014)
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_sum_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='RETURNS FROM YUMA PROJECT', field_id='Consumptive Us',
-                start_year=1990)
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_sum_returns.csv')
-    ocr_reports(image_path, output_path, water_user='RETURNS FROM YUMA PROJECT', field_id='Return')
 
     output_path = out_path.joinpath('ca/usbr_ca_fort_mojave_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Fort Mojave', field_id='Consumptive Us', start_year=1999)
@@ -295,38 +450,6 @@ def scavenge_ca(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='Metropolitan Water District', field_id='Supplemental',
                 start_year=2007, end_year=2008)
 
-    # FIXME Run "Returns from Yuma Project" "FORT MOJAVE INDIAN RESERVATION""AGRICULTURAL - RIVER PUMPS"
-    # FIXME "COLORADO RIVER INDIAN RESERVATION""Wells and pumps"
-    # CA Total
-    # In 2000's this turns into 'Unassigned Yuma Project Reservation Division Measured Returns'
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_returns.csv')
-    ocr_reports(image_path, output_path, water_user='Reservation Division', field_id='Return')
-
-    # Small 'Returns' and 'cu' show up around 1982 under indian and bard on top of overall Reservation return above
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unit_returns.csv')
-    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Returns')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_measured_returns.csv')
-    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Measured')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_measured_returns.csv')
-    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Measured')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unmeasured_returns.csv')
-    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Unmeasured')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unmeasured_returns.csv')
-    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Uneasured')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_indian_unit_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Indian Unit', field_id='Diversion')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_bard_unit_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Bard Unit', field_id='Diversion')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_consumptive_use.csv')
-    ocr_reports(image_path, output_path, field_id='Yuma Project Reservation Division Consumptive Use')
-
     output_path = out_path.joinpath('ca/usbr_ca_total_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='California Totals', field_id='Consumptive Us')
 
@@ -365,16 +488,6 @@ def scavenge_ca(image_dir, out_path):
     output_path = out_path.joinpath('ca/usbr_ca_coachella_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Coachella Valley', field_id='Consumptive Us')
 
-    # Yuma project has two water users, Indian and Bard
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Project Reservation', field_id='Diversion')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Project Reservation', field_id='Consumptive Us')
-
-    output_path = out_path.joinpath('ca/usbr_ca_yuma_project_returns.csv')
-    ocr_reports(image_path, output_path, water_user='Returns from Yuma Project', field_id='Return')
-
     # Municipal
     output_path = out_path.joinpath('ca/usbr_ca_metropolitan_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Metropolitan Water District', field_id='Diversion')
@@ -399,9 +512,241 @@ def scavenge_ca(image_dir, out_path):
 
 def scavenge_az(image_dir, out_path):
     image_path = image_dir.joinpath('az/consumptive_use')
-    # FIXME Lake Mead, Hopi, Havasu Wildlife pumps, Yuma Proving Grounds
+    # FIXME Havasu Wildlife pumps
     # FIXME Cibola Vally (Hopi, et al)
     # FIXME 1982 Protective and Regulatory Pumping Unit, Yuma Mesa Outlet Drain
+    #
+    output_path = out_path.joinpath('az/usbr_az_ogram_boys_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Ogram Boys', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_ogram_boys_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Ogram Boys', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_ott_family_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Ott Family', field_id='Diversion',
+                start_year=2018)
+
+    output_path = out_path.joinpath('az/usbr_az_ott_family_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Ott Family', field_id='Consumptive Us',
+                start_year=2018)
+
+    output_path = out_path.joinpath('az/usbr_az_camille_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Camille', field_id='Diversion',
+                start_year=1983, end_year=2010)
+
+    output_path = out_path.joinpath('az/usbr_az_camille_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Camille', field_id='Consumptive Us',
+                start_year=2003, end_year=2010)
+
+    output_path = out_path.joinpath('az/usbr_az_desert_lawn_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Desert Lawn', field_id='Diversion',
+                start_year=1983)
+
+    output_path = out_path.joinpath('az/usbr_az_desert_lawn_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Desert Lawn', field_id='Consumptive Us',
+                start_year=2003)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_fruit_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Mesa Fruit', field_id='Consumptive Us',
+                start_year=2003, end_year=2011)
+
+    output_path = out_path.joinpath('az/usbr_az_yuma_mesa_fruit_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Yuma Mesa Fruit', field_id='Diversion',
+                start_year=1983, end_year=2011)
+
+    output_path = out_path.joinpath('az/usbr_az_union_pacific_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Union Pacific', field_id='Diversion',
+                start_year=2008)
+
+    output_path = out_path.joinpath('az/usbr_az_union_pacific_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Union Pacific', field_id='Consumptive Us',
+                start_year=2008)
+
+    output_path = out_path.joinpath('az/usbr_az_southern_pacific_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Southern Pacific', field_id='Diversion',
+                start_year=1984, end_year=2009)
+
+    output_path = out_path.joinpath('az/usbr_az_southern_pacific_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Southern Pacific', field_id='Consumptive Us',
+                start_year=2003, end_year=2009)
+
+    output_path = out_path.joinpath('az/usbr_az_beattie_farms_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Beattie Farms', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_beattie_farms_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Beattie Farms', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_cha_cha_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Cha Cha', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_cha_cha_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Cha Cha', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_jrj_partners_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='JRJ Partners', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_jrj_partners_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='JRJ Partners', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_shepard_water_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Shepard Water Company', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_shepard_water_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Shepard Water Company', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_fishers_landing_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Fisher\'s Landing', field_id='Diversion',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_fishers_landing_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Fisher\'s Landing', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_blm_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Land Management', field_id='Diversion',
+                start_year=2016, loop='Returns')
+
+    output_path = out_path.joinpath('az/usbr_az_blm_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Land Management', field_id='Consumptive Us',
+                start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_cibola_island_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Cibola Island', field_id='Diversion', start_year=2017)
+
+    output_path = out_path.joinpath('az/usbr_az_cibola_island_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Cibola Island', field_id='Consumptive Us',  start_year=2017)
+
+    output_path = out_path.joinpath('az/usbr_az_gsc_farm_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='GSC Farm', field_id='Diversion', start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_gsc_farm_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='GSC Farm', field_id='Consumptive Us',  start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_western_water_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Western Water', field_id='Diversion', start_year=2018)
+
+    output_path = out_path.joinpath('az/usbr_az_western_water_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Western Water', field_id='Consumptive Us',  start_year=2018)
+
+    output_path = out_path.joinpath('az/usbr_az_red_river_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Red River', field_id='Diversion', start_year=2018)
+
+    output_path = out_path.joinpath('az/usbr_az_red_river_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Red River', field_id='Consumptive Us',  start_year=2018)
+
+    output_path = out_path.joinpath('az/usbr_az_north_baja_pipeline_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='North Baja Pipeline', field_id='Diversion', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_north_baja_pipeline_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='North Baja Pipeline', field_id='Consumptive Us',  start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_b_and_f_investment_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='B&F Investment', field_id='Diversion', start_year=2020)
+
+    output_path = out_path.joinpath('az/usbr_az_b_and_f_investment_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='B&F Investment', field_id='Consumptive Us',  start_year=2020)
+
+    output_path = out_path.joinpath('az/usbr_az_ehrenberg_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Ehrenberg', field_id='Diversion', start_year=2019)
+
+    output_path = out_path.joinpath('az/usbr_az_ehrenberg_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Ehrenberg', field_id='Consumptive Us',  start_year=2019)
+
+    output_path = out_path.joinpath('az/usbr_az_springs_del_sol_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Springs Del Sol', field_id='Diversion',  start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_springs_del_sol_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Springs Del Sol', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_hillcrest_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Hillcrest', field_id='Diversion', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_hillcrest_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Hillcrest', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_arizona_state_parks_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona State Parks', field_id='Diversion', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_arizona_state_parks_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Arizona State Parks', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_crystal_beach_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Crystal Beach', field_id='Diversion', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_crystal_beach_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Crystal Beach', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_mohave_county_water_authority_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Mohave County Water Authority', field_id='Diversion',
+                start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_mohave_county_water_authority_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Mohave County Water Authority', field_id='Consumptive Us',
+                start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_mohave_co_parks_diversion.csv')  # Bullhead City Diversion
+    ocr_reports(image_path, output_path, water_user='Mohave Co. Parks', field_id='Diversion',
+                start_year=1991, end_year=2012)
+
+    output_path = out_path.joinpath('az/usbr_az_mohave_county_parks_diversion.csv')  # Bullhead City Diversion
+    ocr_reports(image_path, output_path, water_user='Mohave County Parks', field_id='Diversion', start_year=2004)
+
+    output_path = out_path.joinpath('az/usbr_az_bureau_of_reclamation_davis_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Reclamation', field_id='Diversion', start_year=2014)
+
+    output_path = out_path.joinpath('az/usbr_az_bureau_of_reclamation_davis_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Bureau of Reclamation', field_id='Consumptive Us', start_year=2014)
+
+    output_path = out_path.joinpath('az/usbr_az_marble_canyon_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Marble Canyon', field_id='Diversion', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_marble_canyon_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Marble Canyon', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_mcalister_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='McAlister', field_id='Diversion', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_mcalister_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='McAlister', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_lake_mead_national_lake_mead_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='From Lake Mead', field_id='Diversion',
+                start_year=1993, end_year=2012)
+
+    output_path = out_path.joinpath('az/usbr_az_lake_mead_national_lake_mead_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='From Lake Mead', field_id='Consumptive Us',
+                start_year=2003, end_year=2012)
+
+    output_path = out_path.joinpath('az/usbr_az_lake_mead_national_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Temple Bar', field_id='Diversion',  start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_lake_mead_national_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Temple Bar', field_id='Consumptive Us', start_year=2013)
+
+    output_path = out_path.joinpath('az/usbr_az_lake_mead_national_lake_mohave_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Pumped from Lake Mohave', field_id='Diversion',
+                start_year=2017, loop='returns')
+
+    output_path = out_path.joinpath('az/usbr_az_lake_mead_national_lake_mohave_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Pumped from Lake Mohave', field_id='Consumptive Us',
+                start_year=2017)
+
+    output_path = out_path.joinpath('az/usbr_az_epcor_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='EPCOR', field_id='Consumptive Us', start_year=2016)
+
+    output_path = out_path.joinpath('az/usbr_az_epcor_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='EPCOR', field_id='Diversion', start_year=2016)
+
     output_path = out_path.joinpath('az/usbr_az_yuma_proving_well_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Proving', field_id='Wells', start_year=1995)
 
@@ -446,7 +791,8 @@ def scavenge_az(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='Ehrenberg', field_id='Diversion', start_year=1976)
 
     output_path = out_path.joinpath('az/usbr_az_yuma_proving_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Yuma Proving', field_id='Diversion', start_year=1964, loop='Returns')
+    ocr_reports(image_path, output_path, water_user='Yuma Proving', field_id='Diversion',
+                start_year=1964, loop='Returns')
 
     output_path = out_path.joinpath('az/usbr_az_yuma_union_high_school_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user='Yuma Union High School', field_id='Consumptive Us',
@@ -855,6 +1201,31 @@ def scavenge_az(image_dir, out_path):
 def scavenge_nv(image_dir, out_path):
     image_path = image_dir.joinpath('nv/consumptive_use')
 
+    output_path = out_path.joinpath('nv/usbr_nv_lake_mead_national_lake_mohave_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Pumped from Lake Mohave', field_id='Diversion', start_year=2014)
+
+    output_path = out_path.joinpath('nv/usbr_nv_hoover_dam_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='hoover dam', field_id='Diversion',
+                end_year=1984)
+
+    output_path = out_path.joinpath('nv/usbr_nv_hoover_dam_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='hoover dam', field_id='Consumptive Us',
+                end_year=1984)
+
+    output_path = out_path.joinpath('nv/usbr_nv_boulder_canyon_project_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='boulder canyon project', field_id='Consumptive Us',
+                start_year=1985, end_year=2013)
+
+    output_path = out_path.joinpath('nv/usbr_nv_bureau_of_reclamation_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='bureau of reclamation', field_id='Consumptive Us', start_year=2014)
+
+    output_path = out_path.joinpath('nv/usbr_nv_boulder_canyon_project_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='boulder canyon project', field_id='Diversion',
+                start_year=1985, end_year=2013)
+
+    output_path = out_path.joinpath('nv/usbr_nv_bureau_of_reclamation_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='bureau of reclamation', field_id='Diversion', start_year=2014)
+
     output_path = out_path.joinpath('nv/usbr_nv_pacific_coast_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Pacific Coast', field_id='Diversion', start_year=1978)
 
@@ -894,7 +1265,8 @@ def scavenge_nv(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='Big Bend Water', field_id='Consumptive Us', start_year=1995)
 
     output_path = out_path.joinpath('nv/usbr_nv_city_of_henderson_diversion.csv')  # Add diversion loop
-    ocr_reports(image_path, output_path, water_user='City of Henderson', field_id='Diversion', start_year=1984, end_year=2001)
+    ocr_reports(image_path, output_path, water_user='City of Henderson', field_id='Diversion',
+                start_year=1984, end_year=2001)
 
     # Las Valley Water District Changed to Robert B. Griffith in 1984
     output_path = out_path.joinpath('nv/usbr_nv_las_vegas_valley_diversion.csv')
@@ -1068,10 +1440,10 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
+    ocr_debug(image_directory, path1='az', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='releases')
     scavenge_az(image_directory, outputs_path)
-    scavenge_nv(image_directory, outputs_path)
     scavenge_ca(image_directory, outputs_path)
+    scavenge_nv(image_directory, outputs_path)
     scavenge_releases(image_directory, outputs_path)
     scavenge_mx(image_directory, outputs_path)
