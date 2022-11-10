@@ -23,23 +23,13 @@ import datetime
 import numpy as np
 import signal
 import sys
-from sys import modules
-
-from rw.state import State
-from rw.lake import Lake
-from rw.reach import Reach
-from rw.dam import Dam
 from rw.util import add_annual, add_annuals, subtract_annual, multiply_annual, reshape_annual_range, flow_for_year
 from graph.water import WaterGraph
-from graph.water import table
-
 import usgs
 from usgs import lc
 from usgs import az, ca, ut, nv   # nm, wy
-
 import usbr
 from usbr import az, ca, uc, nv, mx
-
 from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
@@ -1283,37 +1273,8 @@ def model_hoover_to_imperial_extras():
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-    water_year_month = 1
-    lake_powell = usbr.uc.LakePowell(water_year_month)
-    lake_mead = usbr.lc.LakeMead(water_year_month)
-    lake_mohave = usbr.lc.LakeMohave(water_year_month)
-    lake_havasu = usbr.lc.LakeHavasu(water_year_month)
-    imperial_dam = usbr.lc.ImperialDam(water_year_month)
-    morelos = usbr.mx.Morelos(water_year_month)
+    reaches = usbr.lc.initialize()
 
-    # rock_dam = Dam('rock_dam', usbr.lc)
-    # palo_verde_dam = Dam('palo_verde_dam', usbr.lc)
-    # laguna_dam = Dam('laguna_dam', usbr.lc)
-
-    reaches = [Reach('Reach0', None, lake_powell, water_year_month),
-               usbr.lc.Reach1(lake_powell, lake_mead, water_year_month),
-               usbr.lc.Reach2(lake_mead, lake_mohave, water_year_month),
-               usbr.lc.Reach3(lake_mohave, lake_havasu, water_year_month),
-               usbr.lc.Reach4(lake_havasu, imperial_dam, water_year_month),
-               usbr.lc.Reach5(imperial_dam, morelos, water_year_month)
-              ]
-
-    State('Arizona', 'az', az, reaches)
-    State('California', 'ca', ca, reaches)
-    State('Nevada', 'nv', nv, reaches)
-    # State("Mexico", "mx")
-    # State("Colorado", "co")
-    # State("New Mexico", "nm")
-    # State("Utah", "ut")
-    # State("Wyoming", "wy")
-
-    # usbr.lc.lake_mead()
-    usbr.ca.test()
     model_hoover_to_imperial(reaches)
     lake_mead_side_inflows()
 
@@ -1326,9 +1287,6 @@ if __name__ == '__main__':
 
     # gage = usgs.nv.las_vegas_wash_below_lake_las_vegas()
     # monthly_af = gage.monthly_af(start_year=1975, end_year=1975)
-    usbr.az.test()
-    usbr.nv.test()
-    usbr.ca.test()
 
     # usbr_rise.catalog()
     # usgs.az.test_returns()
