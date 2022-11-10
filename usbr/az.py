@@ -74,45 +74,46 @@ def init(az, reaches):
     reaches[4].add_user(az.user(None,   'fishers_landing'))                  # 2016
     reaches[4].add_user(az.user(None,   'shepard_water'))                    # 2016
     reaches[4].add_user(az.user(module, 'yuma_proving'))                     # 1964
-    reaches[4].add_user(az.user(None,   'jrj_partners'))                     # 2016
-    reaches[4].add_user(az.user(None,   'cha_cha'))                          # 2016
-    reaches[4].add_user(az.user(None,   'beattie_farms'))                    # 2016
-    reaches[4].add_user(az.user(module, 'gila_monster'))                     # 2001
-    reaches[4].add_user(az.user(module, 'wellton_mohawk'))                   # 1964
-    reaches[4].add_user(az.user(module, 'city_of_yuma'))                     # 1964
-    reaches[4].add_user(az.user(None,   'marine_corp'))                      # 1983
+    reaches[4].add_user(az.user(module, 'sturges'))                          # 1990-2000 imperial
+    # Below Imperial
+    reaches[5].add_user(az.user(None,   'jrj_partners'))                     # 2016  pumped
+    reaches[5].add_user(az.user(None,   'cha_cha'))                          # 2016  pumped
+    reaches[5].add_user(az.user(None,   'beattie_farms'))                    # 2016  pumped
+    reaches[4].add_user(az.user(module, 'gila_monster'))                     # 2001  ggmc
+    reaches[4].add_user(az.user(module, 'wellton_mohawk'))                   # 1964  ggmc
+    reaches[4].add_user(az.user(module, 'city_of_yuma'))                     # 1964  imperial, pumped
+    reaches[4].add_user(az.user(None,   'marine_corp'))                      # 1983  imperial
     reaches[4].add_user(az.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
-    reaches[4].add_user(az.user(None,   'union_pacific'))                    # 2008
+    reaches[4].add_user(az.user(None,   'union_pacific'))                    # 2008  imperial
     reaches[4].add_user(az.user(None,   'yuma_mesa_fruit'))                  # 1983
-    reaches[4].add_user(az.user(None,   'university_of_arizona'))            # 1983
-    reaches[4].add_user(az.user(None,   'yuma_union_high_school'))           # 1984
+    reaches[4].add_user(az.user(None,   'university_of_arizona'))            # 1983  imperial
+    reaches[4].add_user(az.user(None,   'yuma_union_high_school'))           # 1984  east main canal
     reaches[4].add_user(az.user(None,   'camille'))                          # 1983-2010
-    reaches[4].add_user(az.user(None,   'desert_lawn'))                      # 1984
-    reaches[4].add_user(az.user(module, 'north_gila_irrigation'))            # 1964
-    reaches[4].add_user(az.user(module, 'yuma_irrigation'))                  # 1965
-    reaches[4].add_user(az.user(module, 'yuma_mesa'))                        # 1964
-    reaches[4].add_user(az.user(module, 'unit_b'))                           # 1964
-    reaches[4].add_user(az.user(None,   'arizona_state_land'))               # 2013
-    reaches[4].add_user(az.user(None,   'ott_family'))                       # 2018
-    reaches[4].add_user(az.user(None,   'ogram_boys'))                       # 2016
-    reaches[4].add_user(az.user(module, 'fort_yuma'))                        # 1984
-    # Armon Curtis
-    reaches[4].add_user(az.user(module, 'yuma_county_wua'))                  # 1964
-    # R Griffith
-    # Power
-    # Cocopah Indian Tribe (PPR No 7)
-    # Griffin Ranches (PPR No. 7)
-    # Milton Phillips (PPR No.7)
-    # Griffin Family Ltd. Partnership (PPR No. 7)
+    reaches[4].add_user(az.user(None,   'desert_lawn'))                      # 1984  from city of yuma
+    reaches[4].add_user(az.user(module, 'north_gila_irrigation'))            # 1964  ggmc, pumped
+    reaches[4].add_user(az.user(module, 'yuma_irrigation'))                  # 1965  imperial, pumped
+    reaches[4].add_user(az.user(module, 'yuma_mesa'))                        # 1964  ggmc
+    reaches[4].add_user(az.user(module, 'unit_b'))                           # 1964  ggmc
+    reaches[5].add_user(az.user(None,   'arizona_state_land'))               # 2013  pumped
+    reaches[4].add_user(az.user(None,   'ott_family'))                       # 2018  ggmc
+    reaches[4].add_user(az.user(None,   'ogram_boys'))                       # 2016  ggmc
+    reaches[5].add_user(az.user(module, 'fort_yuma'))                        # 1984  pumped
+    reaches[5].add_user(az.user(module, 'armon_curtis'))                     # 2016  pumped
+    reaches[4].add_user(az.user(module, 'yuma_county_wua'))                  # 1964  imperial, pumped
+    reaches[5].add_user(az.user(None,   'r_griffin'))                        # 2016  pumped
+    reaches[5].add_user(az.user(None,   'power'))                            # 2016  pumped
+    reaches[5].add_user(az.user(None,   'cocopah_ppr_7'))                    # 2018  pumped
+    reaches[5].add_user(az.user(None,   'griffin_ranches'))                  # 2016  pumped
+    reaches[5].add_user(az.user(None,   'milton_phillips'))                  # 2016  pumped
+    reaches[5].add_user(az.user(None,   'griffin_family'))                   # 2018  pumped
     reaches[4].add_user(az.user(module, 'cocopah'))                          # 1964
-    reaches[4].add_user(az.user(module, 'yuma_area_office'))                 # 1994
-    # Arizona Public Service
-    # Gary Pasquinelli
+    reaches[5].add_user(az.user(module, 'yuma_area_office'))                 # 1994
+    reaches[5].add_user(az.user(None,   'arizona_public_service'))           # 2016  pumped
+    reaches[5].add_user(az.user(None,   'gary_pasquinelli'))                 # 2016  pumped
     reaches[4].add_user(az.user(module, 'south_gila'))                       # 1964
 
-    # Misc out of order
-    az.user(module, 'others_users_pumping')                                  # 1944
-    az.user(module, 'sturges')                                               # 1990
+    # Misc out of order and across reaches
+    az.user(module, 'others_users_pumping')                                  # 1964
     az.user(None,   'warren_act')                                            # 1964
 
 
@@ -120,7 +121,7 @@ def test():
     data = [
         {'data': state_total_diversion('az', 'total'), 'y_min': 0, 'y_max': 3800000, 'y_interval': 200000},
         {'data': user_total_diversion()},
-        {'y_min': -1000, 'y_max': 24000, 'y_interval': 1000},
+        {'y_min': -1000, 'y_max': 23000, 'y_interval': 1000},
         {'data': state_total_cu('az', 'total'), 'y_min': 0, 'y_max': 3000000, 'y_interval': 200000},
         {'data': user_total_cu()},
         {'y_min': -1000, 'y_max': 9000, 'y_interval': 1000},
@@ -164,9 +165,9 @@ def test():
 
 
 def total_graph():
-    usbr.util.diversion_vs_consumptive('az', 'total', 'Arizona',
-                                       ymin1=900000, ymax1=3800000,
-                                       ymin2=550000, ymax2=900000, yinterval2=25000)
+    util.diversion_vs_consumptive('az', 'total', 'Arizona',
+                                  ymin1=900000, ymax1=3800000,
+                                  ymin2=550000, ymax2=900000, yinterval2=25000)
 
 
 def state_total_diversion(state_code, name):
@@ -557,7 +558,7 @@ def central_arizona_project():
                xlabel='Calendar Year',   color='firebrick',
                ylabel='maf',  format_func=WaterGraph.format_maf)
 
-    ics = usbr.lc.lake_mead_load_ics()
+    ics = lc.lake_mead_load_ics()
     ics_az_delta = ics['AZ Delta']
     ics_az_delta = graph.reshape_annual_range(ics_az_delta, 1985, current_last_year)
 
@@ -1236,6 +1237,5 @@ def others_users_pumping_returns():
 
 if __name__ == '__main__':
     chdir('../')
-    reaches = lc.initialize()
-    print(reaches)
+    lc.initialize()
     test()

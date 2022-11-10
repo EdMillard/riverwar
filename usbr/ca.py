@@ -670,6 +670,5 @@ def winterhaven_returns():
 
 if __name__ == '__main__':
     chdir('../')
-    reaches = lc.initialize()
-    print(reaches)
+    lc.initialize()
     test()

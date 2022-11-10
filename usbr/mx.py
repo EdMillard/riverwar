@@ -19,10 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from rw.lake import Lake
 import usgs
+from usbr import lc
 
 
 def test():
@@ -129,3 +131,9 @@ def mexico():
                ylabel='af', format_func=WaterGraph.format_af)
 
     graph.date_and_wait()
+
+
+if __name__ == '__main__':
+    chdir('../')
+    lc.initialize()
+    test()

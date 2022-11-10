@@ -24,7 +24,7 @@ from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from usbr import lc, util
-from rw.util import add_annuals, subtract_annual, reshape_annual_range, reshape_annual_range_to
+from rw.util import subtract_annual, reshape_annual_range_to
 from rw import state
 
 current_last_year = 2021
@@ -310,6 +310,5 @@ def nevada_dept_of_wildlife_returns():
 
 if __name__ == '__main__':
     chdir('../')
-    reaches = lc.initialize()
-    print(reaches)
+    lc.initialize()
     test()
