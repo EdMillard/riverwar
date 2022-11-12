@@ -23,11 +23,13 @@ import datetime
 import numpy as np
 from pathlib import Path
 import calendar
+from rw.util import multiply_annual
 
 current_last_year = 2021
 
 debug = False
-debug_threshold_af = 2
+debug_threshold_af = 4
+
 
 class USBRReport(object):
     """
@@ -68,12 +70,12 @@ def pre_process_csv(strings, sep):
     return headers, years
 
 
-def load_monthly_csv(file_name, sep=' '):
+def load_monthly_csv(file_name, sep=' ', path='data/USBR_Reports'):
     if debug:
         print("load_monthly_csv: ", file_name)
     date_time_format = "%Y-%m-%d"
 
-    file_path = Path('data/USBR_Reports').joinpath(file_name)
+    file_path = Path(path).joinpath(file_name)
     try:
         f = file_path.open(mode='r')
     except FileNotFoundError:
@@ -158,10 +160,13 @@ def load_monthly_csv(file_name, sep=' '):
     return a
 
 
-def annual_af(file_name, sep=' ', water_year_month=1):
+def annual_af(file_name, sep=' ', water_year_month=1, multiplier=None, path='data/USBR_Reports'):
     # FIXME could just load totals from csv and skip monthly
-    monthly_af = load_monthly_csv(file_name, sep)
-    return monthly_to_water_year(monthly_af, water_year_month)
+    monthly_af = load_monthly_csv(file_name, sep, path=path)
+    result =  monthly_to_water_year(monthly_af, water_year_month)
+    if multiplier:
+        result = multiply_annual(result, multiplier)
+    return result
 
 
 def load_ics_csv(file_name, sep=' '):
@@ -258,12 +263,12 @@ def positive_values(a):
 
 def monthly_to_water_year(a, water_year_month=10):
     dt = datetime.date(1, water_year_month, 1)
-    total = -1
+    total = None
     result = []
     for o in a:
         obj = o['dt'].astype(object)
         if obj.month == water_year_month:
-            if total >= 0:
+            if total is not None:
                 result.append([dt, total])
                 total = 0
             dt = datetime.date(obj.year+1, water_year_month, 1)
@@ -273,9 +278,12 @@ def monthly_to_water_year(a, water_year_month=10):
             else:
                 dt = datetime.date(obj.year+1, water_year_month, 1)
 
-        total += o['val']
+        if total:
+            total += o['val']
+        else:
+            total = o['val']
 
-    if total > 0:
+    if total is not None:
         result.append([dt, total])
 
     a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
