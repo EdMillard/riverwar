@@ -31,8 +31,23 @@ import usbr
 from usbr import az, ca, uc, nv, mx
 
 
-def initialize():
-    water_year_month = 1
+def initialize(water_year_month=1):
+    # SNWA Study losses by reach
+    lake_mead_evap = 580000         # at 1100 ft
+    # lake_mead_evap = 458000       # at 1045 ft
+    lake_mohave_evap = 193000
+    lake_havasu_evap = 138000
+    reach_3_corridor_loss = 191000
+    reach_4_corridor_loss = 365000  # ?
+    reach_5_corridor_loss = 76000   # ?
+
+    reach_losses = [0,
+                    lake_mead_evap,
+                    lake_mohave_evap,
+                    lake_havasu_evap + reach_3_corridor_loss,
+                    reach_4_corridor_loss,
+                    reach_5_corridor_loss]
+
     lake_powell = usbr.uc.LakePowell(water_year_month)
     lake_mead = usbr.lc.LakeMead(water_year_month)
     lake_mohave = usbr.lc.LakeMohave(water_year_month)
@@ -50,11 +65,42 @@ def initialize():
                usbr.lc.Reach4(lake_havasu, imperial_dam, water_year_month),
                usbr.lc.Reach5(imperial_dam, morelos, water_year_month)
               ]
+    for reach_number in range(0, len(reaches)):
+        reaches[reach_number].loss = reach_losses[reach_number]
 
     State('Arizona', 'az', az, reaches)
     State('California', 'ca', ca, reaches)
     State('Nevada', 'nv', nv, reaches)
+    State('Mexico', 'mx', mx, reaches)
     return reaches
+
+
+def model(reaches, year_begin, year_end, water_year_month=1):
+    for reach in reaches:
+        reach.model(year_begin, year_end)
+
+    for i in range(1, len(reaches)):
+        active_users_through_reach = 0
+        for j in range(i, len(reaches)):
+            reach = reaches[j]
+            users_by_state = reach.users_in_reach_by_state()
+            for state in users_by_state:
+                try:
+                    reaches[i].active_users_through_reach[state]
+                except KeyError:
+                    reaches[i].active_users_through_reach[state] = []
+                reaches[i].active_users_through_reach[state].extend(users_by_state[state])
+            active_users_through_reach += len(reaches[j].active_users_in_reach)
+
+    for i in range(1, len(reaches)):
+        reach = reaches[i]
+        reach.print_model()
+
+    for i in range(1, len(reaches)):
+        reach = reaches[i]
+        reach.print_users()
+
+    print()
 
 
 def test():
@@ -135,6 +181,10 @@ class LakeMead(Lake):
         inflow = add_annuals([colorado_above_diamond_creek_annual_af, virgin_river_annual_af, muddy_river_annual_af])
         return inflow
 
+    def side_inflow(self, year_begin, year_end):
+        annual_af = usbr_report.annual_af('usbr_lake_mead_side_inflow.csv', multiplier=1000, path='data/USBR_24_Month')
+        return reshape_annual_range(annual_af, year_begin, year_end)
+
     def release(self, year_begin, year_end):
         usbr_lake_mead_release_total_af = 6122
         info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
@@ -147,7 +197,8 @@ class LakeMead(Lake):
         return daily_storage_af
 
     def evaporation(self, year_begin, year_end):
-        pass
+        annual_af = usbr_report.annual_af('usbr_lake_mead_evap_losses.csv', multiplier=1000, path='data/USBR_24_Month')
+        return reshape_annual_range(annual_af, year_begin, year_end)
 
 
 def lake_mead_release():
@@ -200,6 +251,11 @@ class LakeMohave(Lake):
         # FIXME remove diversions, get losses from 24 month study?
         return reshape_annual_range(lake_mead_release(), year_begin, year_end)
 
+    def side_inflow(self, year_begin, year_end):
+        annual_af = usbr_report.annual_af('usbr_lake_mohave_side_inflow.csv',
+                                          multiplier=1000, path='data/USBR_24_Month')
+        return reshape_annual_range(annual_af, year_begin, year_end)
+
     def release(self, year_begin, year_end):
         usbr_lake_mohave_release_total_af = 6131
         info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
@@ -212,8 +268,8 @@ class LakeMohave(Lake):
         return daily_storage_af
 
     def evaporation(self, year_begin, year_end):
-        # FIXME get evap from 24 month study?
-        pass
+        annual_af = usbr_report.annual_af('usbr_lake_mohave_evap_losses.csv', multiplier=1000, path='data/USBR_24_Month')
+        return reshape_annual_range(annual_af, year_begin, year_end)
 
 
 def lake_mohave_release():
@@ -266,6 +322,11 @@ class LakeHavasu(Lake):
         # FIXME remove diversions, get losses from 24 month study?
         return reshape_annual_range(lake_mohave_release(), year_begin, year_end)
 
+    def side_inflow(self, year_begin, year_end):
+        annual_af = usbr_report.annual_af('usbr_lake_havasu_side_inflow.csv',
+                                          multiplier=1000, path='data/USBR_24_Month')
+        return reshape_annual_range(annual_af, year_begin, year_end)
+
     def release(self, year_begin, year_end):
         usbr_lake_havasu_release_total_af = 6126
         info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
@@ -278,7 +339,8 @@ class LakeHavasu(Lake):
         return daily_storage_af
 
     def evaporation(self, year_begin, year_end):
-        pass
+        annual_af = usbr_report.annual_af('usbr_lake_havasu_evap_losses.csv', multiplier=1000, path='data/USBR_24_Month')
+        return reshape_annual_range(annual_af, year_begin, year_end)
 
 
 def lake_havasu(graph=True):

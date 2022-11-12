@@ -19,12 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from sys import modules
 from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from rw.lake import Lake
 import usgs
 from usbr import lc
+from rw.util import add_annual, subtract_annual
+
+
+def init(mx, reaches):
+    module = modules[__name__]
+    reaches[5].add_user(mx.user(module, 'mexico'))
 
 
 def test():
@@ -131,6 +138,24 @@ def mexico():
                ylabel='af', format_func=WaterGraph.format_af)
 
     graph.date_and_wait()
+
+
+def mexico_diversion(water_year_month=1):
+    nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
+    nib = nib_morelos_gage.annual_af(water_year_month=water_year_month)
+    return nib
+    # satisfaction = usbr_report.annual_af('mx/usbr_mx_satisfaction_of_treaty.csv', water_year_month=water_year_month)
+    # excess = usbr_report.annual_af('mx/usbr_mx_in_excess.csv', water_year_month=water_year_month)
+    # return add_annual(satisfaction, excess)
+
+
+def mexico_cu(water_year_month=1):
+    return mexico_diversion(water_year_month=water_year_month)
+
+
+def mexico_returns(water_year_month=1):
+    return subtract_annual(mexico_diversion(water_year_month=water_year_month),
+                           mexico_diversion(water_year_month=water_year_month))
 
 
 if __name__ == '__main__':

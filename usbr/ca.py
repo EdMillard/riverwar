@@ -39,6 +39,9 @@ def init(ca, reaches):
     reaches[3].add_user(ca.user(None, 'havasu_water'))                  # 2016
     reaches[3].add_user(ca.user(None, 'vista_del_lago'))                # 2016
     reaches[3].add_user(ca.user(None, 'non_federal_subcontractors'))    # 2016
+    reaches[3].add_user(ca.user(None, 'wetmore_mark'))                  # 2016-2019
+    reaches[3].add_user(ca.user(None, 'williams_jerry'))                # 2016-2019
+    reaches[3].add_user(ca.user(None, 'wetmore_kenneth'))               # 2016-2019
     reaches[3].add_user(ca.user(None, 'ppr_30_stephenson'))             # 2020
     reaches[3].add_user(ca.user(None, 'ppr_38_andrade'))                # 2020
     reaches[3].add_user(ca.user(None, 'ppr_40_cooper'))                 # 2021

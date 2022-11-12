@@ -94,15 +94,15 @@ def init(az, reaches):
     reaches[4].add_user(az.user(module, 'yuma_irrigation'))                  # 1965  imperial, pumped
     reaches[4].add_user(az.user(module, 'yuma_mesa'))                        # 1964  ggmc
     reaches[4].add_user(az.user(module, 'unit_b'))                           # 1964  ggmc
-    reaches[5].add_user(az.user(None,   'arizona_state_land'))               # 2013  pumped
+    reaches[5].add_user(az.user(module, 'arizona_state_land'))               # 2013  pumped
     reaches[4].add_user(az.user(None,   'ott_family'))                       # 2018  ggmc
     reaches[4].add_user(az.user(None,   'ogram_boys'))                       # 2016  ggmc
     reaches[5].add_user(az.user(module, 'fort_yuma'))                        # 1984  pumped
-    reaches[5].add_user(az.user(module, 'armon_curtis'))                     # 2016  pumped
+    reaches[5].add_user(az.user(None,   'armon_curtis'))                     # 2016  pumped
     reaches[4].add_user(az.user(module, 'yuma_county_wua'))                  # 1964  imperial, pumped
     reaches[5].add_user(az.user(None,   'r_griffin'))                        # 2016  pumped
     reaches[5].add_user(az.user(None,   'power'))                            # 2016  pumped
-    reaches[5].add_user(az.user(None,   'cocopah_ppr_7'))                    # 2018  pumped
+    # reaches[5].add_user(az.user(None,   'cocopah_ppr_7'))                    # 2018  pumped in "cocopah
     reaches[5].add_user(az.user(None,   'griffin_ranches'))                  # 2016  pumped
     reaches[5].add_user(az.user(None,   'milton_phillips'))                  # 2016  pumped
     reaches[5].add_user(az.user(None,   'griffin_family'))                   # 2018  pumped
@@ -770,7 +770,9 @@ def north_gila_irrigation():
 
 
 def north_gila_irrigation_diversion():
-    return usbr_report.annual_af('az/usbr_az_north_gila_irrigation_diversion.csv')
+    diversion = usbr_report.annual_af('az/usbr_az_north_gila_irrigation_diversion.csv')
+    pumped = usbr_report.annual_af('az/usbr_az_north_gila_irrigation_pumped_diversion.csv')
+    return add_annual(diversion, pumped)
 
 
 def north_gila_irrigation_cu():
@@ -955,6 +957,20 @@ def unit_b_returns():
     return subtract_annual(unit_b_diversion(), unit_b_cu())
 
 
+def arizona_state_land_diversion():
+    diversion = usbr_report.annual_af('az/usbr_az_arizona_state_land_diversion.csv')
+    domestic = usbr_report.annual_af('az/usbr_az_arizona_state_land_domestic_diversion.csv')
+    return add_annual(diversion, domestic)
+
+
+def arizona_state_land_cu():
+    return usbr_report.annual_af('az/usbr_az_arizona_state_land_consumptive_use.csv')
+
+
+def arizona_state_land_returns():
+    return subtract_annual(arizona_state_land_diversion(), arizona_state_land_cu())
+
+
 def wellton_mohawk():
     year_interval = 3
 
@@ -1071,7 +1087,8 @@ def cocopah():
 def cocopah_diversion():
     annuals = [usbr_report.annual_af('az/usbr_az_cocopah_diversion.csv'),
                usbr_report.annual_af('az/usbr_az_cocopah_pumped.csv'),
-               usbr_report.annual_af('az/usbr_az_cocopah_west_pumped.csv')
+               usbr_report.annual_af('az/usbr_az_cocopah_west_pumped.csv'),
+               usbr_report.annual_af('az/usbr_az_cocopah_ppr_7_diversion.csv')
                ]
     return add_annuals(annuals)
 

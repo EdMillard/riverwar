@@ -628,8 +628,7 @@ def lake_mead_side_inflows(show_graph=False):
 
     # USBR 24 month study numbers, some of these are generated (i.e. Davis evap) or may be from models
     lake_mead_side_inflow_af = usbr_report.annual_af(
-        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_side_inflow.csv')
-    lake_mead_side_inflow_af = multiply_annual(lake_mead_side_inflow_af, 1000)
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_side_inflow.csv', multiplier=1000)
 
     # lake_mead_side_inflow_af = reshape_annual_range(lake_mead_side_inflow_af, start_year, end_year)
     if show_graph:
@@ -1212,14 +1211,6 @@ def reach_inflow_minus_outflow(reach, study_year):
     return None
 
 
-def model_hoover_to_imperial(reaches):
-    year_begin = 2019
-    year_end = 2021
-
-    for reach in reaches:
-        reach.model(year_begin, year_end)
-
-
 def model_hoover_to_imperial_extras():
     study_year = 2021
 
@@ -1246,36 +1237,30 @@ def model_hoover_to_imperial_extras():
 
     # USBR 24 month study numbers, some of these are generated (i.e. Davis evap) or may be from models
     lake_mead_side_inflow_af = usbr_report.annual_af(
-        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_side_inflow.csv')
-    lake_mead_side_inflow_af = multiply_annual(lake_mead_side_inflow_af, 1000)
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_side_inflow.csv', multiplier=1000)
 
     lake_mead_evap_af = usbr_report.annual_af(
-        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_evap_losses.csv')
-    lake_mead_evap_af = multiply_annual(lake_mead_evap_af, 1000)
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mead_evap_losses.csv', multiplier=1000)
 
     lake_mohave_side_inflow_af = usbr_report.annual_af(
-        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mohave_side_inflow.csv')
-    lake_mohave_evap_af = multiply_annual(lake_mohave_side_inflow_af, 1000)
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mohave_side_inflow.csv', multiplier=1000)
 
     lake_mohave_evap_af = usbr_report.annual_af(
-        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mohave_evap_losses.csv')
-    lake_mohave_evap_af = multiply_annual(lake_mohave_evap_af, 1000)
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_mohave_evap_losses.csv', multiplier=1000)
 
     lake_havasu_side_inflow_af = usbr_report.annual_af(
-        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_havasu_side_inflow.csv')
-    lake_mohave_evap_af = multiply_annual(lake_havasu_side_inflow_af, 1000)
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_havasu_side_inflow.csv', multiplier=1000)
 
     lake_havasu_evap_af = usbr_report.annual_af(
-        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_havasu_evap_losses.csv')
-    lake_havasu_evap_af = multiply_annual(lake_havasu_evap_af, 1000)
+        '/opt/dev/riverwar/data/USBR_24_Month/usbr_lake_havasu_evap_losses.csv', multiplier=1000)
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     reaches = usbr.lc.initialize()
+    usbr.lc.model(reaches, 2019, 2021, water_year_month=1)
 
-    model_hoover_to_imperial(reaches)
     lake_mead_side_inflows()
 
     usbr.lc.lake_mead()

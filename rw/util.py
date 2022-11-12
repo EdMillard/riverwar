@@ -103,7 +103,32 @@ def annual_zeroed_for_years(year_min, year_max):
     return a
 
 
+def annual_as_str(a, with_year=False):
+    s = ''
+    if a is not None:
+        for y in a:
+            if with_year:
+                s1 = str(int(y[1])) + ' ' + "{:,}".format(int(y[1])) + ' '
+            else:
+                s1 = "{:,}".format(int(y[1]))
+                s1 = "{:>12}".format(s1)
+            s += s1
+    return s
+
+
+def vector_as_str(a):
+    s = ''
+    if a is not None:
+        for y in a:
+            s1 = "{:,}".format(int(y))
+            s1 = "{:>12}".format(s1)
+            s += s1
+    return s
+
+
 def reshape_annual_range_to(a, to):
+    if len(a) == 0:
+        return annual_zeroed_for_years(to[0][0], to[-1][0])
     if a['dt'][0] == to['dt'][0] and a['dt'][-1] == to['dt'][-1]:
         return a
     else:

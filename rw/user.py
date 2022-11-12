@@ -123,7 +123,7 @@ class User(object):
                 if diversion is not None and cu is not None:
                     return subtract_annual(diversion, cu)
                 else:
-                    print(self.name, "gas no returns implementation")
+                    print(self.name, "has no returns implementation")
 
     def get_cu_for_years(self, year_begin, year_end):
         user_cu = self.cu()

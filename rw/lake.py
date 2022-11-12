@@ -23,6 +23,7 @@ from datetime import datetime
 import numpy as np
 from rw.util import annual_zeroed_for_years
 
+
 class Lake(object):
     def __init__(self, name, water_year_month):
         self.name = name
@@ -31,6 +32,9 @@ class Lake(object):
     def inflow(self, year_begin, year_end):
         return annual_zeroed_for_years(year_begin, year_end)
 
+    def side_inflow(self, year_begin, year_end):
+        return None
+
     def release(self, year_begin, year_end):
         return annual_zeroed_for_years(year_begin, year_end)
 
@@ -38,7 +42,8 @@ class Lake(object):
         print("FIXME Lake.storage() not implemented")
         pass
 
-    def ___convert_to_datetime(self, d):
+    @staticmethod
+    def ___convert_to_datetime(d):
         return datetime.strptime(np.datetime_as_string(d, unit='s'), '%Y-%m-%dT%H:%M:%S')
 
     def storage_delta(self, year_begin, year_end):
