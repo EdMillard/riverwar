@@ -84,28 +84,13 @@ def model(reaches, year_begin, year_end):
     for reach in reaches:
         reach.model(year_begin, year_end)
 
-    for i in range(1, len(reaches)):
-        active_users_through_reach = 0
-        for j in range(i, len(reaches)):
-            reach = reaches[j]
-            users_by_state = reach.users_in_reach_by_state()
-            for state in users_by_state:
-                try:
-                    reaches[i].active_users_through_reach[state]
-                except KeyError:
-                    reaches[i].active_users_through_reach[state] = []
-                reaches[i].active_users_through_reach[state].extend(users_by_state[state])
-            active_users_through_reach += len(reaches[j].active_users_in_reach)
+    model_active_users_through_reach(reaches)
 
-    total = 0
     for i in range(1, len(reaches)):
         reach = reaches[i]
-        print('\t' + reach.name + '\t',
-              # annual_as_str(reach.loss_evaporation), '+',
-              # annual_as_str(reach.loss_corridor), '=',
-              reach.loss)
-        total += reach.loss
-    print('total loss: ', total)
+        reach.compute_through_reach_cu_avg()
+
+    print_loss_table(reaches)
 
     for i in range(1, len(reaches)):
         reach = reaches[i]
@@ -116,6 +101,31 @@ def model(reaches, year_begin, year_end):
         reach.print_users()
 
     print()
+
+
+def print_loss_table(reaches):
+    total = 0
+    for i in range(1, len(reaches)):
+        reach = reaches[i]
+        print('\t' + reach.name + '\t',
+              # annual_as_str(reach.loss_evaporation), '+',
+              # annual_as_str(reach.loss_corridor), '=',
+              reach.loss)
+        total += reach.loss
+    print('total loss: ', total)
+
+
+def model_active_users_through_reach(reaches):
+    for i in range(1, len(reaches)):
+        for j in range(i, len(reaches)):
+            reach = reaches[j]
+            users_by_state = reach.users_in_reach_by_state()
+            for state in users_by_state:
+                try:
+                    reaches[i].active_users_through_reach[state]
+                except KeyError:
+                    reaches[i].active_users_through_reach[state] = []
+                reaches[i].active_users_through_reach[state].extend(users_by_state[state])
 
 
 def test():
