@@ -34,6 +34,7 @@ class Reach(object):
         self.users = []
         self.active_users_in_reach = []
         self.active_users_through_reach = {}
+        self.state_assessment = {}
         # Reach
         self.loss = None
         self.reach_cu = None
@@ -117,6 +118,25 @@ class Reach(object):
                 avg_cu = user.avg_cu()
                 self.through_reach_cu_avg += avg_cu
 
+    def compute_state_assessment(self):
+        for state in self.states:
+            try:
+                users = self.active_users_through_reach[state]
+            except KeyError:
+                users = []
+
+            state_through_reach_cu_avg = 0
+            for user in users:
+                avg_cu = user.avg_cu()
+                state_through_reach_cu_avg += avg_cu
+
+            percent = state_through_reach_cu_avg / self.through_reach_cu_avg
+            state_assessment = self.loss * percent
+            self.state_assessment[state] = {'cu_avg': state_through_reach_cu_avg,
+                                            'assessment': state_assessment,
+                                            'percent': percent,
+                                            'users': users}
+
     def users_in_reach_by_state(self):
         users_by_state = {}
         for user in self.active_users_in_reach:
@@ -162,61 +182,45 @@ class Reach(object):
         print('{0: <28}'.format('    storage delta '), vector_as_str(self.storage_delta))
         print()
 
-    def print_users(self):
-        print('\n--- ' + self.name + ' ---')
-        print('  Active users through reach')
+    def state_assessment_as_str(self, state, print_num_users=True):
+        s = '\t'
+        number_of_active_users_through_reach = 0
+        try:
+            state_assessment = self.state_assessment[state]
+            users = state_assessment['users']
+            s += state
+            if print_num_users:
+                s += number_as_str(len(users))
+            s += af_as_str(state_assessment['cu_avg'])
+            s += percent_as_str(state_assessment['percent'])
+            s += af_as_str(state_assessment['assessment'])
+            number_of_active_users_through_reach = len(users)
+        except KeyError:
+            print('\t' + state + '   ')
+        return s, number_of_active_users_through_reach
 
-        # Average CU by state and state assessments per SNWA formula
+    def print_state_assessments(self):
+        print('\n--- ' + self.name + ' ---')
         number_of_active_users_through_reach = 0
         for state in self.states:
             try:
-                users = self.active_users_through_reach[state]
+                s, number_of_state_users = self.state_assessment_as_str(state)
+                number_of_active_users_through_reach += number_of_state_users
+                print(s)
             except KeyError:
-                users = []
-
-            state_through_reach_cu_avg = 0
-            for user in users:
-                avg_cu = user.avg_cu()
-                state_through_reach_cu_avg += avg_cu
-
-            percent = state_through_reach_cu_avg / self.through_reach_cu_avg
-            state_assessment = self.loss * percent
-            print('\t'+state+'   ', number_as_str(len(users)), af_as_str(state_through_reach_cu_avg),
-                  percent_as_str(percent), af_as_str(state_assessment))
-            number_of_active_users_through_reach += len(users)
+                print('\t' + state + '   ')
 
         print('\tTotal', number_as_str(number_of_active_users_through_reach), af_as_str(self.through_reach_cu_avg),
               percent_as_str(1.0), af_as_str(self.loss))
 
-        # For state assessment need:
-        #   state_through_reach_cu_avg
-        #   self.through_reach_cu_avg
-        #   state_assessment
-        # For user assessment
-        #   3 yr avg user annual cu
-        #   factor = user avg cu / state avg cu
-        #   annual assessment = 3 yr avg user annual cu * factor
+    @staticmethod
+    def user_as_str(user, print_cu=False, print_state=False):
+        s = '\t'
+        if print_state:
+            s += user.state
+        s += ' ' + '{0: <30}'.format(user.name)
+        if print_cu:
+            s += annual_as_str(user.cu_for_years)
+        s += af_as_str(user.avg_cu())
+        return s
 
-        print('  Active users in reach')
-        users_in_reach_by_state = self.users_in_reach_by_state()
-        active_users_in_reach = 0
-        for state in self.states:
-            users_in_state = users_in_reach_by_state.get(state)
-            if users_in_state is None:
-                users_in_state = []
-            print('\t'+state+'   ', number_as_str(len(users_in_state)))
-            active_users_in_reach += len(users_in_state)
-        print('\tTotal', number_as_str(active_users_in_reach))
-
-        # FIXME Sort by CU
-        # def get_year(element):
-        #     return element['year']
-        #
-        # programming_languages.sort(key=get_year)
-        if len(self.active_users_in_reach):
-            print('  Active users in reach: ', len(self.active_users_in_reach))
-            for user in self.active_users_in_reach:
-                print('\t', user.state, ' ', '{0: <30}'.format(user.name), annual_as_str(user.cu_for_years),
-                      af_as_str(user.avg_cu()))
-        else:
-            print("No consumptive use in reach")

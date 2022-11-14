@@ -41,8 +41,8 @@ class State(object):
 
         states[abbreviation] = self
 
-    def user(self, module, name):
-        user = User(module, name, self.abbreviation)
+    def user(self, module, name, example=False):
+        user = User(module, name, self.abbreviation, example=example)
         self.users[name] = user
         return user
 

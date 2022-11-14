@@ -25,12 +25,13 @@ from source import usbr_report
 
 
 class User(object):
-    def __init__(self, module, name, state):
+    def __init__(self, module, name, state, example=False):
         self.name = name
         self.state = state
         self.diversion = None
         self.active = False
         self.cu_for_years = None
+        self.example = example
         if module:
             try:
                 self.diversion_func = getattr(module, name + '_diversion')

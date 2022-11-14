@@ -58,7 +58,7 @@ def init(az, reaches):
     r3.add_user(az.user(None,   'crystal_beach'))                    # 2016
     r3.add_user(az.user(module, 'lake_havasu'))                      # 1969
     r3.add_user(az.user(None,   'arizona_state_parks'))              # 2016
-    r3.add_user(az.user(module, 'cap'))                              # 1985
+    r3.add_user(az.user(module, 'cap', example=True))                # 1985
     r3.add_user(az.user(None,   'hillcrest'))                        # 2016
 
     r4.add_user(az.user(None,   'springs_del_sol'))                  # 2016
@@ -107,7 +107,7 @@ def init(az, reaches):
     r4.add_user(az.user(None,   'ogram_boys'))                       # 2016  ggmc
     r5.add_user(az.user(module, 'fort_yuma'))                        # 1984  pumped
     r5.add_user(az.user(None,   'armon_curtis'))                     # 2016  pumped
-    r4.add_user(az.user(module, 'yuma_county_wua'))                  # 1964  imperial, pumped
+    r4.add_user(az.user(module, 'yuma_county_wua', example=True))    # 1964  imperial, pumped
     r5.add_user(az.user(None,   'r_griffin'))                        # 2016  pumped
     r5.add_user(az.user(None,   'power'))                            # 2016  pumped
     # r5.add_user(az.user(None,   'cocopah_ppr_7'))                    # 2018  pumped in "cocopah

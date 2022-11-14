@@ -51,7 +51,7 @@ def init(ca, reaches):
     r3.add_user(ca.user(None, 'ppr_38_andrade'))                # 2020
     r3.add_user(ca.user(None, 'ppr_40_cooper'))                 # 2021
     r3.add_user(ca.user(module, 'chemehuevi'))                  # 1996
-    r3.add_user(ca.user(module, 'metropolitan'))                # 1964
+    r3.add_user(ca.user(module, 'metropolitan', example=True))  # 1964
     r3.add_user(ca.user(None, 'bureau_of_reclamation_parker'))  # 2017
 
     r3a.add_user(ca.user(module, 'crit'))                        # 1973
@@ -64,7 +64,7 @@ def init(ca, reaches):
     r4.add_user(ca.user(None, 'fort_yuma'))                     # 2016
     r4.add_user(ca.user(None, 'yuma_island'))                   # 2016
     r4.add_user(ca.user(module, 'winterhaven'))                 # FIXME
-    r4.add_user(ca.user(module, 'imperial'))                    # 1964
+    r4.add_user(ca.user(module, 'imperial', example=True))      # 1964
     r4.add_user(ca.user(None, 'coachella'))                     # 1964
 
     # FIXME, getting reaches out of this before 2016 will be complicated

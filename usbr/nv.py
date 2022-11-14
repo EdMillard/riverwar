@@ -36,7 +36,7 @@ def init(nv, reaches):
     r1.add_user(nv.user(module, 'bureau_of_reclamation'))  # aka Boulder Canyon Project and Hoover Dam
     r1.add_user(nv.user(module, 'boulder_city'))
     r1.add_user(nv.user(module, 'lake_mead_national'))
-    r1.add_user(nv.user(module, 'snwa_griffith'))
+    r1.add_user(nv.user(module, 'snwa_griffith', example=True))
     r1.add_user(nv.user(module, 'basic'))
     r1.add_user(nv.user(module, 'city_of_henderson'))
     r1.add_user(nv.user(module, 'nevada_dept_of_wildlife'))

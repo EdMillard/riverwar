@@ -22,7 +22,7 @@ SOFTWARE.
 from source import usbr_report
 from graph.water import WaterGraph
 from source import usbr_rise
-from rw.util import reshape_annual_range, add_annuals, subtract_annual, annual_as_str
+from rw.util import number_as_str, af_as_str, reshape_annual_range, add_annuals, subtract_annual, annual_as_str
 import usgs
 from rw.state import State
 from rw.lake import Lake
@@ -46,8 +46,8 @@ def initialize(water_year_month=1):
                     lake_mead_evap,
                     lake_mohave_evap,
                     lake_havasu_evap + reach_3_corridor_loss,
-                    0,  # Rock
-                    0,  # Palo Verde
+                    # 0,  # Rock
+                    # 0,  # Palo Verde
                     reach_4_corridor_loss,
                     reach_5_corridor_loss]
 
@@ -65,8 +65,8 @@ def initialize(water_year_month=1):
                usbr.lc.Reach1(powell, mead, water_year_month),
                usbr.lc.Reach2(mead, mohave, water_year_month),
                usbr.lc.Reach3(mohave, havasu, water_year_month),
-               usbr.lc.Reach3a(havasu, rock_dam, water_year_month),
-               usbr.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
+               # usbr.lc.Reach3a(havasu, rock_dam, water_year_month),
+               # usbr.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
                usbr.lc.Reach4(palo_verde_dam, imperial_dam, water_year_month),
                usbr.lc.Reach5(imperial_dam, morelos, water_year_month)
                ]
@@ -87,20 +87,74 @@ def model(reaches, year_begin, year_end):
     model_active_users_through_reach(reaches)
 
     for i in range(1, len(reaches)):
-        reach = reaches[i]
-        reach.compute_through_reach_cu_avg()
+        reaches[i].compute_through_reach_cu_avg()
+
+    for i in range(1, len(reaches)):
+        reaches[i].compute_state_assessment()
 
     print_loss_table(reaches)
 
-    for i in range(1, len(reaches)):
-        reach = reaches[i]
-        reach.print_model()
+    # for i in range(1, len(reaches)):
+    #     reaches[i].print_model()
 
     for i in range(1, len(reaches)):
-        reach = reaches[i]
-        reach.print_users()
+        reaches[i].print_state_assessments()
+
+    print_users(reaches)
 
     print()
+
+
+def print_users(reaches):
+    for i in range(1, len(reaches)):
+        reach = reaches[i]
+        print('\n--- ' + reach.name + ' ---')
+        # For state assessment need:
+        #   state_through_reach_cu_avg
+        #   reach.through_reach_cu_avg
+        #   state_assessment
+        # For user assessment
+        #   3 yr avg user annual cu
+        #   factor = user avg cu / state avg cu
+        #   annual assessment = 3 yr avg user annual cu * factor
+        users_in_reach_by_state = reach.users_in_reach_by_state()
+        active_users_in_reach = 0
+        for state in reach.states:
+            users_in_state = users_in_reach_by_state.get(state)
+            if users_in_state is None:
+                users_in_state = []
+            # print('\t'+state+'   ', number_as_str(len(users_in_state)))
+            active_users_in_reach += len(users_in_state)
+            for user in users_in_state:
+                if user.example:
+                    user_str = reach.user_as_str(user)
+                    total_assessment = 0
+                    for n in range(1, i+1):
+                        state_assessment_reach = reaches[n]
+                        s, num_users = state_assessment_reach.state_assessment_as_str(state, print_num_users=False)
+                        state_dictionary = state_assessment_reach.state_assessment[state]
+                        state_cu_avg = state_dictionary['cu_avg']
+                        factor = user.avg_cu() / state_cu_avg
+                        state_assessment = state_dictionary['assessment']
+                        user_assessment = state_assessment * factor
+                        print(state_assessment_reach.name + ' ' + number_as_str(reach.loss) + ' ' + s + ' ' +
+                              user_str + ' ' + "{:6.4f}".format(factor) + af_as_str(user_assessment))
+                        total_assessment += user_assessment
+                    print('{0: >122}'.format('Total' + af_as_str(total_assessment)))
+                    print()
+        # print('\tTotal', number_as_str(active_users_in_reach))
+
+        # FIXME Sort by CU
+        # def get_year(element):
+        #     return element['year']
+        #
+        # programming_languages.sort(key=get_year)
+        # if len(reach.active_users_in_reach):
+        #     print('  Active users in reach: ', len(reach.active_users_in_reach))
+        #     for user in reach.active_users_in_reach:
+        #         reach.print_user(user)
+        # else:
+        #      print("No consumptive use in reach")
 
 
 def print_loss_table(reaches):
