@@ -25,6 +25,21 @@ from rw.util import subtract_annual, reshape_annual_range
 current_last_year = 2021
 
 
+def reach_index_for_name(reaches, name):
+    n = 0
+    for reach in reaches:
+        if reach.name == name:
+            return n
+        n += 1
+    return None
+
+
+def reach_for_name(reaches, name):
+    for reach in reaches:
+        if reach.name == name:
+            return reach
+    return None
+
 def state_total_vs_user_total_graph(state_abbreviation, data, y_formatter='maf'):
     year_interval = 3
     graph = WaterGraph(nrows=2)
