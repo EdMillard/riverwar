@@ -30,6 +30,8 @@ from matplotlib.dates import YearLocator
 # gridspec to resize subplots
 # https://www.geeksforgeeks.org/how-to-create-different-subplot-sizes-in-matplotlib/
 
+debug = False
+
 
 class WaterGraph(object):
     """
@@ -408,8 +410,7 @@ class WaterGraph(object):
         return a
 
     @staticmethod
-    def daily_to_water_year(a):
-        water_year_month = 10
+    def daily_to_water_year(a, water_year_month=10):
         dt = datetime.date(1, water_year_month, 1)
         total = 0
         result = []
@@ -428,7 +429,7 @@ class WaterGraph(object):
 
             if not np.isnan(o['val']):
                 total += o['val']
-            else:
+            elif debug:
                 print('daily_to_water_year not a number:', o)
 
         if total > 0:
