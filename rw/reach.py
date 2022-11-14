@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from rw.util import af_as_str, number_as_str, percent_as_str
+from rw.util import af_as_str, number_as_str, percent_as_str, right_justified
 from rw.util import subtract_annual, subtract_vector_from_annual, annual_as_str, vector_as_str
 
 
@@ -182,17 +182,22 @@ class Reach(object):
         print('{0: <28}'.format('    storage delta '), vector_as_str(self.storage_delta))
         print()
 
-    def state_assessment_as_str(self, state, print_num_users=True):
+    def state_assessment_as_str(self, state, print_num_users=True, print_percent=True, print_reach_cu=False):
         s = '\t'
         number_of_active_users_through_reach = 0
         try:
             state_assessment = self.state_assessment[state]
             users = state_assessment['users']
-            s += state
+            s += state + '    '  # Pad to match 'Total'
             if print_num_users:
                 s += number_as_str(len(users))
             s += af_as_str(state_assessment['cu_avg'])
-            s += percent_as_str(state_assessment['percent'])
+            if print_reach_cu:
+                s += af_as_str(self.through_reach_cu_avg)
+            if print_percent:
+                s += ' '
+                s += percent_as_str(state_assessment['percent'])
+                s += ' '
             s += af_as_str(state_assessment['assessment'])
             number_of_active_users_through_reach = len(users)
         except KeyError:
@@ -210,7 +215,7 @@ class Reach(object):
             except KeyError:
                 print('\t' + state + '   ')
 
-        print('\tTotal', number_as_str(number_of_active_users_through_reach), af_as_str(self.through_reach_cu_avg),
+        print('\tTotal', number_as_str(number_of_active_users_through_reach) + af_as_str(self.through_reach_cu_avg),
               percent_as_str(1.0), af_as_str(self.loss))
 
     @staticmethod
@@ -218,9 +223,8 @@ class Reach(object):
         s = '\t'
         if print_state:
             s += user.state
-        s += ' ' + '{0: <30}'.format(user.name)
+        s += right_justified(user.name, 40)
         if print_cu:
             s += annual_as_str(user.cu_for_years)
         s += af_as_str(user.avg_cu())
         return s
-

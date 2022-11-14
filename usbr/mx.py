@@ -26,13 +26,13 @@ from graph.water import WaterGraph
 from rw.lake import Lake
 import usgs
 from usbr import lc, util
-from rw.util import add_annual, subtract_annual
+from rw.util import subtract_annual
 
 
 def init(mx, reaches):
     module = modules[__name__]
     r5 = util.reach_for_name(reaches, 'Reach5')
-    r5.add_user(mx.user(module, 'mexico'))
+    r5.add_user(mx.user(module, 'mexico', example=True))
 
 
 def test():

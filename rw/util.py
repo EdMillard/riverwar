@@ -136,6 +136,12 @@ def number_as_str(number):
     return s
 
 
+def right_justified(s, width):
+    format_str = '{:>' + str(width) + '}'
+    s = format_str.format(s)
+    return s
+
+
 def percent_as_str(percent):
     s = "{:5.1f}".format(percent*100)
     s += '%'

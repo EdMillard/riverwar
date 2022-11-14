@@ -24,7 +24,7 @@ from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from usbr import lc, util
-from rw.util import subtract_annual, reshape_annual_range_to
+from rw.util import subtract_annual, add_annuals, reshape_annual_range_to
 from rw import state
 
 current_last_year = 2021
@@ -33,35 +33,35 @@ current_last_year = 2021
 def init(nv, reaches):
     module = modules[__name__]
     r1 = util.reach_for_name(reaches, 'Reach1')
-    r1.add_user(nv.user(module, 'bureau_of_reclamation'))  # aka Boulder Canyon Project and Hoover Dam
-    r1.add_user(nv.user(module, 'boulder_city'))
-    r1.add_user(nv.user(module, 'lake_mead_national'))
-    r1.add_user(nv.user(module, 'snwa_griffith', example=True))
-    r1.add_user(nv.user(module, 'basic'))
-    r1.add_user(nv.user(module, 'city_of_henderson'))
-    r1.add_user(nv.user(module, 'nevada_dept_of_wildlife'))
-    r1.add_user(nv.user(module, 'las_vegas_valley'))
-    r1.add_user(nv.user(module, 'north_las_vegas'))
-    r1.add_user(nv.user(module, 'nellis'))
-    r1.add_user(nv.user(module, 'pacific_coast'))
-    r1.add_user(nv.user(module, 'socal_edison'))
+    r1.add_user(nv.user(None, 'bureau_of_reclamation'))             # 1985-      aka Boulder Canyon Project and Hoover
+    r1.add_user(nv.user(module, 'boulder_city'))                    # 1964-1983
+    r1.add_user(nv.user(None, 'lake_mead_national'))                # 1964-
+    r1.add_user(nv.user(module, 'snwa_griffith', example=True))     # 1984-
+    r1.add_user(nv.user(module, 'basic'))                           # 1964-
+    r1.add_user(nv.user(module, 'city_of_henderson'))               # 1972-
+    r1.add_user(nv.user(None, 'nevada_dept_of_wildlife'))           # 1973-
+    r1.add_user(nv.user(module, 'las_vegas_valley'))                # 1964-1983
+    r1.add_user(nv.user(module, 'north_las_vegas'))                 # 1971-1983
+    r1.add_user(nv.user(module, 'nellis'))                          # 1971-2002
+    r1.add_user(nv.user(module, 'pacific_coast'))                   # 1964-
+    r1.add_user(nv.user(module, 'socal_edison'))                    # 1967-2011
 
     r2 = util.reach_for_name(reaches, 'Reach2')
-    r2.add_user(nv.user(module, 'lake_mead_national_lake_mohave'))
+    r2.add_user(nv.user(None, 'lake_mead_national_lake_mohave'))    # 1993-
 
     r3 = util.reach_for_name(reaches, 'Reach3')
-    r3.add_user(nv.user(module, 'big_bend'))
-    r3.add_user(nv.user(module, 'fort_mojave_indian'))
+    r3.add_user(nv.user(None, 'big_bend'))                          # 1984-
+    r3.add_user(nv.user(module, 'fort_mojave_indian'))              # 1996-
 
 
 def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 0, 'y_max': 550000, 'y_interval': 50000},
         {'data': user_total_diversion()},
-        {'y_min': -100, 'y_max': 1400, 'y_interval': 100},
+        {'y_min': -50, 'y_max': 200, 'y_interval': 50},
         {'data': state_total_cu(), 'y_min': 0, 'y_max': 350000, 'y_interval': 50000},
         {'data': user_total_cu()},
-        {'y_min': -2000, 'y_max': 7000, 'y_interval': 1000},
+        {'y_min': -50, 'y_max': 200, 'y_interval': 100},
     ]
     util.state_total_vs_user_total_graph('NV', data, y_formatter='kaf')
     total()
@@ -138,18 +138,6 @@ def snwa_griffith_returns():
     return reshape_annual_range_to(las_vegas_wash_returns, snwa_griffith_diversion())
 
 
-def lake_mead_national_diversion():
-    return usbr_report.annual_af('nv/usbr_nv_lake_mead_national_diversion.csv')
-
-
-def lake_mead_national_cu():
-    return lake_mead_national_diversion()
-
-
-def lake_mead_national_returns():
-    return subtract_annual(lake_mead_national_diversion(), lake_mead_national_cu())
-
-
 def lake_mead_national_lake_mohave_diversion():
     return usbr_report.annual_af('nv/usbr_nv_lake_mead_national_lake_mohave_diversion.csv')
 
@@ -206,7 +194,7 @@ def pacific_coast_diversion():
 
 
 def pacific_coast_cu():
-    return lake_mead_national_diversion()
+    return pacific_coast_diversion()
 
 
 def pacific_coast_returns():
@@ -223,18 +211,6 @@ def basic_cu():
 
 def basic_returns():
     return subtract_annual(basic_diversion(), basic_cu())
-
-
-def big_bend_diversion():
-    return usbr_report.annual_af('nv/usbr_nv_big_bend_diversion.csv')
-
-
-def big_bend_cu():
-    return usbr_report.annual_af('nv/usbr_nv_big_bend_consumptive_use.csv')
-
-
-def big_bend_returns():
-    return subtract_annual(big_bend_diversion(), big_bend_cu())
 
 
 def socal_edison_diversion():
@@ -275,20 +251,10 @@ def nellis_returns():
     return subtract_annual(nellis_diversion(), nellis_cu())
 
 
-def bureau_of_reclamation_diversion():
-    return usbr_report.annual_af('nv/usbr_nv_bureau_of_reclamation_diversion.csv')
-
-
-def bureau_of_reclamation_cu():
-    return usbr_report.annual_af('nv/usbr_nv_bureau_of_reclamation_consumptive_use.csv')
-
-
-def bureau_of_reclamation_returns():
-    return subtract_annual(bureau_of_reclamation_diversion(), bureau_of_reclamation_cu())
-
-
 def fort_mojave_indian_diversion():
-    return usbr_report.annual_af('nv/usbr_nv_fort_mojave_indian_diversion.csv')
+    ag = usbr_report.annual_af('nv/usbr_nv_fort_mojave_indian_diversion.csv')
+    domestic = usbr_report.annual_af('nv/usbr_nv_fort_mojave_indian_domestic_diversion.csv')
+    return add_annuals([ag, domestic])
 
 
 def fort_mojave_indian_cu():
@@ -297,18 +263,6 @@ def fort_mojave_indian_cu():
 
 def fort_mojave_indian_returns():
     return subtract_annual(fort_mojave_indian_diversion(), fort_mojave_indian_cu())
-
-
-def nevada_dept_of_wildlife_diversion():
-    return usbr_report.annual_af('nv/usbr_nv_nevada_dept_of_wildlife_diversion.csv')
-
-
-def nevada_dept_of_wildlife_cu():
-    return usbr_report.annual_af('nv/usbr_nv_nevada_dept_of_wildlife_consumptive_use.csv')
-
-
-def nevada_dept_of_wildlife_returns():
-    return subtract_annual(nevada_dept_of_wildlife_diversion(), nevada_dept_of_wildlife_cu())
 
 
 if __name__ == '__main__':

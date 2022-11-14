@@ -64,7 +64,7 @@ def init(az, reaches):
     r4.add_user(az.user(None,   'springs_del_sol'))                  # 2016
     r4.add_user(az.user(module, 'brooke_water'))                     # 1995  EPCOR bought in 2021
     r4.add_user(az.user(None,   'town_of_parker'))                   # 1964
-    r3a.add_user(az.user(module, 'crit'))                            # 1964
+    r3a.add_user(az.user(module, 'crit', example=True))              # 1964
     r4.add_user(az.user(None,   'gabrych'))                          # 2018
     r4.add_user(az.user(None,   'ehrenberg'))                        # 2019
     r4.add_user(az.user(None,   'b_and_f_investment'))               # 2020
@@ -88,7 +88,7 @@ def init(az, reaches):
     r5.add_user(az.user(None,   'cha_cha'))                          # 2016  pumped
     r5.add_user(az.user(None,   'beattie_farms'))                    # 2016  pumped
     r4.add_user(az.user(module, 'gila_monster'))                     # 2001  ggmc
-    r4.add_user(az.user(module, 'wellton_mohawk'))                   # 1964  ggmc
+    r4.add_user(az.user(module, 'wellton_mohawk', example=True))     # 1964  ggmc
     r4.add_user(az.user(module, 'city_of_yuma'))                     # 1964  imperial, pumped
     r4.add_user(az.user(None,   'marine_corp'))                      # 1983  imperial
     r4.add_user(az.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
@@ -100,7 +100,7 @@ def init(az, reaches):
     r4.add_user(az.user(None,   'desert_lawn'))                      # 1984  from city of yuma
     r4.add_user(az.user(module, 'north_gila_irrigation'))            # 1964  ggmc, pumped
     r4.add_user(az.user(module, 'yuma_irrigation'))                  # 1965  imperial, pumped
-    r4.add_user(az.user(module, 'yuma_mesa'))                        # 1964  ggmc
+    r4.add_user(az.user(module, 'yuma_mesa', example=True))          # 1964  ggmc
     r4.add_user(az.user(module, 'unit_b'))                           # 1964  ggmc
     r5.add_user(az.user(module, 'arizona_state_land'))               # 2013  pumped
     r4.add_user(az.user(None,   'ott_family'))                       # 2018  ggmc

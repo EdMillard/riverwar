@@ -22,7 +22,7 @@ SOFTWARE.
 from source import usbr_report
 from graph.water import WaterGraph
 from source import usbr_rise
-from rw.util import number_as_str, af_as_str, reshape_annual_range, add_annuals, subtract_annual, annual_as_str
+from rw.util import number_as_str, af_as_str, reshape_annual_range, add_annuals, right_justified
 import usgs
 from rw.state import State
 from rw.lake import Lake
@@ -55,8 +55,8 @@ def initialize(water_year_month=1):
     mead = usbr.lc.LakeMead(water_year_month)
     mohave = usbr.lc.LakeMohave(water_year_month)
     havasu = usbr.lc.LakeHavasu(water_year_month)
-    rock_dam = usbr.lc.RockDam(water_year_month)
-    palo_verde_dam = usbr.lc.PaloVerdeDam(water_year_month)
+    # rock_dam = usbr.lc.RockDam(water_year_month)
+    # palo_verde_dam = usbr.lc.PaloVerdeDam(water_year_month)
     imperial_dam = usbr.lc.ImperialDam(water_year_month)
     # laguna_dam = Dam('laguna_dam', usbr.lc)
     morelos = usbr.mx.Morelos(water_year_month)
@@ -67,7 +67,7 @@ def initialize(water_year_month=1):
                usbr.lc.Reach3(mohave, havasu, water_year_month),
                # usbr.lc.Reach3a(havasu, rock_dam, water_year_month),
                # usbr.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
-               usbr.lc.Reach4(palo_verde_dam, imperial_dam, water_year_month),
+               usbr.lc.Reach4(havasu, imperial_dam, water_year_month),
                usbr.lc.Reach5(imperial_dam, morelos, water_year_month)
                ]
     for reach_number in range(0, len(reaches)):
@@ -105,10 +105,27 @@ def model(reaches, year_begin, year_end):
     print()
 
 
+def reach_has_example_user(reach):
+    users_in_reach_by_state = reach.users_in_reach_by_state()
+    for state in reach.states:
+        users_in_state = users_in_reach_by_state.get(state)
+        if users_in_state is None:
+            users_in_state = []
+        for user in users_in_state:
+            if user.example:
+                return True
+    return False
+
+
 def print_users(reaches):
+    print()
     for i in range(1, len(reaches)):
         reach = reaches[i]
-        print('\n--- ' + reach.name + ' ---')
+        if not reach_has_example_user(reach):
+            continue
+        # print(reach.name + ' ' + af_as_str(reach.loss))
+        print('        | Reach Loss |  State  |  State CU |  Reach CU | State Assessment |' +
+              right_justified('User Name', 33) + ' | User CU  | Factor | Annual Assessment')
         # For state assessment need:
         #   state_through_reach_cu_avg
         #   reach.through_reach_cu_avg
@@ -125,23 +142,26 @@ def print_users(reaches):
                 users_in_state = []
             # print('\t'+state+'   ', number_as_str(len(users_in_state)))
             active_users_in_reach += len(users_in_state)
+
             for user in users_in_state:
                 if user.example:
                     user_str = reach.user_as_str(user)
                     total_assessment = 0
                     for n in range(1, i+1):
                         state_assessment_reach = reaches[n]
-                        s, num_users = state_assessment_reach.state_assessment_as_str(state, print_num_users=False)
+                        s, num_users = state_assessment_reach.state_assessment_as_str(state,
+                                                                                      print_num_users=False,
+                                                                                      print_percent=False,
+                                                                                      print_reach_cu=True)
                         state_dictionary = state_assessment_reach.state_assessment[state]
                         state_cu_avg = state_dictionary['cu_avg']
                         factor = user.avg_cu() / state_cu_avg
                         state_assessment = state_dictionary['assessment']
                         user_assessment = state_assessment * factor
-                        print(state_assessment_reach.name + ' ' + number_as_str(reach.loss) + ' ' + s + ' ' +
-                              user_str + ' ' + "{:6.4f}".format(factor) + af_as_str(user_assessment))
+                        print(state_assessment_reach.name + ' ' + number_as_str(state_assessment_reach.loss) + ' ' + s +
+                              ' ' + user_str + '  ' + "{:6.4f}".format(factor) + af_as_str(user_assessment))
                         total_assessment += user_assessment
-                    print('{0: >122}'.format('Total' + af_as_str(total_assessment)))
-                    print()
+                    print('{0: >140}'.format('Total' + af_as_str(total_assessment)))
         # print('\tTotal', number_as_str(active_users_in_reach))
 
         # FIXME Sort by CU
@@ -158,15 +178,15 @@ def print_users(reaches):
 
 
 def print_loss_table(reaches):
+    print('Reach Assessments (from CRSS vi SNWA)')
     total = 0
     for i in range(1, len(reaches)):
         reach = reaches[i]
-        print('\t' + reach.name + '\t',
-              # annual_as_str(reach.loss_evaporation), '+',
-              # annual_as_str(reach.loss_corridor), '=',
-              reach.loss)
+        print('\t' + reach.name + right_justified(reach.upper_lake.name, 15) +
+              right_justified(reach.lower_lake.name, 15) +
+              af_as_str(reach.loss))
         total += reach.loss
-    print('total loss: ', total)
+    print(right_justified('total:', 39), af_as_str(total))
 
 
 def model_active_users_through_reach(reaches):
@@ -291,12 +311,12 @@ def lake_mead_release(year_begin, year_end, water_year_month):
     annual_af = usbr_report.annual_af('releases/usbr_releases_hoover_dam.csv', water_year_month=water_year_month)
     ar_release = reshape_annual_range(annual_af, year_begin, year_end)
 
-    usbr_lake_mead_release_total_af = 6122
-    info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
-    annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=water_year_month)
-    rise_release = reshape_annual_range(annual_release_af, year_begin, year_end)
-    diff = subtract_annual(ar_release, rise_release)
-    print('ar vs rise lake mead release', annual_as_str(diff))
+    # usbr_lake_mead_release_total_af = 6122
+    # info, daily_release_af = usbr_rise.load(usbr_lake_mead_release_total_af)
+    # annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=water_year_month)
+    # rise_release = reshape_annual_range(annual_release_af, year_begin, year_end)
+    # diff = subtract_annual(ar_release, rise_release)
+    # print('ar vs rise lake mead release', annual_as_str(diff))
     return ar_release
 
 
@@ -365,13 +385,13 @@ def lake_mohave_release(year_begin, year_end, water_year_month):
     annual_af = usbr_report.annual_af('releases/usbr_releases_davis_dam.csv', water_year_month=water_year_month)
     ar_release = reshape_annual_range(annual_af, year_begin, year_end)
 
-    usbr_lake_mohave_release_total_af = 6131
-    info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
-    annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=water_year_month)
-    rise_release = reshape_annual_range(annual_release_af, year_begin, year_end)
+    # usbr_lake_mohave_release_total_af = 6131
+    # info, daily_release_af = usbr_rise.load(usbr_lake_mohave_release_total_af)
+    # annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=water_year_month)
+    # rise_release = reshape_annual_range(annual_release_af, year_begin, year_end)
 
-    diff = subtract_annual(ar_release, rise_release)
-    print('ar vs rise lake mohave release', annual_as_str(diff))
+    # diff = subtract_annual(ar_release, rise_release)
+    # print('ar vs rise lake mohave release', annual_as_str(diff))
     return ar_release
 
 
@@ -413,8 +433,8 @@ def lake_havasu_release(year_begin, year_end, water_year_month):
     annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=water_year_month)
     rise_release = reshape_annual_range(annual_release_af, year_begin, year_end)
 
-    diff = subtract_annual(ar_release, rise_release)
-    print('ar vs rise lake havasu release', annual_as_str(diff))
+    # diff = subtract_annual(ar_release, rise_release)
+    # print('ar vs rise lake havasu release', annual_as_str(diff))
     return ar_release
 
 

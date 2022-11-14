@@ -28,7 +28,7 @@ class User(object):
     def __init__(self, module, name, state, example=False):
         self.name = name
         self.state = state
-        self.diversion = None
+        #self.diversion = None
         self.active = False
         self.cu_for_years = None
         self.example = example

@@ -54,10 +54,10 @@ def init(ca, reaches):
     r3.add_user(ca.user(module, 'metropolitan', example=True))  # 1964
     r3.add_user(ca.user(None, 'bureau_of_reclamation_parker'))  # 2017
 
-    r3a.add_user(ca.user(module, 'crit'))                        # 1973
-    r3b.add_user(ca.user(module, 'city_of_blythe'))              # 1964-1978
-    r3b.add_user(ca.user(module, 'east_blythe'))                 # 1965-1977
-    r3b.add_user(ca.user(module, 'palo_verde'))                  # 1964
+    r3a.add_user(ca.user(module, 'crit'))                       # 1973
+    r3b.add_user(ca.user(module, 'city_of_blythe'))             # 1964-1978
+    r3b.add_user(ca.user(module, 'east_blythe'))                # 1965-1977
+    r3b.add_user(ca.user(module, 'palo_verde', example=True))   # 1964
     r4.add_user(ca.user(None, 'lake_enterprises'))              # 2016
     r4.add_user(ca.user(None, 'bureau_of_land_management'))     # 2016
     r4.add_user(ca.user(module, 'yuma_project'))                # 1964
