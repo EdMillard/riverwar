@@ -32,23 +32,26 @@ current_last_year = 2021
 
 def init(nv, reaches):
     module = modules[__name__]
-    reaches[1].add_user(nv.user(module, 'bureau_of_reclamation'))  # aka Boulder Canyon Project and Hoover Dam
-    reaches[1].add_user(nv.user(module, 'boulder_city'))
-    reaches[1].add_user(nv.user(module, 'lake_mead_national'))
-    reaches[1].add_user(nv.user(module, 'snwa_griffith'))
-    reaches[1].add_user(nv.user(module, 'basic'))
-    reaches[1].add_user(nv.user(module, 'city_of_henderson'))
-    reaches[1].add_user(nv.user(module, 'nevada_dept_of_wildlife'))
-    reaches[1].add_user(nv.user(module, 'las_vegas_valley'))
-    reaches[1].add_user(nv.user(module, 'north_las_vegas'))
-    reaches[1].add_user(nv.user(module, 'nellis'))
-    reaches[1].add_user(nv.user(module, 'pacific_coast'))
-    reaches[1].add_user(nv.user(module, 'socal_edison'))
+    r1 = util.reach_for_name(reaches, 'Reach1')
+    r1.add_user(nv.user(module, 'bureau_of_reclamation'))  # aka Boulder Canyon Project and Hoover Dam
+    r1.add_user(nv.user(module, 'boulder_city'))
+    r1.add_user(nv.user(module, 'lake_mead_national'))
+    r1.add_user(nv.user(module, 'snwa_griffith'))
+    r1.add_user(nv.user(module, 'basic'))
+    r1.add_user(nv.user(module, 'city_of_henderson'))
+    r1.add_user(nv.user(module, 'nevada_dept_of_wildlife'))
+    r1.add_user(nv.user(module, 'las_vegas_valley'))
+    r1.add_user(nv.user(module, 'north_las_vegas'))
+    r1.add_user(nv.user(module, 'nellis'))
+    r1.add_user(nv.user(module, 'pacific_coast'))
+    r1.add_user(nv.user(module, 'socal_edison'))
 
-    reaches[2].add_user(nv.user(module, 'lake_mead_national_lake_mohave'))
+    r2 = util.reach_for_name(reaches, 'Reach2')
+    r2.add_user(nv.user(module, 'lake_mead_national_lake_mohave'))
 
-    reaches[3].add_user(nv.user(module, 'big_bend'))
-    reaches[3].add_user(nv.user(module, 'fort_mojave_indian'))
+    r3 = util.reach_for_name(reaches, 'Reach3')
+    r3.add_user(nv.user(module, 'big_bend'))
+    r3.add_user(nv.user(module, 'fort_mojave_indian'))
 
 
 def test():

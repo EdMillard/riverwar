@@ -32,35 +32,40 @@ current_last_year = 2021
 
 def init(ca, reaches):
     module = modules[__name__]
-    reaches[3].add_user(ca.user(module, 'fort_mojave'))                 # 1999
-    reaches[3].add_user(ca.user(None, 'city_of_needles'))               # 1964
-    reaches[3].add_user(ca.user(None, 'southern_california_gas'))       # 2016
-    reaches[3].add_user(ca.user(None, 'pacific_gas'))                   # 2016
-    reaches[3].add_user(ca.user(None, 'havasu_water'))                  # 2016
-    reaches[3].add_user(ca.user(None, 'vista_del_lago'))                # 2016
-    reaches[3].add_user(ca.user(None, 'non_federal_subcontractors'))    # 2016
-    reaches[3].add_user(ca.user(None, 'wetmore_mark'))                  # 2016-2019
-    reaches[3].add_user(ca.user(None, 'williams_jerry'))                # 2016-2019
-    reaches[3].add_user(ca.user(None, 'wetmore_kenneth'))               # 2016-2019
-    reaches[3].add_user(ca.user(None, 'ppr_30_stephenson'))             # 2020
-    reaches[3].add_user(ca.user(None, 'ppr_38_andrade'))                # 2020
-    reaches[3].add_user(ca.user(None, 'ppr_40_cooper'))                 # 2021
-    reaches[3].add_user(ca.user(module, 'chemehuevi'))                  # 1996
-    reaches[3].add_user(ca.user(module, 'metropolitan'))                # 1964
-    reaches[3].add_user(ca.user(None, 'bureau_of_reclamation_parker'))  # 2017
+    r3 = util.reach_for_name(reaches, 'Reach3')
+    r3a = util.reach_for_name(reaches, 'Reach4')
+    r3b = util.reach_for_name(reaches, 'Reach4')
+    r4 = util.reach_for_name(reaches, 'Reach4')
 
-    reaches[4].add_user(ca.user(module, 'crit'))                        # 1973
-    reaches[4].add_user(ca.user(module, 'city_of_blythe'))              # 1964-1978
-    reaches[4].add_user(ca.user(module, 'east_blythe'))                 # 1965-1977
-    reaches[4].add_user(ca.user(module, 'palo_verde'))                  # 1964
-    reaches[4].add_user(ca.user(None, 'lake_enterprises'))              # 2016
-    reaches[4].add_user(ca.user(None, 'bureau_of_land_management'))     # 2016
-    reaches[4].add_user(ca.user(module, 'yuma_project'))                # 1964
-    reaches[4].add_user(ca.user(None, 'fort_yuma'))                     # 2016
-    reaches[4].add_user(ca.user(None, 'yuma_island'))                   # 2016
-    reaches[4].add_user(ca.user(module, 'winterhaven'))                 # FIXME
-    reaches[4].add_user(ca.user(module, 'imperial'))                    # 1964
-    reaches[4].add_user(ca.user(None, 'coachella'))                     # 1964
+    r3.add_user(ca.user(module, 'fort_mojave'))                 # 1999
+    r3.add_user(ca.user(None, 'city_of_needles'))               # 1964
+    r3.add_user(ca.user(None, 'southern_california_gas'))       # 2016
+    r3.add_user(ca.user(None, 'pacific_gas'))                   # 2016
+    r3.add_user(ca.user(None, 'havasu_water'))                  # 2016
+    r3.add_user(ca.user(None, 'vista_del_lago'))                # 2016
+    r3.add_user(ca.user(None, 'non_federal_subcontractors'))    # 2016
+    r3.add_user(ca.user(None, 'wetmore_mark'))                  # 2016-2019
+    r3.add_user(ca.user(None, 'williams_jerry'))                # 2016-2019
+    r3.add_user(ca.user(None, 'wetmore_kenneth'))               # 2016-2019
+    r3.add_user(ca.user(None, 'ppr_30_stephenson'))             # 2020
+    r3.add_user(ca.user(None, 'ppr_38_andrade'))                # 2020
+    r3.add_user(ca.user(None, 'ppr_40_cooper'))                 # 2021
+    r3.add_user(ca.user(module, 'chemehuevi'))                  # 1996
+    r3.add_user(ca.user(module, 'metropolitan'))                # 1964
+    r3.add_user(ca.user(None, 'bureau_of_reclamation_parker'))  # 2017
+
+    r3a.add_user(ca.user(module, 'crit'))                        # 1973
+    r3b.add_user(ca.user(module, 'city_of_blythe'))              # 1964-1978
+    r3b.add_user(ca.user(module, 'east_blythe'))                 # 1965-1977
+    r3b.add_user(ca.user(module, 'palo_verde'))                  # 1964
+    r4.add_user(ca.user(None, 'lake_enterprises'))              # 2016
+    r4.add_user(ca.user(None, 'bureau_of_land_management'))     # 2016
+    r4.add_user(ca.user(module, 'yuma_project'))                # 1964
+    r4.add_user(ca.user(None, 'fort_yuma'))                     # 2016
+    r4.add_user(ca.user(None, 'yuma_island'))                   # 2016
+    r4.add_user(ca.user(module, 'winterhaven'))                 # FIXME
+    r4.add_user(ca.user(module, 'imperial'))                    # 1964
+    r4.add_user(ca.user(None, 'coachella'))                     # 1964
 
     # FIXME, getting reaches out of this before 2016 will be complicated
     ca.user(None, 'other_users_pumping')

@@ -32,85 +32,93 @@ current_last_year = 2021
 
 def init(az, reaches):
     module = modules[__name__]
-    reaches[1].add_user(az.user(None, 'marble_canyon'))                      # 2016
-    reaches[1].add_user(az.user(None, 'lake_mead_national'))                 # 1993
 
-    reaches[2].add_user(az.user(None, 'lake_mead_national_lake_mohave'))     # 2017
-    reaches[2].add_user(az.user(None, 'mcalister'))                          # 2016
-    reaches[2].add_user(az.user(None, 'bureau_of_reclamation_davis'))        # 2014
+    r1 = util.reach_for_name(reaches, 'Reach1')
+    r2 = util.reach_for_name(reaches, 'Reach2')
+    r3 = util.reach_for_name(reaches, 'Reach3')
+    r3a = util.reach_for_name(reaches, 'Reach4')
+    r4 = util.reach_for_name(reaches, 'Reach4')
+    r5 = util.reach_for_name(reaches, 'Reach5')
 
-    reaches[3].add_user(az.user(module, 'bullhead_city'))                    # 1987
-    reaches[3].add_user(az.user(module, 'mohave_water'))                     # 1980
-    reaches[3].add_user(az.user(module, 'epcor'))                            # 2016 Bought Brooke 2021 so reaches 3 & 4
-    reaches[3].add_user(az.user(module, 'mohave_valley'))                    # 1969
-    reaches[3].add_user(az.user(None,   'mohave_county_water_authority'))    # 2005 in Cibola Valley, 2013 standalone
-    reaches[3].add_user(az.user(module, 'fort_mojave'))                      # 1975
-    reaches[3].add_user(az.user(None,   'golden_shores'))                    # 1989/2003 really
-    reaches[3].add_user(az.user(module, 'havasu_national_wildlife'))         # 1969
-    reaches[3].add_user(az.user(None,   'crystal_beach'))                    # 2016
-    reaches[3].add_user(az.user(module, 'lake_havasu'))                      # 1969
-    reaches[3].add_user(az.user(None,   'arizona_state_parks'))              # 2016
-    reaches[3].add_user(az.user(module, 'cap'))                              # 1985
-    reaches[3].add_user(az.user(None,   'hillcrest'))                        # 2016
+    r1.add_user(az.user(None, 'marble_canyon'))                      # 2016
+    r1.add_user(az.user(None, 'lake_mead_national'))                 # 1993
 
-    reaches[4].add_user(az.user(None,   'springs_del_sol'))                  # 2016
-    reaches[4].add_user(az.user(module, 'brooke_water'))                     # 1995  EPCOR bought in 2021
-    reaches[4].add_user(az.user(None,   'town_of_parker'))                   # 1964
-    reaches[4].add_user(az.user(module, 'crit'))                             # 1964
-    reaches[4].add_user(az.user(None,   'gabrych'))                          # 2018
-    reaches[4].add_user(az.user(None,   'ehrenberg'))                        # 2019
-    reaches[4].add_user(az.user(None,   'b_and_f_investment'))               # 2020
-    reaches[4].add_user(az.user(None,   'north_baja_pipeline'))              # 2016
-    reaches[4].add_user(az.user(module, 'cibola_valley'))                    # 1983
-    reaches[4].add_user(az.user(None,   'red_river'))                        # 2018
-    reaches[4].add_user(az.user(None,   'western_water'))                    # 2018
-    reaches[4].add_user(az.user(None,   'hopi'))                             # 2005 in Cibola Valley, 2013 standalone
-    reaches[4].add_user(az.user(None,   'gsc_farm'))                         # 2013
-    reaches[4].add_user(az.user(None,   'arizona_game_and_fish'))            # 2013
-    reaches[4].add_user(az.user(None,   'cibola_island'))                    # 2013
-    reaches[4].add_user(az.user(module, 'cibola_national_wildlife'))         # 1976
-    reaches[4].add_user(az.user(module, 'imperial_national_wildlife'))       # 1967
-    reaches[4].add_user(az.user(None,   'blm'))                              # 2016
-    reaches[4].add_user(az.user(None,   'fishers_landing'))                  # 2016
-    reaches[4].add_user(az.user(None,   'shepard_water'))                    # 2016
-    reaches[4].add_user(az.user(module, 'yuma_proving'))                     # 1964
-    reaches[4].add_user(az.user(module, 'sturges'))                          # 1990-2000 imperial
+    r2.add_user(az.user(None, 'lake_mead_national_lake_mohave'))     # 2017
+    r2.add_user(az.user(None, 'mcalister'))                          # 2016
+    r2.add_user(az.user(None, 'bureau_of_reclamation_davis'))        # 201r
+
+    r3.add_user(az.user(module, 'bullhead_city'))                    # 1987
+    r3.add_user(az.user(module, 'mohave_water'))                     # 1980
+    r3.add_user(az.user(module, 'epcor'))                            # 2016 Bought Brooke 2021 so reaches 3 & 4
+    r3.add_user(az.user(module, 'mohave_valley'))                    # 1969
+    r3.add_user(az.user(None,   'mohave_county_water_authority'))    # 2005 in Cibola Valley, 2013 standalone
+    r3.add_user(az.user(module, 'fort_mojave'))                      # 1975
+    r3.add_user(az.user(None,   'golden_shores'))                    # 1989/200r really
+    r3.add_user(az.user(module, 'havasu_national_wildlife'))         # 1969
+    r3.add_user(az.user(None,   'crystal_beach'))                    # 2016
+    r3.add_user(az.user(module, 'lake_havasu'))                      # 1969
+    r3.add_user(az.user(None,   'arizona_state_parks'))              # 2016
+    r3.add_user(az.user(module, 'cap'))                              # 1985
+    r3.add_user(az.user(None,   'hillcrest'))                        # 2016
+
+    r4.add_user(az.user(None,   'springs_del_sol'))                  # 2016
+    r4.add_user(az.user(module, 'brooke_water'))                     # 1995  EPCOR bought in 2021
+    r4.add_user(az.user(None,   'town_of_parker'))                   # 1964
+    r3a.add_user(az.user(module, 'crit'))                            # 1964
+    r4.add_user(az.user(None,   'gabrych'))                          # 2018
+    r4.add_user(az.user(None,   'ehrenberg'))                        # 2019
+    r4.add_user(az.user(None,   'b_and_f_investment'))               # 2020
+    r4.add_user(az.user(None,   'north_baja_pipeline'))              # 2016
+    r4.add_user(az.user(module, 'cibola_valley'))                    # 1983
+    r4.add_user(az.user(None,   'red_river'))                        # 2018
+    r4.add_user(az.user(None,   'western_water'))                    # 2018
+    r4.add_user(az.user(None,   'hopi'))                             # 2005 in Cibola Valley, 2013 standalone
+    r4.add_user(az.user(None,   'gsc_farm'))                         # 2013
+    r4.add_user(az.user(None,   'arizona_game_and_fish'))            # 2013
+    r4.add_user(az.user(None,   'cibola_island'))                    # 2013
+    r4.add_user(az.user(module, 'cibola_national_wildlife'))         # 1976
+    r4.add_user(az.user(module, 'imperial_national_wildlife'))       # 1967
+    r4.add_user(az.user(None,   'blm'))                              # 2016
+    r4.add_user(az.user(None,   'fishers_landing'))                  # 2016
+    r4.add_user(az.user(None,   'shepard_water'))                    # 2016
+    r4.add_user(az.user(module, 'yuma_proving'))                     # 1964
+    r4.add_user(az.user(module, 'sturges'))                          # 1990-2000 imperial
     # Below Imperial
-    reaches[5].add_user(az.user(None,   'jrj_partners'))                     # 2016  pumped
-    reaches[5].add_user(az.user(None,   'cha_cha'))                          # 2016  pumped
-    reaches[5].add_user(az.user(None,   'beattie_farms'))                    # 2016  pumped
-    reaches[4].add_user(az.user(module, 'gila_monster'))                     # 2001  ggmc
-    reaches[4].add_user(az.user(module, 'wellton_mohawk'))                   # 1964  ggmc
-    reaches[4].add_user(az.user(module, 'city_of_yuma'))                     # 1964  imperial, pumped
-    reaches[4].add_user(az.user(None,   'marine_corp'))                      # 1983  imperial
-    reaches[4].add_user(az.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
-    reaches[4].add_user(az.user(None,   'union_pacific'))                    # 2008  imperial
-    reaches[4].add_user(az.user(None,   'yuma_mesa_fruit'))                  # 1983
-    reaches[4].add_user(az.user(None,   'university_of_arizona'))            # 1983  imperial
-    reaches[4].add_user(az.user(None,   'yuma_union_high_school'))           # 1984  east main canal
-    reaches[4].add_user(az.user(None,   'camille'))                          # 1983-2010
-    reaches[4].add_user(az.user(None,   'desert_lawn'))                      # 1984  from city of yuma
-    reaches[4].add_user(az.user(module, 'north_gila_irrigation'))            # 1964  ggmc, pumped
-    reaches[4].add_user(az.user(module, 'yuma_irrigation'))                  # 1965  imperial, pumped
-    reaches[4].add_user(az.user(module, 'yuma_mesa'))                        # 1964  ggmc
-    reaches[4].add_user(az.user(module, 'unit_b'))                           # 1964  ggmc
-    reaches[5].add_user(az.user(module, 'arizona_state_land'))               # 2013  pumped
-    reaches[4].add_user(az.user(None,   'ott_family'))                       # 2018  ggmc
-    reaches[4].add_user(az.user(None,   'ogram_boys'))                       # 2016  ggmc
-    reaches[5].add_user(az.user(module, 'fort_yuma'))                        # 1984  pumped
-    reaches[5].add_user(az.user(None,   'armon_curtis'))                     # 2016  pumped
-    reaches[4].add_user(az.user(module, 'yuma_county_wua'))                  # 1964  imperial, pumped
-    reaches[5].add_user(az.user(None,   'r_griffin'))                        # 2016  pumped
-    reaches[5].add_user(az.user(None,   'power'))                            # 2016  pumped
-    # reaches[5].add_user(az.user(None,   'cocopah_ppr_7'))                    # 2018  pumped in "cocopah
-    reaches[5].add_user(az.user(None,   'griffin_ranches'))                  # 2016  pumped
-    reaches[5].add_user(az.user(None,   'milton_phillips'))                  # 2016  pumped
-    reaches[5].add_user(az.user(None,   'griffin_family'))                   # 2018  pumped
-    reaches[4].add_user(az.user(module, 'cocopah'))                          # 1964
-    reaches[5].add_user(az.user(module, 'yuma_area_office'))                 # 1994
-    reaches[5].add_user(az.user(None,   'arizona_public_service'))           # 2016  pumped
-    reaches[5].add_user(az.user(None,   'gary_pasquinelli'))                 # 2016  pumped
-    reaches[4].add_user(az.user(module, 'south_gila'))                       # 1964
+    r5.add_user(az.user(None,   'jrj_partners'))                     # 2016  pumped
+    r5.add_user(az.user(None,   'cha_cha'))                          # 2016  pumped
+    r5.add_user(az.user(None,   'beattie_farms'))                    # 2016  pumped
+    r4.add_user(az.user(module, 'gila_monster'))                     # 2001  ggmc
+    r4.add_user(az.user(module, 'wellton_mohawk'))                   # 1964  ggmc
+    r4.add_user(az.user(module, 'city_of_yuma'))                     # 1964  imperial, pumped
+    r4.add_user(az.user(None,   'marine_corp'))                      # 1983  imperial
+    r4.add_user(az.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
+    r4.add_user(az.user(None,   'union_pacific'))                    # 2008  imperial
+    r4.add_user(az.user(None,   'yuma_mesa_fruit'))                  # 1983
+    r4.add_user(az.user(None,   'university_of_arizona'))            # 1983  imperial
+    r4.add_user(az.user(None,   'yuma_union_high_school'))           # 1984  east main canal
+    r4.add_user(az.user(None,   'camille'))                          # 1983-2010
+    r4.add_user(az.user(None,   'desert_lawn'))                      # 1984  from city of yuma
+    r4.add_user(az.user(module, 'north_gila_irrigation'))            # 1964  ggmc, pumped
+    r4.add_user(az.user(module, 'yuma_irrigation'))                  # 1965  imperial, pumped
+    r4.add_user(az.user(module, 'yuma_mesa'))                        # 1964  ggmc
+    r4.add_user(az.user(module, 'unit_b'))                           # 1964  ggmc
+    r5.add_user(az.user(module, 'arizona_state_land'))               # 2013  pumped
+    r4.add_user(az.user(None,   'ott_family'))                       # 2018  ggmc
+    r4.add_user(az.user(None,   'ogram_boys'))                       # 2016  ggmc
+    r5.add_user(az.user(module, 'fort_yuma'))                        # 1984  pumped
+    r5.add_user(az.user(None,   'armon_curtis'))                     # 2016  pumped
+    r4.add_user(az.user(module, 'yuma_county_wua'))                  # 1964  imperial, pumped
+    r5.add_user(az.user(None,   'r_griffin'))                        # 2016  pumped
+    r5.add_user(az.user(None,   'power'))                            # 2016  pumped
+    # r5.add_user(az.user(None,   'cocopah_ppr_7'))                    # 2018  pumped in "cocopah
+    r5.add_user(az.user(None,   'griffin_ranches'))                  # 2016  pumped
+    r5.add_user(az.user(None,   'milton_phillips'))                  # 2016  pumped
+    r5.add_user(az.user(None,   'griffin_family'))                   # 2018  pumped
+    r4.add_user(az.user(module, 'cocopah'))                          # 1964
+    r5.add_user(az.user(module, 'yuma_area_office'))                 # 1994
+    r5.add_user(az.user(None,   'arizona_public_service'))           # 2016  pumped
+    r5.add_user(az.user(None,   'gary_pasquinelli'))                 # 2016  pumped
+    r4.add_user(az.user(module, 'south_gila'))                       # 1964
 
     # Misc out of order and across reaches
     az.user(module, 'others_users_pumping')                                  # 1964
