@@ -38,9 +38,11 @@ class Lake(object):
     def release(self, year_begin, year_end):
         return annual_zeroed_for_years(year_begin, year_end)
 
+    def bypass(self, year_begin, year_end):
+        return None
+
     def storage(self):
-        print("FIXME Lake.storage() not implemented")
-        pass
+        return None
 
     @staticmethod
     def ___convert_to_datetime(d):
@@ -69,10 +71,10 @@ class Lake(object):
                 else:
                     print(self.name, 'storage_delta failed')
         else:
-            print(self.name + " storage delta not implemented")
+            # print(self.name + " storage delta not implemented")
             for year in range(year_begin, year_end+1):
                 delta.append(0)
         return delta
 
     def evaporation(self, year_begin, year_end):
-        return annual_zeroed_for_years(year_begin, year_end)
+        return None

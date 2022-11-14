@@ -1258,9 +1258,11 @@ def model_hoover_to_imperial_extras():
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-    reaches = usbr.lc.initialize()
-    usbr.lc.model(reaches, 2019, 2021, water_year_month=1)
+    # model_all_american()
+    # model_imperial_to_mexico()
 
+    reaches = usbr.lc.initialize()
+    usbr.lc.model(reaches, 2019, 2021)
     lake_mead_side_inflows()
 
     usbr.lc.lake_mead()

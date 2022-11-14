@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from rw.util import reshape_annual_range, subtract_annual
+from rw.util import avg_annual, reshape_annual_range, subtract_annual
 from pathlib import Path
 from source import usbr_report
 
@@ -28,6 +28,7 @@ class User(object):
     def __init__(self, module, name, state):
         self.name = name
         self.state = state
+        self.diversion = None
         self.active = False
         self.cu_for_years = None
         if module:
@@ -102,6 +103,9 @@ class User(object):
                     else:
                         print("user consumptive use file not found: ", path)
                         return None
+
+    def avg_cu(self):
+        return round(avg_annual(self.cu_for_years))
 
     def returns_path(self):
         path = self.make_path('_returns.csv')

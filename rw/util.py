@@ -2,6 +2,8 @@ import numpy as np
 import datetime
 from dateutil.relativedelta import relativedelta
 
+debug = False
+
 
 def subtract_annual(minuend, subtrahend, start_year=0, end_year=0):
     subtrahend = reshape_annual_range_to(subtrahend, minuend)
@@ -10,6 +12,16 @@ def subtract_annual(minuend, subtrahend, start_year=0, end_year=0):
     difference['val'] = minuend['val'] - subtrahend['val']
     if start_year and end_year:
         difference = reshape_annual_range(difference, start_year, end_year)
+    return difference
+
+
+def subtract_vector_from_annual(minuend, subtrahend):
+    difference = np.zeros(len(minuend), [('dt', 'i'), ('val', 'f')])
+    if len(minuend) == len(subtrahend):
+        difference['dt'] = minuend['dt']
+        difference['val'] = minuend['val'] - subtrahend
+    else:
+        print('subtract_vector_from_annual failed, length mismatch')
     return difference
 
 
@@ -103,6 +115,33 @@ def annual_zeroed_for_years(year_min, year_max):
     return a
 
 
+def avg_annual(a):
+    total = 0
+    if a is not None:
+        for y in a:
+            total += y[1]
+    avg = total / len(a)
+    return avg
+
+
+def af_as_str(af):
+    s = "{:,}".format(round(af))
+    s = "{:>12}".format(s)
+    return s
+
+
+def number_as_str(number):
+    s = "{:,}".format(round(number))
+    s = "{:>12}".format(s)
+    return s
+
+
+def percent_as_str(percent):
+    s = "{:5.1f}".format(percent*100)
+    s += '%'
+    return s
+
+
 def annual_as_str(a, with_year=False):
     s = ''
     if a is not None:
@@ -110,7 +149,7 @@ def annual_as_str(a, with_year=False):
             if with_year:
                 s1 = str(int(y[1])) + ' ' + "{:,}".format(int(y[1])) + ' '
             else:
-                s1 = "{:,}".format(int(y[1]))
+                s1 = "{:,}".format(round(y[1]))
                 s1 = "{:>12}".format(s1)
             s += s1
     return s
@@ -191,7 +230,7 @@ def daily_to_water_year(a):
 
         if not np.isnan(o['val']):
             total += o['val']
-        else:
+        elif debug:
             print('daily_to_water_year not a number:', o)
 
     if total > 0:
