@@ -1545,7 +1545,7 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    ocr_debug(image_directory, path1='nv', path2='/consumptive_use')
+    ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='releases')
     # ocr_debug(image_directory, path1='mx')
     scavenge_nv(image_directory, outputs_path)

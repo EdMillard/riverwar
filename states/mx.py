@@ -25,7 +25,7 @@ from source import usbr_report
 from graph.water import WaterGraph
 from rw.lake import Lake
 import usgs
-from basin import lc
+from basins import lc
 from rw.util import subtract_annual, reach_for_name
 
 

@@ -23,7 +23,7 @@ from sys import modules
 from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
-from basin import lc
+from basins import lc
 from rw.state import state_by_abbreviation
 from rw.util import add_annual, add_annuals, subtract_annual, reshape_annual_range, reach_for_name
 from rw.util import state_total_vs_user_total_graph

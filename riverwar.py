@@ -28,8 +28,8 @@ from graph.water import WaterGraph
 import usgs
 from usgs import lc
 from usgs import az, ca, ut, nv   # nm, wy
-import basin
-from basin import lc
+import basins
+from basins import lc
 import states
 from states import az, ca, nv, mx
 from source.usgs_gage import USGSGage
@@ -1003,10 +1003,10 @@ def model_lower_colorado_1905_1964():
     # below_davis_gage = usgs.lc.below_davis(graph=False)
     # below_davis_annual_af = below_davis_gage.annual_af()
 
-    hoover_release = basin.lc.lake_mead(graph=show_graph)
+    hoover_release = basins.lc.lake_mead(graph=show_graph)
     hoover_release = reshape_annual_range(hoover_release, 1922, 1964)
-    # davis_release = basin.lc.lake_mohave(graph=False)
-    # parker_release = basin.lc.lake_havasu(graph=False)
+    # davis_release = basins.lc.lake_mohave(graph=False)
+    # parker_release = basins.lc.lake_havasu(graph=False)
 
     graph = WaterGraph(nrows=4)
     graph.bars(lees_ferry_annual_af, sub_plot=0, title='USGS Lees Ferry',
@@ -1043,9 +1043,9 @@ def model_lower_colorado_1905_1964():
 
 
 def hoover_to_imperial_graph():
-    hoover_release = basin.lc.lake_mead(graph=False)
-    davis_release = basin.lc.lake_mohave(graph=False)
-    parker_release = basin.lc.lake_havasu(graph=False)
+    hoover_release = basins.lc.lake_mead(graph=False)
+    davis_release = basins.lc.lake_mohave(graph=False)
+    parker_release = basins.lc.lake_havasu(graph=False)
     rock_release = usbr_report.annual_af('releases/usbr_releases_rock_dam.csv')
     palo_verde_release = usbr_report.annual_af('releases/usbr_releases_palo_verde_dam.csv')
     imperial_release = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
@@ -1263,11 +1263,11 @@ if __name__ == '__main__':
     # model_all_american()
     # model_imperial_to_mexico()
 
-    reaches = basin.lc.initialize()
-    basin.lc.model(reaches, 2019, 2021)
+    reaches = basins.lc.initialize()
+    basins.lc.model(reaches, 2019, 2021)
     lake_mead_side_inflows()
 
-    basin.lc.lake_mead()
+    basins.lc.lake_mead()
     usgs.lc.test()
     states.ca.palo_verde()
     states.az.colorado_river_indian_tribes()
@@ -1298,10 +1298,10 @@ if __name__ == '__main__':
     usgs.co.test()
 
     states.nv.test()
-    basin.lc.test()
-    basin.uc.test()
+    basins.lc.test()
+    basins.uc.test()
     states.az.test()
     states.ca.test()
-    basin.uc.test()
+    basins.uc.test()
 
     all_american_extras()

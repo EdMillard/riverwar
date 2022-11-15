@@ -29,8 +29,8 @@ from rw.reach import Reach
 from rw.state import State
 import states
 from states import az, ca, nv, mx
-import basin
-from basin import uc
+import basins
+from basins import uc
 
 
 def initialize(water_year_month=1):
@@ -53,24 +53,24 @@ def initialize(water_year_month=1):
                     reach_4_corridor_loss,
                     reach_5_corridor_loss]
 
-    powell = basin.uc.LakePowell(water_year_month)
-    mead = basin.lc.LakeMead(water_year_month)
-    mohave = basin.lc.LakeMohave(water_year_month)
-    havasu = basin.lc.LakeHavasu(water_year_month)
-    # rock_dam = basin.lc.RockDam(water_year_month)
-    # palo_verde_dam = basin.lc.PaloVerdeDam(water_year_month)
-    imperial_dam = basin.lc.ImperialDam(water_year_month)
+    powell = basins.uc.LakePowell(water_year_month)
+    mead = basins.lc.LakeMead(water_year_month)
+    mohave = basins.lc.LakeMohave(water_year_month)
+    havasu = basins.lc.LakeHavasu(water_year_month)
+    # rock_dam = basins.lc.RockDam(water_year_month)
+    # palo_verde_dam = basins.lc.PaloVerdeDam(water_year_month)
+    imperial_dam = basins.lc.ImperialDam(water_year_month)
     # laguna_dam = Dam('laguna_dam', usbr.lc)
     morelos = states.mx.Morelos(water_year_month)
 
     reaches = [Reach('Reach0', None, powell, water_year_month),
-               basin.lc.Reach1(powell, mead, water_year_month),
-               basin.lc.Reach2(mead, mohave, water_year_month),
-               basin.lc.Reach3(mohave, havasu, water_year_month),
-               # basin.lc.Reach3a(havasu, rock_dam, water_year_month),
-               # basin.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
-               basin.lc.Reach4(havasu, imperial_dam, water_year_month),
-               basin.lc.Reach5(imperial_dam, morelos, water_year_month)
+               basins.lc.Reach1(powell, mead, water_year_month),
+               basins.lc.Reach2(mead, mohave, water_year_month),
+               basins.lc.Reach3(mohave, havasu, water_year_month),
+               # basins.lc.Reach3a(havasu, rock_dam, water_year_month),
+               # basins.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
+               basins.lc.Reach4(havasu, imperial_dam, water_year_month),
+               basins.lc.Reach5(imperial_dam, morelos, water_year_month)
                ]
     for reach_number in range(0, len(reaches)):
         reaches[reach_number].loss = reach_losses[reach_number]
