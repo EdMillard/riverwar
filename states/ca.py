@@ -23,19 +23,21 @@ from sys import modules
 from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
-from usbr import lc, util
-from rw.util import add_annual, add_annuals, subtract_annual, replace_annual, reshape_annual_range
-from rw import state
+from basin import lc
+from rw.state import state_by_abbreviation
+from rw.util import add_annual, add_annuals, subtract_annual, replace_annual, reshape_annual_range, reach_for_name
+from rw import util
+
 
 current_last_year = 2021
 
 
 def init(ca, reaches):
     module = modules[__name__]
-    r3 = util.reach_for_name(reaches, 'Reach3')
-    r3a = util.reach_for_name(reaches, 'Reach4')
-    r3b = util.reach_for_name(reaches, 'Reach4')
-    r4 = util.reach_for_name(reaches, 'Reach4')
+    r3 = reach_for_name(reaches, 'Reach3')
+    r3a = reach_for_name(reaches, 'Reach4')
+    r3b = reach_for_name(reaches, 'Reach4')
+    r4 = reach_for_name(reaches, 'Reach4')
 
     r3.add_user(ca.user(module, 'fort_mojave'))                 # 1999
     r3.add_user(ca.user(None, 'city_of_needles'))               # 1964
@@ -183,17 +185,17 @@ def state_total_returns():
 
 
 def user_total_diversion():
-    california = state.state_by_abbreviation('ca')
+    california = state_by_abbreviation('ca')
     return california.total_user_diversion()
 
 
 def user_total_cu():
-    california = state.state_by_abbreviation('ca')
+    california = state_by_abbreviation('ca')
     return california.total_user_cu()
 
 
 def user_total_returns():
-    california = state.state_by_abbreviation('ca')
+    california = state_by_abbreviation('ca')
     return california.total_user_returns()
 
 

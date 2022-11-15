@@ -23,9 +23,11 @@ from sys import modules
 from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
-from usbr import lc, util
-from rw.util import add_annual, add_annuals, subtract_annual, reshape_annual_range
-from rw import state
+from basin import lc
+from rw.state import state_by_abbreviation
+from rw.util import add_annual, add_annuals, subtract_annual, reshape_annual_range, reach_for_name
+from rw.util import state_total_vs_user_total_graph
+from source.usbr_report import diversion_vs_consumptive
 
 current_last_year = 2021
 
@@ -33,12 +35,12 @@ current_last_year = 2021
 def init(az, reaches):
     module = modules[__name__]
 
-    r1 = util.reach_for_name(reaches, 'Reach1')
-    r2 = util.reach_for_name(reaches, 'Reach2')
-    r3 = util.reach_for_name(reaches, 'Reach3')
-    r3a = util.reach_for_name(reaches, 'Reach4')
-    r4 = util.reach_for_name(reaches, 'Reach4')
-    r5 = util.reach_for_name(reaches, 'Reach5')
+    r1 = reach_for_name(reaches, 'Reach1')
+    r2 = reach_for_name(reaches, 'Reach2')
+    r3 = reach_for_name(reaches, 'Reach3')
+    r3a = reach_for_name(reaches, 'Reach4')
+    r4 = reach_for_name(reaches, 'Reach4')
+    r5 = reach_for_name(reaches, 'Reach5')
 
     r1.add_user(az.user(None, 'marble_canyon'))                      # 2016
     r1.add_user(az.user(None, 'lake_mead_national'))                 # 1993
@@ -134,7 +136,7 @@ def test():
         {'data': user_total_cu()},
         {'y_min': -1000, 'y_max': 9000, 'y_interval': 1000},
     ]
-    util.state_total_vs_user_total_graph('AZ', data)
+    state_total_vs_user_total_graph('AZ', data)
 
     others_users_pumping()
     user_total_returns()
@@ -173,33 +175,33 @@ def test():
 
 
 def total_graph():
-    util.diversion_vs_consumptive('az', 'total', 'Arizona',
-                                  ymin1=900000, ymax1=3800000,
-                                  ymin2=550000, ymax2=900000, yinterval2=25000)
+    diversion_vs_consumptive('az', 'total', 'Arizona',
+                             ymin1=900000, ymax1=3800000,
+                             ymin2=550000, ymax2=900000, yinterval2=25000)
 
 
-def state_total_diversion(state_code, name):
-    diversion_file_name = state_code + '/usbr_' + state_code + '_' + name + '_diversion.csv'
+def state_total_diversion(state, name):
+    diversion_file_name = state + '/usbr_' + state + '_' + name + '_diversion.csv'
     return usbr_report.annual_af(diversion_file_name)
 
 
-def state_total_cu(state_code, name):
-    diversion_file_name = state_code + '/usbr_' + state_code + '_' + name + '_consumptive_use.csv'
+def state_total_cu(state, name):
+    diversion_file_name = state + '/usbr_' + state + '_' + name + '_consumptive_use.csv'
     return usbr_report.annual_af(diversion_file_name)
 
 
 def user_total_diversion():
-    arizona = state.state_by_abbreviation('az')
+    arizona = state_by_abbreviation('az')
     return arizona.total_user_diversion()
 
 
 def user_total_cu():
-    arizona = state.state_by_abbreviation('az')
+    arizona = state_by_abbreviation('az')
     return arizona.total_user_cu()
 
 
 def user_total_returns():
-    arizona = state.state_by_abbreviation('az')
+    arizona = state_by_abbreviation('az')
     return arizona.total_user_returns()
 
 

@@ -15,7 +15,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FsROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
@@ -23,13 +23,15 @@ import datetime
 import numpy as np
 import signal
 import sys
-from rw.util import add_annual, add_annuals, subtract_annual, multiply_annual, reshape_annual_range, flow_for_year
+from rw.util import add_annual, add_annuals, subtract_annual, reshape_annual_range, flow_for_year
 from graph.water import WaterGraph
 import usgs
 from usgs import lc
 from usgs import az, ca, ut, nv   # nm, wy
-import usbr
-from usbr import az, ca, uc, nv, mx
+import basin
+from basin import lc
+import states
+from states import az, ca, nv, mx
 from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
@@ -264,22 +266,22 @@ def model_imperial_to_mexico():
 def model_all_american():
     year_interval = 3
 
-    usbr_imperial_diversion = usbr.ca.imperial_diversion()
-    usbr_imperial_cu = usbr.ca.imperial_cu()
-    usbr_imperial_returns = usbr.ca.imperial_returns()
+    usbr_imperial_diversion = states.ca.imperial_diversion()
+    usbr_imperial_cu = states.ca.imperial_cu()
+    usbr_imperial_returns = states.ca.imperial_returns()
 
-    usbr_coachella_diversion = usbr.ca.coachella_diversion()
-    usbr_coachella_cu = usbr.ca.coachella_cu()
-    usbr_coachella_returns = usbr.ca.coachella_returns()
+    usbr_coachella_diversion = states.ca.coachella_diversion()
+    usbr_coachella_cu = states.ca.coachella_cu()
+    usbr_coachella_returns = states.ca.coachella_returns()
 
-    # usbr_yuma_project_diversion = usbr.ca.yuma_project_diversion()
-    # usbr_yuma_project_cu = usbr.ca.yuma_project_cu()
-    usbr_yuma_project_returns = usbr.ca.yuma_project_returns()
+    # usbr_yuma_project_diversion = states.ca.yuma_project_diversion()
+    # usbr_yuma_project_cu = states.ca.yuma_project_cu()
+    usbr_yuma_project_returns = states.ca.yuma_project_returns()
 
     reservation_main_canal_gage = usgs.ca.reservation_main_canal(graph=False)
     reservation_main_annual_af = reservation_main_canal_gage.annual_af(water_year_month=1,
                                                                        start_year=1964, end_year=current_last_year)
-    yuma_project_indian_diversion = usbr.ca.yuma_project_indian_diversion()
+    yuma_project_indian_diversion = states.ca.yuma_project_indian_diversion()
 
     yuma_main_canal_gage = usgs.ca.yuma_main_canal_at_siphon_drop_PP(graph=False)
     yuma_main_annual_af = yuma_main_canal_gage.annual_af(water_year_month=1,
@@ -364,7 +366,7 @@ def model_all_american():
     #           xinterval=year_interval, ymin=0, ymax=60000, yinterval=10000, color='firebrick',
     #           ylabel='kaf',  format_func=WaterGraph.format_kaf)
 
-    # reservation_diff = subtract_annual(reservation_main_annual_af, usbr.ca.yuma_project_indian_diversion())
+    # reservation_diff = subtract_annual(reservation_main_annual_af, states.ca.yuma_project_indian_diversion())
     # graph.bars(reservation_diff, sub_plot=0, title='USGS Reservation Main Canal (Annual)',
     #            xinterval=year_interval, ymin=-70000, ymax=70000, yinterval=10000, color='firebrick',
     #            ylabel='kaf',  format_func=WaterGraph.format_kaf)
@@ -825,7 +827,7 @@ def model_yuma_area():
 
     # CA Yuma Area Returns
     graph = WaterGraph(nrows=2)
-    data = usbr.ca.yuma_area_returns()
+    data = states.ca.yuma_area_returns()
     graph.bars_stacked(data, sub_plot=0, title='CA Yuma Area Returns',
                        ymin=0, ymax=250000, yinterval=50000,
                        xlabel='Calendar Year', xinterval=year_interval,
@@ -837,7 +839,7 @@ def model_yuma_area():
     graph.running_average(ca_total, 10, sub_plot=0)
 
     # AZ Yuma Area Returns
-    data = usbr.az.yuma_area_returns()
+    data = states.az.yuma_area_returns()
     graph.bars_stacked(data, sub_plot=1, title='AZ Yuma Area Returns',
                        ymin=0, ymax=600000, yinterval=50000,
                        xlabel='Calendar Year', xinterval=year_interval,
@@ -851,7 +853,7 @@ def model_yuma_area():
 
     # Yuma Area Diversion
     graph = WaterGraph(nrows=2)
-    data = usbr.az.yuma_area_diversion()
+    data = states.az.yuma_area_diversion()
     graph.bars_stacked(data, sub_plot=0, title='AZ Yuma Area Diversion',
                        ymin=0, ymax=1300000, yinterval=100000,
                        xlabel='Calendar Year', xinterval=year_interval,
@@ -863,7 +865,7 @@ def model_yuma_area():
     graph.running_average(az_diversion_total, 10, sub_plot=0)
 
     # Yuma Area Consumptive Use
-    data = usbr.az.yuma_area_cu()
+    data = states.az.yuma_area_cu()
     graph.bars_stacked(data, sub_plot=1, title='AZ Yuma Area Consumptive Use',
                        ymin=0, ymax=1300000, yinterval=100000,
                        xlabel='Calendar Year', xinterval=year_interval,
@@ -877,7 +879,7 @@ def model_yuma_area():
 
     # MX Yuma Area Returns
     graph = WaterGraph(nrows=1)
-    data = usbr.mx.yuma_area_returns()
+    data = states.mx.yuma_area_returns()
     graph.bars_stacked(data, sub_plot=0, title='Mexico Yuma Area Returns',
                        ymin=0, ymax=200000, yinterval=10000,
                        xlabel='Calendar Year', xinterval=year_interval,
@@ -931,7 +933,7 @@ def yuma_area_wasteways():
 def model_not_yuma_area():
     year_interval = 4
     graph = WaterGraph(nrows=1)
-    data = usbr.ca.not_yuma_area_returns()
+    data = states.ca.not_yuma_area_returns()
     graph.bars_stacked(data, sub_plot=0, title='CA Returns Not in Yuma Area',
                        ymin=300000, ymax=600000, yinterval=50000,
                        xlabel='Calendar Year', xinterval=year_interval,
@@ -945,7 +947,7 @@ def model_not_yuma_area():
     graph.date_and_wait()
 
     graph = WaterGraph(nrows=1)
-    data = usbr.az.not_yuma_area_returns()
+    data = states.az.not_yuma_area_returns()
     graph.bars_stacked(data, sub_plot=0, title='AZ Returns Not in Yuma Area',
                        ymin=0, ymax=500000, yinterval=50000,
                        xlabel='Calendar Year', xinterval=year_interval,
@@ -1001,10 +1003,10 @@ def model_lower_colorado_1905_1964():
     # below_davis_gage = usgs.lc.below_davis(graph=False)
     # below_davis_annual_af = below_davis_gage.annual_af()
 
-    hoover_release = usbr.lc.lake_mead(graph=show_graph)
+    hoover_release = basin.lc.lake_mead(graph=show_graph)
     hoover_release = reshape_annual_range(hoover_release, 1922, 1964)
-    # davis_release = usbr.lc.lake_mohave(graph=False)
-    # parker_release = usbr.lc.lake_havasu(graph=False)
+    # davis_release = basin.lc.lake_mohave(graph=False)
+    # parker_release = basin.lc.lake_havasu(graph=False)
 
     graph = WaterGraph(nrows=4)
     graph.bars(lees_ferry_annual_af, sub_plot=0, title='USGS Lees Ferry',
@@ -1041,9 +1043,9 @@ def model_lower_colorado_1905_1964():
 
 
 def hoover_to_imperial_graph():
-    hoover_release = usbr.lc.lake_mead(graph=False)
-    davis_release = usbr.lc.lake_mohave(graph=False)
-    parker_release = usbr.lc.lake_havasu(graph=False)
+    hoover_release = basin.lc.lake_mead(graph=False)
+    davis_release = basin.lc.lake_mohave(graph=False)
+    parker_release = basin.lc.lake_havasu(graph=False)
     rock_release = usbr_report.annual_af('releases/usbr_releases_rock_dam.csv')
     palo_verde_release = usbr_report.annual_af('releases/usbr_releases_palo_verde_dam.csv')
     imperial_release = usbr_report.annual_af('releases/usbr_releases_imperial_dam.csv')
@@ -1086,7 +1088,7 @@ def hoover_to_imperial_graph():
                ylabel='maf',  format_func=WaterGraph.format_maf)
     graph.running_average(parker_minus_rock, 10, sub_plot=2)
 
-    # crit_release_returns = add_annual(rock_release, usbr.az.crit_returns())
+    # crit_release_returns = add_annual(rock_release, states.az.crit_returns())
     rock_minus_palo_verde = subtract_annual(rock_release, palo_verde_release)
     graph.bars(rock_minus_palo_verde, sub_plot=3, title='Rock minus Palo Verde Release ',
                xinterval=year_interval, ymin=0, ymax=1600000, yinterval=250000, color='firebrick',
@@ -1096,7 +1098,7 @@ def hoover_to_imperial_graph():
     graph.date_and_wait()
 
     graph = WaterGraph(nrows=2)
-    palo_verde_release_returns = add_annual(palo_verde_release, usbr.ca.palo_verde_returns())
+    palo_verde_release_returns = add_annual(palo_verde_release, states.ca.palo_verde_returns())
     palo_verde_minus_imperial = subtract_annual(palo_verde_release_returns, imperial_release)
     graph.bars(palo_verde_minus_imperial, sub_plot=0, title='(Palo Verde Release & Returns) minus Imperial Release',
                xinterval=year_interval, ymin=3000000, ymax=8000000, yinterval=1000000, color='firebrick',
@@ -1113,8 +1115,8 @@ def hoover_to_imperial_graph():
     # Colorado River Indian Tribe (CRIT) and Rock Dam Release
     graph = WaterGraph(nrows=4)
 
-    crit_diversion_annual_af = usbr.az.crit_diversion()
-    crit_cu_annual_af = usbr.az.crit_cu()
+    crit_diversion_annual_af = states.az.crit_diversion()
+    crit_cu_annual_af = states.az.crit_cu()
 
     bar_data = [{'data': crit_diversion_annual_af, 'label': 'Diversion', 'color': 'darkmagenta'},
                 {'data': crit_cu_annual_af, 'label': 'Consumptive Use', 'color': 'firebrick'},
@@ -1261,15 +1263,14 @@ if __name__ == '__main__':
     # model_all_american()
     # model_imperial_to_mexico()
 
-    reaches = usbr.lc.initialize()
-    usbr.lc.model(reaches, 2019, 2021)
+    reaches = basin.lc.initialize()
+    basin.lc.model(reaches, 2019, 2021)
     lake_mead_side_inflows()
 
-    usbr.lc.lake_mead()
+    basin.lc.lake_mead()
     usgs.lc.test()
-    usbr.ca.palo_verde()
-    usbr.az.colorado_river_indian_tribes()
-
+    states.ca.palo_verde()
+    states.az.colorado_river_indian_tribes()
     model_lower_colorado_1905_1964()
 
     # gage = usgs.nv.las_vegas_wash_below_lake_las_vegas()
@@ -1284,8 +1285,8 @@ if __name__ == '__main__':
     model_not_yuma_area()
 
     usgs.ca.test()
-    usbr.az.colorado_river_indian_tribes()
-    usbr.ca.test()
+    states.az.colorado_river_indian_tribes()
+    states.ca.test()
     usbr_lower_basin_states_total_use()
     usbr_glen_canyon_annual_release_af()
     model_glen_canyon()
@@ -1296,11 +1297,11 @@ if __name__ == '__main__':
     usgs.nv.test()
     usgs.co.test()
 
-    usbr.nv.test()
-    usbr.lc.test()
-    usbr.uc.test()
-    usbr.az.test()
-    usbr.ca.test()
-    usbr.uc.test()
+    states.nv.test()
+    basin.lc.test()
+    basin.uc.test()
+    states.az.test()
+    states.ca.test()
+    basin.uc.test()
 
     all_american_extras()

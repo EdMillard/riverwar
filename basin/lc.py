@@ -24,11 +24,13 @@ from graph.water import WaterGraph
 from source import usbr_rise
 from rw.util import number_as_str, af_as_str, reshape_annual_range, add_annuals, right_justified
 import usgs
-from rw.state import State
 from rw.lake import Lake
 from rw.reach import Reach
-import usbr
-from usbr import az, ca, uc, nv, mx
+from rw.state import State
+import states
+from states import az, ca, nv, mx
+import basin
+from basin import uc
 
 
 def initialize(water_year_month=1):
@@ -51,24 +53,24 @@ def initialize(water_year_month=1):
                     reach_4_corridor_loss,
                     reach_5_corridor_loss]
 
-    powell = usbr.uc.LakePowell(water_year_month)
-    mead = usbr.lc.LakeMead(water_year_month)
-    mohave = usbr.lc.LakeMohave(water_year_month)
-    havasu = usbr.lc.LakeHavasu(water_year_month)
-    # rock_dam = usbr.lc.RockDam(water_year_month)
-    # palo_verde_dam = usbr.lc.PaloVerdeDam(water_year_month)
-    imperial_dam = usbr.lc.ImperialDam(water_year_month)
+    powell = basin.uc.LakePowell(water_year_month)
+    mead = basin.lc.LakeMead(water_year_month)
+    mohave = basin.lc.LakeMohave(water_year_month)
+    havasu = basin.lc.LakeHavasu(water_year_month)
+    # rock_dam = basin.lc.RockDam(water_year_month)
+    # palo_verde_dam = basin.lc.PaloVerdeDam(water_year_month)
+    imperial_dam = basin.lc.ImperialDam(water_year_month)
     # laguna_dam = Dam('laguna_dam', usbr.lc)
-    morelos = usbr.mx.Morelos(water_year_month)
+    morelos = states.mx.Morelos(water_year_month)
 
     reaches = [Reach('Reach0', None, powell, water_year_month),
-               usbr.lc.Reach1(powell, mead, water_year_month),
-               usbr.lc.Reach2(mead, mohave, water_year_month),
-               usbr.lc.Reach3(mohave, havasu, water_year_month),
-               # usbr.lc.Reach3a(havasu, rock_dam, water_year_month),
-               # usbr.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
-               usbr.lc.Reach4(havasu, imperial_dam, water_year_month),
-               usbr.lc.Reach5(imperial_dam, morelos, water_year_month)
+               basin.lc.Reach1(powell, mead, water_year_month),
+               basin.lc.Reach2(mead, mohave, water_year_month),
+               basin.lc.Reach3(mohave, havasu, water_year_month),
+               # basin.lc.Reach3a(havasu, rock_dam, water_year_month),
+               # basin.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
+               basin.lc.Reach4(havasu, imperial_dam, water_year_month),
+               basin.lc.Reach5(imperial_dam, morelos, water_year_month)
                ]
     for reach_number in range(0, len(reaches)):
         reaches[reach_number].loss = reach_losses[reach_number]
@@ -428,10 +430,10 @@ def lake_havasu_release(year_begin, year_end, water_year_month):
     annual_af = usbr_report.annual_af('releases/usbr_releases_parker_dam.csv', water_year_month=water_year_month)
     ar_release = reshape_annual_range(annual_af, year_begin, year_end)
 
-    usbr_lake_havasu_release_total_af = 6126
-    info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
-    annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=water_year_month)
-    rise_release = reshape_annual_range(annual_release_af, year_begin, year_end)
+    # usbr_lake_havasu_release_total_af = 6126
+    # info, daily_release_af = usbr_rise.load(usbr_lake_havasu_release_total_af)
+    # annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=water_year_month)
+    # rise_release = reshape_annual_range(annual_release_af, year_begin, year_end)
 
     # diff = subtract_annual(ar_release, rise_release)
     # print('ar vs rise lake havasu release', annual_as_str(diff))
@@ -519,8 +521,8 @@ def rock_dam_release(year_begin, year_end, water_year_month):
 
 
 def rock_dam_bypass(year_begin, year_end,  *_):
-    az_crit = reshape_annual_range(usbr.az.crit_returns(), year_begin, year_end)
-    ca_crit = reshape_annual_range(usbr.ca.crit_returns(), year_begin, year_end)
+    az_crit = reshape_annual_range(states.az.crit_returns(), year_begin, year_end)
+    ca_crit = reshape_annual_range(states.ca.crit_returns(), year_begin, year_end)
     return add_annuals([az_crit, ca_crit])
 
 
@@ -546,7 +548,7 @@ def palo_verde_dam_release(year_begin, year_end, water_year_month):
 
 
 def palo_verde_dam_bypass(year_begin, year_end, water_year_month):
-    return reshape_annual_range(usbr.ca.palo_verde_returns(water_year_month=water_year_month), year_begin, year_end)
+    return reshape_annual_range(states.ca.palo_verde_returns(water_year_month=water_year_month), year_begin, year_end)
 
 
 class ImperialDam(Lake):
@@ -564,13 +566,13 @@ class ImperialDam(Lake):
         return reshape_annual_range(imperial_release, year_begin, year_end)
 
     def bypass(self, year_begin, year_end):
-        imperial_returns = usbr.ca.imperial_returns(self.water_year_month)
+        imperial_returns = states.ca.imperial_returns(self.water_year_month)
         imperial_returns = reshape_annual_range(imperial_returns, year_begin, year_end)
 
-        coachella_returns = usbr.ca.coachella_returns(self.water_year_month)
+        coachella_returns = states.ca.coachella_returns(self.water_year_month)
         coachella_returns = reshape_annual_range(coachella_returns, year_begin, year_end)
 
-        yuma_project_returns = usbr.ca.yuma_project_returns(self.water_year_month)
+        yuma_project_returns = states.ca.yuma_project_returns(self.water_year_month)
         yuma_project_returns = reshape_annual_range(yuma_project_returns, year_begin, year_end)
 
         below_yuma_wasteway_gage = usgs.lc.below_yuma_wasteway(graph=False)

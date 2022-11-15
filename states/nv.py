@@ -23,16 +23,22 @@ from sys import modules
 from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
-from usbr import lc, util
-from rw.util import subtract_annual, add_annuals, reshape_annual_range_to
-from rw import state
+from basin import lc
+from rw.state import state_by_abbreviation
+from rw.util import subtract_annual, add_annuals, reshape_annual_range_to, reach_for_name
+from rw.util import state_total_vs_user_total_graph
+from source.usbr_report import diversion_vs_consumptive
+
 
 current_last_year = 2021
 
 
 def init(nv, reaches):
     module = modules[__name__]
-    r1 = util.reach_for_name(reaches, 'Reach1')
+    r1 = reach_for_name(reaches, 'Reach1')
+    r2 = reach_for_name(reaches, 'Reach2')
+    r3 = reach_for_name(reaches, 'Reach3')
+
     r1.add_user(nv.user(None, 'bureau_of_reclamation'))             # 1985-      aka Boulder Canyon Project and Hoover
     r1.add_user(nv.user(module, 'boulder_city'))                    # 1964-1983
     r1.add_user(nv.user(None, 'lake_mead_national'))                # 1964-
@@ -46,10 +52,8 @@ def init(nv, reaches):
     r1.add_user(nv.user(module, 'pacific_coast'))                   # 1964-
     r1.add_user(nv.user(module, 'socal_edison'))                    # 1967-2011
 
-    r2 = util.reach_for_name(reaches, 'Reach2')
     r2.add_user(nv.user(None, 'lake_mead_national_lake_mohave'))    # 1993-
 
-    r3 = util.reach_for_name(reaches, 'Reach3')
     r3.add_user(nv.user(None, 'big_bend'))                          # 1984-
     r3.add_user(nv.user(module, 'fort_mojave_indian'))              # 1996-
 
@@ -63,7 +67,7 @@ def test():
         {'data': user_total_cu()},
         {'y_min': -50, 'y_max': 200, 'y_interval': 100},
     ]
-    util.state_total_vs_user_total_graph('NV', data, y_formatter='kaf')
+    state_total_vs_user_total_graph('NV', data, y_formatter='kaf')
     total()
     southern_nevada_water_authority()
 
@@ -77,24 +81,24 @@ def state_total_cu():
 
 
 def user_total_diversion():
-    nevada = state.state_by_abbreviation('nv')
+    nevada = state_by_abbreviation('nv')
     return nevada.total_user_diversion()
 
 
 def user_total_cu():
-    nevada = state.state_by_abbreviation('nv')
+    nevada = state_by_abbreviation('nv')
     return nevada.total_user_cu()
 
 
 def user_total_returns():
-    nevada = state.state_by_abbreviation('nv')
+    nevada = state_by_abbreviation('nv')
     return nevada.total_user_returns()
 
 
 def total():
-    util.diversion_vs_consumptive('nv', 'total', 'Nevada',
-                                  ymin1=0, ymax1=550000,
-                                  ymin2=0, ymax2=250000, yinterval2=10000)
+    diversion_vs_consumptive('nv', 'total', 'Nevada',
+                             ymin1=0, ymax1=550000,
+                             ymin2=0, ymax2=250000, yinterval2=10000)
 
 
 def southern_nevada_water_authority():
