@@ -76,7 +76,7 @@ def init(ca, reaches, model):
     # FIXME, getting reaches out of this before 2016 will be complicated
     ca.user(None, 'other_users_pumping')
 
-szzxxxxxxxxxxxxxx
+
 def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
