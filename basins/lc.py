@@ -19,18 +19,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from source import usbr_rise
-from rw.util import number_as_str, af_as_str, reshape_annual_range, add_annuals, right_justified
+from rw.util import number_as_str, af_as_str, reshape_annual_range, add_annuals, right_justified, left_justified
 import usgs
+from usgs import az, ca, nv, ut, lc
 from rw.lake import Lake
 from rw.reach import Reach
-from rw.state import State
+from rw.state import State, state_by_abbreviation
 import states
 from states import az, ca, nv, mx
 import basins
 from basins import uc
+from matplotlib import pyplot
 
 
 def initialize(water_year_month=1):
@@ -75,15 +78,21 @@ def initialize(water_year_month=1):
     for reach_number in range(0, len(reaches)):
         reaches[reach_number].loss = reach_losses[reach_number]
 
-    State('Arizona', 'az', az, reaches)
-    State('California', 'ca', ca, reaches)
-    State('Nevada', 'nv', nv, reaches)
-    State('Mexico', 'mx', mx, reaches)
-    return reaches
+    state_list = [State('Arizona', 'az', az, reaches),
+                  State('California', 'ca', ca, reaches),
+                  State('Nevada', 'nv', nv, reaches),
+                  State('Mexico', 'mx', mx, reaches)]
+    return reaches, state_list
 
 
-def model(reaches, year_begin, year_end):
+def model(reaches, state_list, year_begin, year_end):
+    for state in state_list:
+        state.loss_assessment = 0
+        state.other_user_loss_assessments = 0
+
     for reach in reaches:
+        for user in reach.users:
+            user.assessment = 0
         reach.model(year_begin, year_end)
 
     model_active_users_through_reach(reaches)
@@ -103,6 +112,8 @@ def model(reaches, year_begin, year_end):
         reaches[i].print_state_assessments()
 
     print_users(reaches)
+
+    print_summary(reaches, state_list)
 
     print()
 
@@ -155,14 +166,14 @@ def print_users(reaches):
                                                                                       print_num_users=False,
                                                                                       print_percent=False,
                                                                                       print_reach_cu=True)
-                        state_dictionary = state_assessment_reach.state_assessment[state]
-                        state_cu_avg = state_dictionary['cu_avg']
-                        factor = user.avg_cu() / state_cu_avg
-                        state_assessment = state_dictionary['assessment']
-                        user_assessment = state_assessment * factor
+                        # state_dictionary = state_assessment_reach.state_assessment[state]
+                        # state_cu_avg = state_dictionary['cu_avg']
+                        # factor = user.avg_cu() / state_cu_avg
+                        # state_assessment = state_dictionary['assessment']
+                        # user_assessment = state_assessment * factor
                         print(state_assessment_reach.name + ' ' + number_as_str(state_assessment_reach.loss) + ' ' + s +
-                              ' ' + user_str + '  ' + "{:6.4f}".format(factor) + af_as_str(user_assessment))
-                        total_assessment += user_assessment
+                              ' ' + user_str + '  ' + "{:6.4f}".format(user.factor) + af_as_str(user.assessment))
+                        total_assessment += user.assessment
                     print('{0: >140}'.format('Total' + af_as_str(total_assessment)))
         # print('\tTotal', number_as_str(active_users_in_reach))
 
@@ -177,6 +188,45 @@ def print_users(reaches):
         #         reach.print_user(user)
         # else:
         #      print("No consumptive use in reach")
+
+
+def print_summary(reaches, state_list):
+    print('Summary of Assessments by State')
+    total_state_assessments = 0
+    for state in state_list:
+        state.other_user_assessments = 0
+        print(state.abbreviation + '   ' + af_as_str(state.loss_assessment))
+        total_state_assessments += state.loss_assessment
+    print('Total' + af_as_str(total_state_assessments))
+
+    print('\nSummary of Water User Assessments')
+    print('Major Water Users')
+    total_assessment = 0
+    for i in range(1, len(reaches)):
+        reach = reaches[i]
+        if not reach_has_example_user(reach):
+            continue
+        users_in_reach_by_state = reach.users_in_reach_by_state()
+        for state_code in reach.states:
+            state = state_by_abbreviation(state_code)
+            users_in_state = users_in_reach_by_state.get(state_code)
+            if users_in_state:
+                for user in users_in_state:
+                    if user.example:
+                        print(str(i), state_code, left_justified(user.name, 20), af_as_str(user.assessment))
+                        total_assessment += user.assessment
+                    else:
+                        state.other_user_assessments += user.assessment
+    print("Subtotal: ", right_justified(af_as_str(total_assessment), 27))
+
+    print('\nRemaining Water Users')
+    other_sub_total = 0
+    for state in state_list:
+        if state.other_user_assessments != 0:
+            print('   ', left_justified(state.abbreviation, 21), af_as_str(state.other_user_assessments))
+            other_sub_total += state.other_user_assessments
+    print("Subtotal: ", right_justified(af_as_str(other_sub_total), 27))
+    print("Total:    ", right_justified(af_as_str(total_assessment + other_sub_total), 27))
 
 
 def print_loss_table(reaches):
@@ -599,3 +649,10 @@ class ImperialDam(Lake):
 def laguna_dam_release():
     laguna_release = usbr_report.annual_af('releases/usbr_releases_laguna_dam.csv')
     return laguna_release
+
+
+if __name__ == '__main__':
+    pyplot.switch_backend('Agg')  # FIXME must be accessing pyplt somewhere
+    chdir('../')
+    all_reaches, all_states = initialize()
+    model(all_reaches, all_states, 2019, 2021)

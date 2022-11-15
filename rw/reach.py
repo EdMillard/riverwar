@@ -21,6 +21,7 @@ SOFTWARE.
 """
 from rw.util import af_as_str, number_as_str, percent_as_str, right_justified
 from rw.util import subtract_annual, subtract_vector_from_annual, annual_as_str, vector_as_str
+from rw.state import state_by_abbreviation
 
 
 class Reach(object):
@@ -119,9 +120,10 @@ class Reach(object):
                 self.through_reach_cu_avg += avg_cu
 
     def compute_state_assessment(self):
-        for state in self.states:
+        for state_code in self.states:
+            state = state_by_abbreviation(state_code)
             try:
-                users = self.active_users_through_reach[state]
+                users = self.active_users_through_reach[state_code]
             except KeyError:
                 users = []
 
@@ -132,10 +134,16 @@ class Reach(object):
 
             percent = state_through_reach_cu_avg / self.through_reach_cu_avg
             state_assessment = self.loss * percent
-            self.state_assessment[state] = {'cu_avg': state_through_reach_cu_avg,
-                                            'assessment': state_assessment,
-                                            'percent': percent,
-                                            'users': users}
+            state.loss_assessment += state_assessment
+
+            for user in users:
+                user.factor = user.avg_cu() / state_through_reach_cu_avg
+                user.assessment += state_assessment * user.factor
+
+            self.state_assessment[state_code] = {'cu_avg': state_through_reach_cu_avg,
+                                                 'assessment': state_assessment,
+                                                 'percent': percent,
+                                                 'users': users}
 
     def users_in_reach_by_state(self):
         users_by_state = {}

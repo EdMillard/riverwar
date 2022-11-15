@@ -32,6 +32,8 @@ class User(object):
         self.active = False
         self.cu_for_years = None
         self.example = example
+        self.factor = None
+        self.assessment = None
         if module:
             try:
                 self.diversion_func = getattr(module, name + '_diversion')

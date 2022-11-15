@@ -36,6 +36,7 @@ from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
 
+
 interrupted = False
 
 current_last_year = 2021
@@ -1263,8 +1264,9 @@ if __name__ == '__main__':
     # model_all_american()
     # model_imperial_to_mexico()
 
-    reaches = basins.lc.initialize()
-    basins.lc.model(reaches, 2019, 2021)
+    all_reaches, all_states = basins.lc.initialize()
+    basins.lc.model(all_reaches, all_states, 2019, 2021)
+
     lake_mead_side_inflows()
 
     basins.lc.lake_mead()

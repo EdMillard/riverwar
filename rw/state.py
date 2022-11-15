@@ -35,6 +35,8 @@ class State(object):
         self.name = name
         self.abbreviation = abbreviation
         self.module = module
+        self.loss_assessment = None
+        self.other_user_loss_assessments = None
         self.users = {}
         self.init = getattr(module, 'init')
         self.init(self, reaches)

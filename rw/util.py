@@ -208,9 +208,15 @@ def number_as_str(number):
     return s
 
 
-def right_justified(s, width):
+def right_justified(in_str, width):
     format_str = '{:>' + str(width) + '}'
-    s = format_str.format(s)
+    s = format_str.format(in_str)
+    return s
+
+
+def left_justified(in_str, width):
+    format_str = '{:<' + str(width) + '}'
+    s = format_str.format(in_str)
     return s
 
 

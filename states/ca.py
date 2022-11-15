@@ -67,7 +67,7 @@ def init(ca, reaches):
     r4.add_user(ca.user(None, 'yuma_island'))                   # 2016
     r4.add_user(ca.user(module, 'winterhaven'))                 # FIXME
     r4.add_user(ca.user(module, 'imperial', example=True))      # 1964
-    r4.add_user(ca.user(None, 'coachella'))                     # 1964
+    r4.add_user(ca.user(None, 'coachella', example=True))       # 1964
 
     # FIXME, getting reaches out of this before 2016 will be complicated
     ca.user(None, 'other_users_pumping')
