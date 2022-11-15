@@ -32,12 +32,16 @@ from rw import util
 current_last_year = 2021
 
 
-def init(ca, reaches):
+def init(ca, reaches, model):
     module = modules[__name__]
     r3 = reach_for_name(reaches, 'Reach3')
     r3a = reach_for_name(reaches, 'Reach4')
     r3b = reach_for_name(reaches, 'Reach4')
     r4 = reach_for_name(reaches, 'Reach4')
+    if model.option_yuma_users_moved_to_reach_4:
+        r4a = reach_for_name(reaches, 'Reach4')
+    else:
+        r4a = reach_for_name(reaches, 'Reach5')
 
     r3.add_user(ca.user(module, 'fort_mojave'))                 # 1999
     r3.add_user(ca.user(None, 'city_of_needles'))               # 1964
@@ -62,17 +66,17 @@ def init(ca, reaches):
     r3b.add_user(ca.user(module, 'palo_verde', example=True))   # 1964
     r4.add_user(ca.user(None, 'lake_enterprises'))              # 2016
     r4.add_user(ca.user(None, 'bureau_of_land_management'))     # 2016
-    r4.add_user(ca.user(module, 'yuma_project'))                # 1964
-    r4.add_user(ca.user(None, 'fort_yuma'))                     # 2016
-    r4.add_user(ca.user(None, 'yuma_island'))                   # 2016
-    r4.add_user(ca.user(module, 'winterhaven'))                 # FIXME
+    r4a.add_user(ca.user(module, 'yuma_project'))                # 1964
+    r4a.add_user(ca.user(None, 'fort_yuma'))                     # 2016
+    r4a.add_user(ca.user(None, 'yuma_island'))                   # 2016
+    r4a.add_user(ca.user(module, 'winterhaven'))                 # FIXME
     r4.add_user(ca.user(module, 'imperial', example=True))      # 1964
     r4.add_user(ca.user(None, 'coachella', example=True))       # 1964
 
     # FIXME, getting reaches out of this before 2016 will be complicated
     ca.user(None, 'other_users_pumping')
 
-
+szzxxxxxxxxxxxxxx
 def test():
     data = [
         {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},

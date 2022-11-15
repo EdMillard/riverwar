@@ -31,7 +31,7 @@ def state_by_abbreviation(abbreviation):
 
 
 class State(object):
-    def __init__(self, name, abbreviation, module, reaches):
+    def __init__(self, name, abbreviation, module, reaches, model):
         self.name = name
         self.abbreviation = abbreviation
         self.module = module
@@ -39,7 +39,8 @@ class State(object):
         self.other_user_loss_assessments = None
         self.users = {}
         self.init = getattr(module, 'init')
-        self.init(self, reaches)
+        self.init(self, reaches, model)
+        self.model = model
 
         states[abbreviation] = self
 

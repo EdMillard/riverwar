@@ -36,86 +36,93 @@ from basins import uc
 from matplotlib import pyplot
 
 
-def initialize(water_year_month=1):
-    # SNWA Study losses by reach
-    lake_mead_evap = 580000         # Reach 1 Mead at 1100 ft
-    # lake_mead_evap = 458000       # Reach 2 Mead at 1045 ft
-    lake_mohave_evap = 193000       # Reach 2
-    lake_havasu_evap = 138000       # Reach 3
-    reach_3_corridor_loss = 191000  # Reach 3
+class Model(object):
+    def __init__(self, name):
+        self.name = name
+        self.states = None
+        self.reaches = None
+        self.reach_losses = None
+        # Scenario options
+        self.option_yuma_users_moved_to_reach_4 = False
+        self.option_havasu_evap_charge_to_havasu_users = False
+        self.option_grand_canyon_inflow_cancels_mead_evap = False
+        self.option_crit_in_reach_3a = False
+        self.option_palo_verde_in_reach_3b = False
 
-    reach_4_corridor_loss = 365000  # ? Reach 4
-    reach_5_corridor_loss = 76000   # ? Reach 5
+    def initialize(self, water_year_month=1):
+        # SNWA Study losses by reach
+        lake_mead_evap = 580000         # Reach 1 Mead at 1100 ft
+        # lake_mead_evap = 458000       # Reach 2 Mead at 1045 ft
+        lake_mohave_evap = 193000       # Reach 2
+        lake_havasu_evap = 138000       # Reach 3
+        reach_3_corridor_loss = 191000  # Reach 3
+        reach_4_corridor_loss = 365000  # ? Reach 4
+        reach_5_corridor_loss = 76000   # ? Reach 5
+        self.reach_losses = [0,
+                             lake_mead_evap,
+                             lake_mohave_evap,
+                             lake_havasu_evap + reach_3_corridor_loss,
+                             # 0,  # Rock
+                             # 0,  # Palo Verde
+                             reach_4_corridor_loss,
+                             reach_5_corridor_loss]
 
-    reach_losses = [0,
-                    lake_mead_evap,
-                    lake_mohave_evap,
-                    lake_havasu_evap + reach_3_corridor_loss,
-                    # 0,  # Rock
-                    # 0,  # Palo Verde
-                    reach_4_corridor_loss,
-                    reach_5_corridor_loss]
+        powell = basins.uc.LakePowell(water_year_month)
+        mead = basins.lc.LakeMead(water_year_month)
+        mohave = basins.lc.LakeMohave(water_year_month)
+        havasu = basins.lc.LakeHavasu(water_year_month)
+        # rock_dam = basins.lc.RockDam(water_year_month)
+        # palo_verde_dam = basins.lc.PaloVerdeDam(water_year_month)
+        imperial_dam = basins.lc.ImperialDam(water_year_month)
+        # laguna_dam = Dam('laguna_dam', usbr.lc)
+        morelos = states.mx.Morelos(water_year_month)
+        self.reaches = [Reach('Reach0', None, powell, water_year_month),
+                        basins.lc.Reach1(powell, mead, water_year_month),
+                        basins.lc.Reach2(mead, mohave, water_year_month),
+                        basins.lc.Reach3(mohave, havasu, water_year_month),
+                        # basins.lc.Reach3a(havasu, rock_dam, water_year_month),
+                        # basins.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
+                        basins.lc.Reach4(havasu, imperial_dam, water_year_month),
+                        basins.lc.Reach5(imperial_dam, morelos, water_year_month)
+                        ]
+        for reach_number in range(0, len(self.reaches)):
+            self.reaches[reach_number].loss = self.reach_losses[reach_number]
 
-    powell = basins.uc.LakePowell(water_year_month)
-    mead = basins.lc.LakeMead(water_year_month)
-    mohave = basins.lc.LakeMohave(water_year_month)
-    havasu = basins.lc.LakeHavasu(water_year_month)
-    # rock_dam = basins.lc.RockDam(water_year_month)
-    # palo_verde_dam = basins.lc.PaloVerdeDam(water_year_month)
-    imperial_dam = basins.lc.ImperialDam(water_year_month)
-    # laguna_dam = Dam('laguna_dam', usbr.lc)
-    morelos = states.mx.Morelos(water_year_month)
+        self.states = [State('Arizona', 'az', az, self.reaches, self),
+                       State('California', 'ca', ca, self.reaches, self),
+                       State('Nevada', 'nv', nv, self.reaches, self),
+                       State('Mexico', 'mx', mx, self.reaches, self)]
 
-    reaches = [Reach('Reach0', None, powell, water_year_month),
-               basins.lc.Reach1(powell, mead, water_year_month),
-               basins.lc.Reach2(mead, mohave, water_year_month),
-               basins.lc.Reach3(mohave, havasu, water_year_month),
-               # basins.lc.Reach3a(havasu, rock_dam, water_year_month),
-               # basins.lc.Reach3b(rock_dam, palo_verde_dam, water_year_month),
-               basins.lc.Reach4(havasu, imperial_dam, water_year_month),
-               basins.lc.Reach5(imperial_dam, morelos, water_year_month)
-               ]
-    for reach_number in range(0, len(reaches)):
-        reaches[reach_number].loss = reach_losses[reach_number]
+    def run(self, year_begin, year_end):
+        for state in self.states:
+            state.loss_assessment = 0
+            state.other_user_loss_assessments = 0
 
-    state_list = [State('Arizona', 'az', az, reaches),
-                  State('California', 'ca', ca, reaches),
-                  State('Nevada', 'nv', nv, reaches),
-                  State('Mexico', 'mx', mx, reaches)]
-    return reaches, state_list
+        for reach in self.reaches:
+            for user in reach.users:
+                user.assessment = 0
+            reach.model(year_begin, year_end)
 
+        model_active_users_through_reach(self.reaches)
 
-def model(reaches, state_list, year_begin, year_end):
-    for state in state_list:
-        state.loss_assessment = 0
-        state.other_user_loss_assessments = 0
+        for i in range(1, len(self.reaches)):
+            self.reaches[i].compute_through_reach_cu_avg()
 
-    for reach in reaches:
-        for user in reach.users:
-            user.assessment = 0
-        reach.model(year_begin, year_end)
+        for i in range(1, len(self.reaches)):
+            self.reaches[i].compute_state_assessment()
 
-    model_active_users_through_reach(reaches)
+    def print(self):
+        print_loss_table(self.reaches)
 
-    for i in range(1, len(reaches)):
-        reaches[i].compute_through_reach_cu_avg()
+        # for i in range(1, len(reaches)):
+        #     self.reaches[i].print_model()
 
-    for i in range(1, len(reaches)):
-        reaches[i].compute_state_assessment()
+        for i in range(1, len(self.reaches)):
+            self.reaches[i].print_state_assessments()
 
-    print_loss_table(reaches)
-
-    # for i in range(1, len(reaches)):
-    #     reaches[i].print_model()
-
-    for i in range(1, len(reaches)):
-        reaches[i].print_state_assessments()
-
-    print_users(reaches)
-
-    print_summary(reaches, state_list)
-
-    print()
+        print_users(self.reaches)
+        print_summary(self.reaches, self.states)
+        print()
 
 
 def reach_has_example_user(reach):
@@ -162,18 +169,19 @@ def print_users(reaches):
                     total_assessment = 0
                     for n in range(1, i+1):
                         state_assessment_reach = reaches[n]
-                        s, num_users = state_assessment_reach.state_assessment_as_str(state,
-                                                                                      print_num_users=False,
-                                                                                      print_percent=False,
-                                                                                      print_reach_cu=True)
-                        # state_dictionary = state_assessment_reach.state_assessment[state]
-                        # state_cu_avg = state_dictionary['cu_avg']
-                        # factor = user.avg_cu() / state_cu_avg
-                        # state_assessment = state_dictionary['assessment']
+                        s, num_users  = state_assessment_reach.state_assessment_as_str(state,
+                                                                                       print_num_users=False,
+                                                                                       print_percent=False,
+                                                                                       print_reach_cu=True)
+                        state_dictionary = state_assessment_reach.state_assessment[state]
+                        state_cu_avg = state_dictionary['cu_avg']
+                        factor = user.avg_cu() / state_cu_avg
+                        state_assessment = state_dictionary['assessment']
                         # user_assessment = state_assessment * factor
+                        user_reach_assessment = state_assessment * factor
                         print(state_assessment_reach.name + ' ' + number_as_str(state_assessment_reach.loss) + ' ' + s +
-                              ' ' + user_str + '  ' + "{:6.4f}".format(user.factor) + af_as_str(user.assessment))
-                        total_assessment += user.assessment
+                              ' ' + user_str + '  ' + "{:6.4f}".format(user.factor) + af_as_str(user_reach_assessment))
+                        total_assessment += user_reach_assessment
                     print('{0: >140}'.format('Total' + af_as_str(total_assessment)))
         # print('\tTotal', number_as_str(active_users_in_reach))
 
@@ -654,5 +662,7 @@ def laguna_dam_release():
 if __name__ == '__main__':
     pyplot.switch_backend('Agg')  # FIXME must be accessing pyplt somewhere
     chdir('../')
-    all_reaches, all_states = initialize()
-    model(all_reaches, all_states, 2019, 2021)
+    snwa_loss_model = Model('snwa_loss_study')
+    snwa_loss_model.initialize()
+    snwa_loss_model.run(2019, 2021)
+    snwa_loss_model.print()

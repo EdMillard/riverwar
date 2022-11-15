@@ -33,7 +33,7 @@ from source.usbr_report import diversion_vs_consumptive
 current_last_year = 2021
 
 
-def init(nv, reaches):
+def init(nv, reaches, model):
     module = modules[__name__]
     r1 = reach_for_name(reaches, 'Reach1')
     r2 = reach_for_name(reaches, 'Reach2')

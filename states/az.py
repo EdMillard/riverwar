@@ -32,7 +32,7 @@ from source.usbr_report import diversion_vs_consumptive
 current_last_year = 2021
 
 
-def init(az, reaches):
+def init(az, reaches, model):
     module = modules[__name__]
 
     r1 = reach_for_name(reaches, 'Reach1')
@@ -40,6 +40,10 @@ def init(az, reaches):
     r3 = reach_for_name(reaches, 'Reach3')
     r3a = reach_for_name(reaches, 'Reach4')
     r4 = reach_for_name(reaches, 'Reach4')
+    if model.option_yuma_users_moved_to_reach_4:
+        r4a = reach_for_name(reaches, 'Reach4')
+    else:
+        r4a = reach_for_name(reaches, 'Reach5')
     r5 = reach_for_name(reaches, 'Reach5')
 
     r1.add_user(az.user(None, 'marble_canyon'))                      # 2016
@@ -89,34 +93,34 @@ def init(az, reaches):
     r5.add_user(az.user(None,   'jrj_partners'))                     # 2016  pumped
     r5.add_user(az.user(None,   'cha_cha'))                          # 2016  pumped
     r5.add_user(az.user(None,   'beattie_farms'))                    # 2016  pumped
-    r4.add_user(az.user(module, 'gila_monster'))                     # 2001  ggmc
+    r4a.add_user(az.user(module, 'gila_monster'))                     # 2001  ggmc
     r4.add_user(az.user(module, 'wellton_mohawk', example=True))     # 1964  ggmc
-    r4.add_user(az.user(module, 'city_of_yuma'))                     # 1964  imperial, pumped
-    r4.add_user(az.user(None,   'marine_corp'))                      # 1983  imperial
-    r4.add_user(az.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
-    r4.add_user(az.user(None,   'union_pacific'))                    # 2008  imperial
-    r4.add_user(az.user(None,   'yuma_mesa_fruit'))                  # 1983
-    r4.add_user(az.user(None,   'university_of_arizona'))            # 1983  imperial
-    r4.add_user(az.user(None,   'yuma_union_high_school'))           # 1984  east main canal
-    r4.add_user(az.user(None,   'camille'))                          # 1983-2010
-    r4.add_user(az.user(None,   'desert_lawn'))                      # 1984  from city of yuma
-    r4.add_user(az.user(module, 'north_gila_irrigation'))            # 1964  ggmc, pumped
-    r4.add_user(az.user(module, 'yuma_irrigation'))                  # 1965  imperial, pumped
-    r4.add_user(az.user(module, 'yuma_mesa', example=True))          # 1964  ggmc
-    r4.add_user(az.user(module, 'unit_b'))                           # 1964  ggmc
+    r4a.add_user(az.user(module, 'city_of_yuma'))                     # 1964  imperial, pumped
+    r4a.add_user(az.user(None,   'marine_corp'))                      # 1983  imperial
+    r4a.add_user(az.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
+    r4a.add_user(az.user(None,   'union_pacific'))                    # 2008  imperial
+    r4a.add_user(az.user(None,   'yuma_mesa_fruit'))                  # 1983
+    r4a.add_user(az.user(None,   'university_of_arizona'))            # 1983  imperial
+    r4a.add_user(az.user(None,   'yuma_union_high_school'))           # 1984  east main canal
+    r4a.add_user(az.user(None,   'camille'))                          # 1983-2010
+    r4a.add_user(az.user(None,   'desert_lawn'))                      # 1984  from city of yuma
+    r4a.add_user(az.user(module, 'north_gila_irrigation'))           # 1964  ggmc, pumped
+    r4a.add_user(az.user(module, 'yuma_irrigation'))                 # 1965  imperial, pumped
+    r4a.add_user(az.user(module, 'yuma_mesa', example=True))         # 1964  ggmc
+    r4a.add_user(az.user(module, 'unit_b'))                          # 1964  ggmc
     r5.add_user(az.user(module, 'arizona_state_land'))               # 2013  pumped
-    r4.add_user(az.user(None,   'ott_family'))                       # 2018  ggmc
-    r4.add_user(az.user(None,   'ogram_boys'))                       # 2016  ggmc
+    r4a.add_user(az.user(None,   'ott_family'))                       # 2018  ggmc
+    r4a.add_user(az.user(None,   'ogram_boys'))                       # 2016  ggmc
     r5.add_user(az.user(module, 'fort_yuma'))                        # 1984  pumped
     r5.add_user(az.user(None,   'armon_curtis'))                     # 2016  pumped
-    r4.add_user(az.user(module, 'yuma_county_wua', example=True))    # 1964  imperial, pumped
+    r4a.add_user(az.user(module, 'yuma_county_wua', example=True))   # 1964  imperial, pumped
     r5.add_user(az.user(None,   'r_griffin'))                        # 2016  pumped
     r5.add_user(az.user(None,   'power'))                            # 2016  pumped
     # r5.add_user(az.user(None,   'cocopah_ppr_7'))                    # 2018  pumped in "cocopah
     r5.add_user(az.user(None,   'griffin_ranches'))                  # 2016  pumped
     r5.add_user(az.user(None,   'milton_phillips'))                  # 2016  pumped
     r5.add_user(az.user(None,   'griffin_family'))                   # 2018  pumped
-    r4.add_user(az.user(module, 'cocopah'))                          # 1964
+    r4a.add_user(az.user(module, 'cocopah'))                          # 1964
     r5.add_user(az.user(module, 'yuma_area_office'))                 # 1994
     r5.add_user(az.user(None,   'arizona_public_service'))           # 2016  pumped
     r5.add_user(az.user(None,   'gary_pasquinelli'))                 # 2016  pumped

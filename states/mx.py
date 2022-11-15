@@ -29,7 +29,7 @@ from basins import lc
 from rw.util import subtract_annual, reach_for_name
 
 
-def init(mx, reaches):
+def init(mx, reaches, model):
     module = modules[__name__]
     r5 = reach_for_name(reaches, 'Reach5')
     r5.add_user(mx.user(module, 'mexico', example=True))

@@ -194,19 +194,20 @@ class Reach(object):
         s = '\t'
         number_of_active_users_through_reach = 0
         try:
-            state_assessment = self.state_assessment[state]
-            users = state_assessment['users']
+            state_dictionary = self.state_assessment[state]
+            users = state_dictionary['users']
             s += state + '    '  # Pad to match 'Total'
             if print_num_users:
                 s += number_as_str(len(users))
-            s += af_as_str(state_assessment['cu_avg'])
+            s += af_as_str(state_dictionary['cu_avg'])
             if print_reach_cu:
                 s += af_as_str(self.through_reach_cu_avg)
             if print_percent:
                 s += ' '
-                s += percent_as_str(state_assessment['percent'])
+                s += percent_as_str(state_dictionary['percent'])
                 s += ' '
-            s += af_as_str(state_assessment['assessment'])
+            state_assessment = state_dictionary['assessment']
+            s += af_as_str(state_assessment)
             number_of_active_users_through_reach = len(users)
         except KeyError:
             print('\t' + state + '   ')
