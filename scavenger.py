@@ -1303,8 +1303,27 @@ def scavenge_az(image_dir, out_path):
 def scavenge_nv(image_dir, out_path):
     image_path = image_dir.joinpath('nv/consumptive_use')
 
+    # Lake Havasu Irrigation and Drainage in the 80's at least
+    # Big Bend Conservation Area
+    # Local aquifer storage
+    # Las Vegas Valley Water District
+    # City of North Las Vegas
+    output_path = out_path.joinpath('nv/usbr_nv_city_of_boulder_city_diversion.csv')  # Add diversion loop
+    ocr_reports(image_path, output_path, water_user='City of Boulder City', field_id='Diversion',
+                start_year=1990, end_year=2003)
+
+    output_path = out_path.joinpath('nv/usbr_nv_boulder_city_diversion.csv')  # Add diversion loop
+    ocr_reports(image_path, output_path, water_user='Boulder ', field_id='Diversion')
+
     output_path = out_path.joinpath('nv/usbr_nv_lake_mead_national_lake_mohave_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Lake Mead National Recreation Area',
+                field_id='Diversion from Lake Mohave', start_year=1993, end_year=2013)
+
+    output_path = out_path.joinpath('nv/usbr_nv_lake_mead_national_lake_mohave_pumped_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Pumped from Lake Mohave', field_id='Diversion', start_year=2014)
+
+    output_path = out_path.joinpath('nv/usbr_nv_lake_mead_national_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Lake Mead Nat', field_id='Diversion', start_year=1964)
 
     output_path = out_path.joinpath('nv/usbr_nv_hoover_dam_diversion.csv')
     ocr_reports(image_path, output_path, water_user='hoover dam', field_id='Diversion',
@@ -1314,19 +1333,19 @@ def scavenge_nv(image_dir, out_path):
     ocr_reports(image_path, output_path, water_user='hoover dam', field_id='Consumptive Us',
                 end_year=1984)
 
-    output_path = out_path.joinpath('nv/usbr_nv_boulder_canyon_project_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='boulder canyon project', field_id='Consumptive Us',
-                start_year=1985, end_year=2013)
-
-    output_path = out_path.joinpath('nv/usbr_nv_bureau_of_reclamation_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='bureau of reclamation', field_id='Consumptive Us', start_year=2014)
-
     output_path = out_path.joinpath('nv/usbr_nv_boulder_canyon_project_diversion.csv')
     ocr_reports(image_path, output_path, water_user='boulder canyon project', field_id='Diversion',
                 start_year=1985, end_year=2013)
 
+    output_path = out_path.joinpath('nv/usbr_nv_boulder_canyon_project_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='boulder canyon project', field_id='Consumptive Us',
+                start_year=1985, end_year=2013)
+
     output_path = out_path.joinpath('nv/usbr_nv_bureau_of_reclamation_diversion.csv')
     ocr_reports(image_path, output_path, water_user='bureau of reclamation', field_id='Diversion', start_year=2014)
+
+    output_path = out_path.joinpath('nv/usbr_nv_bureau_of_reclamation_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='bureau of reclamation', field_id='Consumptive Us', start_year=2014)
 
     output_path = out_path.joinpath('nv/usbr_nv_pacific_coast_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Pacific Coast', field_id='Diversion', start_year=1978)
@@ -1337,9 +1356,6 @@ def scavenge_nv(image_dir, out_path):
     # Name changed to Johns Manville in 1968
     output_path = out_path.joinpath('nv/usbr_nv_fiberboard_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Fiberboard', field_id='Diversion', end_year=1967)
-
-    output_path = out_path.joinpath('nv/usbr_nv_lake_mead_national_diversion.csv')
-    ocr_reports(image_path, output_path, water_user='Lake Mead Nat', field_id='Diversion', start_year=1964)
 
     output_path = out_path.joinpath('nv/usbr_nv_nevada_fish_and_game_consumptive_use.csv')
     ocr_reports(image_path, output_path, water_user=' fish ', field_id='Consumptive Us',
@@ -1353,9 +1369,6 @@ def scavenge_nv(image_dir, out_path):
 
     output_path = out_path.joinpath('nv/usbr_nv_nevada_fish_and_game_diversion.csv')
     ocr_reports(image_path, output_path, water_user=' fish ', field_id='Diversion', start_year=1973, end_year=2014)
-
-    output_path = out_path.joinpath('nv/usbr_nv_fort_mojave_indian_consumptive_use.csv')
-    ocr_reports(image_path, output_path, water_user='Fort Mojave Indian', field_id='Consumptive Us', start_year=2003)
 
     output_path = out_path.joinpath('nv/usbr_nv_north_las_vegas_diversion.csv')
     ocr_reports(image_path, output_path, water_user='North Las Vegas', field_id='Diversion', end_year=1984)
@@ -1384,8 +1397,8 @@ def scavenge_nv(image_dir, out_path):
     output_path = out_path.joinpath('nv/usbr_nv_basic_water_company_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Basic ', field_id='Diversion')
 
-    output_path = out_path.joinpath('nv/usbr_nv_boulder_city_diversion.csv')  # Add diversion loop
-    ocr_reports(image_path, output_path, water_user='Boulder ', field_id='Diversion')
+    output_path = out_path.joinpath('nv/usbr_nv_fort_mojave_indian_consumptive_use.csv')
+    ocr_reports(image_path, output_path, water_user='Fort Mojave Indian', field_id='Consumptive Us', start_year=2003)
 
     output_path = out_path.joinpath('nv/usbr_nv_fort_mojave_indian_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Fort Mojave Indian', field_id='Diversion', start_year=1996)
@@ -1413,16 +1426,6 @@ def scavenge_nv(image_dir, out_path):
 
     output_path = out_path.joinpath('nv/usbr_nv_snwa_griffith_diversion.csv')
     ocr_reports(image_path, output_path, water_user='Griffith Water Project', field_id='Diversion', start_year=1984)
-
-    # Lake Havasu Irrigation and Drainage in the 80's at least
-    # Bureau of Reclamation
-    # Lake Mead National Recreational Area
-    # Big Bend Conservation Area
-    # Pacific Coast Building Products
-
-    # Local aquifer storage
-    # Las Vegas Valley Water District
-    # City of North Las Vegas
 
 
 def scavenge_mx(image_dir, out_path):
@@ -1542,11 +1545,11 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    # ocr_debug(image_directory, path1='az', path2='/consumptive_use')
+    ocr_debug(image_directory, path1='nv', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='releases')
     # ocr_debug(image_directory, path1='mx')
+    scavenge_nv(image_directory, outputs_path)
     scavenge_ca(image_directory, outputs_path)
     scavenge_az(image_directory, outputs_path)
-    scavenge_nv(image_directory, outputs_path)
     scavenge_releases(image_directory, outputs_path)
     scavenge_mx(image_directory, outputs_path)
