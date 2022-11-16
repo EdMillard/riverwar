@@ -1261,12 +1261,8 @@ def model_hoover_to_imperial_extras():
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
-    # model_all_american()
-    # model_imperial_to_mexico()
-
-    all_reaches, all_states = basins.lc.initialize()
-    basins.lc.model(all_reaches, all_states, 2019, 2021)
-
+    model_all_american()
+    model_imperial_to_mexico()
     lake_mead_side_inflows()
 
     basins.lc.lake_mead()
