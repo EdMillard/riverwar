@@ -69,3 +69,7 @@ class State(object):
             user_returns.append(user.returns())
         user_returns[0] = reshape_annual_range(user_returns[0], 1964, current_last_year)
         return add_annuals(user_returns)
+
+    def user_for_name(self, name):
+        state = self.users[name]
+        return state
