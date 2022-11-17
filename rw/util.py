@@ -196,8 +196,13 @@ def avg_annual(a):
     return avg
 
 
-def af_as_str(af):
+def af_as_str(af, plus_minus=False):
     s = "{:,}".format(round(af))
+    if plus_minus:
+        if af > 0:
+            s = '+' + s
+        elif af < 0:
+            s = '-' + s
     s = "{:>12}".format(s)
     return s
 
