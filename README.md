@@ -9,7 +9,7 @@ riverwar is a Python app and library to download and graph hydrological data fro
 - USBR RISE service
 
 ```python
-python3 riverwar.py
+python3 loss_study.py
 ```
 Services available for USGS gages include:
 - download and cache the data of interest:
@@ -28,11 +28,15 @@ Services available to view data:
 
 Quick start
 -----------
-riverwar can be installed using pip3:
+riverwar can be installed using pip3.  Its recommended you create a virtualenv first:
 
     $ pip3 install -r requirements.txt
 
-To run the very basin example:
+To run the Lower Colorado loss assessment study:
+
+    $ python3 loss_study.py
+
+To run tests for AZ, CA, NV and Mexico data and graphs:
 
     $ python3 riverwar.py
 

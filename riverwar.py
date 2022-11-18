@@ -35,6 +35,7 @@ from states import az, ca, nv, mx
 from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
+from loss_study import Model
 
 
 interrupted = False
@@ -1261,6 +1262,23 @@ def model_hoover_to_imperial_extras():
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
+    model = Model("Lower Colorado")
+    model.initialize()
+
+    states.nv.test()
+    states.az.test()
+    states.ca.test()
+    states.ca.test()
+
+    basins.lc.test()
+    basins.uc.test()
+
+    usgs.az.test()
+    usgs.lc.test()
+    usgs.ca.test()
+    usgs.nv.test()
+    usgs.co.test()
+
     model_all_american()
     model_imperial_to_mexico()
     lake_mead_side_inflows()
@@ -1288,18 +1306,4 @@ if __name__ == '__main__':
     usbr_lower_basin_states_total_use()
     usbr_glen_canyon_annual_release_af()
     model_glen_canyon()
-
-    usgs.az.test()
-    usgs.lc.test()
-    usgs.ca.test()
-    usgs.nv.test()
-    usgs.co.test()
-
-    states.nv.test()
-    basins.lc.test()
-    basins.uc.test()
-    states.az.test()
-    states.ca.test()
-    basins.uc.test()
-
     all_american_extras()

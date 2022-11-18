@@ -2,8 +2,10 @@ data/USBR_RISE
 data/USGS_Gages
 data/USBR_Reports/generated
 .idea
-graph/__pycache__/
-source/__pycache__/
+__pycache__/
 basins/__pycache__/
+graph/__pycache__/
 rw/__pycache__/
+source/__pycache__/
 states/__pycache__/
+usgs/__pycache__/
