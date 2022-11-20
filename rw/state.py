@@ -21,6 +21,8 @@ SOFTWARE.
 """
 from rw.user import User
 from rw.util import add_annuals, reshape_annual_range
+from graph.water import WaterGraph
+from source import usbr_report
 
 states = {}
 current_last_year = 2021
@@ -31,18 +33,20 @@ def state_by_abbreviation(abbreviation):
 
 
 class State(object):
-    def __init__(self, name, abbreviation, module, reaches, model):
+    def __init__(self, name, abbreviation, module, reaches, options):
         self.name = name
         self.abbreviation = abbreviation
         self.module = module
         self.loss_assessment = None
         self.other_user_loss_assessments = None
         self.users = {}
-        self.init = getattr(module, 'init')
-        self.init(self, reaches, model)
-        self.model = model
+        self.reaches = reaches
+        self.options = options
 
         states[abbreviation] = self
+
+    def test(self):
+        pass
 
     def user(self, module, name, example=False):
         user = User(module, name, self.abbreviation, example=example)
@@ -73,3 +77,43 @@ class State(object):
     def user_for_name(self, name):
         state = self.users[name]
         return state
+
+    @staticmethod
+    def orders_not_delivered(self, state_code):
+        year_interval = 3
+        show_graph = True
+
+        orders_not_delivered_af = usbr_report.annual_af('orders/'+state_code+'/total_ordered_but_not_diverted.csv',
+                                                        water_year_month=1)
+        diverted_by_others_af = usbr_report.annual_af('orders/'+state_code+'/total_diverted_by_others.csv',
+                                                      water_year_month=1)
+        diverted_to_storage_af = usbr_report.annual_af('orders/'+state_code+'/total_diverted_to_storage.csv',
+                                                       water_year_month=1)
+        satisfaction_of_treaty_af = usbr_report.annual_af('orders/'+state_code+'/total_satisfaction_of_treaty.csv',
+                                                          water_year_month=1)
+        excess_of_treaty_af = usbr_report.annual_af('orders/'+state_code+'/total_excess_of_treaty.csv',
+                                                    water_year_month=1)
+
+        if show_graph:
+            graph = WaterGraph(nrows=5)
+            graph.bars(orders_not_delivered_af, sub_plot=0, title=state_code + ' Total Orders Not Delivered',
+                       ymin=0, ymax=500000, yinterval=50000,
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(diverted_by_others_af, sub_plot=1,
+                       ymin=0, ymax=150000, yinterval=50000, title='Diverted by Others',
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(diverted_to_storage_af, sub_plot=2,
+                       ymin=0, ymax=300000, yinterval=50000, title='Diverted to Storage',
+                       xlabel='', x_labels=False,  xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(satisfaction_of_treaty_af, sub_plot=3,
+                       ymin=0, ymax=300000, yinterval=50000, title='Delivered in Satisfaction of Treaty',
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(excess_of_treaty_af, sub_plot=4,
+                       ymin=0, ymax=100000, yinterval=20000, title='Delivered in Excess of Treaty',
+                       xlabel='',  xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.date_and_wait()

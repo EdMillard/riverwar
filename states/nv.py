@@ -24,7 +24,7 @@ from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from basins import lc
-from rw.state import state_by_abbreviation
+from rw.state import State, state_by_abbreviation
 from rw.util import subtract_annual, add_annuals, reshape_annual_range_to, reach_for_name
 from rw.util import state_total_vs_user_total_graph
 from source.usbr_report import diversion_vs_consumptive
@@ -33,43 +33,44 @@ from source.usbr_report import diversion_vs_consumptive
 current_last_year = 2021
 
 
-def init(nv, reaches, model):
-    module = modules[__name__]
-    r1 = reach_for_name(reaches, 'Reach1')
-    r2 = reach_for_name(reaches, 'Reach2')
-    r3 = reach_for_name(reaches, 'Reach3')
+class Nevada(State):
+    def __init__(self, module, reaches, options):
+        State.__init__(self, 'Nevada', 'nv', module, reaches, options)
+        module = modules[__name__]
+        r1 = reach_for_name(reaches, 'Reach1')
+        r2 = reach_for_name(reaches, 'Reach2')
+        r3 = reach_for_name(reaches, 'Reach3')
 
-    r1.add_user(nv.user(None, 'bureau_of_reclamation'))             # 1985-      aka Boulder Canyon Project and Hoover
-    r1.add_user(nv.user(module, 'boulder_city'))                    # 1964-1983
-    r1.add_user(nv.user(None, 'lake_mead_national'))                # 1964-
-    r1.add_user(nv.user(module, 'snwa_griffith', example=True))     # 1984-
-    r1.add_user(nv.user(module, 'basic'))                           # 1964-
-    r1.add_user(nv.user(module, 'city_of_henderson'))               # 1972-
-    r1.add_user(nv.user(None, 'nevada_dept_of_wildlife'))           # 1973-
-    r1.add_user(nv.user(module, 'las_vegas_valley'))                # 1964-1983
-    r1.add_user(nv.user(module, 'north_las_vegas'))                 # 1971-1983
-    r1.add_user(nv.user(module, 'nellis'))                          # 1971-2002
-    r1.add_user(nv.user(module, 'pacific_coast'))                   # 1964-
-    r1.add_user(nv.user(module, 'socal_edison'))                    # 1967-2011
+        r1.add_user(self.user(None, 'bureau_of_reclamation'))             # 1985- aka Boulder Canyon Project and Hoover
+        r1.add_user(self.user(module, 'boulder_city'))                    # 1964-1983
+        r1.add_user(self.user(None, 'lake_mead_national'))                # 1964-
+        r1.add_user(self.user(module, 'snwa_griffith', example=True))     # 1984-
+        r1.add_user(self.user(module, 'basic'))                           # 1964-
+        r1.add_user(self.user(module, 'city_of_henderson'))               # 1972-
+        r1.add_user(self.user(None, 'nevada_dept_of_wildlife'))           # 1973-
+        r1.add_user(self.user(module, 'las_vegas_valley'))                # 1964-1983
+        r1.add_user(self.user(module, 'north_las_vegas'))                 # 1971-1983
+        r1.add_user(self.user(module, 'nellis'))                          # 1971-2002
+        r1.add_user(self.user(module, 'pacific_coast'))                   # 1964-
+        r1.add_user(self.user(module, 'socal_edison'))                    # 1967-2011
 
-    r2.add_user(nv.user(None, 'lake_mead_national_lake_mohave'))    # 1993-
+        r2.add_user(self.user(None, 'lake_mead_national_lake_mohave'))    # 1993-
 
-    r3.add_user(nv.user(None, 'big_bend'))                          # 1984-
-    r3.add_user(nv.user(module, 'fort_mojave_indian'))              # 1996-
+        r3.add_user(self.user(None, 'big_bend'))                          # 1984-
+        r3.add_user(self.user(module, 'fort_mojave_indian'))              # 1996-
 
-
-def test():
-    data = [
-        {'data': state_total_diversion(), 'y_min': 0, 'y_max': 550000, 'y_interval': 50000},
-        {'data': user_total_diversion()},
-        {'y_min': -50, 'y_max': 200, 'y_interval': 50},
-        {'data': state_total_cu(), 'y_min': 0, 'y_max': 350000, 'y_interval': 50000},
-        {'data': user_total_cu()},
-        {'y_min': -50, 'y_max': 200, 'y_interval': 100},
-    ]
-    state_total_vs_user_total_graph('NV', data, y_formatter='kaf')
-    total()
-    southern_nevada_water_authority()
+    def test(self):
+        data = [
+            {'data': state_total_diversion(), 'y_min': 0, 'y_max': 550000, 'y_interval': 50000},
+            {'data': user_total_diversion()},
+            {'y_min': -50, 'y_max': 200, 'y_interval': 50},
+            {'data': state_total_cu(), 'y_min': 0, 'y_max': 350000, 'y_interval': 50000},
+            {'data': user_total_cu()},
+            {'y_min': -50, 'y_max': 200, 'y_interval': 100},
+        ]
+        state_total_vs_user_total_graph('NV', data, y_formatter='kaf')
+        total()
+        southern_nevada_water_authority()
 
 
 def state_total_diversion():
@@ -271,5 +272,7 @@ def fort_mojave_indian_returns():
 
 if __name__ == '__main__':
     chdir('../')
-    lc.initialize()
-    test()
+    test_model = lc.Model('test')
+    test_model.initialize()
+    state = test_model.state_by_name('Nevada')
+    state.test()

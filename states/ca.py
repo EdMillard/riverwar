@@ -24,7 +24,7 @@ from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
 from basins import lc
-from rw.state import state_by_abbreviation
+from rw.state import State, state_by_abbreviation
 from rw.util import add_annual, add_annuals, subtract_annual, replace_annual, reshape_annual_range, reach_for_name
 from rw import util
 
@@ -32,68 +32,122 @@ from rw import util
 current_last_year = 2021
 
 
-def init(ca, reaches, model):
-    module = modules[__name__]
-    r3 = reach_for_name(reaches, 'Reach3')
-    r3a = reach_for_name(reaches, 'Reach4')
-    r3b = reach_for_name(reaches, 'Reach4')
-    r4 = reach_for_name(reaches, 'Reach4')
-    if model.option_yuma_users_moved_to_reach_4:
-        r4a = reach_for_name(reaches, 'Reach4')
-    else:
-        r4a = reach_for_name(reaches, 'Reach5')
+class California(State):
+    def __init__(self, module, reaches, options):
+        State.__init__(self, 'California', 'ca',  module, reaches, options)
 
-    r3.add_user(ca.user(module, 'fort_mojave'))                 # 1999
-    r3.add_user(ca.user(None, 'city_of_needles'))               # 1964
-    r3.add_user(ca.user(None, 'southern_california_gas'))       # 2016
-    r3.add_user(ca.user(None, 'pacific_gas'))                   # 2016
-    r3.add_user(ca.user(None, 'havasu_water'))                  # 2016
-    r3.add_user(ca.user(None, 'vista_del_lago'))                # 2016
-    r3.add_user(ca.user(None, 'non_federal_subcontractors'))    # 2016
-    r3.add_user(ca.user(None, 'wetmore_mark'))                  # 2016-2019
-    r3.add_user(ca.user(None, 'williams_jerry'))                # 2016-2019
-    r3.add_user(ca.user(None, 'wetmore_kenneth'))               # 2016-2019
-    r3.add_user(ca.user(None, 'ppr_30_stephenson'))             # 2020
-    r3.add_user(ca.user(None, 'ppr_38_andrade'))                # 2020
-    r3.add_user(ca.user(None, 'ppr_40_cooper'))                 # 2021
-    r3.add_user(ca.user(module, 'chemehuevi'))                  # 1996
-    r3.add_user(ca.user(module, 'metropolitan', example=True))  # 1964
-    r3.add_user(ca.user(None, 'bureau_of_reclamation_parker'))  # 2017
+        module = modules[__name__]
+        r3 = reach_for_name(reaches, 'Reach3')
+        r3a = reach_for_name(reaches, 'Reach4')
+        r3b = reach_for_name(reaches, 'Reach4')
+        r4 = reach_for_name(reaches, 'Reach4')
+        if options.yuma_users_moved_to_reach_4:
+            r4a = reach_for_name(reaches, 'Reach4')
+        else:
+            r4a = reach_for_name(reaches, 'Reach5')
 
-    r3a.add_user(ca.user(module, 'crit'))                       # 1973
-    r3b.add_user(ca.user(module, 'city_of_blythe'))             # 1964-1978
-    r3b.add_user(ca.user(module, 'east_blythe'))                # 1965-1977
-    r3b.add_user(ca.user(module, 'palo_verde', example=True))   # 1964
-    r4.add_user(ca.user(None, 'lake_enterprises'))              # 2016
-    r4.add_user(ca.user(None, 'bureau_of_land_management'))     # 2016
-    r4a.add_user(ca.user(module, 'yuma_project'))                # 1964
-    r4a.add_user(ca.user(None, 'fort_yuma'))                     # 2016
-    r4a.add_user(ca.user(None, 'yuma_island'))                   # 2016
-    r4a.add_user(ca.user(module, 'winterhaven'))                 # FIXME
-    r4.add_user(ca.user(module, 'imperial', example=True))      # 1964
-    r4.add_user(ca.user(None, 'coachella', example=True))       # 1964
+        r3.add_user(self.user(module, 'fort_mojave'))                 # 1999
+        r3.add_user(self.user(None, 'city_of_needles'))               # 1964
+        r3.add_user(self.user(None, 'southern_california_gas'))       # 2016
+        r3.add_user(self.user(None, 'pacific_gas'))                   # 2016
+        r3.add_user(self.user(None, 'havasu_water'))                  # 2016
+        r3.add_user(self.user(None, 'vista_del_lago'))                # 2016
+        r3.add_user(self.user(None, 'non_federal_subcontractors'))    # 2016
+        r3.add_user(self.user(None, 'wetmore_mark'))                  # 2016-2019
+        r3.add_user(self.user(None, 'williams_jerry'))                # 2016-2019
+        r3.add_user(self.user(None, 'wetmore_kenneth'))               # 2016-2019
+        r3.add_user(self.user(None, 'ppr_30_stephenson'))             # 2020
+        r3.add_user(self.user(None, 'ppr_38_andrade'))                # 2020
+        r3.add_user(self.user(None, 'ppr_40_cooper'))                 # 2021
+        r3.add_user(self.user(module, 'chemehuevi'))                  # 1996
+        r3.add_user(self.user(module, 'metropolitan', example=True))  # 1964
+        r3.add_user(self.user(None, 'bureau_of_reclamation_parker'))  # 2017
 
-    # FIXME, getting reaches out of this before 2016 will be complicated
-    ca.user(None, 'other_users_pumping')
+        r3a.add_user(self.user(module, 'crit'))                       # 1973
+        r3b.add_user(self.user(module, 'city_of_blythe'))             # 1964-1978
+        r3b.add_user(self.user(module, 'east_blythe'))                # 1965-1977
+        r3b.add_user(self.user(module, 'palo_verde', example=True))   # 1964
+        r4.add_user(self.user(None, 'lake_enterprises'))              # 2016
+        r4.add_user(self.user(None, 'bureau_of_land_management'))     # 2016
+        r4a.add_user(self.user(module, 'yuma_project'))                # 1964
+        r4a.add_user(self.user(None, 'fort_yuma'))                     # 2016
+        r4a.add_user(self.user(None, 'yuma_island'))                   # 2016
+        r4a.add_user(self.user(module, 'winterhaven'))                 # FIXME
+        r4.add_user(self.user(module, 'imperial', example=True))      # 1964
+        r4.add_user(self.user(None, 'coachella', example=True))       # 1964
 
+        # FIXME, getting reaches out of this before 2016 will be complicated
+        self.user(None, 'other_users_pumping')
 
-def test():
-    data = [
-        {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
-        {'data': user_total_diversion()},
-        {'y_min': -100, 'y_max': 1000, 'y_interval': 100},
-        {'data': state_total_cu(), 'y_min': 3500000, 'y_max': 5500000, 'y_interval': 500000},
-        {'data': user_total_cu()},
-        {'y_min': -1000, 'y_max': 60000, 'y_interval': 5000},
-    ]
-    util.state_total_vs_user_total_graph('CA', data)
+    def test(self):
+        self.orders_not_delivered(self, 'ca')
+        data = [
+            {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
+            {'data': user_total_diversion()},
+            {'y_min': -100, 'y_max': 1000, 'y_interval': 100},
+            {'data': state_total_cu(), 'y_min': 3500000, 'y_max': 5500000, 'y_interval': 500000},
+            {'data': user_total_cu()},
+            {'y_min': -1000, 'y_max': 60000, 'y_interval': 5000},
+        ]
+        util.state_total_vs_user_total_graph('CA', data)
 
-    total()
-    metropolitan()
-    coachella()
-    imperial_irrigation_district()
-    palo_verde()
-    yuma_project()
+        total()
+        metropolitan()
+        coachella()
+        imperial_irrigation_district()
+        palo_verde()
+        yuma_project()
+
+    @staticmethod
+    def orders_not_delivered(self, state_code):
+        year_interval = 3
+        show_graph = True
+
+        orders_not_delivered_af = usbr_report.annual_af('orders/'+state_code+'/total_ordered_but_not_diverted.csv',
+                                                        water_year_month=1)
+        diverted_by_others_af = usbr_report.annual_af('orders/'+state_code+'/total_diverted_by_others.csv',
+                                                      water_year_month=1)
+        diverted_to_storage_af = usbr_report.annual_af('orders/'+state_code+'/total_diverted_to_storage.csv',
+                                                       water_year_month=1)
+        satisfaction_of_treaty_af = usbr_report.annual_af('orders/'+state_code+'/total_satisfaction_of_treaty.csv',
+                                                          water_year_month=1)
+        excess_of_treaty_af = usbr_report.annual_af('orders/'+state_code+'/total_excess_of_treaty.csv',
+                                                    water_year_month=1)
+
+        if show_graph:
+            graph = WaterGraph(nrows=5)
+            graph.bars(orders_not_delivered_af, sub_plot=0, title=state_code + ' Total Orders Not Delivered',
+                       ymin=0, ymax=500000, yinterval=50000,
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(diverted_by_others_af, sub_plot=1,
+                       ymin=0, ymax=125000, yinterval=25000, title='Diverted by Others',
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(diverted_to_storage_af, sub_plot=2,
+                       ymin=0, ymax=250000, yinterval=50000, title='Diverted to Storage',
+                       xlabel='', x_labels=False,  xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(satisfaction_of_treaty_af, sub_plot=3,
+                       ymin=0, ymax=300000, yinterval=50000, title='Delivered in Satisfaction of Treaty',
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(excess_of_treaty_af, sub_plot=4,
+                       ymin=0, ymax=100000, yinterval=20000, title='Delivered in Excess of Treaty',
+                       xlabel='',  xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.date_and_wait()
+
+        imperial_not_delivered_af = usbr_report.annual_af('orders/'+state_code+'/imperial_ordered_but_not_diverted.csv',
+                                                          water_year_month=1)
+
+        if show_graph:
+            graph = WaterGraph(nrows=1)
+            graph.bars(imperial_not_delivered_af, sub_plot=0, title='Imperial Irrigation Orders Not Delivered',
+                       ymin=0, ymax=350000, yinterval=50000,
+                       xlabel='', x_labels=True, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.date_and_wait()
 
 
 def total():
@@ -684,5 +738,7 @@ def winterhaven_returns():
 
 if __name__ == '__main__':
     chdir('../')
-    lc.initialize()
-    test()
+    test_model = lc.Model('test')
+    test_model.initialize()
+    state = test_model.state_by_name('California')
+    state.test()

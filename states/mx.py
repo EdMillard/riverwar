@@ -23,20 +23,23 @@ from sys import modules
 from os import chdir
 from source import usbr_report
 from graph.water import WaterGraph
+from basins import lc
 from rw.lake import Lake
 import usgs
-from basins import lc
 from rw.util import subtract_annual, reach_for_name
+from rw.state import State
 
 
-def init(mx, reaches, model):
-    module = modules[__name__]
-    r5 = reach_for_name(reaches, 'Reach5')
-    r5.add_user(mx.user(module, 'mexico', example=True))
+class Mexico(State):
+    def __init__(self, module, reaches, options):
+        State.__init__(self, 'Mexico', 'mx', module, reaches, options)
 
+        module = modules[__name__]
+        r5 = reach_for_name(reaches, 'Reach5')
+        r5.add_user(self.user(module, 'mexico', example=True))
 
-def test():
-    mexico()
+    def test(self):
+        mexico()
 
 
 class Morelos(Lake):
@@ -161,5 +164,7 @@ def mexico_returns(water_year_month=1):
 
 if __name__ == '__main__':
     chdir('../')
-    lc.initialize()
-    test()
+    test_model = lc.Model('test')
+    test_model.initialize()
+    state = test_model.state_by_name('Mexico')
+    state.test()
