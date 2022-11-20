@@ -1477,6 +1477,55 @@ def scavenge_mx(image_dir, out_path):
     ocr_reports(image_path, output_path, field_id='In Excess')
 
 
+def scavenge_orders(image_dir, out_path, state, user_name, user_id):
+    image_path = image_dir.joinpath('orders/'+state)
+
+    output_path = out_path.joinpath('orders/'+state+'/'+user_id+'_ordered_but_not_diverted.csv')
+    ocr_reports(image_path, output_path, water_user=user_name,
+                field_id='Ordered but not Diverted')
+
+    output_path = out_path.joinpath('orders/'+state+'/'+user_id+'_diverted_by_others.csv')
+    ocr_reports(image_path, output_path, water_user=user_name,
+                field_id='Diverted by Others')
+
+    output_path = out_path.joinpath('orders/'+state+'/'+user_id+'_diverted_to_storage.csv')
+    ocr_reports(image_path, output_path, water_user=user_name,
+                field_id='Delivered to Storage')
+
+    output_path = out_path.joinpath('orders/'+state+'/'+user_id+'_satisfaction_of_treaty.csv')
+    ocr_reports(image_path, output_path, water_user=user_name,
+                field_id='Delivered to Mexico')
+
+    output_path = out_path.joinpath('orders/'+state+'/'+user_id+'_excess_of_treaty.csv')
+    ocr_reports(image_path, output_path, water_user=user_name,
+                field_id='Excess of Treaty')
+
+
+def scavenge_orders_az(image_dir, out_path):
+    scavenge_orders(image_dir, out_path, 'az', 'Central Arizona Project', 'cap')
+    scavenge_orders(image_dir, out_path, 'az', 'River Indian', 'crit')
+    scavenge_orders(image_dir, out_path, 'az', 'North Gila', 'north_gila_irrigation')
+    scavenge_orders(image_dir, out_path, 'az', 'Gila Monster', 'gila_monster')
+    scavenge_orders(image_dir, out_path, 'az', 'Wellton-Mohawk', 'wellton_mohawk')
+    scavenge_orders(image_dir, out_path, 'az', 'Yuma Irrigation', 'yuma_irrigation')
+    scavenge_orders(image_dir, out_path, 'az', 'Yuma Mesa', 'yuma_mesa')
+    scavenge_orders(image_dir, out_path, 'az', 'Unit', 'unit_b')
+    scavenge_orders(image_dir, out_path, 'az', 'Cocopah', 'cocopah')
+    scavenge_orders(image_dir, out_path, 'az', 'City of Yuma', 'city_of_yuma')
+    scavenge_orders(image_dir, out_path, 'az', 'Yuma County Water Users', 'yuma_county_wua')
+    scavenge_orders(image_dir, out_path, 'az', 'Arizona Totals', 'total')
+    # Yuma proving ground is listed some years but is often zero
+
+
+def scavenge_orders_ca(image_dir, out_path):
+    scavenge_orders(image_dir, out_path, 'ca', 'Metropolitan', 'metropolitan')
+    scavenge_orders(image_dir, out_path, 'ca', 'Palo Verde', 'palo_verde')
+    scavenge_orders(image_dir, out_path, 'ca', 'Yuma Project', 'yuma_project')
+    scavenge_orders(image_dir, out_path, 'ca', 'Imperial Irrigation', 'imperial')
+    scavenge_orders(image_dir, out_path, 'ca', 'Coachella', 'coachella')
+    scavenge_orders(image_dir, out_path, 'ca', 'California Totals', 'total')
+
+
 def scavenge_releases(image_dir, out_path):
     image_path = image_dir.joinpath('releases')
 
@@ -1545,9 +1594,14 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
+    # ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
+    #ocr_debug(image_directory, path1='orders', path2='ca')
     # ocr_debug(image_directory, path1='releases')
+    ocr_debug(image_directory, path1='orders/ca')
     # ocr_debug(image_directory, path1='mx')
+    scavenge_orders_ca(image_directory, outputs_path)
+    scavenge_orders_az(image_directory, outputs_path)
+
     scavenge_nv(image_directory, outputs_path)
     scavenge_ca(image_directory, outputs_path)
     scavenge_az(image_directory, outputs_path)
