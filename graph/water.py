@@ -132,7 +132,7 @@ class WaterGraph(object):
                     xytext=(x_lim[1], y), textcoords='data', verticalalignment='center',
                     arrowprops=dict(arrowstyle="-", connectionstyle="arc3", color=color))
 
-    def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, running_average_years=10,
+    def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, x_labels=True, running_average_years=10,
              ymin=0, ymax=0, yinterval=1,
              xlabel='', xmin=0, xmax=0, xinterval=1, bar_width=0.9,
              ylabel='', format_func=format_af):
@@ -150,13 +150,15 @@ class WaterGraph(object):
         if xmax == 0:
             xmax = a[-1][0] + 1
 
-        labels_x = np.arange(xmin, xmax, xinterval)
-        ax.set_xticks(labels_x)
+        x_ticks = np.arange(xmin, xmax, xinterval)
+        ax.set_xticks(x_ticks)
+        if not x_labels:
+            ax.set_xticklabels([])
         ax.set_xlim([xmin, xmax])
 
         if ymax > 0 and yinterval > 0:
-            labels_y = np.arange(ymin, ymax+yinterval, yinterval)
-            ax.set_yticks(labels_y)
+            y_ticks = np.arange(ymin, ymax+yinterval, yinterval)
+            ax.set_yticks(y_ticks)
         ax.set_ylim([ymin, ymax])
 
         ax.yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
