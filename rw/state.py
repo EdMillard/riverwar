@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from rw.user import User
-from rw.util import add_annuals, reshape_annual_range
+from rw.util import add_annuals, subtract_annual, reshape_annual_range
 from graph.water import WaterGraph
 from source import usbr_report
 
@@ -94,8 +94,14 @@ class State(object):
         excess_of_treaty_af = usbr_report.annual_af('orders/'+state_code+'/total_excess_of_treaty.csv',
                                                     water_year_month=1)
 
+        diverted_total_af = add_annuals([diverted_by_others_af,
+                                         diverted_to_storage_af,
+                                         satisfaction_of_treaty_af,
+                                         excess_of_treaty_af])
+        diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
+
         if show_graph:
-            graph = WaterGraph(nrows=5)
+            graph = WaterGraph(nrows=6)
             graph.bars(orders_not_delivered_af, sub_plot=0, title=state_code + ' Total Orders Not Delivered',
                        ymin=0, ymax=500000, yinterval=50000,
                        xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
@@ -114,6 +120,10 @@ class State(object):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(excess_of_treaty_af, sub_plot=4,
                        ymin=0, ymax=100000, yinterval=20000, title='Delivered in Excess of Treaty',
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(diff, sub_plot=5,
+                       ymin=-100000, ymax=100000, yinterval=50000, title='Diff Orders Not Diverted, Diverted/Delivered',
                        xlabel='',  xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.date_and_wait()
