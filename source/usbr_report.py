@@ -121,9 +121,12 @@ def load_monthly_csv(file_name, sep=' ', path='data/USBR_Reports'):
                     accumulate = False
                 sum_year = 0
                 total = int(fields[-1].replace(',', ''))
-
                 for m in fields[1:-1]:
-                    monthly_flow = int(m.replace(',', ''))
+                    try:
+                        monthly_flow = int(m.replace(',', ''))
+                    except ValueError:
+                        monthly_flow = 0
+                        print(year, m)
                     if not accumulate:
                         if month <= 12:
                             last_day = calendar.monthrange(year, month)[1]
