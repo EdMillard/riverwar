@@ -34,7 +34,7 @@ current_last_year = 2021
 
 class Arizona(State):
     def __init__(self, module, reaches, options):
-        State.__init__(self, 'Arizona', 'az',  module, reaches, options)
+        State.__init__(self, 'Arizona', 'az', module, reaches, options)
 
         module = modules[__name__]
 
@@ -49,12 +49,12 @@ class Arizona(State):
             r4a = reach_for_name(reaches, 'Reach5')
         r5 = reach_for_name(reaches, 'Reach5')
 
-        r1.add_user(self.user(None, 'marble_canyon'))                      # 2016
-        r1.add_user(self.user(None, 'lake_mead_national'))                 # 1993
+        r1.add_user(self.user(None,   'marble_canyon'))                    # 2016
+        r1.add_user(self.user(None,   'lake_mead_national'))               # 1993
 
-        r2.add_user(self.user(None, 'lake_mead_national_lake_mohave'))     # 2017
-        r2.add_user(self.user(None, 'mcalister'))                          # 2016
-        r2.add_user(self.user(None, 'bureau_of_reclamation_davis'))        # 201r
+        r2.add_user(self.user(None,   'lake_mead_national_lake_mohave'))   # 2017
+        r2.add_user(self.user(None,   'mcalister'))                        # 2016
+        r2.add_user(self.user(None,   'bureau_of_reclamation_davis'))      # 2014
 
         r3.add_user(self.user(module, 'bullhead_city'))                    # 1987
         r3.add_user(self.user(module, 'mohave_water'))                     # 1980
@@ -93,45 +93,45 @@ class Arizona(State):
         r4.add_user(self.user(module, 'yuma_proving'))                     # 1964
         r4.add_user(self.user(module, 'sturges'))                          # 1990-2000 imperial
         # Below Imperial
-        r5.add_user(self.user(None,   'jrj_partners'))                     # 2016  pumped
-        r5.add_user(self.user(None,   'cha_cha'))                          # 2016  pumped
-        r5.add_user(self.user(None,   'beattie_farms'))                    # 2016  pumped
-        r4a.add_user(self.user(module, 'gila_monster'))                     # 2001  ggmc
-        r4.add_user(self.user(module, 'wellton_mohawk', example=True))     # 1964  ggmc
-        r4a.add_user(self.user(module, 'city_of_yuma'))                     # 1964  imperial, pumped
-        r4a.add_user(self.user(None,   'marine_corp'))                      # 1983  imperial
-        r4a.add_user(self.user(None,   'southern_pacific'))                 # 1984-2009, bureau overlapped these 2009
-        r4a.add_user(self.user(None,   'union_pacific'))                    # 2008  imperial
-        r4a.add_user(self.user(None,   'yuma_mesa_fruit'))                  # 1983
-        r4a.add_user(self.user(None,   'university_of_arizona'))            # 1983  imperial
-        r4a.add_user(self.user(None,   'yuma_union_high_school'))           # 1984  east main canal
-        r4a.add_user(self.user(None,   'camille'))                          # 1983-2010
-        r4a.add_user(self.user(None,   'desert_lawn'))                      # 1984  from city of yuma
+        r5.add_user(self.user(None,    'jrj_partners'))                    # 2016  pumped
+        r5.add_user(self.user(None,    'cha_cha'))                         # 2016  pumped
+        r5.add_user(self.user(None,    'beattie_farms'))                   # 2016  pumped
+        r4a.add_user(self.user(module, 'gila_monster'))                    # 2001  ggmc
+        r4.add_user(self.user(module,  'wellton_mohawk', example=True))    # 1964  ggmc
+        r4a.add_user(self.user(module, 'city_of_yuma'))                    # 1964  imperial, pumped
+        r4a.add_user(self.user(None,   'marine_corp'))                     # 1983  imperial
+        r4a.add_user(self.user(None,   'southern_pacific'))                # 1984-2009, bureau overlapped these 2009
+        r4a.add_user(self.user(None,   'union_pacific'))                   # 2008  imperial
+        r4a.add_user(self.user(None,   'yuma_mesa_fruit'))                 # 1983
+        r4a.add_user(self.user(None,   'university_of_arizona'))           # 1983  imperial
+        r4a.add_user(self.user(None,   'yuma_union_high_school'))          # 1984  east main canal
+        r4a.add_user(self.user(None,   'camille'))                         # 1983-2010
+        r4a.add_user(self.user(None,   'desert_lawn'))                     # 1984  from city of yuma
         r4a.add_user(self.user(module, 'north_gila_irrigation'))           # 1964  ggmc, pumped
         r4a.add_user(self.user(module, 'yuma_irrigation'))                 # 1965  imperial, pumped
         r4a.add_user(self.user(module, 'yuma_mesa', example=True))         # 1964  ggmc
         r4a.add_user(self.user(module, 'unit_b'))                          # 1964  ggmc
-        r5.add_user(self.user(module, 'arizona_state_land'))               # 2013  pumped
-        r4a.add_user(self.user(None,   'ott_family'))                       # 2018  ggmc
-        r4a.add_user(self.user(None,   'ogram_boys'))                       # 2016  ggmc
-        r5.add_user(self.user(module, 'fort_yuma'))                        # 1984  pumped
-        r5.add_user(self.user(None,   'armon_curtis'))                     # 2016  pumped
+        r5.add_user(self.user(module,  'arizona_state_land'))              # 2013  pumped
+        r4a.add_user(self.user(None,   'ott_family'))                      # 2018  ggmc
+        r4a.add_user(self.user(None,   'ogram_boys'))                      # 2016  ggmc
+        r5.add_user(self.user(module,  'fort_yuma'))                       # 1984  pumped
+        r5.add_user(self.user(None,    'armon_curtis'))                    # 2016  pumped
         r4a.add_user(self.user(module, 'yuma_county_wua', example=True))   # 1964  imperial, pumped
-        r5.add_user(self.user(None,   'r_griffin'))                        # 2016  pumped
-        r5.add_user(self.user(None,   'power'))                            # 2016  pumped
-        # r5.add_user(self.user(None,   'cocopah_ppr_7'))                    # 2018  pumped in "cocopah
-        r5.add_user(self.user(None,   'griffin_ranches'))                  # 2016  pumped
-        r5.add_user(self.user(None,   'milton_phillips'))                  # 2016  pumped
-        r5.add_user(self.user(None,   'griffin_family'))                   # 2018  pumped
-        r4a.add_user(self.user(module, 'cocopah'))                          # 1964
-        r5.add_user(self.user(module, 'yuma_area_office'))                 # 1994
-        r5.add_user(self.user(None,   'arizona_public_service'))           # 2016  pumped
-        r5.add_user(self.user(None,   'gary_pasquinelli'))                 # 2016  pumped
-        r4.add_user(self.user(module, 'south_gila'))                       # 1964
+        r5.add_user(self.user(None,    'r_griffin'))                       # 2016  pumped
+        r5.add_user(self.user(None,    'power'))                           # 2016  pumped
+        # r5.add_user(self.user(None,   'cocopah_ppr_7'))                  # 2018  pumped in "cocopah
+        r5.add_user(self.user(None,    'griffin_ranches'))                 # 2016  pumped
+        r5.add_user(self.user(None,    'milton_phillips'))                 # 2016  pumped
+        r5.add_user(self.user(None,    'griffin_family'))                  # 2018  pumped
+        r4a.add_user(self.user(module, 'cocopah'))                         # 1964
+        r5.add_user(self.user(module,  'yuma_area_office'))                # 1994
+        r5.add_user(self.user(None,    'arizona_public_service'))          # 2016  pumped
+        r5.add_user(self.user(None,    'gary_pasquinelli'))                # 2016  pumped
+        r4.add_user(self.user(module,  'south_gila'))                      # 1964
 
         # Misc out of order and across reaches
-        self.user(module, 'others_users_pumping')                                  # 1964
-        self.user(None,   'warren_act')                                            # 1964
+        self.user(module, 'others_users_pumping')                          # 1964
+        self.user(None, 'warren_act')                                      # 1964
 
     def test(self):
         self.orders_not_delivered(self, 'az')
@@ -182,19 +182,18 @@ class Arizona(State):
         sturges()
 
     @staticmethod
-    def orders_not_delivered(self, state_code):
+    def orders_not_delivered(self, state_code, show_graph=True, show_error=False):
         year_interval = 3
-        show_graph = True
 
-        orders_not_delivered_af = usbr_report.annual_af('orders/'+state_code+'/total_ordered_but_not_diverted.csv',
+        orders_not_delivered_af = usbr_report.annual_af('orders/' + state_code + '/total_ordered_but_not_diverted.csv',
                                                         water_year_month=1)
-        diverted_by_others_af = usbr_report.annual_af('orders/'+state_code+'/total_diverted_by_others.csv',
+        diverted_by_others_af = usbr_report.annual_af('orders/' + state_code + '/total_diverted_by_others.csv',
                                                       water_year_month=1)
-        diverted_to_storage_af = usbr_report.annual_af('orders/'+state_code+'/total_diverted_to_storage.csv',
+        diverted_to_storage_af = usbr_report.annual_af('orders/' + state_code + '/total_diverted_to_storage.csv',
                                                        water_year_month=1)
-        satisfaction_of_treaty_af = usbr_report.annual_af('orders/'+state_code+'/total_satisfaction_of_treaty.csv',
+        satisfaction_of_treaty_af = usbr_report.annual_af('orders/' + state_code + '/total_satisfaction_of_treaty.csv',
                                                           water_year_month=1)
-        excess_of_treaty_af = usbr_report.annual_af('orders/'+state_code+'/total_excess_of_treaty.csv',
+        excess_of_treaty_af = usbr_report.annual_af('orders/' + state_code + '/total_excess_of_treaty.csv',
                                                     water_year_month=1)
 
         diverted_total_af = add_annuals([diverted_by_others_af,
@@ -204,7 +203,13 @@ class Arizona(State):
         diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
 
         if show_graph:
-            graph = WaterGraph(nrows=6)
+            if show_error:
+                graph = WaterGraph(nrows=6)
+                show_tick_labels = False
+            else:
+                graph = WaterGraph(nrows=5)
+                show_tick_labels = True
+
             graph.bars(orders_not_delivered_af, sub_plot=0, title='Arizona Total Orders Not Delivered',
                        ymin=0, ymax=500000, yinterval=50000,
                        xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
@@ -215,7 +220,7 @@ class Arizona(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(diverted_to_storage_af, sub_plot=2,
                        ymin=0, ymax=300000, yinterval=50000, title='Diverted to Storage',
-                       xlabel='', x_labels=False,  xinterval=year_interval, color='firebrick',
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(satisfaction_of_treaty_af, sub_plot=3,
                        ymin=0, ymax=300000, yinterval=50000, title='Delivered in Satisfaction of Treaty',
@@ -223,12 +228,14 @@ class Arizona(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(excess_of_treaty_af, sub_plot=4,
                        ymin=0, ymax=100000, yinterval=20000, title='Delivered in Excess of Treaty',
-                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       xlabel='', x_labels=show_tick_labels, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
-            graph.bars(diff, sub_plot=5,
-                       ymin=-100000, ymax=100000, yinterval=50000, title='Diff Orders Not Diverted, Diverted/Delivered',
-                       xlabel='',  xinterval=year_interval, color='firebrick',
-                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            if show_error:
+                graph.bars(diff, sub_plot=5,
+                           ymin=-100000, ymax=100000, yinterval=50000,
+                           title='Diff Orders Not Diverted, Diverted/Delivered',
+                           xlabel='', xinterval=year_interval, color='firebrick',
+                           ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.date_and_wait()
 
             orders_not_delivered_af = usbr_report.annual_af(
@@ -249,20 +256,26 @@ class Arizona(State):
             diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
 
             if show_graph:
-                graph = WaterGraph(nrows=3)
+                if show_error:
+                    graph = WaterGraph(nrows=3)
+                    show_tick_labels = False
+                else:
+                    graph = WaterGraph(nrows=2)
+                    show_tick_labels = True
                 graph.bars(orders_not_delivered_af, sub_plot=0, title='CAP Total Orders Not Delivered',
                            ymin=0, ymax=200000, yinterval=50000,
                            xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
                            ylabel='kaf', format_func=WaterGraph.format_kaf)
                 graph.bars(diverted_to_storage_af, sub_plot=1,
                            ymin=0, ymax=200000, yinterval=50000, title='Diverted to Storage',
-                           xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                           xlabel='', x_labels=show_tick_labels, xinterval=year_interval, color='firebrick',
                            ylabel='kaf', format_func=WaterGraph.format_kaf)
-                graph.bars(diff, sub_plot=2,
-                           ymin=-100000, ymax=100000, yinterval=50000,
-                           title='Diff Orders Not Diverted, Diverted/Delivered',
-                           xlabel='', xinterval=year_interval, color='firebrick',
-                           ylabel='kaf', format_func=WaterGraph.format_kaf)
+                if show_error:
+                    graph.bars(diff, sub_plot=2,
+                               ymin=-100000, ymax=100000, yinterval=50000,
+                               title='Diff Orders Not Diverted, Diverted/Delivered',
+                               xlabel='', xinterval=year_interval, color='firebrick',
+                               ylabel='kaf', format_func=WaterGraph.format_kaf)
                 graph.date_and_wait()
 
 
@@ -657,8 +670,8 @@ def central_arizona_project():
     annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=1)
     graph.bars(annual_af, sub_plot=1, title='Lake Havasu CAP Wilmer Pumping Plant (Annual)',
                xinterval=year_interval, ymin=0, ymax=1800000, yinterval=100000,
-               xlabel='Calendar Year',   color='firebrick',
-               ylabel='maf',  format_func=WaterGraph.format_maf)
+               xlabel='Calendar Year', color='firebrick',
+               ylabel='maf', format_func=WaterGraph.format_maf)
 
     ics = lc.lake_mead_load_ics()
     ics_az_delta = ics['AZ Delta']
@@ -711,7 +724,7 @@ def colorado_river_indian_tribes():
     returns_annual = subtract_annual(diversion_annual, cu_annual)
     graph.bars(returns_annual, sub_plot=1, title='Colorado River Indian Tribe Consumptive Use',
                ymin=0, ymax=400000, yinterval=50000,
-               xlabel='',  xinterval=year_interval, color='firebrick',
+               xlabel='', xinterval=year_interval, color='firebrick',
                ylabel='kaf', format_func=WaterGraph.format_kaf)
 
     graph.date_and_wait()
@@ -1360,4 +1373,3 @@ if __name__ == '__main__':
     test_model.initialize()
     state = test_model.state_by_name('Arizona')
     state.test()
-

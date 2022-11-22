@@ -99,9 +99,8 @@ class California(State):
         yuma_project()
 
     @staticmethod
-    def orders_not_delivered(self, state_code):
+    def orders_not_delivered(self, state_code, show_graph=True, show_error=False):
         year_interval = 3
-        show_graph = True
 
         orders_not_delivered_af = usbr_report.annual_af('orders/'+state_code+'/total_ordered_but_not_diverted.csv',
                                                         water_year_month=1)
@@ -121,7 +120,13 @@ class California(State):
         diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
 
         if show_graph:
-            graph = WaterGraph(nrows=6)
+            if show_error:
+                graph = WaterGraph(nrows=6)
+                show_tick_labels = False
+            else:
+                graph = WaterGraph(nrows=5)
+                show_tick_labels = True
+
             graph.bars(orders_not_delivered_af, sub_plot=0, title='California Total Orders Not Delivered',
                        ymin=0, ymax=500000, yinterval=50000,
                        xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
@@ -140,12 +145,13 @@ class California(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(excess_of_treaty_af, sub_plot=4,
                        ymin=0, ymax=100000, yinterval=20000, title='Delivered in Excess of Treaty',
-                       xlabel='',  x_labels=False, xinterval=year_interval, color='firebrick',
+                       xlabel='',  x_labels=show_tick_labels, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
-            graph.bars(diff, sub_plot=5,
-                       ymin=-100000, ymax=100000, yinterval=50000, title='Diff Orders Not Diverted, Diverted/Delivered',
-                       xlabel='',  xinterval=year_interval, color='firebrick',
-                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            if show_error:
+                graph.bars(diff, sub_plot=5,
+                           ymin=-100000, ymax=100000, yinterval=50000, title='Diff Orders Not Diverted, Diverted/Delivered',
+                           xlabel='',  xinterval=year_interval, color='firebrick',
+                           ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.date_and_wait()
 
         orders_not_delivered_af = usbr_report.annual_af('orders/'+state_code+'/imperial_ordered_but_not_diverted.csv',
@@ -164,7 +170,12 @@ class California(State):
                                          excess_of_treaty_af])
         diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
         if show_graph:
-            graph = WaterGraph(nrows=6)
+            if show_error:
+                graph = WaterGraph(nrows=6)
+                show_tick_labels = False
+            else:
+                graph = WaterGraph(nrows=5)
+                show_tick_labels = True
             graph.bars(orders_not_delivered_af, sub_plot=0, title='Imperial Irrigation Orders Not Delivered',
                        ymin=0, ymax=350000, yinterval=50000,
                        xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
@@ -183,12 +194,13 @@ class California(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(excess_of_treaty_af, sub_plot=4,
                        ymin=0, ymax=100000, yinterval=20000, title='Delivered in Excess of Treaty',
-                       xlabel='',  xinterval=year_interval, color='firebrick',
+                       xlabel='', x_labels=show_tick_labels, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
-            graph.bars(diff, sub_plot=5,
-                       ymin=-100000, ymax=100000, yinterval=50000, title='Diff Orders Not Diverted, Diverted/Delivered',
-                       xlabel='',  xinterval=year_interval, color='firebrick',
-                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            if show_error:
+                graph.bars(diff, sub_plot=5,
+                           ymin=-100000, ymax=100000, yinterval=50000, title='Diff Orders Not Diverted, Diverted/Delivered',
+                           xlabel='',  xinterval=year_interval, color='firebrick',
+                           ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.date_and_wait()
 
         orders_not_delivered_af = usbr_report.annual_af(
@@ -209,21 +221,31 @@ class California(State):
         diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
 
         if show_graph:
-            graph = WaterGraph(nrows=3)
+            if show_error:
+                graph = WaterGraph(nrows=3)
+                show_tick_labels = False
+            else:
+                graph = WaterGraph(nrows=2)
+                show_tick_labels = True
             graph.bars(orders_not_delivered_af, sub_plot=0, title='Metropolitan Total Orders Not Delivered',
-                       ymin=0, ymax=200000, yinterval=50000,
+                       ymin=0, ymax=75000, yinterval=25000,
                        xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(diverted_to_storage_af, sub_plot=1,
-                       ymin=0, ymax=200000, yinterval=50000, title='Diverted to Storage',
-                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ymin=0, ymax=75000, yinterval=25000, title='Diverted to Storage',
+                       xlabel='', x_labels=show_tick_labels, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
-            graph.bars(diff, sub_plot=2,
-                       ymin=-100000, ymax=100000, yinterval=50000,
-                       title='Diff Orders Not Diverted, Diverted/Delivered',
-                       xlabel='', xinterval=year_interval, color='firebrick',
-                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            if show_error:
+                graph.bars(diff, sub_plot=2,
+                           ymin=-100000, ymax=100000, yinterval=50000,
+                           title='Diff Orders Not Diverted, Diverted/Delivered',
+                           xlabel='', xinterval=year_interval, color='firebrick',
+                           ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.date_and_wait()
+
+        orders_not_delivered_af = usbr_report.annual_af(
+            'orders/' + state_code + '/palo_verde_ordered_but_not_diverted.csv', water_year_month=1)
+        print()
 
 
 def total():
