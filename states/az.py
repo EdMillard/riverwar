@@ -296,18 +296,15 @@ def state_total_cu(state, name):
 
 
 def user_total_diversion():
-    arizona = state_by_abbreviation('az')
-    return arizona.total_user_diversion()
+    return state_by_abbreviation('az').total_user_diversion()
 
 
 def user_total_cu():
-    arizona = state_by_abbreviation('az')
-    return arizona.total_user_cu()
+    return state_by_abbreviation('az').total_user_cu()
 
 
 def user_total_returns():
-    arizona = state_by_abbreviation('az')
-    return arizona.total_user_returns()
+    return state_by_abbreviation('az').total_user_returns()
 
 
 def yuma_area_returns():
@@ -1371,5 +1368,5 @@ if __name__ == '__main__':
     chdir('../')
     test_model = lc.Model('test')
     test_model.initialize()
-    state = test_model.state_by_name('Arizona')
-    state.test()
+    arizona = test_model.state_by_name('Arizona')
+    arizona.test()
