@@ -22,6 +22,9 @@ SOFTWARE.
 
 
 class River(object):
+    rivers = []
+
     def __init__(self, name):
+        River.rivers.append(self)
         self.name = name
 

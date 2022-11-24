@@ -25,7 +25,9 @@ from source import usbr_report
 
 
 class User(object):
+    users = []
     def __init__(self, module, name, state, example=False):
+        User.users.append(self)
         self.name = name
         self.state = state
         # self.diversion = None

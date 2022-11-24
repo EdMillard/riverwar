@@ -22,6 +22,9 @@ SOFTWARE.
 
 
 class Canal(object):
+    canals = []
+
     def __init__(self, name):
+        self.canals.append(self)
         self.name = name
 

@@ -33,7 +33,10 @@ def state_by_abbreviation(abbreviation):
 
 
 class State(object):
+    states = []
+
     def __init__(self, name, abbreviation, module, reaches, options):
+        State.states.append(self)
         self.name = name
         self.abbreviation = abbreviation
         self.module = module

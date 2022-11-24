@@ -25,7 +25,10 @@ from rw.state import state_by_abbreviation
 
 
 class Reach(object):
+    reaches = []
+
     def __init__(self, name, upper_lake, lower_lake, water_year_month):
+        Reach.reaches.append(self)
         self.name = name
         self.upper_lake = upper_lake
         self.lower_lake = lower_lake

@@ -22,6 +22,9 @@ SOFTWARE.
 
 
 class Dam(object):
+    dams = []
+
     def __init__(self, name, module):
+        Dam.dams.append(self)
         self.name = name
         self.module = module

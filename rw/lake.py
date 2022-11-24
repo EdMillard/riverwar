@@ -25,7 +25,10 @@ from rw.util import annual_zeroed_for_years
 
 
 class Lake(object):
+    lakes = []
+
     def __init__(self, name, water_year_month):
+        Lake.lakes.append(self)
         self.name = name
         self.water_year_month = water_year_month
 
