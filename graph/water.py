@@ -418,13 +418,16 @@ class WaterGraph(object):
         result = []
         for o in a:
             obj = o['dt'].astype(object)
-            if obj.month == 10 and obj.day == 1:
+            if obj.month == water_year_month and obj.day == 1:
                 if total > 0:
                     result.append([dt, total])
                     total = 0
-                dt = datetime.date(obj.year+1, water_year_month, 1)
+                if water_year_month == 1:
+                    dt = datetime.date(obj.year, water_year_month, 1)
+                else:
+                    dt = datetime.date(obj.year+1, water_year_month, 1)
             elif dt.year == 1:
-                if obj.month < water_year_month:
+                if obj.month < water_year_month or water_year_month == 1:
                     dt = datetime.date(obj.year, water_year_month, 1)
                 else:
                     dt = datetime.date(obj.year+1, water_year_month, 1)
