@@ -19,12 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from os import chdir
 from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
 
 
 def test():
     # Diversions
+    palo_verde_canal_near_blythe()
+    palo_verde_f_canal_spill_near_blythe()
+    palo_verde_d23_spill_near_blythe()
+    palo_verde_c_canal_spill_near_blythe()
     all_american_canal()
     pilot_knob_powerplant_and_wasteway()
     brock_inlet()
@@ -62,6 +67,46 @@ def test_wasteways_and_drains():
     drain_8_b_near_winterhaven()
     reservation_main_drain_no_4()
     yuma_main_canal_wasteway_at_yuma()
+
+
+def palo_verde_canal_near_blythe(graph=True):
+    gage = USGSGage('09429000', start_date='1950-10-01', color='firebrick',
+                    cfs_max=2500, cfs_interval=200,
+                    annual_min=0, annual_max=1100000, annual_interval=100000, year_interval=3,
+                    annual_unit='maf')
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def palo_verde_f_canal_spill_near_blythe(graph=True):
+    gage = USGSGage('09429155', start_date='1968-01-01', color='firebrick',
+                    cfs_max=100, cfs_interval=20,
+                    annual_min=0, annual_max=30000, annual_interval=1000, year_interval=3,
+                    annual_unit='kaf')
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def palo_verde_d23_spill_near_blythe(graph=True):
+    gage = USGSGage('09429180', start_date='1968-01-01', color='firebrick',
+                    cfs_max=100, cfs_interval=20,
+                    annual_min=0, annual_max=25000, annual_interval=1000, year_interval=3,
+                    annual_unit='kaf')
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
+
+
+def palo_verde_c_canal_spill_near_blythe(graph=True):
+    gage = USGSGage('09429200', start_date='1967-12-01', color='firebrick',
+                    cfs_max=200, cfs_interval=20,
+                    annual_min=0, annual_max=50000, annual_interval=1000, year_interval=3,
+                    annual_unit='kaf')
+    if graph:
+        WaterGraph(nrows=2).plot_gage(gage)
+    return gage
 
 
 def all_american_canal(graph=True):
@@ -255,3 +300,8 @@ def drain_8_b_near_winterhaven(graph=True):
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
+
+
+if __name__ == '__main__':
+    chdir('../')
+    test()

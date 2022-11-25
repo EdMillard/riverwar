@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from os import chdir
 from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
 
@@ -26,6 +27,7 @@ from graph.water import WaterGraph
 def test():
     muddy_near_glendale()
     las_vegas_wash_below_lake_las_vegas()
+    virgin_abv_lake_mead_nr_overton()
 
 
 def muddy_near_glendale(graph=True):
@@ -40,8 +42,8 @@ def muddy_near_glendale(graph=True):
 
 def virgin_abv_lake_mead_nr_overton(graph=True):
     gage = USGSGage('09415250', start_date='2006-04-21',
-                    cfs_max=10000, cfs_interval=1000,
-                    annual_min=0, annual_max=400000, annual_interval=20000, annual_unit='kaf',
+                    cfs_max=15000, cfs_interval=1000,
+                    annual_min=0, annual_max=280000, annual_interval=20000, annual_unit='kaf',
                     year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
@@ -57,3 +59,7 @@ def las_vegas_wash_below_lake_las_vegas(graph=True):
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
 
+
+if __name__ == '__main__':
+    chdir('../')
+    test()

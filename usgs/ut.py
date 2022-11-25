@@ -19,8 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from os import chdir
 from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
+
+
+def test():
+    san_juan_bluff()
+    green_river_at_green_river()
+    colorado_cisco()
+    colorado_potash()
+    dirty_devil()
+    escalante()
+    virgin_river_at_virgin()
+    virgin_river_near_st_george()
 
 
 def san_juan_bluff(graph=True):
@@ -52,8 +64,8 @@ def colorado_cisco(graph=True):
 
 def colorado_potash(graph=True):
     gage = USGSGage('09185600', start_date='2014-10-29',
-                    cfs_max=75000, cfs_interval=2500,
-                    annual_max=11000000, annual_interval=250000, annual_unit='maf', year_interval=4)
+                    cfs_max=37500, cfs_interval=2500,
+                    annual_max=6000000, annual_interval=250000, annual_unit='maf', year_interval=4)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
@@ -70,7 +82,7 @@ def dirty_devil(graph=True):
 
 def escalante(graph=True):
     gage = USGSGage('09337500', start_date='1911-01-01',
-                    cfs_max=10000, cfs_interval=100,
+                    cfs_max=1000, cfs_interval=100,
                     annual_max=30000, annual_interval=2000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
@@ -88,8 +100,13 @@ def virgin_river_at_virgin(graph=True):
 
 def virgin_river_near_st_george(graph=True):
     gage = USGSGage('09413500', start_date='1909-05-01',
-                    cfs_max=1000, cfs_interval=100,
-                    annual_max=30000, annual_interval=2000, annual_unit='kaf', year_interval=5)
+                    cfs_max=19000, cfs_interval=1000,
+                    annual_max=550000, annual_interval=50000, annual_unit='kaf', year_interval=5)
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
+
+
+if __name__ == '__main__':
+    chdir('../')
+    test()

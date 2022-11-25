@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from os import chdir
 from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
 
@@ -529,3 +530,8 @@ def south_gila_terminal_canal_wasteway(graph=True):
     if graph:
         WaterGraph(nrows=2).plot_gage(gage)
     return gage
+
+
+if __name__ == '__main__':
+    chdir('../')
+    test()
