@@ -21,6 +21,7 @@ SOFTWARE.
 """
 from source.usgs_gage import USGSGage
 from graph.water import WaterGraph
+from usgs import az
 
 # Some history on Lower Colorado flows and gages
 # https://www.researchgate.net/publication/308133114_Geomorphic_change_and_sediment_transport_during_a_small_artificial_flood_in_a_transformed_post-dam_delta_The_Colorado_River_delta_United_States_and_Mexico
@@ -29,8 +30,8 @@ from graph.water import WaterGraph
 def test():
     # above_little_colorado()
     # above_national_canyon_near_supai()
-    near_grand_canyon()
-    above_diamond_creek_near_peach_springs()
+    az.colorado_near_grand_canyon()
+    az.colorado_above_diamond_creek_near_peach_springs()
     below_hoover()
     below_davis()
     below_parker()
@@ -62,7 +63,7 @@ def above_national_canyon_near_supai(graph=False):
 
 
 def below_hoover(graph=False):
-    gage = USGSGage('09421500', start_date='1934-04-01', color='firebrick',
+    gage = USGSGage('09421500', start_date='1934-04-01', end_date='2021-09-13', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,
                     annual_min=6000000, annual_max=23000000, annual_interval=500000, annual_unit='maf', year_interval=6)
     if graph:
@@ -72,7 +73,7 @@ def below_hoover(graph=False):
 
 def below_davis(graph=False):
     # Three years, 1905-1907 pre dam; then 1949-present when dam was built
-    gage = USGSGage('09423000', start_date='1905-05-11', color='firebrick',
+    gage = USGSGage('09423000', start_date='1905-05-11', end_date='2022-10-14', color='firebrick',
                     cfs_max=120000, cfs_interval=5000,
                     annual_min=6000000, annual_max=23000000, annual_interval=500000, annual_unit='maf', year_interval=6)
     if graph:
