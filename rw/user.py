@@ -25,9 +25,10 @@ from source import usbr_report
 
 
 class User(object):
-    users = []
+    users = {}
+
     def __init__(self, module, name, state, example=False):
-        User.users.append(self)
+        User.users[name] = self
         self.name = name
         self.state = state
         # self.diversion = None
@@ -59,6 +60,10 @@ class User(object):
 
     def make_path(self, file_suffix):
         return Path(self.state + '/usbr_' + self.state + '_' + self.name + file_suffix)
+
+    @staticmethod
+    def user_by_name(name):
+        return User.users[name]
 
     @staticmethod
     def path_exists(path):

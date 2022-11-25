@@ -22,9 +22,13 @@ SOFTWARE.
 
 
 class Dam(object):
-    dams = []
+    dams = {}
 
     def __init__(self, name, module):
-        Dam.dams.append(self)
+        Dam.dams[name] = self
         self.name = name
         self.module = module
+
+    @staticmethod
+    def dam_by_name(name):
+        return Dam.dams[name]

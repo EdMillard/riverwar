@@ -44,21 +44,21 @@ class Mexico(State):
 
 class Morelos(Lake):
     def __init__(self, water_month):
-        Lake.__init__(self, 'morelos', water_month)
+        Lake.__init__(self, 'morelos')
 
-    def inflow(self, year_begin, year_end):
+    def inflow(self):
         nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
-        nib = nib_morelos_gage.annual_af(water_year_month=self.water_year_month,
-                                         start_year=year_begin, end_year=year_end)
+        nib = nib_morelos_gage.annual_af(water_year_month=Lake.water_year_month,
+                                         start_year=Lake.year_begin, end_year=Lake.year_end)
         return nib
 
-    def release(self, year_begin, year_end):
+    def release(self):
         return None
 
     def storage(self):
         return None
 
-    def evaporation(self, year_begin, year_end):
+    def evaporation(self):
         return None
 
 
@@ -165,6 +165,6 @@ def mexico_returns(water_year_month=1):
 if __name__ == '__main__':
     chdir('../')
     test_model = lc.Model('test')
-    test_model.initialize()
+    test_model.initialize(1964, 2021)
     state = test_model.state_by_name('Mexico')
     state.test()

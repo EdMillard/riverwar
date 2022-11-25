@@ -22,9 +22,12 @@ SOFTWARE.
 
 
 class River(object):
-    rivers = []
+    rivers = {}
 
     def __init__(self, name):
-        River.rivers.append(self)
+        River.rivers[name] = self
         self.name = name
 
+    @staticmethod
+    def reach_by_name(name):
+        return River.rivers[name]

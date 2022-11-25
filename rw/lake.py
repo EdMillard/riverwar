@@ -25,38 +25,44 @@ from rw.util import annual_zeroed_for_years
 
 
 class Lake(object):
-    lakes = []
+    lakes = {}
+    year_begin = None
+    year_end = None
+    water_year_month = 1
 
-    def __init__(self, name, water_year_month):
-        Lake.lakes.append(self)
+    def __init__(self, name):
+        Lake.lakes[name] = self
         self.name = name
-        self.water_year_month = water_year_month
 
-    def inflow(self, year_begin, year_end):
-        return annual_zeroed_for_years(year_begin, year_end)
+    def inflow(self):
+        return annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
 
-    def side_inflow(self, year_begin, year_end):
+    def side_inflow(self):
         return None
 
-    def release(self, year_begin, year_end):
-        return annual_zeroed_for_years(year_begin, year_end)
+    def release(self):
+        return annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
 
-    def bypass(self, year_begin, year_end):
+    def bypass(self):
         return None
 
     def storage(self):
         return None
 
     @staticmethod
+    def lake_by_name(name):
+        return Lake.lakes[name]
+
+    @staticmethod
     def ___convert_to_datetime(d):
         return datetime.strptime(np.datetime_as_string(d, unit='s'), '%Y-%m-%dT%H:%M:%S')
 
-    def storage_delta(self, year_begin, year_end):
+    def storage_delta(self):
         delta = []
         date_time_format = "%Y-%m-%d"
         daily_storage = self.storage()
         if daily_storage is not None:
-            for year in range(year_begin, year_end+1):
+            for year in range(Lake.year_begin, Lake.year_end+1):
                 storage_begin = None
                 storage_end = None
                 water_year_month_str = '-' + str(self.water_year_month) + '-'
@@ -75,9 +81,9 @@ class Lake(object):
                     print(self.name, 'storage_delta failed')
         else:
             # print(self.name + " storage delta not implemented")
-            for year in range(year_begin, year_end+1):
+            for year in range(Lake.year_begin, Lake.year_end+1):
                 delta.append(0)
         return delta
 
-    def evaporation(self, year_begin, year_end):
+    def evaporation(self):
         return None

@@ -1367,6 +1367,6 @@ def others_users_pumping_returns():
 if __name__ == '__main__':
     chdir('../')
     test_model = lc.Model('test')
-    test_model.initialize()
+    test_model.initialize(1964, 2021)
     arizona = test_model.state_by_name('Arizona')
     arizona.test()

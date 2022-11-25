@@ -51,8 +51,8 @@ if __name__ == '__main__':
             snwa_loss_model.option_crit_in_reach_3a = True
             snwa_loss_model.option_palo_verde_in_reach_3b = True
 
-        snwa_loss_model.initialize()
-        snwa_loss_model.run(2019, 2021)
+        snwa_loss_model.initialize(2016, 2021)
+        snwa_loss_model.run(2016, 2021)
         summary = snwa_loss_model.print()
         summaries.append(summary)
 

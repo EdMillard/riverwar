@@ -40,19 +40,20 @@ def test():
 
 
 class LakePowell(Lake):
-    def __init__(self, water_month):
-        Lake.__init__(self, 'lake_powell', water_month)
+    def __init__(self):
+        Lake.__init__(self, 'lake_powell')
 
-    def inflow(self, year_begin, year_end):
+    def inflow(self):
         pass
 
-    def release(self, year_begin, year_end):
-        return usgs.az.lees_ferry(graph=False).annual_af(year_begin, year_end, water_year_month=self.water_year_month)
+    def release(self):
+        return usgs.az.lees_ferry(graph=False).annual_af(Lake.year_begin, Lake.year_end,
+                                                         water_year_month=Lake.water_year_month)
 
     def storage(self):
         pass
 
-    def evaporation(self, year_begin, year_end):
+    def evaporation(self):
         pass
 
 

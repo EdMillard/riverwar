@@ -22,9 +22,13 @@ SOFTWARE.
 
 
 class Canal(object):
-    canals = []
+    canals = {}
 
     def __init__(self, name):
-        self.canals.append(self)
+        self.canals[name] = self
         self.name = name
+
+    @staticmethod
+    def canal_by_name(name):
+        return Canal.canals[name]
 
