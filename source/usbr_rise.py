@@ -25,6 +25,8 @@ import numpy as np
 import requests
 from pathlib import Path
 
+debug = True
+
 
 class USBRRise(object):
     """
@@ -37,8 +39,7 @@ class USBRRise(object):
         pass
 
 
-def daily_to_water_year(a):
-    water_year_month = 10
+def daily_to_water_year(a, water_year_month=10):
     dt = datetime.date(1, water_year_month, 1)
     total = 0
     result = []
@@ -260,7 +261,8 @@ def load_json(file_path):
             'Units': data['Units']}
 
     try:
-        location = data['Location']
+        pass
+        # location = data['Location']
         # print('units:  {0}  timestep: {1}   {2:<50} {3}'.format(data['Units'], data['Timestep'],
         #                                                         data['Parameter Name:'], location['Name']))
     except KeyError:
@@ -408,4 +410,3 @@ def catalog():
     Colorado River Below Interstate Bridge Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
     Colorado River Below Big Bend Water Operations Monitoring Data from the Lower Colorado Hydrologic Database
 '''
-

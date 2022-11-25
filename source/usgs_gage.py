@@ -24,6 +24,7 @@ import requests
 import numpy as np
 from pathlib import Path
 from source import usbr_report
+from rw.util import reshape_annual_range
 
 # USGS Gage parameter definitions
 # https://help.waterdata.usgs.gov/code/parameter_cd_query?fmt=rdb&inline=true&group_cd=%
@@ -35,6 +36,8 @@ from source import usbr_report
 # https://dashboard.waterdata.usgs.gov/app/nwd/?aoi=default
 
 current_last_year = 2022
+debug = True
+update_gages = False
 
 
 class USGSGage(object):
@@ -42,14 +45,18 @@ class USGSGage(object):
     Essential paramaters to load and display a USGS gage site
   """
 
-    def __init__(self, site, start_date, cfs_min=0, cfs_max=1000, cfs_interval=100,
+    def __init__(self, site, start_date, end_date=None, cfs_min=0, cfs_max=1000, cfs_interval=100,
                  annual_min=0, annual_max=100, annual_interval=10, annual_unit='kaf',
                  year_interval=5, color='royalblue'):
         self.site = site
         self.site_name = ''
 
         self.start_date = start_date.strip()
-        self.end_date = str(datetime.date.today())
+        if end_date:
+            year_month_day_format = '%Y-%m-%d'
+            self.end_date = datetime.datetime.strptime(end_date, year_month_day_format).date()
+        else:
+            self.end_date = datetime.date.today()
 
         self.cfs_min = cfs_min
         self.cfs_max = cfs_max
@@ -83,12 +90,13 @@ class USGSGage(object):
         return b
 
     def annual_af(self, start_year=0, end_year=0, water_year_month=1):
-        monthly_af = daily_cfs_to_monthly_af(self.daily_discharge(update=False),
-                                             start_year=start_year, end_year=end_year)
         if water_year_month == 1:
+            monthly_af = daily_cfs_to_monthly_af(self.daily_discharge(update=update_gages),
+                                                 start_year=start_year, end_year=end_year)
             annual_af = usbr_report.monthly_to_calendar_year(monthly_af)
         else:
-            annual_af = usbr_report.monthly_to_water_year(monthly_af, water_year_month=water_year_month)
+            a = daily_to_water_year(self.daily_discharge(update=update_gages), water_year_month)
+            annual_af = reshape_annual_range(a, start_year, end_year)
         if start_year > 0 and end_year > 0:
             annual_af = USGSGage.reshape_annual_range(annual_af, start_year, end_year)
         elif start_year > 0:
@@ -96,13 +104,13 @@ class USGSGage(object):
         return annual_af
 
     def monthly_af(self, start_year=0, end_year=0):
-        return daily_cfs_to_monthly_af(self.daily_discharge(update=False), start_year, end_year)
+        return daily_cfs_to_monthly_af(self.daily_discharge(update=update_gages), start_year, end_year)
 
-    def daily_discharge(self, update=False):
+    def daily_discharge(self, update=update_gages):
         file_path = Path('data/USGS_Gages/')
         file_name = file_path.joinpath(self.site + '.csv')
         if not file_name.exists():
-            self.request_daily_discharge(self.start_date, self.end_date)
+            self.request_daily_discharge(self.start_date, str(self.end_date))
 
         return self.load_daily_discharge(update)
 
@@ -198,7 +206,7 @@ class USGSGage(object):
         else:
             print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
 
-    def load_daily_discharge(self, update=True):
+    def load_daily_discharge(self, update=update_gages):
         if not len(self.daily_discharge_cfs):
             file_path = Path('data/USGS_Gages/')
             file_path.mkdir(parents=True, exist_ok=True)
@@ -210,7 +218,8 @@ class USGSGage(object):
             end_datetime64 = self.daily_discharge_cfs[-1]['dt']
             end_date = end_datetime64.astype(datetime.datetime).date()
             yesterdays_date = datetime.datetime.now().date() - datetime.timedelta(days=1)
-            if end_date < yesterdays_date and update:
+            if end_date < yesterdays_date < self.end_date and update:
+                print(end_date, self.end_date, yesterdays_date)
                 end_date += datetime.timedelta(days=1)
                 print('Gage updating from USGS: ', self.site_name, ' ', end_date, ' to ', yesterdays_date)
                 self.request_daily_discharge(str(end_date), str(yesterdays_date), append=True)
@@ -233,8 +242,7 @@ def usgs_discharge_mean_column(headers):
     return discharge_mean_index
 
 
-def daily_to_water_year(a):
-    water_year_month = 10
+def daily_to_water_year(a, water_year_month=10):
     dt = datetime.date(1, water_year_month, 1)
     total = 0
     result = []
@@ -242,7 +250,7 @@ def daily_to_water_year(a):
         obj = o['dt'].astype(object)
         if obj.month == 10 and obj.day == 1:
             if total > 0:
-                result.append([dt, total])
+                result.append([dt, total*1.983459])
                 total = 0
             dt = datetime.date(obj.year+1, water_year_month, 1)
         elif dt.year == 1:
@@ -251,18 +259,21 @@ def daily_to_water_year(a):
             else:
                 dt = datetime.date(obj.year+1, water_year_month, 1)
 
-        total += o['val']
+        if not np.isnan(o['val']):
+            total += o['val']
+        elif debug:
+            print('daily_to_water_year not a number:', o)
 
     if total > 0:
-        result.append([dt, total])
+        result.append([dt, total*1.983459])
 
     a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
-    day = 0
+    year = 0
     for l in result:
         # a[day][0] = np.datetime64(l[0])
-        a[day][0] = l[0].year
-        a[day][1] = l[1]
-        day += 1
+        a[year][0] = l[0].year
+        a[year][1] = l[1]
+        year += 1
 
     return a
 
