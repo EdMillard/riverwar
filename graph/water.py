@@ -320,7 +320,7 @@ class WaterGraph(object):
         annual_af = WaterGraph.daily_to_water_year(daily_discharge_af)
         date_format = "%Y-%m-%d"
         start_year = datetime.datetime.strptime(gage.start_date, date_format).year
-        end_year = datetime.datetime.strptime(gage.end_date, date_format).year
+        end_year = datetime.datetime.strptime(str(gage.end_date), date_format).year
 
         if gage.annual_unit == 'af':
             y_format = WaterGraph.format_af
