@@ -1526,6 +1526,24 @@ def scavenge_orders_ca(image_dir, out_path):
     scavenge_orders(image_dir, out_path, 'ca', 'California Totals', 'total')
 
 
+def scavenge_summaries(image_dir, out_path):
+    image_path = image_dir.joinpath('summary')
+
+    # Numbers are in kaf from 1990 to 2002ish
+
+    output_path = out_path.joinpath('summary/lake_mead_storage.csv')
+    ocr_reports(image_path, output_path, field_id='Lake Mead', kaf_begin=1991, kaf_end=2022, start_year=1991, end_year=2002)
+
+    output_path = out_path.joinpath('summary/lake_mohave_storage.csv')
+    ocr_reports(image_path, output_path, field_id='Lake Mohave', kaf_begin=1991, kaf_end=2022, start_year=1991, end_year=2002)
+
+    output_path = out_path.joinpath('summary/lake_havasu_storage.csv')
+    ocr_reports(image_path, output_path, field_id='Lake Havasu', kaf_begin=1991, kaf_end=2022, start_year=1991, end_year=2002)
+
+    output_path = out_path.joinpath('summary/total_storage.csv')
+    ocr_reports(image_path, output_path, field_id='Total Storage', kaf_begin=1991, kaf_end=2022, start_year=1991)
+
+
 def scavenge_releases(image_dir, out_path):
     image_path = image_dir.joinpath('releases')
 
@@ -1595,10 +1613,13 @@ if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
     # ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
-    #ocr_debug(image_directory, path1='orders', path2='ca')
+    # ocr_debug(image_directory, path1='orders', path2='ca')
     # ocr_debug(image_directory, path1='releases')
+    # ocr_debug(image_directory, path1='summary')
     ocr_debug(image_directory, path1='orders/ca')
     # ocr_debug(image_directory, path1='mx')
+    # scavenge_summaries(image_directory, outputs_path)
+
     scavenge_orders_ca(image_directory, outputs_path)
     scavenge_orders_az(image_directory, outputs_path)
 
