@@ -41,7 +41,10 @@ class Arizona(State):
         r1 = reach_for_name(reaches, 'Reach1')
         r2 = reach_for_name(reaches, 'Reach2')
         r3 = reach_for_name(reaches, 'Reach3')
-        r3a = reach_for_name(reaches, 'Reach4')
+        if self.options.crit_in_reach_3a:
+            r3a = reach_for_name(reaches, 'Reach3a')
+        else:
+            r3a = reach_for_name(reaches, 'Reach4')
         r4 = reach_for_name(reaches, 'Reach4')
         if options.yuma_users_moved_to_reach_4:
             r4a = reach_for_name(reaches, 'Reach4')

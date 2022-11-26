@@ -23,6 +23,7 @@ from source import usbr_rise
 from graph.water import WaterGraph
 from rw.lake import Lake
 import usgs
+from rw.util import reshape_annual_range
 
 current_last_year = 2021
 
@@ -43,42 +44,28 @@ class LakePowell(Lake):
     def __init__(self):
         Lake.__init__(self, 'lake_powell')
 
-    def inflow(self):
-        pass
+        usbr_lake_powell_inflow_af = 4288
+        info, daily_release_af = usbr_rise.load(usbr_lake_powell_inflow_af)
+        annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
+        self.inflow = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
 
-    def release(self):
-        return usgs.az.lees_ferry(graph=False).annual_af(Lake.year_begin, Lake.year_end,
-                                                         water_year_month=Lake.water_year_month)
+        self.release_usgs = usgs.az.lees_ferry(graph=False).annual_af(Lake.year_begin, Lake.year_end,
+                                                                      water_year_month=Lake.water_year_month)
 
-    def storage(self):
-        pass
+        usbr_lake_powell_release_total_af = 4354
+        info, daily_release_af = usbr_rise.load(usbr_lake_powell_release_total_af)
+        annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
+        self.release = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
 
-    def evaporation(self):
-        pass
+        usbr_lake_powell_evaporation_af = 510
+        info, daily_release_af = usbr_rise.load(usbr_lake_powell_evaporation_af)
+        annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
+        self.evaporation = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
 
-
-def lake_powell_inflow():
-    usbr_lake_powell_inflow_af = 4288
-    annual_inflow_af = usbr_rise.annual_af(usbr_lake_powell_inflow_af)
-    return annual_inflow_af
-
-
-def lake_powell_release():
-    usbr_lake_powell_release_total_af = 4354
-    annual_release_total_af = usbr_rise.annual_af(usbr_lake_powell_release_total_af)
-    return annual_release_total_af
-
-
-def lake_powell_evaporation():
-    usbr_lake_powell_evaporation_af = 510
-    annual_evaporation_af = usbr_rise.annual_af(usbr_lake_powell_evaporation_af)
-    return annual_evaporation_af
-
-
-def lake_powell_storage():
-    usbr_lake_powell_storage_af = 509
-    info, daily_storage_af = usbr_rise.load(usbr_lake_powell_storage_af)
-    return daily_storage_af
+        usbr_lake_powell_storage_af = 509
+        info, daily_release_af = usbr_rise.load(usbr_lake_powell_storage_af)
+        annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
+        self.storage = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
 
 
 def lake_powell(show_graph=True):

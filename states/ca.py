@@ -38,8 +38,14 @@ class California(State):
 
         module = modules[__name__]
         r3 = reach_for_name(reaches, 'Reach3')
-        r3a = reach_for_name(reaches, 'Reach4')
-        r3b = reach_for_name(reaches, 'Reach4')
+        if self.options.crit_in_reach_3a:
+            r3a = reach_for_name(reaches, 'Reach3a')
+        else:
+            r3a = reach_for_name(reaches, 'Reach4')
+        if self.options.palo_verde_in_reach_3b:
+            r3b = reach_for_name(reaches, 'Reach3b')
+        else:
+            r3b = reach_for_name(reaches, 'Reach4')
         r4 = reach_for_name(reaches, 'Reach4')
         if options.yuma_users_moved_to_reach_4:
             r4a = reach_for_name(reaches, 'Reach4')
@@ -887,6 +893,12 @@ def winterhaven_returns():
 if __name__ == '__main__':
     chdir('../')
     test_model = lc.Model('test')
-    test_model.initialize(1964, 2021)
+    test_model.options.yuma_users_moved_to_reach_4 = True
+    test_model.options.crit_in_reach_3a = True
+    test_model.options.palo_verde_in_reach_3b = True
+    test_model.initialize(2016, 2021)
+    # run this
+    # test_model.run(2016, 2021)
+    # or this
     state = test_model.state_by_name('California')
     state.test()

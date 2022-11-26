@@ -24,7 +24,7 @@ from matplotlib import pyplot
 
 
 if __name__ == '__main__':
-    pyplot.switch_backend('Agg')  # FIXME must be accessing pyplt somewhere
+    # pyplot.switch_backend('Agg')  # FIXME must be accessing pyplt somewhere
     summaries = []
     num_runs = 4
     for run_number in range(0, num_runs):

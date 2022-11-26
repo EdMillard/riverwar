@@ -26,7 +26,7 @@ from graph.water import WaterGraph
 from basins import lc
 from rw.lake import Lake
 import usgs
-from rw.util import subtract_annual, reach_for_name
+from rw.util import add_annuals, subtract_annual, reach_for_name, reshape_annual_range
 from rw.state import State
 
 
@@ -43,23 +43,20 @@ class Mexico(State):
 
 
 class Morelos(Lake):
-    def __init__(self, water_month):
+    def __init__(self):
         Lake.__init__(self, 'morelos')
 
-    def inflow(self):
-        nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
-        nib = nib_morelos_gage.annual_af(water_year_month=Lake.water_year_month,
-                                         start_year=Lake.year_begin, end_year=Lake.year_end)
-        return nib
+        upper_dam = Lake.lake_by_name('imperial_dam')
+        self.inflow = add_annuals([upper_dam.release, upper_dam.bypass])
 
-    def release(self):
-        return None
+        # This is counted as CU at the moment
+        # nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
+        # self.release = nib_morelos_gage.annual_af(water_year_month=Lake.water_year_month,
+        #                                          start_year=Lake.year_begin, end_year=Lake.year_end)
 
-    def storage(self):
-        return None
-
-    def evaporation(self):
-        return None
+        # Minute 242 bypass of Wellton waste water to Cienaga
+        annual_af = usbr_report.annual_af('mx/usbr_mx_minute_242_bypass.csv', water_year_month=Lake.water_year_month)
+        self.bypass = reshape_annual_range(annual_af, Lake.year_begin, Lake.year_end)
 
 
 def yuma_area_returns():

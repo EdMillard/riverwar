@@ -29,25 +29,17 @@ class Lake(object):
     year_begin = None
     year_end = None
     water_year_month = 1
+    options = None
 
     def __init__(self, name):
         Lake.lakes[name] = self
         self.name = name
-
-    def inflow(self):
-        return annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
-
-    def side_inflow(self):
-        return None
-
-    def release(self):
-        return annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
-
-    def bypass(self):
-        return None
-
-    def storage(self):
-        return None
+        self.inflow = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+        self.side_inflow = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+        self.release = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+        self.bypass = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+        self.evaporation = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+        self.storage = None
 
     @staticmethod
     def lake_by_name(name):
@@ -60,7 +52,7 @@ class Lake(object):
     def storage_delta(self):
         delta = []
         date_time_format = "%Y-%m-%d"
-        daily_storage = self.storage()
+        daily_storage = self.storage
         if daily_storage is not None:
             for year in range(Lake.year_begin, Lake.year_end+1):
                 storage_begin = None
@@ -84,6 +76,3 @@ class Lake(object):
             for year in range(Lake.year_begin, Lake.year_end+1):
                 delta.append(0)
         return delta
-
-    def evaporation(self):
-        return None
