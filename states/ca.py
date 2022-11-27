@@ -86,7 +86,7 @@ class California(State):
         self.user(None, 'other_users_pumping')
 
     def test(self):
-        self.orders_not_delivered(self, 'ca')
+        self.orders_not_delivered(self, 'ca', show_error=True)
         data = [
             {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
             {'data': user_total_diversion()},
@@ -155,7 +155,7 @@ class California(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             if show_error:
                 graph.bars(diff, sub_plot=5,
-                           ymin=-100000, ymax=100000, yinterval=50000,
+                           ymin=-20000, ymax=240000, yinterval=20000,
                            title='Diff Orders Not Diverted, Diverted/Delivered',
                            xlabel='',  xinterval=year_interval, color='firebrick',
                            ylabel='kaf', format_func=WaterGraph.format_kaf)
@@ -205,7 +205,7 @@ class California(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             if show_error:
                 graph.bars(diff, sub_plot=5,
-                           ymin=-100000, ymax=100000, yinterval=50000,
+                           ymin=-20000, ymax=170000, yinterval=20000,
                            title='Diff Orders Not Diverted, Diverted/Delivered',
                            xlabel='',  xinterval=year_interval, color='firebrick',
                            ylabel='kaf', format_func=WaterGraph.format_kaf)
@@ -236,7 +236,7 @@ class California(State):
                 graph = WaterGraph(nrows=5)
                 show_tick_labels = True
             graph.bars(orders_not_delivered_af, sub_plot=0, title='Palo Verde Orders Not Delivered',
-                       ymin=0, ymax=60000, yinterval=5000,
+                       ymin=0, ymax=55000, yinterval=5000,
                        xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.bars(diverted_by_others_af, sub_plot=1,
@@ -257,47 +257,7 @@ class California(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             if show_error:
                 graph.bars(diff, sub_plot=5,
-                           ymin=-100000, ymax=100000, yinterval=50000,
-                           title='Diff Orders Not Diverted, Diverted/Delivered',
-                           xlabel='', xinterval=year_interval, color='firebrick',
-                           ylabel='kaf', format_func=WaterGraph.format_kaf)
-            graph.date_and_wait()
-
-        orders_not_delivered_af = usbr_report.annual_af(
-            'orders/' + state_code + '/metropolitan_ordered_but_not_diverted.csv', water_year_month=1)
-        diverted_by_others_af = usbr_report.annual_af('orders/' + state_code + '/metropolitan_diverted_by_others.csv',
-                                                      water_year_month=1)
-        diverted_to_storage_af = usbr_report.annual_af('orders/' + state_code + '/metropolitan_diverted_to_storage.csv',
-                                                       water_year_month=1)
-        satisfaction_of_treaty_af = usbr_report.annual_af(
-            'orders/' + state_code + '/metropolitan_satisfaction_of_treaty.csv', water_year_month=1)
-        excess_of_treaty_af = usbr_report.annual_af('orders/' + state_code + '/metropolitan_excess_of_treaty.csv',
-                                                    water_year_month=1)
-
-        diverted_total_af = add_annuals([diverted_by_others_af,
-                                         diverted_to_storage_af,
-                                         satisfaction_of_treaty_af,
-                                         excess_of_treaty_af])
-        diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
-
-        if show_graph:
-            if show_error:
-                graph = WaterGraph(nrows=3)
-                show_tick_labels = False
-            else:
-                graph = WaterGraph(nrows=2)
-                show_tick_labels = True
-            graph.bars(orders_not_delivered_af, sub_plot=0, title='Metropolitan Total Orders Not Delivered',
-                       ymin=0, ymax=70000, yinterval=10000,
-                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
-                       ylabel='kaf', format_func=WaterGraph.format_kaf)
-            graph.bars(diverted_to_storage_af, sub_plot=1,
-                       ymin=0, ymax=70000, yinterval=10000, title='Diverted to Storage',
-                       xlabel='', x_labels=show_tick_labels, xinterval=year_interval, color='firebrick',
-                       ylabel='kaf', format_func=WaterGraph.format_kaf)
-            if show_error:
-                graph.bars(diff, sub_plot=2,
-                           ymin=-100000, ymax=100000, yinterval=50000,
+                           ymin=-5000, ymax=25000, yinterval=5000,
                            title='Diff Orders Not Diverted, Diverted/Delivered',
                            xlabel='', xinterval=year_interval, color='firebrick',
                            ylabel='kaf', format_func=WaterGraph.format_kaf)
@@ -349,7 +309,7 @@ class California(State):
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             if show_error:
                 graph.bars(diff, sub_plot=5,
-                           ymin=-100000, ymax=100000, yinterval=50000,
+                           ymin=-2000, ymax=17000, yinterval=2000,
                            title='Diff Orders Not Diverted, Diverted/Delivered',
                            xlabel='', xinterval=year_interval, color='firebrick',
                            ylabel='kaf', format_func=WaterGraph.format_kaf)
@@ -369,6 +329,48 @@ class California(State):
                        xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
                        ylabel='kaf', format_func=WaterGraph.format_kaf)
             graph.date_and_wait()
+
+
+        orders_not_delivered_af = usbr_report.annual_af(
+            'orders/' + state_code + '/metropolitan_ordered_but_not_diverted.csv', water_year_month=1)
+        diverted_by_others_af = usbr_report.annual_af('orders/' + state_code + '/metropolitan_diverted_by_others.csv',
+                                                      water_year_month=1)
+        diverted_to_storage_af = usbr_report.annual_af('orders/' + state_code + '/metropolitan_diverted_to_storage.csv',
+                                                       water_year_month=1)
+        satisfaction_of_treaty_af = usbr_report.annual_af(
+            'orders/' + state_code + '/metropolitan_satisfaction_of_treaty.csv', water_year_month=1)
+        excess_of_treaty_af = usbr_report.annual_af('orders/' + state_code + '/metropolitan_excess_of_treaty.csv',
+                                                    water_year_month=1)
+
+        diverted_total_af = add_annuals([diverted_by_others_af,
+                                         diverted_to_storage_af,
+                                         satisfaction_of_treaty_af,
+                                         excess_of_treaty_af])
+        diff = subtract_annual(orders_not_delivered_af, diverted_total_af)
+
+        if show_graph:
+            if show_error:
+                graph = WaterGraph(nrows=3)
+                show_tick_labels = False
+            else:
+                graph = WaterGraph(nrows=2)
+                show_tick_labels = True
+            graph.bars(orders_not_delivered_af, sub_plot=0, title='Metropolitan Total Orders Not Delivered',
+                       ymin=0, ymax=70000, yinterval=10000,
+                       xlabel='', x_labels=False, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.bars(diverted_to_storage_af, sub_plot=1,
+                       ymin=0, ymax=70000, yinterval=10000, title='Diverted to Storage',
+                       xlabel='', x_labels=show_tick_labels, xinterval=year_interval, color='firebrick',
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            if show_error:
+                graph.bars(diff, sub_plot=2,
+                           ymin=-1000, ymax=1000, yinterval=100,
+                           title='Diff Orders Not Diverted, Diverted/Delivered',
+                           xlabel='', xinterval=year_interval, color='firebrick',
+                           ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.date_and_wait()
+
 
 
 def total():
