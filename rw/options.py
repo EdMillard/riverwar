@@ -30,6 +30,9 @@ class Options(object):
         self.crit_in_reach_3a = False
         self.palo_verde_in_reach_3b = False
         self.usgs_lake_mead_inflow = False
+        self.reach6_for_mexico = False
+        self.use_rise_release_data_if_available = False
+
 
     def reset(self):
         self.yuma_users_moved_to_reach_4 = False
@@ -38,4 +41,6 @@ class Options(object):
         self.crit_in_reach_3a = False
         self.palo_verde_in_reach_3b = False
         self.usgs_lake_mead_inflow = False
+        self.reach6_for_mexico = False
+        self.use_rise_release_data_if_available = False
 

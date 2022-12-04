@@ -75,6 +75,48 @@ def daily_to_water_year(a, water_year_month=10):
     return a
 
 
+def daily_af_to_monthly_af(a, start_year=0, end_year=0):
+    obj = a[0]['dt'].astype(object)
+    dt = datetime.date(obj.year, obj.month, obj.day)
+    month = obj.month
+    year = obj.year
+
+    total = 0
+    result = []
+    for o in a:
+        obj = o['dt'].astype(object)
+        if obj.month != month:
+            if start_year == 0 and end_year == 0:
+                result.append([dt, round(total)])
+            else:
+                if start_year <= year <= end_year:
+                    result.append([dt, round(total)])
+            total = 0
+            month = obj.month
+        if obj.year != year:
+            year = obj.year
+        af = o['val']
+        if not np.isnan(af):
+            total += af
+        dt = datetime.date(obj.year, obj.month, obj.day)
+
+    if total > 0:
+        if start_year == 0 and end_year == 0:
+            result.append([dt, round(total)])
+        else:
+            if start_year <= obj.year <= end_year:
+                result.append([dt, round(total)])
+
+    a = np.empty(len(result), [('dt', 'datetime64[s]'), ('val', 'f')])
+    month = 0
+    for l in result:
+        a[month][0] = l[0]
+        a[month][1] = l[1]
+        month += 1
+
+    return a
+
+
 def annual_af(item_id, start_date='', end_date='', csv=False):
     info, daily_inflow_af = load(item_id, start_date=start_date, end_date=end_date, csv=csv)
     return daily_to_water_year(daily_inflow_af)

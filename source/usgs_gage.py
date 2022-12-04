@@ -37,7 +37,7 @@ from rw.util import reshape_annual_range
 
 current_last_year = 2022
 debug = True
-update_gages = False
+update_gages = True
 
 
 class USGSGage(object):

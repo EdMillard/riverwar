@@ -48,6 +48,7 @@ class LakePowell(Lake):
         info, daily_release_af = usbr_rise.load(usbr_lake_powell_inflow_af)
         annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
         self.inflow = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
+        self.inflow_note = 'Lake Powell inflow, USBR RISE'
 
         self.release_usgs = usgs.az.lees_ferry(graph=False).annual_af(Lake.year_begin, Lake.year_end,
                                                                       water_year_month=Lake.water_year_month)
@@ -56,16 +57,19 @@ class LakePowell(Lake):
         info, daily_release_af = usbr_rise.load(usbr_lake_powell_release_total_af)
         annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
         self.release = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
+        self.release_note = 'Glen Canyon release, USBR RISE'
 
         usbr_lake_powell_evaporation_af = 510
         info, daily_release_af = usbr_rise.load(usbr_lake_powell_evaporation_af)
         annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
         self.evaporation = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
+        self.evaporation = 'Lake Powell evaporation, USBR RISE'
 
         usbr_lake_powell_storage_af = 509
         info, daily_release_af = usbr_rise.load(usbr_lake_powell_storage_af)
         annual_release_af = WaterGraph.daily_to_water_year(daily_release_af, water_year_month=Lake.water_year_month)
         self.storage = reshape_annual_range(annual_release_af, Lake.year_begin, Lake.year_end)
+        self.storage_note = 'Lake Powell storage, USBR RISE'
 
 
 def lake_powell(show_graph=True):

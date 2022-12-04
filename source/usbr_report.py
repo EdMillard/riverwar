@@ -123,7 +123,8 @@ def load_monthly_csv(file_name, sep=' ', path='data/USBR_Reports'):
                 try:
                     total = int(fields[-1].replace(',', ''))
                 except ValueError:
-                    print(year, m)
+                    total = 0
+                    print(year, fields[-1])
                 for m in fields[1:-1]:
                     try:
                         monthly_flow = int(m.replace(',', ''))

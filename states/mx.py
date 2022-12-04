@@ -26,7 +26,7 @@ from graph.water import WaterGraph
 from basins import lc
 from rw.lake import Lake
 import usgs
-from rw.util import add_annuals, subtract_annual, reach_for_name, reshape_annual_range
+from rw.util import add_annuals, subtract_annual, reach_for_name, reshape_annual_range, annual_set_to_constant_for_years
 from rw.state import State
 
 
@@ -35,31 +35,49 @@ class Mexico(State):
         State.__init__(self, 'Mexico', 'mx', module, reaches, options)
 
         module = modules[__name__]
-        r5 = reach_for_name(reaches, 'Reach5')
-        r5.add_user(self.user(module, 'mexico', example=True))
+        if self.options.reach6_for_mexico:
+            r6 = reach_for_name(reaches, 'Reach6')
+            r6.add_user(self.user(module, 'mexico', example=True))
+        else:
+            r5 = reach_for_name(reaches, 'Reach5')
+            r5.add_user(self.user(module, 'mexico', example=True))
 
     def test(self):
         mexico()
 
 
 class Morelos(Lake):
-    def __init__(self):
+    def __init__(self, corridor_loss):
         Lake.__init__(self, 'morelos')
+        self.side_inflow = annual_set_to_constant_for_years(Lake.year_begin, Lake.year_end, -corridor_loss)
+        self.side_inflow_note = 'Reach 5 Corridor loss from CRSS via SNWA loss study'
 
-        upper_dam = Lake.lake_by_name('imperial_dam')
-        self.inflow = add_annuals([upper_dam.release, upper_dam.bypass])
-
-        # This is counted as CU at the moment
-        # nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
-        # self.release = nib_morelos_gage.annual_af(water_year_month=Lake.water_year_month,
-        #                                          start_year=Lake.year_begin, end_year=Lake.year_end)
+        if self.options.reach6_for_mexico:
+            nib_morelos_gage = usgs.lc.northern_international_border(graph=False)
+            self.inflow = nib_morelos_gage.annual_af(water_year_month=Lake.water_year_month,
+                                                     start_year=Lake.year_begin, end_year=Lake.year_end)
+            self.inflow_note = 'USGS NIB Gage'
+            self.release = self.inflow
+            self.release_note = 'USGS NIB Gage'
+        else:
+            upper_dam = Lake.lake_by_name('imperial_dam')
+            self.inflow = add_annuals([upper_dam.release, upper_dam.bypass])
+            self.inflow_note = upper_dam.release_note
 
         # Minute 242 bypass of Wellton waste water to Cienaga
         annual_af = usbr_report.annual_af('mx/usbr_mx_minute_242_bypass.csv', water_year_month=Lake.water_year_month)
         self.bypass = reshape_annual_range(annual_af, Lake.year_begin, Lake.year_end)
+        self.bypass_note = 'Minute 242 bypass, Wellton waste water, USBR Annual Report'
 
 
-def yuma_area_returns():
+class GulfOfCalifornia(Lake):
+    def __init__(self):
+        Lake.__init__(self, 'gulf_of_california')
+        self.bypass = Lake.lake_by_name('morelos').bypass
+        self.bypass_note = Lake.lake_by_name('morelos').bypass_note
+
+
+def minute_242_bypass():
     data = []
     minute_242_returns = usbr_report.annual_af('mx/usbr_mx_minute_242_bypass.csv')
     data.append({'data': minute_242_returns, 'label': 'Minute 242', 'color': 'maroon'})

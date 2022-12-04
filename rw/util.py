@@ -77,6 +77,7 @@ def state_total_vs_user_total_graph(state_abbreviation, data, y_formatter='maf')
                ylabel='kaf', format_func=WaterGraph.format_kaf)
     graph.date_and_wait()
 
+
 def subtract_annual(minuend, subtrahend, start_year=0, end_year=0):
     subtrahend = reshape_annual_range_to(subtrahend, minuend)
     difference = np.zeros(len(minuend), [('dt', 'i'), ('val', 'f')])
@@ -149,6 +150,22 @@ def add3_annual(augend, addend, addend2, start_year=0, end_year=0):
     return summation
 
 
+def annual_is_zero(a):
+    if a is not None:
+        for value in a:
+            if value['val'] != 0:
+                return False
+    return True
+
+
+def vector_is_zero(a):
+    if a is not None:
+        for value in a:
+            if value != 0:
+                return False
+    return True
+
+
 def replace_annual(a, b):
     for source in b:
         source_dt = source['dt']
@@ -184,6 +201,22 @@ def annual_zeroed_for_years(year_min, year_max):
         year_index = year - year_min
         a[year_index][0] = year
         a[year_index][1] = 0
+    return a
+
+
+def vector_zeroed_for_years(year_min, year_max):
+    years = year_max - year_min + 1
+    a = [0] * years
+    return a
+
+
+def annual_set_to_constant_for_years(year_min, year_max, constant):
+    years = year_max - year_min + 1
+    a = np.zeros(years, [('dt', 'i'), ('val', 'f')])
+    for year in range(year_min, year_max + 1):
+        year_index = year - year_min
+        a[year_index][0] = year
+        a[year_index][1] = constant
     return a
 
 
@@ -251,6 +284,16 @@ def vector_as_str(a):
             s1 = "{:,}".format(int(y))
             s1 = "{:>12}".format(s1)
             s += s1
+    return s
+
+
+def generate_year_header(year_begin, year_end):
+    s = ''
+    for year in range(year_begin, year_end + 1):
+        s += '    '
+        s += str(year)
+        s += '    '
+
     return s
 
 

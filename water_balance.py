@@ -23,12 +23,14 @@ from basins import lc
 from matplotlib import pyplot
 
 if __name__ == '__main__':
-    pyplot.switch_backend('Agg')  # FIXME must be accessing pyplt somewhere
+    # pyplot.switch_backend('Agg')  # FIXME must be accessing pyplt somewhere
     test_model = lc.Model('test')
     test_model.options.yuma_users_moved_to_reach_4 = True
     test_model.options.crit_in_reach_3a = True
     test_model.options.palo_verde_in_reach_3b = True
-    test_model.initialize(2016, 2021)
+    test_model.options.reach6_for_mexico = True
+    test_model.options.use_rise_release_data_if_available = True
+    test_model.initialize(2016, 2021, water_year_month=1)
     test_model.run(2016, 2021)
     summary = test_model.print()
     summaries = [summary]

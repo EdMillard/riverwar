@@ -30,7 +30,7 @@ from matplotlib.dates import YearLocator
 # gridspec to resize subplots
 # https://www.geeksforgeeks.org/how-to-create-different-subplot-sizes-in-matplotlib/
 
-debug = False
+debug = True
 
 
 class WaterGraph(object):
@@ -385,29 +385,33 @@ class WaterGraph(object):
         return b
 
     @staticmethod
-    def daily_to_calendar_year(a):
+    def daily_to_calendar_year(a, debug=False):
         dt = datetime.date(1, 1, 1)
         total = 0
         result = []
         for o in a:
             obj = o['dt'].astype(object)
+            y = o['val']
+            if np.isnan(y):
+                if debug:
+                    print('daily_to_calendar_year isnan', o['dt'])
+                y = 0
             if dt.year != obj.year:
                 if total > 0:
                     result.append([dt, total])
                     total = 0
                 dt = datetime.date(obj.year, 12, 31)
-            else:
-                total += o['val']
+            total += y
         if total > 0:
             result.append([dt, total])
 
         a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
-        day = 0
+        year = 0
         for l in result:
             # a[day][0] = np.datetime64(l[0])
-            a[day][0] = l[0].year
-            a[day][1] = l[1]
-            day += 1
+            a[year][0] = l[0].year
+            a[year][1] = l[1]
+            year += 1
 
         return a
 

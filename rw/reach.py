@@ -19,8 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from rw.util import af_as_str, number_as_str, percent_as_str, right_justified
+from rw.util import af_as_str, number_as_str, percent_as_str, right_justified, left_justified, generate_year_header
 from rw.util import add_annual, subtract_annual, subtract_vector_from_annual, annual_as_str, vector_as_str
+from rw.util import annual_is_zero, annual_zeroed_for_years, vector_is_zero, vector_zeroed_for_years
 from rw.state import state_by_abbreviation
 
 debug = True
@@ -43,22 +44,51 @@ class Reach(object):
         self.state_assessment = {}
         # Reach
         self.loss = None
+        self.loss_note = ''
+
         self.reach_cu = None
+        self.reach_cu_note = ''
+
         self.in_reach_cu_avg = None
         self.through_reach_cu_avg = None
+
         self.reach_inflow = None
+        self.reach_inflow_note = ''
+
         self.upper_lake_bypass = None
+        self.upper_lake_bypass_note = ''
+
         self.reach_side_inflows = None
+        self.reach_side_inflows_note = ''
+
         self.reach_total_inflow = None
+        self.reach_total_inflow_note = ''
+
         self._24_month_side_inflows = None
+        self._24_month_side_inflows_note = ''
+
         # Lower Lake
         self.loss_corridor = None
+        self.loss_corridor_note = ''
+
         self.lower_lake_inflow = None
+        self.lower_lake_inflow_note = ''
+
         self.loss_evaporation = None
+        self.loss_evaporation_note = ''
+
         self.lower_lake_release = None
+        self.lower_lake_release_note = ''
+
         self.lower_lake_bypass = None
+        self.lower_lake_bypass_note = ''
+
         self.inflow_outflow_delta = None
+        self.inflow_outflow_delta_note = ''
+
         self.storage_delta = None
+        self.storage_delta_note = ''
+
         self.states = ['az', 'ca', 'nv', 'mx']
 
     @staticmethod
@@ -69,27 +99,39 @@ class Reach(object):
         self.users.append(user)
 
     def model(self, year_begin, year_end):
-        if not self.upper_lake or not self.lower_lake:
+        if not self.upper_lake:
             return None, None
 
         self.reach_inflow = self.upper_lake.release
+        self.reach_inflow_note = self.upper_lake.release_note
         self.upper_lake_bypass = self.upper_lake.bypass
         if self.upper_lake_bypass is not None:
+            self.upper_lake_bypass_note = self.upper_lake.bypass_note
             self.reach_total_inflow = add_annual(self.reach_inflow, self.upper_lake_bypass)
         else:
             self.reach_total_inflow = self.reach_inflow
 
-        self.loss_evaporation = self.lower_lake.evaporation
-        self.lower_lake_release = self.lower_lake.release
-        self.lower_lake_bypass = self.lower_lake.bypass
+        if self.lower_lake:
+            self.loss_evaporation = self.lower_lake.evaporation
+            self.lower_lake_release = self.lower_lake.release
+            self.lower_lake_bypass = self.lower_lake.bypass
+            self.storage_delta = self.lower_lake.storage_delta()
+            self._24_month_side_inflows = self.lower_lake.side_inflow
+        else:
+            self.loss_evaporation = annual_zeroed_for_years(year_begin, year_end)
+            self.lower_lake_release = annual_zeroed_for_years(year_begin, year_end)
+            self.lower_lake_bypass = annual_zeroed_for_years(year_begin, year_end)
+            self.storage_delta = vector_zeroed_for_years(year_begin, year_end)
+            self._24_month_side_inflows = None
 
-        self._24_month_side_inflows = self.lower_lake.side_inflow
         if self._24_month_side_inflows is not None:
             self.reach_side_inflows = self._24_month_side_inflows
+            self.reach_side_inflows_note = self.lower_lake.side_inflow_note
             self.reach_total_inflow = add_annual(self.reach_total_inflow, self.reach_side_inflows)
-        elif self.lower_lake.inflow is not None:
+        elif self.lower_lake and self.lower_lake.inflow is not None:
             self.lower_lake_inflow = self.lower_lake.inflow
             self.reach_side_inflows = subtract_annual(self.reach_total_inflow, self.lower_lake_inflow)
+            self.reach_side_inflows_note = 'Estimated from reach inflow and lower lake inflow'
             self.reach_total_inflow = add_annual(self.reach_total_inflow, self.reach_side_inflows)
         else:
             pass
@@ -103,6 +145,7 @@ class Reach(object):
             for user in self.active_users_in_reach:
                 self.reach_cu = [self.reach_cu[x] + user.cu_for_years[x][1] for x in range(len(self.reach_cu))]
             self.in_reach_cu_avg = int(sum(self.reach_cu) / len(self.reach_cu))
+            self.reach_cu_note = self.name + ' Total User CU, USBR Annual Report'
 
         self.inflow_outflow_delta = subtract_vector_from_annual(self.reach_total_inflow, self.reach_cu)
         if self.lower_lake_release is not None:
@@ -112,26 +155,32 @@ class Reach(object):
         if self.lower_lake_bypass is not None:
             self.inflow_outflow_delta = subtract_annual(self.inflow_outflow_delta, self.lower_lake_bypass)
 
-        self.storage_delta = self.lower_lake.storage_delta()
-
         if debug:
-            print('\n==', self.name)
-            print(' reach_inflow:         ', annual_as_str(self.reach_inflow))
-            if self.upper_lake_bypass is not None:
-                print('+upper_lake_bypass:    ', annual_as_str(self.upper_lake_bypass))
-            print('+reach_side_inflows:   ', annual_as_str(self.reach_side_inflows))
-            print('=reach_total_inflow:   ', annual_as_str(self.reach_total_inflow))
+            print('\n==', self.name + ',', self.upper_lake.name, 'to', self.lower_lake.name)
+            print('                           ', generate_year_header(year_begin, year_end))
+            print(' reach_inflow:         ', annual_as_str(self.reach_inflow), self.reach_inflow_note)
+            if not annual_is_zero(self.upper_lake_bypass):
+                print('+upper_lake_bypass:    ', annual_as_str(self.upper_lake_bypass), self.upper_lake.bypass_note)
+            if not annual_is_zero(self.reach_side_inflows):
+                print('+reach_side_inflows:   ', annual_as_str(self.reach_side_inflows), self.reach_side_inflows_note)
+            print('=reach_total_inflow:   ', annual_as_str(self.reach_total_inflow), self.reach_total_inflow_note)
 
-            if self.lower_lake_inflow is not None:
-                print(' lower_lake_inflow:    ', annual_as_str(self.lower_lake_inflow))
-            print('-reach cu:             ', vector_as_str(self.reach_cu))
-            print('-loss_evaporation:     ', annual_as_str(self.loss_evaporation))
-            print('-lower_lake_release:   ', annual_as_str(self.lower_lake_release))
-            print('-lower_lake_bypass:    ', annual_as_str(self.lower_lake_bypass))
+            if not annual_is_zero(self.lower_lake_inflow):
+                print(' lower_lake_inflow:    ', annual_as_str(self.lower_lake_inflow), self.lower_lake_inflow_note)
+            print('-reach cu:             ', vector_as_str(self.reach_cu), self.reach_cu_note)
+            if not annual_is_zero(self.loss_evaporation):
+                print('-loss_evaporation:     ', annual_as_str(self.loss_evaporation), self.lower_lake.evaporation_note)
+            if not annual_is_zero(self.lower_lake_release):
+                print('-lower_lake_release:   ', annual_as_str(self.lower_lake_release), self.lower_lake.release_note)
+            if not annual_is_zero(self.lower_lake_bypass):
+                print('-lower_lake_bypass:    ', annual_as_str(self.lower_lake_bypass), self.lower_lake.bypass_note)
 
             print('=inflow_outflow_delta: ', annual_as_str(self.inflow_outflow_delta))
-            print('-storage_delta:        ', vector_as_str(self.storage_delta))
-            diff = subtract_vector_from_annual(self.inflow_outflow_delta, self.storage_delta)
+            if not vector_is_zero(self.storage_delta):
+                print('-storage_delta:        ', vector_as_str(self.storage_delta), self.lower_lake.storage_note)
+                diff = subtract_vector_from_annual(self.inflow_outflow_delta, self.storage_delta)
+            else:
+                diff = self.inflow_outflow_delta
             print('=water balance_delta   ', annual_as_str(diff))
 
     def cu(self, year_begin, year_end):
@@ -167,7 +216,10 @@ class Reach(object):
                 avg_cu = user.avg_cu()
                 state_through_reach_cu_avg += avg_cu
 
-            percent = state_through_reach_cu_avg / self.through_reach_cu_avg
+            if self.through_reach_cu_avg != 0:
+                percent = state_through_reach_cu_avg / self.through_reach_cu_avg
+            else:
+                percent = 0
             state_assessment = self.loss * percent
             state.loss_assessment += state_assessment
 
