@@ -35,7 +35,7 @@ from rw.util import reshape_annual_range
 # USGS National Water Dashboard
 # https://dashboard.waterdata.usgs.gov/app/nwd/?aoi=default
 
-current_last_year = 2022
+current_last_year = 2023
 debug = True
 update_gages = True
 
@@ -95,12 +95,11 @@ class USGSGage(object):
                                                  start_year=start_year, end_year=end_year)
             annual_af = usbr_report.monthly_to_calendar_year(monthly_af)
         else:
-            a = daily_to_water_year(self.daily_discharge(update=update_gages), water_year_month)
-            annual_af = reshape_annual_range(a, start_year, end_year)
+            annual_af = daily_to_water_year(self.daily_discharge(update=update_gages), water_year_month)
         if start_year > 0 and end_year > 0:
-            annual_af = USGSGage.reshape_annual_range(annual_af, start_year, end_year)
+            annual_af = reshape_annual_range(annual_af, start_year, end_year)
         elif start_year > 0:
-            annual_af = USGSGage.reshape_annual_range(annual_af, start_year, current_last_year)
+            annual_af = reshape_annual_range(annual_af, start_year, current_last_year)
         return annual_af
 
     def monthly_af(self, start_year=0, end_year=0):
