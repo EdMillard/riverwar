@@ -334,7 +334,7 @@ def print_loss_table(reaches):
         reach = reaches[i]
         s = '\t' + left_justified(reach.name, 8) + right_justified(reach.upper_lake.name, 15)
         if reach.lower_lake is not None:
-            s += right_justified(reach.lower_lake.name, 15)
+            s += right_justified(reach.lower_lake.name, 20)
         else:
             s += right_justified(' ', 15)
         s += af_as_str(reach.loss)
@@ -523,7 +523,7 @@ def lake_mead_ics_by_state():
 
 
 class LakeMead(Lake):
-    def __init__(self):
+    def __init__(self, show_graphs=False):
         Lake.__init__(self, 'lake_mead')
         ar_annual_release_af = usbr_report.annual_af('releases/usbr_releases_hoover_dam.csv',
                                                      water_year_month=Lake.water_year_month)
@@ -550,44 +550,45 @@ class LakeMead(Lake):
         usgs_annual_release_af = usgs.lc.below_hoover().annual_af(2000, Lake.year_end, Lake.water_year_month)
         usgs_monthly_release_af = usgs.lc.below_hoover().monthly_af(Lake.year_begin, Lake.year_end)
 
-        graph = WaterGraph(nrows=2)
-        graph.plot(ar_monthly_release_af, sub_plot=0, title='Lake Mead Monthly Release', color='firebrick',
-                   xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR Annual Report',
-                   ymin=200000, ymax=1300000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.plot(rise_monthly_release_af, sub_plot=0, title='Lake Mead Monthly Release',
-                   color='royalblue',
-                   xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR RISE',
-                   ymin=200000, ymax=1300000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.plot(usgs_monthly_release_af, sub_plot=1, title='', color='firebrick',
-                   xmin=datetime.date(2000, 1, 1), xinterval=1, label='USGS Gage',
-                   ymin=200000, ymax=1300000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.plot(rise_monthly_release_af, sub_plot=1, title='',
-                   color='royalblue',
-                   xmin=datetime.date(2000, 1, 1),xinterval=1, label='USBR RISE',
-                   ymin=200000, ymax=1300000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.date_and_wait()
+        if show_graphs:
+            graph = WaterGraph(nrows=2)
+            graph.plot(ar_monthly_release_af, sub_plot=0, title='Lake Mead Monthly Release', color='firebrick',
+                       xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR Annual Report',
+                       ymin=200000, ymax=1300000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.plot(rise_monthly_release_af, sub_plot=0, title='Lake Mead Monthly Release',
+                       color='royalblue',
+                       xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR RISE',
+                       ymin=200000, ymax=1300000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.plot(usgs_monthly_release_af, sub_plot=1, title='', color='firebrick',
+                       xmin=datetime.date(2000, 1, 1), xinterval=1, label='USGS Gage',
+                       ymin=200000, ymax=1300000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.plot(rise_monthly_release_af, sub_plot=1, title='',
+                       color='royalblue',
+                       xmin=datetime.date(2000, 1, 1),xinterval=1, label='USBR RISE',
+                       ymin=200000, ymax=1300000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.date_and_wait()
 
-        graph = WaterGraph(nrows=3)
-        ar_annual_release_af = reshape_annual_range(ar_annual_release_af, 2000, Lake.year_end)
-        graph.bars(ar_annual_release_af, sub_plot=0, title='Annual Report Lake Mead Release (Hoover Dam)',
-                   color='firebrick', ymin=7500000, ymax=11000000, yinterval=200000,
-                   xlabel='', xinterval=2,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        rise_annual_release_af = reshape_annual_range(rise_annual_release_af, 2000, Lake.year_end)
-        graph.bars(rise_annual_release_af, sub_plot=1, title='USBR RISE Lake Mead Release (Hoover Dam)',
-                   color='firebrick', ymin=7500000, ymax=11000000, yinterval=200000,
-                   xlabel='', xinterval=2,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        diff = subtract_annual(usgs_annual_release_af, rise_annual_release_af)
-        graph.bars(diff, sub_plot=2, title='Below Hoover USGS gage minus USBR RISE Lake Mead Release (Hoover Dam)',
-                   color='firebrick', ymin=-6000, ymax=10000, yinterval=2000,
-                   xlabel='Calendar Year', xinterval=2,
-                   ylabel='kaf', format_func=WaterGraph.format_kaf)
-        graph.date_and_wait()
+            graph = WaterGraph(nrows=3)
+            ar_annual_release_af = reshape_annual_range(ar_annual_release_af, 2000, Lake.year_end)
+            graph.bars(ar_annual_release_af, sub_plot=0, title='Annual Report Lake Mead Release (Hoover Dam)',
+                       color='firebrick', ymin=7500000, ymax=11000000, yinterval=200000,
+                       xlabel='', xinterval=2,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            rise_annual_release_af = reshape_annual_range(rise_annual_release_af, 2000, Lake.year_end)
+            graph.bars(rise_annual_release_af, sub_plot=1, title='USBR RISE Lake Mead Release (Hoover Dam)',
+                       color='firebrick', ymin=7500000, ymax=11000000, yinterval=200000,
+                       xlabel='', xinterval=2,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            diff = subtract_annual(usgs_annual_release_af, rise_annual_release_af)
+            graph.bars(diff, sub_plot=2, title='Below Hoover USGS gage minus USBR RISE Lake Mead Release (Hoover Dam)',
+                       color='firebrick', ymin=-6000, ymax=10000, yinterval=2000,
+                       xlabel='Calendar Year', xinterval=2,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.date_and_wait()
 
         if Lake.options.usgs_lake_mead_inflow:
             colorado_above_diamond_creek_annual_af = \
@@ -681,7 +682,7 @@ def lake_mead(graph=True):
 
 
 class LakeMohave(Lake):
-    def __init__(self):
+    def __init__(self, show_graphs=False):
         Lake.__init__(self, 'lake_mohave')
 
         self.inflow = Lake.lake_by_name('lake_mead').release
@@ -705,36 +706,37 @@ class LakeMohave(Lake):
         self.release_usgs = usgs.lc.below_davis().annual_af(Lake.year_begin, Lake.year_end, Lake.water_year_month)
         usgs_monthly_release_af = usgs.lc.below_davis().monthly_af(Lake.year_begin, Lake.year_end)
 
-        graph = WaterGraph(nrows=1)
-        graph.plot(usgs_monthly_release_af, sub_plot=0, title='Lake Mohave Monthly Release', color='firebrick',
-                   xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR Annual Report (USGS Gage)',
-                   ymin=200000, ymax=1300000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.plot(rise_monthly_release_af, sub_plot=0, title='Lake Mohave Monthly Release',
-                   color='royalblue',
-                   xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR RISE',
-                   ymin=200000, ymax=1300000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.date_and_wait()
+        if show_graphs:
+            graph = WaterGraph(nrows=1)
+            graph.plot(usgs_monthly_release_af, sub_plot=0, title='Lake Mohave Monthly Release', color='firebrick',
+                       xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR Annual Report (USGS Gage)',
+                       ymin=200000, ymax=1300000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.plot(rise_monthly_release_af, sub_plot=0, title='Lake Mohave Monthly Release',
+                       color='royalblue',
+                       xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR RISE',
+                       ymin=200000, ymax=1300000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.date_and_wait()
 
-        graph = WaterGraph(nrows=3)
-        ar_annual_release_af = reshape_annual_range(ar_annual_release_af, 2000, Lake.year_end)
-        graph.bars(ar_annual_release_af, sub_plot=0, title='Annual Report Lake Mohave Release (Davis Dam)',
-                   color='firebrick', ymin=7000000, ymax=11000000, yinterval=500000,
-                   xlabel='', xinterval=2,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        rise_annual_release_af = reshape_annual_range(rise_annual_release_af, 2000, Lake.year_end)
-        graph.bars(rise_annual_release_af, sub_plot=1, title='USBR RISE Lake Mohave Release (Davis Dam)',
-                   color='firebrick', ymin=7000000, ymax=11000000, yinterval=500000,
-                   xlabel='', xinterval=2,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        diff = subtract_annual(self.release_usgs, rise_annual_release_af)
-        graph.bars(diff, sub_plot=2, title='USGS Gage minus USBR RISE Lake Mohave Release (Davis Dam)',
-                   color='firebrick',
-                   ymin=-100000, ymax=1100000, yinterval=100000,
-                   xlabel='Calendar Year', xinterval=2,
-                   ylabel='kaf', format_func=WaterGraph.format_kaf)
-        graph.date_and_wait()
+            graph = WaterGraph(nrows=3)
+            ar_annual_release_af = reshape_annual_range(ar_annual_release_af, 2000, Lake.year_end)
+            graph.bars(ar_annual_release_af, sub_plot=0, title='Annual Report Lake Mohave Release (Davis Dam)',
+                       color='firebrick', ymin=7000000, ymax=11000000, yinterval=500000,
+                       xlabel='', xinterval=2,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            rise_annual_release_af = reshape_annual_range(rise_annual_release_af, 2000, Lake.year_end)
+            graph.bars(rise_annual_release_af, sub_plot=1, title='USBR RISE Lake Mohave Release (Davis Dam)',
+                       color='firebrick', ymin=7000000, ymax=11000000, yinterval=500000,
+                       xlabel='', xinterval=2,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            diff = subtract_annual(self.release_usgs, rise_annual_release_af)
+            graph.bars(diff, sub_plot=2, title='USGS Gage minus USBR RISE Lake Mohave Release (Davis Dam)',
+                       color='firebrick',
+                       ymin=-100000, ymax=1100000, yinterval=100000,
+                       xlabel='Calendar Year', xinterval=2,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.date_and_wait()
 
         if self.options.use_rise_release_data_if_available:
             self.release = self.release_rise
@@ -806,7 +808,7 @@ def lake_mohave(graph=False):
 
 
 class LakeHavasu(Lake):
-    def __init__(self):
+    def __init__(self, show_graphs=False):
         Lake.__init__(self, 'lake_havasu')
 
         self.inflow = Lake.lake_by_name('lake_mohave').release
@@ -836,36 +838,37 @@ class LakeHavasu(Lake):
 
         self.release_usgs = usgs.lc.below_parker().annual_af(Lake.year_begin, Lake.year_end, Lake.water_year_month)
 
-        graph = WaterGraph(nrows=1)
-        graph.plot(ar_monthly_release_af, sub_plot=0, title='Lake Havasu Monthly Release', color='firebrick',
-                   xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR Annual Report (USGS Gage)',
-                   ymin=100000, ymax=1000000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.plot(rise_monthly_release_af, sub_plot=0, title='Lake Havasu Monthly Release',
-                   color='royalblue',
-                   xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR RISE',
-                   ymin=100000, ymax=1000000, yinterval=100000,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        graph.date_and_wait()
+        if show_graphs:
+            graph = WaterGraph(nrows=1)
+            graph.plot(ar_monthly_release_af, sub_plot=0, title='Lake Havasu Monthly Release', color='firebrick',
+                       xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR Annual Report (USGS Gage)',
+                       ymin=100000, ymax=1000000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.plot(rise_monthly_release_af, sub_plot=0, title='Lake Havasu Monthly Release',
+                       color='royalblue',
+                       xmin=datetime.date(2000, 1, 1), xinterval=1, label='USBR RISE',
+                       ymin=100000, ymax=1000000, yinterval=100000,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            graph.date_and_wait()
 
-        graph = WaterGraph(nrows=3)
-        ar_annual_release_af = reshape_annual_range(ar_annual_release_af, 2000, Lake.year_end)
-        graph.bars(ar_annual_release_af, sub_plot=0, title='Annual Report Lake Havasu Release (Parker Dam)',
-                   color='firebrick',
-                   ymin=5000000, ymax=8000000, yinterval=500000,
-                   xlabel='', xinterval=2,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        rise_annual_release_af = reshape_annual_range(rise_annual_release_af, 2000, Lake.year_end)
-        graph.bars(rise_annual_release_af, sub_plot=1, title='USBR RISE Lake Havasu Release (Parker Dam)', color='firebrick',
-                   ymin=5000000, ymax=8000000, yinterval=500000,
-                   xlabel='', xinterval=2,
-                   ylabel='maf', format_func=WaterGraph.format_maf)
-        diff = subtract_annual(ar_annual_release_af, rise_annual_release_af)
-        graph.bars(diff, sub_plot=2, title='AR minus USBR RISE Lake Havasu Release (Parker Dam)', color='firebrick',
-                   ymin=-200000, ymax=700000, yinterval=100000,
-                   xlabel='Calendar Year', xinterval=2,
-                   ylabel='kaf', format_func=WaterGraph.format_kaf)
-        graph.date_and_wait()
+            graph = WaterGraph(nrows=3)
+            ar_annual_release_af = reshape_annual_range(ar_annual_release_af, 2000, Lake.year_end)
+            graph.bars(ar_annual_release_af, sub_plot=0, title='Annual Report Lake Havasu Release (Parker Dam)',
+                       color='firebrick',
+                       ymin=5000000, ymax=8000000, yinterval=500000,
+                       xlabel='', xinterval=2,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            rise_annual_release_af = reshape_annual_range(rise_annual_release_af, 2000, Lake.year_end)
+            graph.bars(rise_annual_release_af, sub_plot=1, title='USBR RISE Lake Havasu Release (Parker Dam)', color='firebrick',
+                       ymin=5000000, ymax=8000000, yinterval=500000,
+                       xlabel='', xinterval=2,
+                       ylabel='maf', format_func=WaterGraph.format_maf)
+            diff = subtract_annual(ar_annual_release_af, rise_annual_release_af)
+            graph.bars(diff, sub_plot=2, title='AR minus USBR RISE Lake Havasu Release (Parker Dam)', color='firebrick',
+                       ymin=-200000, ymax=700000, yinterval=100000,
+                       xlabel='Calendar Year', xinterval=2,
+                       ylabel='kaf', format_func=WaterGraph.format_kaf)
+            graph.date_and_wait()
 
         usbr_lake_havasu_storage_af = 6129
         info, daily_storage_af = usbr_rise.load(usbr_lake_havasu_storage_af)
