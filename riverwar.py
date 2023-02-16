@@ -35,12 +35,12 @@ from states import az, ca, nv, mx
 from source.usgs_gage import USGSGage
 from source import usbr_report
 from source import usbr_rise
-from loss_study import Model
+from basins.lc import Model
 
 
 interrupted = False
 
-current_last_year = 2021
+current_last_year = 2022
 
 # FIXME Revision 1967_0, 1967_1, 1968_0, 1968_1, 1970_0, 1971_0, 1973_1
 # Fixed 1969_0, 1969_1, 1970_1, 1971_1, 1972_1,1980_1, 1984_1
@@ -90,9 +90,9 @@ def model_glen_canyon(show_graph=False):
     # plot_bars.show()
     # plot_bars.waitforbuttonpress()
 
-    usgs_lees_ferry_af_1999_2021 = WaterGraph.array_in_time_range(usgs_lees_ferry_annual_af,
-                                                                  datetime.datetime(1999, 1, 1),
-                                                                  datetime.datetime(current_last_year, 12, 31))
+    usgs_lees_ferry_af_since_1999 = WaterGraph.array_in_time_range(usgs_lees_ferry_annual_af,
+                                                                   datetime.datetime(1999, 1, 1),
+                                                                   datetime.datetime(current_last_year, 12, 31))
     # rw_bars(annual_discharge_af, title=name, color='royalblue',
     #        ylabel='maf', ymin=2000000, ymax=21000000, yinterval=500000, format_func=format_maf,
     #        xlabel='Water Year', xinterval=5)
@@ -115,50 +115,50 @@ def model_glen_canyon(show_graph=False):
         graph.running_average(glen_canyon_annual_release_af, 10, sub_plot=0)
         graph.running_average(usgs_lees_ferry_annual_af, 10, sub_plot=0)
 
-    usbr_lake_powell_release_af_1999_2021 = WaterGraph.array_in_time_range(glen_canyon_annual_release_af,
-                                                                           datetime.datetime(1999, 1, 1),
+    usbr_lake_powell_release_af_since_1999 = WaterGraph.array_in_time_range(glen_canyon_annual_release_af,
+                                                                            datetime.datetime(1999, 1, 1),
                                                                            datetime.datetime(current_last_year, 12, 31))
 
     # USGS Paria At Lees Ferry Gage Daily Discharge Mean
     #
     usgs_paria_annual_af = usgs.az.paria_lees_ferry().annual_af()
-    usgs_paria_annual_af_1999_2021 = WaterGraph.array_in_time_range(usgs_paria_annual_af,
-                                                                    datetime.datetime(1999, 1, 1),
-                                                                    datetime.datetime(current_last_year, 12, 31))
+    usgs_paria_annual_af_since_1999 = WaterGraph.array_in_time_range(usgs_paria_annual_af,
+                                                                     datetime.datetime(1999, 1, 1),
+                                                                     datetime.datetime(current_last_year, 12, 31))
 
-    usbr_glen_canyon_vector = usbr_lake_powell_release_af_1999_2021['val']
-    usgs_paria_vector = usgs_paria_annual_af_1999_2021['val']
+    usbr_glen_canyon_vector = usbr_lake_powell_release_af_since_1999['val']
+    usgs_paria_vector = usgs_paria_annual_af_since_1999['val']
     usgs_glen_canyon_plus_paria = usbr_glen_canyon_vector + usgs_paria_vector
 
-    glen_canyon_plus_paria = np.empty(2021-1999+1, [('dt', 'i'), ('val', 'f')])
-    glen_canyon_plus_paria['dt'] = usbr_lake_powell_release_af_1999_2021['dt']
+    glen_canyon_plus_paria = np.empty(current_last_year-1999+1, [('dt', 'i'), ('val', 'f')])
+    glen_canyon_plus_paria['dt'] = usbr_lake_powell_release_af_since_1999['dt']
     glen_canyon_plus_paria['val'] = usgs_glen_canyon_plus_paria
 
-    usgs_lees_ferry_vector = usgs_lees_ferry_af_1999_2021['val']
+    usgs_lees_ferry_vector = usgs_lees_ferry_af_since_1999['val']
 
     print('USBR Glen Canyon:\n', usbr_glen_canyon_vector)
     print('USGS Lees Ferry:\n', usgs_lees_ferry_vector)
     difference = usgs_lees_ferry_vector - usgs_glen_canyon_plus_paria
     difference_sum = difference.sum()
     difference_average = difference_sum / len(difference)
-    print('Total discrepancy 1999-2021   = ', int(difference_sum))
-    print('Average discrepancy 1999-2021 = ', int(difference_average))
+    print('Total discrepancy 1999-', current_last_year, ' = ', int(difference_sum))
+    print('Average discrepancy 1999-', current_last_year, ' = ', int(difference_average))
     print('Difference vector:\n', difference)
 
-    discrepancy = np.empty(len(usgs_lees_ferry_af_1999_2021['dt']), [('dt', 'i'), ('val', 'f')])
-    discrepancy['dt'] = usgs_lees_ferry_af_1999_2021['dt']
+    discrepancy = np.empty(len(usgs_lees_ferry_af_since_1999['dt']), [('dt', 'i'), ('val', 'f')])
+    discrepancy['dt'] = usgs_lees_ferry_af_since_1999['dt']
     discrepancy['val'] = difference
 
     if show_graph:
         graph = WaterGraph()
-        graph.bars_two(glen_canyon_plus_paria, usgs_lees_ferry_af_1999_2021,
+        graph.bars_two(glen_canyon_plus_paria, usgs_lees_ferry_af_since_1999,
                        title='Lake Powell Release Comparison, USBR Glen Canyon + Paria vs USGS Lees Ferry',
                        label_a='Glen Canyon + Paria', color_a='royalblue',
                        label_b='Lees Ferry', color_b='limegreen',
-                       ylabel='maf', ymin=7000000, ymax=13000000, yinterval=250000,
-                       xlabel='Water Year', xinterval=3, format_func=WaterGraph.format_maf)
+                       ylabel='maf', ymin=6500000, ymax=13000000, yinterval=250000,
+                       xlabel='Water Year', xinterval=2, format_func=WaterGraph.format_maf)
         graph.running_average(glen_canyon_plus_paria, 10, sub_plot=0)
-        graph.running_average(usgs_lees_ferry_af_1999_2021, 10, sub_plot=0)
+        graph.running_average(usgs_lees_ferry_af_since_1999, 10, sub_plot=0)
         graph.date_and_wait()
 
         graph = WaterGraph()
@@ -1216,7 +1216,7 @@ def reach_inflow_minus_outflow(reach, study_year):
 
 
 def model_hoover_to_imperial_extras():
-    study_year = 2021
+    study_year = 2022
 
     parker_release = usbr_report.annual_af('releases/usbr_releases_parker_dam.csv')
 
@@ -1263,14 +1263,15 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, keyboardInterruptHandler)
 
     model = Model("Lower Colorado")
-    model.initialize()
+    model.initialize(2018, 2021)
+    model_glen_canyon(show_graph=True)
+    basins.lc.test()
 
     states.nv.test()
     states.az.test()
     states.ca.test()
     states.ca.test()
 
-    basins.lc.test()
     basins.uc.test()
 
     usgs.az.test()
