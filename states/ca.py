@@ -83,17 +83,14 @@ class California(State):
         r4.add_user(self.user(None, 'coachella', example=True))       # 1964
 
         # FIXME, getting reaches out of this before 2016 will be complicated
-        self.user(None, 'other_users_pumping')
+        self.user(module, 'other_users')
 
     def test(self):
-        self.orders_not_delivered(self, 'ca', show_error=True)
         data = [
             {'data': state_total_diversion(), 'y_min': 4000000, 'y_max': 6000000, 'y_interval': 500000},
-            {'data': user_total_diversion()},
-            {'y_min': -100, 'y_max': 1000, 'y_interval': 100},
+            {'data': user_total_diversion()}, {'y_min': -200, 'y_max': 200, 'y_interval': 100},
             {'data': state_total_cu(), 'y_min': 3500000, 'y_max': 5500000, 'y_interval': 500000},
-            {'data': user_total_cu()},
-            {'y_min': -1000, 'y_max': 60000, 'y_interval': 5000},
+            {'data': user_total_cu()}, {'y_min': -1000, 'y_max': 60000, 'y_interval': 5000},
         ]
         util.state_total_vs_user_total_graph('CA', data)
 
@@ -103,6 +100,7 @@ class California(State):
         imperial_irrigation_district()
         palo_verde()
         yuma_project()
+        self.orders_not_delivered(self, 'ca', show_error=True)
 
     @staticmethod
     def orders_not_delivered(self, state_code, show_graph=True, show_error=False):
@@ -698,6 +696,19 @@ def palo_verde_cu(water_year_month=1):
 def palo_verde_returns(water_year_month=1):
     return subtract_annual(palo_verde_diversion(water_year_month=water_year_month),
                            palo_verde_cu(water_year_month=water_year_month))
+
+
+def other_users_diversion(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_other_users_pumping_diversion.csv', water_year_month=water_year_month)
+
+
+def other_users_cu(water_year_month=1):
+    return usbr_report.annual_af('ca/usbr_ca_other_users_pumping_consumptive_use.csv', water_year_month=water_year_month)
+
+
+def other_users_returns(water_year_month=1):
+    return subtract_annual(other_users_diversion(water_year_month=water_year_month),
+                           other_users_cu(water_year_month=water_year_month))
 
 
 def crit_diversion(water_year_month=1):
