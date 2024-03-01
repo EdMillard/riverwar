@@ -1501,6 +1501,53 @@ def scavenge_orders(image_dir, out_path, state, user_name, user_id):
                 field_id='Excess of Treaty')
 
 
+def scavenge_supplement(image_dir, out_path, state):
+    start_year = 2005
+    image_path = image_dir.joinpath(state+'/supplement/')
+
+    output_path = out_path.joinpath('supplement/'+state+'/davis_to_parker_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='DAVIS DAM TO PARKER',
+                field_id='DIVERSION', start_year=start_year, end_year=2015)
+
+    output_path = out_path.joinpath('supplement/'+state+'/davis_to_parker_cu.csv')
+    ocr_reports(image_path, output_path, water_user='DAVIS DAM TO PARKER',
+                field_id='CONSUMPTIVE USE', start_year=start_year, end_year=2015)
+
+    output_path = out_path.joinpath('supplement/'+state+'/parker_to_imperial_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='PARKER DAM TO IMPERIAL',
+                field_id='DIVERSION', start_year=start_year, end_year=2015)
+
+    output_path = out_path.joinpath('supplement/'+state+'/parker_to_imperial_cu.csv')
+    ocr_reports(image_path, output_path, water_user='PARKER DAM TO IMPERIAL',
+                field_id='CONSUMPTIVE USE', start_year=start_year, end_year=2015)
+
+    output_path = out_path.joinpath('supplement/'+state+'/below_imperial_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='BELOW IMPERIAL',
+                field_id='DIVERSION', start_year=start_year, end_year=2015)
+
+    output_path = out_path.joinpath('supplement/'+state+'/below_imperial_cu.csv')
+    ocr_reports(image_path, output_path, water_user='BELOW IMPERIAL',
+                field_id='CONSUMPTIVE USE', start_year=start_year, end_year=2015)
+
+
+def scavenge_supplement_az(image_dir, out_path):
+    start_year = 2005
+    image_path = image_dir.joinpath('az'+'/supplement/')
+    output_path = out_path.joinpath('supplement/'+'az'+'/marble_canyon_diversion.csv')
+    ocr_reports(image_path, output_path, water_user='Marble Canyon',
+                field_id='Diversion', start_year=start_year, end_year=2015)
+
+    output_path = out_path.joinpath('supplement/'+'az'+'/marble_canyon_cu.csv')
+    ocr_reports(image_path, output_path, water_user='Marble Canyon',
+                field_id='Consumptive Use', start_year=start_year, end_year=2015)
+
+    scavenge_supplement(image_dir, out_path, 'az')
+
+
+def scavenge_supplement_ca(image_dir, out_path):
+    scavenge_supplement(image_dir, out_path, 'ca')
+
+
 def scavenge_orders_az(image_dir, out_path):
     scavenge_orders(image_dir, out_path, 'az', 'Central Arizona Project', 'cap')
     scavenge_orders(image_dir, out_path, 'az', 'River Indian', 'crit')
@@ -1612,13 +1659,15 @@ def ocr_debug(image_dir, path1='ca', path2=''):
 if __name__ == '__main__':
     image_directory = Path('/ark/Varuna/USBR_Reports/images/')
     outputs_path = Path('/opt/dev/riverwar/data/USBR_Reports/generated')
-    # ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
+    ocr_debug(image_directory, path1='ca', path2='/consumptive_use')
     # ocr_debug(image_directory, path1='orders', path2='ca')
     # ocr_debug(image_directory, path1='releases')
     # ocr_debug(image_directory, path1='summary')
-    ocr_debug(image_directory, path1='orders/ca')
+    # ocr_debug(image_directory, path1='orders/ca')
     # ocr_debug(image_directory, path1='mx')
     # scavenge_summaries(image_directory, outputs_path)
+    scavenge_supplement_az(image_directory, outputs_path)
+    scavenge_supplement_ca(image_directory, outputs_path)
 
     scavenge_orders_ca(image_directory, outputs_path)
     scavenge_orders_az(image_directory, outputs_path)
