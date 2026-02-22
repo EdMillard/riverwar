@@ -4,3 +4,9 @@ matplotlib>=3.5.0
 python-dateutil>=2.8
 pyocr
 Pillow
+openpyxl
+pandas
+python-docx
+wxPython
+plyvel
+pytz

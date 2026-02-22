@@ -25,6 +25,7 @@ import numpy as np
 from pathlib import Path
 from source import usbr_report
 from rw.util import reshape_annual_range
+from source.water_year_info import WaterYearInfo
 
 # USGS Gage parameter definitions
 # https://help.waterdata.usgs.gov/code/parameter_cd_query?fmt=rdb&inline=true&group_cd=%
@@ -37,21 +38,29 @@ from rw.util import reshape_annual_range
 
 current_last_year = 2023
 debug = True
-update_gages = True
+update_gages = False
+
+
+def print_last_value(abbrev, a, alias=''):
+    last_date = a['dt'][-1]
+    last_val = a['val'][-1]
+    print(f'\tUSGS - {abbrev} {last_date} {last_val} {alias}')
 
 
 class USGSGage(object):
     """
     Essential paramaters to load and display a USGS gage site
   """
-
-    def __init__(self, site, start_date, end_date=None, cfs_min=0, cfs_max=1000, cfs_interval=100,
+    def __init__(self, site, start_date=None, end_date=None, cfs_min=0, cfs_max=1000, cfs_interval=100,
                  annual_min=0, annual_max=100, annual_interval=10, annual_unit='kaf',
-                 year_interval=5, color='royalblue'):
+                 year_interval=1, color='royalblue'):
         self.site = site
         self.site_name = ''
 
-        self.start_date = start_date.strip()
+        if start_date:
+            self.start_date = start_date.strip()
+        else:
+            self.start_date = None
         if end_date:
             year_month_day_format = '%Y-%m-%d'
             self.end_date = datetime.datetime.strptime(end_date, year_month_day_format).date()
@@ -105,15 +114,49 @@ class USGSGage(object):
     def monthly_af(self, start_year=0, end_year=0):
         return daily_cfs_to_monthly_af(self.daily_discharge(update=update_gages), start_year, end_year)
 
-    def daily_discharge(self, update=update_gages):
+    def daily_discharge(self, water_year_info=None, update=update_gages, alias='', parameterCd='00060', statCd='00003'):
+        if water_year_info is not None:
+            water_year_string = '_' + str(water_year_info.year)
+            self.start_date = water_year_info.start_date
+            self.end_date = water_year_info.end_date
+            if water_year_info.is_current_water_year:
+                update = True
+        else:
+            water_year_string = ''
+
+        previous_data = None
+        new_data = None
         file_path = Path('data/USGS_Gages/')
-        file_name = file_path.joinpath(self.site + '.csv')
-        if not file_name.exists():
-            self.request_daily_discharge(self.start_date, str(self.end_date))
+        file_path = file_path.joinpath(self.site + water_year_string +'.csv')
+        if file_path.exists():
+            previous_data = self.load_daily_discharge(file_path, update, parameterCd=parameterCd, statCd=statCd)
+            if previous_data is not None and len(previous_data):
+                if water_year_info is not None and water_year_info.is_current_water_year:
+                    last_date = previous_data[-1][0]
+                    update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
 
-        return self.load_daily_discharge(update)
+        if file_path.exists() and update:
+            old_file_moved_path = WaterYearInfo.move_file_with_mod_date(file_path)
+        else:
+            old_file_moved_path = None
 
-    def load_time_series_csv(self, filename):
+        if not file_path.exists() or update:
+            self.request_daily_discharge(file_path, self.start_date, str(self.end_date), parameterCd=parameterCd,
+                                         statCd=statCd)
+            new_data = self.load_daily_discharge(file_path, update, parameterCd=parameterCd, statCd=statCd)
+
+        if previous_data is not None and new_data is not None:
+            WaterYearInfo.diff_data(previous_data, new_data, file_path, old_file_moved_path)
+            daily_discharge = new_data
+        elif previous_data is not None:
+            daily_discharge = previous_data
+        else:
+            daily_discharge = new_data
+
+        print_last_value(self.site, daily_discharge, alias=alias)
+        return daily_discharge
+
+    def load_time_series_csv(self, filename, parameterCd='00060', statCd='00003'):
         date_time_format = "%Y-%m-%d"
 
         f = open(filename, )
@@ -136,7 +179,8 @@ class USGSGage(object):
                 else:
                     days += 1
 
-        discharge_mean_index = usgs_discharge_mean_column(headers)
+        discharge_mean_index = usgs_discharge_mean_column(headers, parameterCd=parameterCd, statCd=statCd)
+        discharge_mean_code_index = usgs_discharge_mean_code_column(headers, parameterCd=parameterCd, statCd=statCd)
 
         a = np.zeros(days - 1, [('dt', 'datetime64[s]'), ('val', 'f')])
         line = 0
@@ -162,6 +206,10 @@ class USGSGage(object):
                                 discharge = 0.0
                         else:
                             discharge = 0.0
+
+                        if discharge_mean_code_index:
+                            discharge_code_string = fields[discharge_mean_code_index]
+                            # print(date_time, discharge_code_string)
                         # state = fields[4]
                         a[day][0] = date_time
                         a[day][1] = discharge
@@ -172,13 +220,18 @@ class USGSGage(object):
         f.close()
         return a
 
-    def request_daily_discharge(self, start_date, end_date, append=False):
-        url = 'https://waterdata.usgs.gov/nwis/dv?cb_00060=on&format=rdb&site_no='
+    def request_daily_discharge(self, file_path, start_date, end_date, append=False, parameterCd='00060', statCd='00003'):
+        url = 'https://waterservices.usgs.gov/nwis/dv?format=rdb&sites='
         url += self.site
-        url += '&referred_module=sw&period=&begin_date='
-        url += start_date
-        url += '&end_date='
-        url += end_date
+        url += '&startDT='
+        url += str(start_date)
+        url += '&endDT='
+        url += str(end_date)
+        url += '&parameterCd='
+        url += str(parameterCd)
+        url += '&statCd='
+        url += str(statCd)
+        print(f'USGS daily:  {url}')
         r = requests.get(url)
         if r.status_code == 200:
             if r.text.startswith('<!DOCTYPE html>'):
@@ -188,16 +241,15 @@ class USGSGage(object):
                     data_path = Path('data/USGS_Gages/')
                     data_path.mkdir(parents=True, exist_ok=True)
 
-                    file_name = data_path.joinpath(self.site + '.csv')
                     if append:
-                        f = open(file_name, 'a')
+                        f = open(file_path, 'a')
                         strings = r.content.decode("utf-8").split('\n')
                         for s in strings:
                             if s.startswith('USGS'):
                                 s += '\n'
                                 f.write(s)
                     else:
-                        f = open(file_name, 'w')
+                        f = open(file_path, 'w')
                         f.write(r.content.decode("utf-8"))
                     f.close()
                 except FileNotFoundError:
@@ -205,15 +257,12 @@ class USGSGage(object):
         else:
             print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
 
-    def load_daily_discharge(self, update=update_gages):
+    def load_daily_discharge(self, file_path, update=update_gages, parameterCd='00060', statCd='00003'):
         if not len(self.daily_discharge_cfs):
-            file_path = Path('data/USGS_Gages/')
-            file_path.mkdir(parents=True, exist_ok=True)
-            file_name = file_path.joinpath(self.site + '.csv')
-            if not file_name.exists():
-                print('USGS path doesn\'t exist: ', file_name)
-                return file_name
-            self.daily_discharge_cfs = self.load_time_series_csv(file_name)
+            if not file_path.exists():
+                print('USGS path doesn\'t exist: ', file_path)
+                return file_path
+            self.daily_discharge_cfs = self.load_time_series_csv(file_path, parameterCd=parameterCd, statCd=statCd)
             end_datetime64 = self.daily_discharge_cfs[-1]['dt']
             end_date = end_datetime64.astype(datetime.datetime).date()
             yesterdays_date = datetime.datetime.now().date() - datetime.timedelta(days=1)
@@ -221,20 +270,37 @@ class USGSGage(object):
                 print(end_date, self.end_date, yesterdays_date)
                 end_date += datetime.timedelta(days=1)
                 print('Gage updating from USGS: ', self.site_name, ' ', end_date, ' to ', yesterdays_date)
-                self.request_daily_discharge(str(end_date), str(yesterdays_date), append=True)
-                self.daily_discharge_cfs = self.load_time_series_csv(file_name)
+                self.request_daily_discharge(file_path, str(end_date), str(yesterdays_date), append=True,
+                                             parameterCd=parameterCd, statCd=statCd)
+                self.daily_discharge_cfs = self.load_time_series_csv(file_path)
 
             # daily_discharge_af = convert_cfs_to_af_per_day(self.daily_discharge_cfs)
+        else:
+            print(f'load_daily_discharge already loaded {file_path}')
+
         return self.daily_discharge_cfs
 
 
-def usgs_discharge_mean_column(headers):
+def usgs_discharge_mean_column(headers, parameterCd='00060', statCd='00003'):
     discharge_mean_index = 0
     for header in headers:
         parts = header.split('_')
         if len(parts) == 3:
             # print(parts)
-            if parts[1] == '00060' and parts[2] == '00003':
+            if parts[1] == parameterCd and parts[2] == statCd:
+                break
+        discharge_mean_index += 1
+
+    return discharge_mean_index
+
+
+def usgs_discharge_mean_code_column(headers, parameterCd='00060', statCd='00003'):
+    discharge_mean_index = 0
+    for header in headers:
+        parts = header.split('_')
+        if len(parts) == 4:
+            # print(parts)
+            if parts[1] == parameterCd and parts[2] == statCd and parts[3] == 'cd':
                 break
         discharge_mean_index += 1
 
@@ -247,7 +313,7 @@ def daily_to_water_year(a, water_year_month=10):
     result = []
     for o in a:
         obj = o['dt'].astype(object)
-        if obj.month == 10 and obj.day == 1:
+        if obj.month == water_year_month and obj.day == 1:
             if total > 0:
                 result.append([dt, total*1.983459])
                 total = 0

@@ -349,6 +349,29 @@ def ruedi():
     usbr_ruedi_release_total_cfs = 716
 
 
+class McPhee(Lake):
+    def __init__(self, update=True):
+        Lake.__init__(self, 'mcphee')
+        self.year_begin = 1984
+
+        usbr_mcphee_elevation_ft = 572
+        info, self.daily_elevation_ft = usbr_rise.load(usbr_mcphee_elevation_ft, update=update, alias='RESERV ELEV')
+
+        usbr_mcphee_storage_af = 569
+        info, self.daily_storage_af = usbr_rise.load(usbr_mcphee_storage_af, update=update, alias='RESERV TOT CAP')
+
+        usbr_mcphee_inflow_cfs = 570
+        info, self.daily_inflow_cfs = usbr_rise.load(usbr_mcphee_inflow_cfs, update=update, alias='MCP INFLOW')
+
+        usbr_mcphee_release_total_cfs = 4342
+        info, self.daily_release_cfs = usbr_rise.load(usbr_mcphee_release_total_cfs, update=update, alias='BELOW MCP')
+
+        usbr_mcphee_area_acres = 4791
+        info, self.daily_area_acres = usbr_rise.load(usbr_mcphee_area_acres, update=update, alias='MCP AREA')
+
+        usbr_mcphee_evaporation_af = 573
+        info, self.daily_evaporation_af = usbr_rise.load(usbr_mcphee_evaporation_af, update=update, alias='MCP EVAP')
+
 # noinspection PyUnusedLocal
 def mcphee():
     usbr_mcphee_storage_af = 569
@@ -360,6 +383,39 @@ def mcphee():
     usbr_mcphee_release_total_af = 4420
     usbr_mcphee_change_in_storage_af = 4421
     usbr_mcphee_area_acres = 4791
+
+    graph = WaterGraph(nrows=4)
+    year_interval = 3
+
+    # info, daily_elevation_ft = usbr_rise.load(usbr_fontenelle_elevation_ft)
+    # graph.plot(daily_elevation_ft, sub_plot=0, title='Fontenelle Elevation', ymin=6415, ymax=6510, yinterval=5,
+    #            ylabel='ft', format_func=WaterGraph.format_elevation)
+
+    info, daily_storage_af = usbr_rise.load(usbr_mcphee_storage_af)
+    graph.plot(daily_storage_af, sub_plot=0, title='McPhee Storage', ymax=480000, yinterval=50000,
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+
+    info, daily_inflow_cfs = usbr_rise.load(usbr_mcphee_inflow_cfs)
+    daily_inflow_af = WaterGraph.convert_cfs_to_af_per_day(daily_inflow_cfs)
+    annual_inflow_af = WaterGraph.daily_to_water_year(daily_inflow_af)
+    graph.bars(annual_inflow_af, sub_plot=1, title='McPhee Inflow',
+               ymin=0, ymax=650000, yinterval=100000, xinterval=year_interval,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+
+    info, daily_release_cfs = usbr_rise.load(usbr_mcphee_release_total_cfs)
+    daily_release_total_af = WaterGraph.convert_cfs_to_af_per_day(daily_release_cfs)
+    annual_release_total_af = WaterGraph.daily_to_water_year(daily_release_total_af)
+    graph.bars(annual_release_total_af, sub_plot=2, title='McPhee Release',
+               ymin=0, ymax=500000, yinterval=100000, xinterval=year_interval,
+               ylabel='maf', format_func=WaterGraph.format_maf)
+
+    info, daily_evaporation_af = usbr_rise.load(usbr_mcphee_evaporation_af)
+    annual_evaporation_af = WaterGraph.daily_to_water_year(daily_evaporation_af)
+    graph.bars(annual_evaporation_af, sub_plot=3, title='McPhee Evaporation',
+               ymin=0, ymax=9000, yinterval=1000, xinterval=year_interval,
+               xlabel='Water Year',
+               ylabel='kaf', format_func=WaterGraph.format_kaf)
+    graph.date_and_wait()
 
 
 # noinspection PyUnusedLocal

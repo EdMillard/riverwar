@@ -24,9 +24,9 @@ import json
 import numpy as np
 import requests
 from pathlib import Path
+from source.water_year_info import WaterYearInfo
 
 debug = True
-
 
 class USBRRise(object):
     """
@@ -122,19 +122,60 @@ def annual_af(item_id, start_date='', end_date='', csv=False):
     return daily_to_water_year(daily_inflow_af)
 
 
-def load(item_id, start_date='', end_date='', csv=False):
+def print_last_value(abbrev, a, alias=''):
+    last_date = a['dt'][-1]
+    last_val = a['val'][-1]
+    print(f'\tUSBR - {abbrev:>8s} {last_date} {last_val} {alias}')
+
+def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, update=False, alias=''):
+    info = None
     item_id_str = str(item_id)
     data_path = Path('data/USBR_RISE')
     data_path.mkdir(parents=True, exist_ok=True)
-    if csv:
-        file_name = data_path.joinpath(item_id_str + '.csv')
+
+    if water_year_info is not None:
+        water_year_string = '_' + str(water_year_info.year)
+        start_date = str(water_year_info.start_date)
+        end_date = str(water_year_info.end_date)
+        if water_year_info.is_current_water_year:
+            update = True
     else:
-        file_name = data_path.joinpath(item_id_str + '.json')
-    if file_name.exists():
-        return load_json(file_name)
+        water_year_string = ''
 
-    return request(item_id, file_name, start_date, end_date, csv)
+    previous_data = None
+    if csv:
+        file_path = data_path.joinpath(item_id_str + water_year_string + '.csv')
+    else:
+        file_path = data_path.joinpath(item_id_str +  water_year_string + '.json')
+        if file_path.exists():
+            info, previous_data = load_json(file_path)
+            if previous_data is not None and len(previous_data):
+                if water_year_info is not None and water_year_info.is_current_water_year:
+                    last_date = previous_data[-1][0]
+                    update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
 
+    if not info or update:
+        if file_path.exists():
+            old_file_moved_path = WaterYearInfo.move_file_with_mod_date(file_path)
+        else:
+            old_file_moved_path = None
+
+        info, new_data = request(item_id, file_path, start_date, end_date, csv)
+
+        if previous_data is not None and new_data is not None:
+            WaterYearInfo.diff_data(previous_data, new_data, file_path, old_file_moved_path)
+            a = new_data
+        elif previous_data is not None:
+            a = previous_data
+        else:
+            a = new_data
+    else:
+        a = previous_data
+
+    if not alias:
+        alias = info.get('Parameter Name')
+    print_last_value(str(item_id), a, alias=alias)
+    return info, a
 
 def request(item_id, file_name, start_date='', end_date='', csv=False):
     item_id_str = str(item_id)
@@ -162,20 +203,17 @@ def request(item_id, file_name, start_date='', end_date='', csv=False):
     # url += '&referred_module=sw'
     # url += '&period='
 
+    print(f'USBR RISE:  {url}')
     r = requests.get(url)
     if r.status_code == 200:
         try:
             f = file_name.open(mode='w')
             f.write(r.content.decode("utf-8"))
             f.close()
-
             if csv:
                 # FIXME
                 print("FIXME USBR RISE csv load")
             else:
-                f = file_name.open(mode='w')
-                f.write(r.content.decode("utf-8"))
-                f.close()
                 return load_json(file_name)
         except FileNotFoundError:
             print("usbr_rise request cache file open failed for item id: ", item_id_str)
@@ -219,6 +257,7 @@ def request_catalog(catalog_path, unified_region_id, theme_id=0):
             url += '&themeId='
             url += theme_id_str
 
+        print(f'USBR RISE catalog:  {url}')
         r = requests.get(url)
         if r.status_code == 200:
             try:
@@ -270,6 +309,7 @@ def request_catalog_item(catalog_item_id_str, prefix=''):
     url = 'https://data.usbr.gov'
     url += catalog_item_id_str
 
+    print(f'USBR RISE catalog item:  {url}')
     r = requests.get(url)
     if r.status_code == 200:
         try:

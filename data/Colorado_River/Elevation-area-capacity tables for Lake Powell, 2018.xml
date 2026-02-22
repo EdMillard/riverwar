@@ -1,0 +1,524 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<metadata>
+  <idinfo>
+    <citation>
+      <citeinfo>
+        <origin>Jones, Daniel K.</origin>
+        <origin>Root, Jonathan Casey</origin>
+        <pubdate>20220321</pubdate>
+        <title>Elevation-area-capacity tables for Lake Powell, 2018</title>
+        <geoform>digital data</geoform>
+        <pubinfo>
+          <pubplace>Reston, VA</pubplace>
+          <publish>U.S. Geological Survey</publish>
+        </pubinfo>
+        <onlink>https://doi.org/10.5066/P9O3IPG3</onlink>
+        <lworkcit>
+          <citeinfo>
+            <origin>Root, Jonathan Casey</origin>
+            <origin>Jones, Daniel K.</origin>
+            <pubdate>2022</pubdate>
+            <title>Elevation-Area-Capacity Relationships of Lake Powell in 2018 and Estimated Loss of Storage Capacity Since 1963</title>
+            <geoform>publication</geoform>
+            <pubinfo>
+              <pubplace>Reston, VA</pubplace>
+              <publish>US Geological Survey</publish>
+            </pubinfo>
+            <onlink>https://doi.org/10.3133/sir20225017</onlink>
+          </citeinfo>
+        </lworkcit>
+      </citeinfo>
+    </citation>
+    <descript>
+      <abstract>This dataset provides elevation-area-capacity relationships for Lake Powell derived from a topobathymetric digital elevation model (TBDEM) that was collected in 2017 and 2018. The TBDEM was modified (Jones and Root, 2021, available for download at https://doi.org/10.5066/P9H60YCF) from the originally published version (Poppenga and others, 2020, available for download at https://doi.org/10.5066/P9XX0J1Y) for the purposes of this study. This dataset contains comma delimited (CSV) files for: (1) calculated tables of elevation-area-capacity relationships for Lake Powell at 0.33-ft (0.1-m) intervals; (2) interpolated tables of elevation-area-capacity relationships for Lake Powell at 0.01-ft intervals; and (3) an error analysis table conducted at 0.01-ft elevation increments across three elevation bands: lower (3,160.00–3,161.00 ft above NAVD 88), middle (3,400.00–3,401.00 ft above NAVD 88), and upper (3,700.00–3,711.00 ft above NAVD 88).</abstract>
+      <purpose>The primary purpose of this dataset is to provide an update to existing elevation-area-capacity relationships for the Lake Powell reservoir that are based on recent high-resolution topographic and bathymetric survey data.</purpose>
+    </descript>
+    <timeperd>
+      <timeinfo>
+        <rngdates>
+          <begdate>20171008</begdate>
+          <enddate>20180403</enddate>
+        </rngdates>
+      </timeinfo>
+      <current>ground condition</current>
+    </timeperd>
+    <status>
+      <progress>Complete</progress>
+      <update>None planned</update>
+    </status>
+    <spdom>
+      <bounding>
+        <westbc>-111.6205</westbc>
+        <eastbc>-110.1378</eastbc>
+        <northbc>38.0066</northbc>
+        <southbc>36.8324</southbc>
+      </bounding>
+    </spdom>
+    <keywords>
+      <theme>
+        <themekt>USGS Thesaurus</themekt>
+        <themekey>water resources</themekey>
+        <themekey>surface water (non-marine)</themekey>
+        <themekey>surface-water level</themekey>
+        <themekey>water supply and demand</themekey>
+        <themekey>water budget</themekey>
+        <themekey>water use</themekey>
+        <themekey>power generation water use</themekey>
+        <themekey>water resource management</themekey>
+        <themekey>watershed management</themekey>
+        <themekey>hydrology</themekey>
+        <themekey>recreation</themekey>
+        <themekey>topography</themekey>
+        <themekey>digital elevation models</themekey>
+        <themekey>bathymetry</themekey>
+        <themekey>geospatial analysis</themekey>
+        <themekey>lidar</themekey>
+      </theme>
+      <theme>
+        <themekt>ISO 19115 Topic Category</themekt>
+        <themekey>elevation</themekey>
+        <themekey>geoscientificInformation</themekey>
+        <themekey>inlandWaters</themekey>
+      </theme>
+      <theme>
+        <themekt>None</themekt>
+        <themekey>topobathymetric digital elevation model</themekey>
+        <themekey>TBDEM</themekey>
+        <themekey>DEM</themekey>
+        <themekey>elevation</themekey>
+        <themekey>USGS</themekey>
+        <themekey>U.S. Geological Survey</themekey>
+        <themekey>Coastal and Marine Hazards Resources Program</themekey>
+        <themekey>Coastal National Elevation Database</themekey>
+        <themekey>CoNED</themekey>
+        <themekey>3D Elevation Program</themekey>
+        <themekey>3DEP</themekey>
+        <themekey>Topobathymetric</themekey>
+        <themekey>Light Detection and Ranging</themekey>
+        <themekey>Utah Water Science Center</themekey>
+        <themekey>Acoustic Sonar</themekey>
+        <themekey>Inland Bathymetry</themekey>
+        <themekey>Reservoir Storage Capacity</themekey>
+        <themekey>Elevation-area-capacity</themekey>
+        <themekey>Flood Inundation Modeling</themekey>
+        <themekey>Earth Resources Observation and Science (EROS) Center</themekey>
+        <themekey>Lake Powell</themekey>
+        <themekey>Glen Canyon Dam</themekey>
+      </theme>
+      <theme>
+        <themekt>USGS Metadata Identifier</themekt>
+        <themekey>USGS:614ccd07d34e0df5fb9868e2</themekey>
+      </theme>
+      <place>
+        <placekt>U.S. Department of Commerce, 1987, Codes for the identification of the States, the District of Columbia and the outlying areas of the United States, and associated areas (Federal Information Processing Standard 5-2): Washington, D.C., National Institute of Standards and Technology</placekt>
+        <placekey>Arizona</placekey>
+        <placekey>Utah</placekey>
+      </place>
+      <place>
+        <placekt>Geographic Names Information System (GNIS)</placekt>
+        <placekey>Lake Powell</placekey>
+        <placekey>Colorado River</placekey>
+        <placekey>Glen Canyon Dam</placekey>
+        <placekey>Glen Canyon National Recreation Area</placekey>
+        <placekey>State of Arizona</placekey>
+        <placekey>State of Utah</placekey>
+        <placekey>Escalante River</placekey>
+        <placekey>San Juan River</placekey>
+        <placekey>County of Coconino</placekey>
+        <placekey>County of Garfield</placekey>
+        <placekey>County of Kane</placekey>
+        <placekey>County of San Juan</placekey>
+      </place>
+      <place>
+        <placekt>U.S. Department of Commerce, 1995, Countries, dependencies, areas of special sovereignty, and their principal administrative divisions, Federal Information Processing Standard 10-4: Washington, D.C., National Institute of Standards and Technology</placekt>
+        <placekey>US</placekey>
+        <placekey>U.S.</placekey>
+        <placekey>United States</placekey>
+        <placekey>USA</placekey>
+      </place>
+    </keywords>
+    <accconst>none</accconst>
+    <useconst>None. However, users should be aware that temporal changes may have occurred since this dataset was collected and that some parts of these data may no longer represent actual surface conditions. Users should not use these data for critical applications without a full awareness of the limitations of the data. Acknowledgment of Bureau of Reclamation and the U.S. Geological Survey would be appreciated for products derived from these data. The data represented is the result of data collection and processing per contract specifications and indicates the general existing conditions at the time of the data collection. As such, it is only valid for its intended use, content, time, and accuracy specifications. The user is responsible for the results of any application of the data for other than its intended purpose. Any use of trade, firm, or product names is for descriptive purposes only and does not imply endorsement by the U.S. Government. Unless otherwise stated, all data, metadata and related materials are considered to satisfy the quality standards relative to the purpose for which the data were collected. Although these data and associated metadata have been reviewed for accuracy and completeness and approved for release by the U.S. Geological Survey (USGS), no warranty expressed or implied is made regarding the display or utility of the data for other purposes, nor on all computer systems, nor shall the act of distribution constitute any such warranty.</useconst>
+    <ptcontac>
+      <cntinfo>
+        <cntperp>
+          <cntper>Daniel K Jones</cntper>
+          <cntorg>ROCKY MOUNTAIN REGION: UTAH WATER SCI CTR</cntorg>
+        </cntperp>
+        <cntpos>Physical Scientist</cntpos>
+        <cntaddr>
+          <addrtype>mailing and physical</addrtype>
+          <address>2329 West Orton Circle</address>
+          <city>West Valley City</city>
+          <state>UT</state>
+          <postal>84119</postal>
+          <country>US</country>
+        </cntaddr>
+        <cntvoice>801-908-5010</cntvoice>
+        <cntemail>dkjones@usgs.gov</cntemail>
+      </cntinfo>
+    </ptcontac>
+    <datacred>Bureau of Reclamation</datacred>
+    <crossref>
+      <citeinfo>
+        <origin>Jones, Daniel K.</origin>
+        <origin>Root, Jonathan Casey</origin>
+        <pubdate>20210712</pubdate>
+        <title>Modified topobathymetric elevation data for Lake Powell</title>
+        <pubinfo>
+          <pubplace>Reston, VA</pubplace>
+          <publish>U.S. Geological Survey</publish>
+        </pubinfo>
+        <onlink>https://doi.org/10.5066/P9H60YCF</onlink>
+      </citeinfo>
+    </crossref>
+  </idinfo>
+  <dataqual>
+    <attracc>
+      <attraccr>No formal attribute accuracy tests were conducted</attraccr>
+    </attracc>
+    <logic>No formal logical accuracy tests were conducted</logic>
+    <complete>Data set is considered complete for the information presented, as described in the abstract. Users are advised to read the rest of the metadata record carefully for additional details.</complete>
+    <posacc>
+      <horizpa>
+        <horizpar>No formal positional accuracy tests were conducted</horizpar>
+      </horizpa>
+      <vertacc>
+        <vertaccr>No formal positional accuracy tests were conducted</vertaccr>
+      </vertacc>
+    </posacc>
+    <lineage>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Jones, Daniel K., Root, Jonathan Casey</origin>
+            <pubdate>20210712</pubdate>
+            <title>Modified topobathymetric elevation data for Lake Powell</title>
+            <geoform>raster digital data</geoform>
+            <pubinfo>
+              <pubplace>Reston, VA</pubplace>
+              <publish>U.S. Geological Survey</publish>
+            </pubinfo>
+            <onlink>https://doi.org/10.5066/P9H60YCF</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>topobathymetric elevation data</typesrc>
+        <srctime>
+          <timeinfo>
+            <rngdates>
+              <begdate>19470101</begdate>
+              <enddate>20180403</enddate>
+            </rngdates>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>2021 topobathymetric dataset</srccitea>
+        <srccontr>Base input dataset for derived elevation-area-capacity relationships.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Poppenga, Sandra K., Danielson, Jeffrey J., Tyler, Dean J.</origin>
+            <pubdate>20200603</pubdate>
+            <title>One Meter Topobathymetric Digital Elevation Model for Lake Powell, Arizona-Utah, 1947-2018</title>
+            <geoform>raster digital data</geoform>
+            <pubinfo>
+              <pubplace>ScienceBase, Denver, CO</pubplace>
+              <publish>U.S. Geological Survey</publish>
+            </pubinfo>
+            <onlink>https://doi.org/10.5066/P9XX0J1Y</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>topobathymetric elevation data</typesrc>
+        <srctime>
+          <timeinfo>
+            <rngdates>
+              <begdate>19470101</begdate>
+              <enddate>20180403</enddate>
+            </rngdates>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>2020 topobathymetric dataset</srccitea>
+        <srccontr>Base input dataset for modified topobathymetry.</srccontr>
+      </srcinfo>
+      <procstep>
+        <procdesc>Elevation-area-capacity relationships were derived from a script written in the Python coding language (Python Software Foundation. Python Language Reference, version 2.7, available at http://www.python.org) that utilizes Esri’s Storage Capacity tool, part of the Spatial Analyst Supplemental Toolbox (version 1.4, https://www.arcgis.com/home/item.html?id=3528bd72847c439f88190a137a1d0e67). The script requires three inputs: a DEM, a polygon boundary of the spatial extent of the computation, and the elevation range and interval to calculate the elevation-area-capacity values within. Starting at the minimum elevation value provided, the script iteratively tabulates the total area and volume within the provided polygon extent below each elevation increment. Due to the computational requirements of the analysis, the script was adapted for use on the Yeti high performance computing cluster at the USGS Advanced Research Computing Center in Denver, CO (https://www.usgs.gov/core-science-systems/sas/arc). The inputs used to compute elevation-area-capacity relationships for Lake Powell included the modified TBDEM (available for download through ScienceBase at https://doi.org/10.5066/P9H60YCF; Jones and Root, 2021) and a reservoir mask that excludes areas below the Glen Canyon Dam.</procdesc>
+        <procdate>2020</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Units of the original TBDEM (Poppenga and others, 2020) are in the International System of Units (SI). Primary storage capacity calculations were made in SI with an elevation range of 950.98–1,133.03 m above NAVD 88 (3,120.01–3,717.29 ft above NAVD 88) at increments of 0.10 m (0.33 ft). These results were then converted to the United States customary system (USCS) in accordance with USBR operational standards at Glen Canyon Dam and historical estimates of storage capacity. Rounding to the hundredth foot during preparation for this data release may result in an interval of between 0.32–0.33 feet. All subsequent calculations were conducted with USCS results. Resulting 0.33-ft (0.10-m) relationships were used to generate elevation-area-capacity values at 0.01-ft increments by linearly interpolating values between each 0.33-ft (0.10-m) incremental pair. The 0.01-ft interpolated interval was calculated at the request of USBR.</procdesc>
+        <procdate>2020</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Additional storage capacity calculations were conducted for error assessment at matching 0.01-ft increments for lower (3,160.00–3,161.00 ft above NAVD 88), middle (3,400.00–3,401.00 ft above NAVD 88), and upper (3,700.00–3,711.00 ft above NAVD 88) elevations. Values were generated following the same procedures outlined for the original 0.33-ft (0.10-m) increment calculations, thereby providing a one-to-one comparison dataset against the linearly interpolated values for these discrete elevation bands.</procdesc>
+        <procdate>2020</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Elevations are referenced to NGVD 29 and NAVD 88. The conversion value for elevations at the dam used in this study is -2.91 ft from NGVD 29 to NAVD 88 and was selected from the land surface east of Glen Canyon Dam using the NOAA VERTCON tool (NOAA, 2021). This conversion was calculated for the U.S. Geological Survey reservoir elevation station (09379901), located at 36.9369326 -111.4837694.</procdesc>
+        <procdate>2020</procdate>
+      </procstep>
+    </lineage>
+  </dataqual>
+  <eainfo>
+    <detailed>
+      <enttyp>
+        <enttypl>Lake_Powell_2018_ElevAreaCap_calc.csv</enttypl>
+        <enttypd>The calculated tables of elevation-area-capacity relationships for Lake Powell at 0.33-ft (0.1-m) intervals.</enttypd>
+        <enttypds>U.S. Geological Survey</enttypds>
+      </enttyp>
+      <attr>
+        <attrlabl>Elevation_ft_NAVD88</attrlabl>
+        <attrdef>Elevation in feet, referenced to the North American Vertical Datum 1988 (NAVD88).</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>3120.08</rdommin>
+            <rdommax>3717.19</rdommax>
+            <attrunit>feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Elevation_ft_NGVD29</attrlabl>
+        <attrdef>Elevation in feet, referenced to the National Geodetic Vertical Datum 1929 (NGVD29).</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>3117.17</rdommin>
+            <rdommax>3714.28</rdommax>
+            <attrunit>feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Area_acres</attrlabl>
+        <attrdef>Area in acres.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.01</rdommin>
+            <rdommax>169390.94</rdommax>
+            <attrunit>acres</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Capacity_acrefeet</attrlabl>
+        <attrdef>Capacity in acre-feet.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.04</rdommin>
+            <rdommax>27512283.91</rdommax>
+            <attrunit>acre-feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+    </detailed>
+    <detailed>
+      <enttyp>
+        <enttypl>Lake_Powell_2018_ElevAreaCap_interp.csv</enttypl>
+        <enttypd>The interpolated tables of elevation-area-capacity relationships for Lake Powell at 0.01-ft intervals. Values were linearly interpolated between previously calculated 0.33-ft (0.1-m) elevation increments.</enttypd>
+        <enttypds>U.S. Geological Survey</enttypds>
+      </enttyp>
+      <attr>
+        <attrlabl>Elevation_ft_NAVD88</attrlabl>
+        <attrdef>Elevation in feet, referenced to the North American Vertical Datum 1988 (NAVD88).</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>3120.00</rdommin>
+            <rdommax>3717.20</rdommax>
+            <attrunit>feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Elevation_ft_NGVD29</attrlabl>
+        <attrdef>Elevation in feet, referenced to the National Geodetic Vertical Datum 1929 (NGVD29).</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>3117.09</rdommin>
+            <rdommax>3714.29</rdommax>
+            <attrunit>feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Area_acres</attrlabl>
+        <attrdef>Area in acres.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.01</rdommin>
+            <rdommax>169391.32</rdommax>
+            <attrunit>acres</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Capacity_acrefeet</attrlabl>
+        <attrdef>Capacity in acre-feet</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.04</rdommin>
+            <rdommax>27512345.19</rdommax>
+            <attrunit>acre-feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+    </detailed>
+    <detailed>
+      <enttyp>
+        <enttypl>Lake_Powell_2018_ElevAreaCap_errchk.csv</enttypl>
+        <enttypd>Error analysis table conducted at 0.01-ft elevation increments across three elevation bands: lower (3,160.00–3,161.00 ft above NAVD 88), middle (3,400.00–3,401.00 ft above NAVD 88), and upper (3,700.00–3,711.00 ft above NAVD 88).</enttypd>
+        <enttypds>U.S. Geological Survey</enttypds>
+      </enttyp>
+      <attr>
+        <attrlabl>Elevation_ft_NAVD88</attrlabl>
+        <attrdef>Elevation in feet, referenced to the North American Vertical Datum 1988 (NAVD88).</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>3160.00</rdommin>
+            <rdommax>3711.00</rdommax>
+            <attrunit>feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Elevation_ft_NGVD29</attrlabl>
+        <attrdef>Elevation in feet, referenced to the National Geodetic Vertical Datum 1929 (NGVD29).</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>3157.09</rdommin>
+            <rdommax>3708.09</rdommax>
+            <attrunit>feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Area_acres_01</attrlabl>
+        <attrdef>Area in acres derived from the 0.01 foot increment Storage Capacity tool calculations.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>69.19</rdommin>
+            <rdommax>164964.86</rdommax>
+            <attrunit>acres</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Capacity_acrefeet_01</attrlabl>
+        <attrdef>Capacity in acre-feet derived from the 0.01 foot increment Storage Capacity tool calculations.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>1533.52</rdommin>
+            <rdommax>26477299.71</rdommax>
+            <attrunit>acre-feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Area_acres_int</attrlabl>
+        <attrdef>Area in acres derived from linearly interpolating between original 0.33 foot increments.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>69.20</rdommin>
+            <rdommax>164964.69</rdommax>
+            <attrunit>acres</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Capacity_acrefeet_int</attrlabl>
+        <attrdef>Capacity in acre-feet derived from linearly interpolating between original 0.33 foot increments.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>1533.51</rdommin>
+            <rdommax>26477273.20</rdommax>
+            <attrunit>acre-feet</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Area_percent_diff</attrlabl>
+        <attrdef>Area difference between Area_acres_int and Area_acres_01 expressed as a rounded percentage of Area_acres_int: ((Area_acres_int – Area_acres_01) / Area_acres_int) * 100).</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>-0.01</rdommin>
+            <rdommax>0.03</rdommax>
+            <attrunit>percent</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Capacity_percent_diff</attrlabl>
+        <attrdef>Capacity difference between Capacity_acrefeet_01 and Capacity_acrefeet_int expressed as a rounded percentage of Capacity_acrefeet_int.</attrdef>
+        <attrdefs>Producer defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.00</rdommin>
+            <rdommax>0.02</rdommax>
+            <attrunit>percent</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+    </detailed>
+  </eainfo>
+  <distinfo>
+    <distrib>
+      <cntinfo>
+        <cntperp>
+          <cntper>USGS ScienceBase</cntper>
+          <cntorg>USGS ScienceBase</cntorg>
+        </cntperp>
+        <cntaddr>
+          <addrtype>mailing and physical</addrtype>
+          <address>Denver Federal Center, Building 810, Mail Stop 302</address>
+          <city>Denver</city>
+          <state>Colorado</state>
+          <postal>80225</postal>
+          <country>USA</country>
+        </cntaddr>
+        <cntvoice>1-888-275-8747</cntvoice>
+        <cntemail>sciencebase@usgs.gov</cntemail>
+      </cntinfo>
+    </distrib>
+    <distliab>Unless otherwise stated, all data, metadata and related materials are considered to satisfy the quality standards relative to the purpose for which the data were collected. Although these data and associated metadata have been reviewed for accuracy and completeness and approved for release by the U.S. Geological Survey (USGS), no warranty expressed or implied is made regarding the display or utility of the data for other purposes, nor on all computer systems, nor shall the act of distribution constitute any such warranty. Any use of trade, firm, or product names is for descriptive purposes only and does not imply endorsement by the U.S. Government.</distliab>
+    <techpreq>The CSV files can be read using text editor programs or Microsoft Excel.</techpreq>
+  </distinfo>
+  <metainfo>
+    <metd>20220321</metd>
+    <metc>
+      <cntinfo>
+        <cntperp>
+          <cntper>Daniel K Jones</cntper>
+          <cntorg>ROCKY MOUNTAIN REGION: UTAH WATER SCI CTR</cntorg>
+        </cntperp>
+        <cntpos>Physical Scientist</cntpos>
+        <cntaddr>
+          <addrtype>mailing and physical</addrtype>
+          <address>2329 West Orton Circle</address>
+          <city>West Valley City</city>
+          <state>UT</state>
+          <postal>84119</postal>
+          <country>US</country>
+        </cntaddr>
+        <cntvoice>801-908-5010</cntvoice>
+        <cntemail>dkjones@usgs.gov</cntemail>
+      </cntinfo>
+    </metc>
+    <metstdn>Content Standard for Digital Geospatial Metadata</metstdn>
+    <metstdv>FGDC-STD-001-1998</metstdv>
+  </metainfo>
+</metadata>

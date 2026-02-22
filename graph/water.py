@@ -25,7 +25,8 @@ from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-from matplotlib.dates import YearLocator
+from matplotlib.dates import YearLocator, MonthLocator
+import matplotlib.dates as mdates
 
 # gridspec to resize subplots
 # https://www.geeksforgeeks.org/how-to-create-different-subplot-sizes-in-matplotlib/
@@ -289,7 +290,12 @@ class WaterGraph(object):
         if xmax == 0:
             xmax = a[-1][0] + 1
         if ymax == 0:
-            ymax = float(math.ceil(a['val'].max()))
+            has_nan = np.any(np.isnan(a['val']))
+            if has_nan:
+                print(title, ' has NaN')
+                ymax = np.nanmax(a['val'])
+            else:
+                ymax = float(math.ceil(a['val'].max()))
         ax.set_xlim([xmin, xmax])
         ax.set_ylim([ymin, ymax])
 
@@ -301,7 +307,12 @@ class WaterGraph(object):
         # graph.fig.gca().xaxis.set_major_locator(YearLocator(xinterval))
 
         ax.yaxis.set_major_formatter(ticker.FuncFormatter(format_func))
-        ax.xaxis.set_major_locator(YearLocator(xinterval))
+        # ax.xaxis.set_major_locator(YearLocator(xinterval))
+        ax.xaxis.set_major_locator(MonthLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
+
+        # Rotate and align the tick labels
+        plt.gcf().autofmt_xdate()
 
         x = a['dt']
         y = a['val']

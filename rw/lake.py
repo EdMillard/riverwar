@@ -34,21 +34,27 @@ class Lake(object):
     def __init__(self, name):
         Lake.lakes[name] = self
         self.name = name
+        if Lake.year_begin and Lake.year_end:
+            self.inflow = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+            self.inflow_note = ''
 
-        self.inflow = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
-        self.inflow_note = ''
+            self.side_inflow = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+            self.side_inflow_note = ''
 
-        self.side_inflow = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
-        self.side_inflow_note = ''
+            self.release = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+            self.release_note = ''
 
-        self.release = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
-        self.release_note = ''
+            self.bypass = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+            self.bypass_note = ''
 
-        self.bypass = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
-        self.bypass_note = ''
-
-        self.evaporation = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
-        self.evaporation_note = ''
+            self.evaporation = annual_zeroed_for_years(Lake.year_begin, Lake.year_end)
+            self.evaporation_note = ''
+        else:
+            self.inflow = None
+            self.side_inflow = None
+            self.release = None
+            self.bypass = None
+            self.evaporation = None
 
         self.storage = None
         self.storage_note = ''
