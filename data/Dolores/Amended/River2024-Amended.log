@@ -1,0 +1,34 @@
+'AC FT CHANGE' Feb-28 =C42-C40 to =C42-C41
+'AC FT CHANGE' Feb-29 =C43-C41 to =C43-C42
+
+'RECORD OTF' Aug-15 to Aug-19 =M31+V29+W29+AH29+AK29 to =M29+V29+W29+AH29+AK29
+     	Row index invalid 'M31' in 'RECORD OTF'[Aug-13]: =M31+V29+W29+AH29+AK29
+		Row index invalid 'M32' in 'RECORD OTF'[Aug-14]: =M32+V30+W30+AH30+AK30
+		Row index invalid 'M33' in 'RECORD OTF'[Aug-15]: =M33+V31+W31+AH31+AK31
+		Row index invalid 'M34' in 'RECORD OTF'[Aug-16]: =M34+V32+W32+AH32+AK32
+		Row index invalid 'M35' in 'RECORD OTF'[Aug-17]: =M35+V33+W33+AH33+AK33
+
+# Hardwired constant 32.5 to finish TO EX Fill is slightly off
+'TO EX & U/S EX' Mar-12 AC26 ...-32.344097
+'NARR FILL In MCPHEE' Mar-12 AO26 32.344097
+
+# Change formulas from empty to =AC26 to carry TO EX pool to the end of the month
+'TO EX & U/S EX'  Mar-13 to Mar-31
+'TOTTEN CREDIT & U/S EX'  Apr-1 =AC9-(AX13/1.9835) to =AC13-(AX13/1.9835)
+
+'NARR FILL' Aug-15 AQ29 =V29-35.4 to =V29-35.43
+
+# Pool drain left a tiny amount of water in the pool you dont see in Excel, 0.00487628084, this zeroes it
+# I could relax tolerance on verification to ignore this small error
+'MVI CALL STOR' Seo-10 =Z23+MIN(0,AT24)-AM24+241.48 to =Z23+MIN(0,AT24)-AM24+241.48+0.03-0.00487628084 # zero out pool
+    =Z23+MIN(0,AT24)-AM24+241.48+0.03-0.00487628084
+
+ # AV14 is empty seperator line
+'TOTT EX' Oct-2 =AC15-IF(AV14="",0,AZ15/1.9835) to =AC15-IF(AV15="",0,AZ15/1.9835)
+
+# Carried over wrong number from Sep, lost 1,000 AF of MVI project water
+'MVI PROJ' Oct-1 =AG13-AM15 to =AG14-AM15 to =AG12-AM15
+
+# Need last value from Feb-29
+'CUM NARR IN MCP EVAP' Mar-1 =$FEB.AU52 to =$FEB.AU43
+

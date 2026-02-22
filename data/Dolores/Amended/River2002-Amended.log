@@ -1,0 +1,19 @@
+'RESERV ELEV' Dec-07 6776.55 to 6876.55
+'RESERV ELEV' May-29 6876.82 to 6873.82
+
+'RESERV TOT CAP' Nov-01 205907 to 205917
+'RESERV TOT CAP' Nov-15 205395 to 205397
+'RESERV TOT CAP' May-30 197290 to 197262
+'RESERV TOT CAP' Jul-04 170632 to 170681
+'RESERV TOT CAP' Oct-08 157166 to 157144
+
+'ACTIVE CAP' Sep-01 to Sep-30 =C10-151978 to =C10-152000 to =C39-152000
+
+'UTE F&R' Jun-02 =6.57/1.05 to =6.57*1.05
+'UTE F&R' Sep-30 =5.51*1.058 to =5.51*1.05
+'UTE F&R' Oct-30 =3.55+3.22*1.05 to =(3.55+3.22)*1.05 # Not sure but add should probably be before loss coefficient multiply
+
+'TOTAL MVI' Aug-16 0 to =SUM(P25:R25)
+
+Haven't done it but 'MVI CALL STOR' Should probably be zeroed from Oct-16 to Oct-31
+

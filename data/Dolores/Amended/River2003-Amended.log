@@ -1,0 +1,29 @@
+'AK' Oct-23 Clear space from cell to get rid of this unused column
+
+'RESERV ELEV' Nov-06 6857.58 to 6857.28
+'RESERV ELEV' Dec-05 9858.00 to 6858.00
+'RESERV ELEV' Feb-25 6960.08 to 6860.08
+'RESERV ELEV' Aor-19 6870.66 to 6870.33
+'RESERV ELEV' Jun-11 6889.97 to 6889.87
+'RESERV ELEV' Jun-26 6887.14 to 6887.25
+'RESERV ELEV' Oct-17 6864.64 to 6864.54
+'RESERV ELEV' Oct-22 6864.65 to 6864.55
+'RESERV ELEV' Oct-28 6564.57 to 6864.57
+
+'RESERV AC FT' Dec-20 159011 to 159033
+'RESERV AC FT' Dec-02 159154 to 159145
+'RESERV AC FT' Jan-12 159995 to 159997
+'RESERV AC FT' Jul-06 229428 to 229423
+'RESERV AC FT' Jul-09 226586 to 226556
+'RESERV AC FT' Aug-10 197319 to 197318
+'RESERV AC FT' Aug-27 185634 to 185661
+'RESERV AC FT' Sep-16 183828 to 183823
+'RESERV AC FT' Sep-23 182524 to 182514
+
+'ACTIVE CAP' Sep-01 to Sep-30 =C12-152000 to C41-152000
+
+# This probably worked until MWC and CTZ were added to accounting in August
+# This mod uses the outflow gages instead of totalling usage
+# An alternative fix would probably be to add MWC and CTZ to the original usage formula
+'RECORD OTF' Oct-01 to Oct-31 AA12 to AA42 =N12+O12+U12+X12+Y12 to =M12+S12+T12+X12+Y12
+
