@@ -115,8 +115,7 @@ class MainFrame(wx.Frame):
         self.colorado = river.Colorado()
 
     def handle_click(self, clicked_str:str, start:int, end:int, line_text:str, parent=None):
-        if clicked_str == 'Export':
-            self.colorado.export()
+        pass
 
     def Run(self, excel_paths, batch=False):
         w, h = wx.GetClientDisplayRect().GetSize()

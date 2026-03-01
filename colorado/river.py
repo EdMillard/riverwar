@@ -23,6 +23,7 @@ from pathlib import Path
 import openpyxl
 from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 from graph.water import WaterGraph
 from source import usbr_rise
 from source.water_year_info import WaterYearInfo
@@ -58,13 +59,25 @@ UPPER_BASIN_WY = 'WY'
 UPPER_BASIN_NM = 'NM'
 UPPER_BASIN_AZ = 'AZ_'
 
+
 BORDER_NATURAL = 'Natural Border'
 LEES_FERRY_NATURAL = 'Natural Lees Ferry'
 GILA_NATURAL = "Natural Gila"
 GILA_CU = "Gila Consumptive Use"
-SALTON_ELEVATION = 'Salton Sea Elevation'
+SALTON_ELEVATION = 'Salton Elevation'
+SALTON_INFLOW = 'Salton Inflow'
 ALAMO_RIVER = 'Alamo River'
 NEW_RIVER = "New River"
+WHITEWATER = "Whitewater"
+
+IIIC = "iii(c)"
+EQUALS = " = "
+MINUS = " - ("
+PLUS = " + "
+CLOSE = ")"
+UPPER_CU = 'UPPER CU'
+LOWER_CU = 'LOWER CU'
+
 
 class Colorado():
     def __init__(self):
@@ -76,48 +89,84 @@ class Colorado():
                         POWELL,POWELL_EVAPORATION, GLEN_CANYON, LEES_FERRY_USGS,
                         INFLOW, INFLOW_UNREGULATED,
                         UPPER_BASIN_CU, UPPER_BASIN_CO, UPPER_BASIN_UT, UPPER_BASIN_WY, UPPER_BASIN_NM, UPPER_BASIN_AZ,
-                        GILA_CU, GILA_NATURAL, POWELL_ELEVATION, SALTON_ELEVATION, ALAMO_RIVER, NEW_RIVER]
+                        GILA_CU, GILA_NATURAL, POWELL_ELEVATION,
+                        SALTON_ELEVATION, SALTON_INFLOW, ALAMO_RIVER, NEW_RIVER, WHITEWATER]
         self.df = Colorado.create_df(self.start_year, self.end_year, self.headers)
-        self.export()
 
-    def merge_annual_column(self, annual_df, column_name, inp_column_name='Total'):
+        self.headers_iii_c = [IIIC, EQUALS, BORDER_NATURAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE]
+        self.df_iii_c = Colorado.create_df(self.start_year, self.end_year, self.headers_iii_c)
+
+        file_path = Path('Colorado_River_Math.xlsx')
+        writer =  pd.ExcelWriter(file_path, engine='openpyxl')
+
+        ws = self.export_all(writer, 'Colorado River')
+        ws = self.export_iii_c(writer, 'iii(c)', self.df_iii_c)
+
+        writer.close()
+        Report.open_docx_in_app(file_path)
+
+    def merge_annual_column(self, df:pd.DataFrame, annual_df:pd.DataFrame,
+                            column_name:str, inp_column_name='Total'):
         annual_df[inp_column_name] = annual_df[inp_column_name] / 1_000_000
-        df1 = self.df.merge(
+        df1 = df.merge(
             annual_df[['Year', inp_column_name]],
             on='Year',
             how='left'  # keeps all rows from df1, fills NaN where no match
         )
-        self.df[column_name] = df1[inp_column_name].combine_first(df1[column_name])
+        df[column_name] = df1[inp_column_name].combine_first(df1[column_name])
 
-    def lower_basin_annual_reports(self):
+    def lower_basin_annual_reports(self, df: pd.DataFrame):
         df_ca = Colorado.read_csv('data/USBR_Reports/ca/usbr_ca_total_consumptive_use.csv', sep='\s+')
-        self.merge_annual_column(df_ca, CA)
+        self.merge_annual_column(df, df_ca, CA)
 
         df_az = Colorado.read_csv('data/USBR_Reports/az/usbr_az_total_consumptive_use.csv', sep='\s+')
-        self.merge_annual_column(df_az, AZ)
+        self.merge_annual_column(df, df_az, AZ)
 
         df_nv = Colorado.read_csv('data/USBR_Reports/nv/usbr_nv_total_consumptive_use.csv', sep='\s+')
-        self.merge_annual_column(df_nv, NV)
+        self.merge_annual_column(df, df_nv, NV)
 
         df_mx = Colorado.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
-        self.merge_annual_column(df_mx, MEXICO)
+        self.merge_annual_column(df, df_mx, MEXICO)
 
-    def export(self):
-        self.upper_basin_cu_from_excel()
-        self.natural_flow_from_excel()
-        self.lf_natural_flow_from_excel()
+    def export_iii_c(self, writer: pd.ExcelWriter, sheet_name:str, df:pd.DataFrame) -> openpyxl.worksheet.worksheet.Worksheet:
+        df[IIIC] = [f"=D{row}-( F{row} + H{row})" for row in range(2, len(df) + 2)]
+        df[EQUALS] = [f"=" for row in range(2, len(df) + 2)]
+        self.natural_flow_from_excel(df)
+        df.loc[57:, BORDER_NATURAL] = self.df[LEES_FERRY_NATURAL].values[57:]
+        df[MINUS] = [f"- (" for row in range(2, len(df) + 2)]
+        df[LOWER_CU] = [f"='Colorado River'!G{row} + 'Colorado River'!I{row}" for row in range(2, len(df) + 2)]
+        df[PLUS] = [f"+" for row in range(2, len(df) + 2)]
+        df[UPPER_CU] = [f"='Colorado River'!U{row}" for row in range(2, len(df) + 2)]
+
+        df[CLOSE] = [f")" for row in range(2, len(df) + 2)]
+
+        ws = self.export_to_excel(df, writer, sheet_name)
+
+        Colorado.set_column_alignment(ws, 3, 2, len(df) + 2, horizontal='center')
+        Colorado.set_column_alignment(ws, 5, 2, len(df) + 2, horizontal='center')
+        Colorado.set_column_alignment(ws, 7, 2, len(df) + 2, horizontal='center')
+        Colorado.set_column_alignment(ws, 9, 2, len(df) + 2, horizontal='center')
+
+        Colorado.set_column_negative_red(ws, 2, 2, len(df) + 2)
+
+        return ws
+
+    def export_all(self, writer: pd.ExcelWriter, sheet_name:str) -> openpyxl.worksheet.worksheet.Worksheet:
+        Colorado.upper_basin_cu_from_excel(self.df)
+        Colorado.natural_flow_from_excel(self.df)
+        Colorado.lf_natural_flow_from_excel(self.df)
 
         # usbr_lake_mead_elevation_ft = 6123
 
-        self.lower_basin_annual_reports()
+        self.lower_basin_annual_reports(self.df)
 
         self.df[LOWER_BASIN_CU] = [f'=SUM(D{row}:F{row})' for row in range(2, len(self.df) + 2)]
 
         df_mead_evap = Colorado.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
-        self.merge_annual_column(df_mead_evap, MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
+        self.merge_annual_column(self.df, df_mead_evap, MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
 
         df_hoover = Colorado.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
-        self.merge_annual_column(df_hoover, HOOVER_RELEASE)
+        self.merge_annual_column(self.df, df_hoover, HOOVER_RELEASE)
 
         self.usgs_annuals('09421500', title=HOOVER_USGS)
 
@@ -150,8 +199,7 @@ class Colorado():
 
         self.salton_sea()
 
-        file_path = Path('Colorado_River_Math.xlsx')
-        ws, writer = self.export_to_excel(file_path)
+        ws = self.export_to_excel(self.df, writer, sheet_name)
 
         LIGHT_RED_BG = 'fff0f0'
         LIGHT_GREEN_BG = 'f8fff0'
@@ -170,12 +218,14 @@ class Colorado():
         for col in range(20, 27):
             Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_RED_BG)
 
-        writer.close()
-        Report.open_docx_in_app(file_path)
+        return ws
 
     def salton_sea(self):
         self.usgs_annuals('10254730', title=ALAMO_RIVER)          # 10254580 Alamo at border
         self.usgs_annuals('10255550', title=NEW_RIVER)    # 10254970 New at border
+        self.usgs_annuals('10259540', title=WHITEWATER)
+
+        self.df[SALTON_INFLOW] = [f'=SUM(AF{row}:AH{row})' for row in range(2, len(self.df) + 2)]
 
         self.usgs_value('10254005', start_year=1988, title=SALTON_ELEVATION, parameterCd='62614', statCd='00003')
 
@@ -258,14 +308,13 @@ class Colorado():
         df = df.sort_index()  # Sort to move units row to position 0
         return df.reset_index(drop=True)
 
-    def export_to_excel(self, file_name: Path) -> pd.ExcelWriter:
-        df_data = pd.DataFrame(self.df)
+    def export_to_excel(self, df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str) -> openpyxl.worksheet.worksheet.Worksheet:
+        df_data = pd.DataFrame(df)
 
         # df_data = MainFrame.insert_units_row(df_data, units)
 
-        writer =  pd.ExcelWriter(file_name, engine='openpyxl')
-        df_data.to_excel(writer, sheet_name='Colorado River', index=False)
-        ws = writer.sheets['Colorado River']
+        df_data.to_excel(writer, sheet_name=sheet_name, index=False)
+        ws = writer.sheets[sheet_name]
         ws.freeze_panes = ws['B2']
         # Date column format
         #
@@ -274,7 +323,7 @@ class Colorado():
             # cell.number_format = 'yyyy'
             Colorado.format_sheet(ws, df_data)
 
-        return ws, writer
+        return ws
 
     @staticmethod
     def color_column(
@@ -354,7 +403,8 @@ class Colorado():
                     max_col = max(max_col, cell.column)
         return max_col
 
-    def lf_natural_flow_from_excel(self):
+    @staticmethod
+    def lf_natural_flow_from_excel(df: pd.DataFrame):
         wb = openpyxl.load_workbook('data/Colorado_River/LFnatFlow1906-2024.2024.9.12.xlsx', data_only=True)
         ws = wb['Calendar Year']
         # ws = wb['AnnualCYTotalNaturalFlow']
@@ -373,10 +423,10 @@ class Colorado():
 
             if column_index == 2: # Lees Ferry
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[0: 0 + len(values) - 1, LEES_FERRY_NATURAL] = values
+                df.loc[0: 0 + len(values) - 1, LEES_FERRY_NATURAL] = values
 
-
-    def natural_flow_from_excel(self):
+    @staticmethod
+    def natural_flow_from_excel(df:pd.DataFrame):
         wb = openpyxl.load_workbook('data/Colorado_River/NaturalFlows1906-2020_20221215.xlsx', data_only=True)
         ws = wb['AnnualCYTotalNaturalFlow']
         # ws = wb['AnnualCYTotalNaturalFlow']
@@ -396,15 +446,12 @@ class Colorado():
             if units == 'Water Year':
                 year_column_index = column_index
 
-            if gage == '09380000': # Lees Ferry
-                pass
-                # pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                # self.df.loc[0: 0 + len(values) - 1, LEES_FERRY_NATURAL] = values
-            elif gage == '09429490': # Imperial
+            if gage == '09429490': # Imperial
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[0: 0 + len(values) - 1, BORDER_NATURAL] = values
+                df.loc[0: 0 + len(values) - 1, BORDER_NATURAL] = values
 
-    def upper_basin_cu_from_excel(self):
+    @staticmethod
+    def upper_basin_cu_from_excel(df:pd.DataFrame):
         wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
         ws = wb['CY Pivot']
         header_row = 2
@@ -422,22 +469,22 @@ class Colorado():
 
             if header == 'Grand Total':
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[7: 7 + len(values) - 1, UPPER_BASIN_CU] = values
+                df.loc[7: 7 + len(values) - 1, UPPER_BASIN_CU] = values
             if header == 'Colorado':
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[7: 7 + len(values) - 1, UPPER_BASIN_CO] = values
+                df.loc[7: 7 + len(values) - 1, UPPER_BASIN_CO] = values
             elif header == 'Utah':
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[7: 7 + len(values) - 1, UPPER_BASIN_UT] = values
+                df.loc[7: 7 + len(values) - 1, UPPER_BASIN_UT] = values
             elif header == 'Wyoming':
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[7: 7 + len(values) - 1, UPPER_BASIN_WY] = values
+                df.loc[7: 7 + len(values) - 1, UPPER_BASIN_WY] = values
             elif header == 'NewMexico':
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[7: 7 + len(values) - 1, UPPER_BASIN_NM] = values
+                df.loc[7: 7 + len(values) - 1, UPPER_BASIN_NM] = values
             elif header == 'Arizona':
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[7: 7 + len(values) - 1, UPPER_BASIN_AZ] = values
+                df.loc[7: 7 + len(values) - 1, UPPER_BASIN_AZ] = values
 
     @staticmethod
     def read_year_value_pairs(
@@ -698,56 +745,6 @@ class Colorado():
 
         return df
 
-
-    def color_column(
-            ws,
-            column: str | int,  # e.g. "C" or 3
-            start_row: int,
-            end_row: int,
-            fg_color: str = "FFFFFF",  # foreground / fill color (hex without #)
-            bg_color: str = None,  # optional separate background (usually same as fg)
-            text_color: str = "000000",  # font color (usually black)
-    ) -> None:
-        """
-        Apply fill (background) and font color to a specific column over a row range.
-
-        Args:
-            ws: openpyxl worksheet object
-            column: column letter ("A", "C") or column number (1-based)
-            start_row: first row to color (inclusive)
-            end_row: last row to color (inclusive)
-            fg_color: fill color hex (e.g. "FFFF00" = yellow) - without #
-            bg_color: if you want different background vs foreground (rare)
-            text_color: font color hex (e.g. "FF0000" = red)
-
-        Example:
-            color_column(ws, "D", 5, 25, fg_color="FFD966", text_color="000000")
-        """
-        # Normalize column to letter
-        if isinstance(column, int):
-            col_letter = get_column_letter(column)
-        else:
-            col_letter = column.upper()
-
-        # Decide fill color (most people mean background when they say "background color")
-        fill_color = bg_color if bg_color else fg_color
-
-        # Create fill style
-        fill = PatternFill(
-            start_color=fill_color,
-            end_color=fill_color,
-            fill_type="solid"
-        )
-
-        # Create font style
-        font = Font(name='Arial Narrow', size=10, color=text_color)
-
-        # Apply to each cell in the range
-        for row in range(start_row, end_row + 1):
-            cell = ws[f"{col_letter}{row}"]
-            cell.fill = fill
-            cell.font = font
-
     @staticmethod
     def add_borders_to_column(
             ws,
@@ -825,3 +822,103 @@ class Colorado():
         for row in range(start_row, end_row + 1):
             cell = ws[f"{col_letter}{row}"]
             cell.border = cell_border
+
+    @staticmethod
+    def set_column_alignment(
+        ws: Worksheet,
+        column: str | int,
+        start_row: int,
+        end_row: int,
+        horizontal: str = 'center',
+        vertical: str = 'center',
+        wrap_text: bool = False,
+        shrink_to_fit: bool = False,
+        indent: int = 0
+    ) -> None:
+        """
+        Set alignment for all cells in a given column between start_row and end_row (inclusive).
+
+        Parameters:
+        -----------
+        ws : Worksheet
+            The openpyxl worksheet to modify
+        column : str or int
+            Column letter ('A', 'B', ...) or column number (1, 2, ...)
+        start_row : int
+            First row to apply alignment to (1-based)
+        end_row : int
+            Last row to apply alignment to (1-based, inclusive)
+        horizontal : str, optional
+            'left', 'center', 'right', 'general', 'justify', 'distributed'
+            Default: 'center'
+        vertical : str, optional
+            'top', 'center', 'bottom', 'justify', 'distributed'
+            Default: 'center'
+        wrap_text : bool, optional
+            Whether to wrap text in the cells
+            Default: False
+        shrink_to_fit : bool, optional
+            Whether text should shrink to fit the cell
+            Default: False
+        indent : int, optional
+            Indent level (0 or more)
+            Default: 0
+
+        Example:
+        --------
+        set_column_alignment(ws, 'B', 5, 100, horizontal='right', vertical='center', wrap_text=True)
+        set_column_alignment(ws, 3, 2, 50, horizontal='center', vertical='top')  # column C
+        """
+        # Normalize column to letter
+        if isinstance(column, int):
+            col_letter = get_column_letter(column)
+        else:
+            col_letter = str(column).upper()
+
+        # Create the alignment object once
+        align = Alignment(
+            horizontal=horizontal,
+            vertical=vertical,
+            wrap_text=wrap_text,
+            shrink_to_fit=shrink_to_fit,
+            indent=indent
+        )
+
+        # Fastest way: iterate only over the specific column slice
+        for row in range(start_row, end_row + 1):
+            cell = ws[f"{col_letter}{row}"]
+            cell.alignment = align
+
+    @staticmethod
+    def set_column_negative_red(
+            ws: Worksheet,
+            column: str | int,
+            start_row: int,
+            end_row: int,
+            base_format: str = '#,##0.00',
+            use_parentheses: bool = False,
+            negative_color: str = 'Red'
+    ) -> None:
+        """
+        Apply number format so negative values show in red **with a minus sign**.
+
+        Options:
+        - base_format:       Format for positive numbers (e.g. '#,##0.00', '0', '$#,##0.00')
+        - use_parentheses:   If True → negatives appear as (123.45) in red (accounting style)
+                             If False → negatives appear as -123.45 in red (default)
+        """
+        if isinstance(column, int):
+            col_letter = get_column_letter(column)
+        else:
+            col_letter = str(column).upper().strip()
+
+        if use_parentheses:
+            # Accounting style: positives normal, negatives red + parentheses
+            fmt = f"{base_format};[Red]({base_format})"
+        else:
+            # Standard: explicit minus sign in red
+            fmt = f"{base_format};[Red]-{base_format}"
+
+        for row in range(start_row, end_row + 1):
+            cell = ws[f"{col_letter}{row}"]
+            cell.number_format = fmt
