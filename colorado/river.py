@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from pathlib import Path
 import openpyxl
-from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.utils import get_column_letter
 from graph.water import WaterGraph
 from source import usbr_rise
@@ -37,6 +37,7 @@ MEXICO = 'Mexico'
 CA = 'CA'
 AZ = 'AZ'
 NV = 'NV'
+LOWER_BASIN_CU = 'Lower Basin CU'
 HOOVER_USGS = 'Hoover USGS'
 HOOVER_RELEASE = 'Hoover Release'
 H_M = 'H-M'
@@ -69,12 +70,12 @@ class Colorado():
     def __init__(self):
         self.start_year = 1964
         self.end_year = 2026
-        self.headers = [NV, AZ, CA, MEXICO, HOOVER_RELEASE,
-                        HOOVER_USGS, H_M, DIFF_7_5, MEAD_EVAPORATION, MEAD,
+        self.headers = [LEES_FERRY_NATURAL, BORDER_NATURAL,
+                        NV, AZ, CA, LOWER_BASIN_CU, MEXICO, MEAD_EVAPORATION, HOOVER_RELEASE,
+                        HOOVER_USGS, H_M, DIFF_7_5, MEAD,
                         POWELL,POWELL_EVAPORATION, GLEN_CANYON, LEES_FERRY_USGS,
                         INFLOW, INFLOW_UNREGULATED,
                         UPPER_BASIN_CU, UPPER_BASIN_CO, UPPER_BASIN_UT, UPPER_BASIN_WY, UPPER_BASIN_NM, UPPER_BASIN_AZ,
-                        LEES_FERRY_NATURAL, BORDER_NATURAL,
                         GILA_CU, GILA_NATURAL, POWELL_ELEVATION, SALTON_ELEVATION, ALAMO_RIVER, NEW_RIVER]
         self.df = Colorado.create_df(self.start_year, self.end_year, self.headers)
         self.export()
@@ -110,16 +111,19 @@ class Colorado():
 
         self.lower_basin_annual_reports()
 
-        df_hoover = Colorado.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
-        self.merge_annual_column(df_hoover, HOOVER_RELEASE)
+        self.df[LOWER_BASIN_CU] = [f'=SUM(D{row}:F{row})' for row in range(2, len(self.df) + 2)]
 
         df_mead_evap = Colorado.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
         self.merge_annual_column(df_mead_evap, MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
 
+        df_hoover = Colorado.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
+        self.merge_annual_column(df_hoover, HOOVER_RELEASE)
+
         self.usgs_annuals('09421500', title=HOOVER_USGS)
 
-        self.df['H-M'] = [f'=F{row}-E{row}' for row in range(2, len(self.df) + 2)]
-        self.df['Diff 7.5'] = [f'=H{row}-7.5' for row in range(2, len(self.df) + 2)]
+        # FIXME - Have to change these to handle column chamges automatically
+        self.df['H-M'] = [f'=J{row}-I{row}' for row in range(2, len(self.df) + 2)]
+        self.df['Diff 7.5'] = [f'=L{row}-7.5' for row in range(2, len(self.df) + 2)]
 
         usbr_lake_mead_storage_af = 6124
         self.usbr_last_value(usbr_lake_mead_storage_af, title=MEAD, month=10)
@@ -147,7 +151,26 @@ class Colorado():
         self.salton_sea()
 
         file_path = Path('Colorado_River_Math.xlsx')
-        self.export_to_excel(file_path)
+        ws, writer = self.export_to_excel(file_path)
+
+        LIGHT_RED_BG = 'fff0f0'
+        LIGHT_GREEN_BG = 'f8fff0'
+
+        Colorado.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
+        Colorado.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
+        Colorado.add_borders_to_column(ws, 7, 1, ws.max_row, which='vertical')
+
+        for col in range(2, 4):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_GREEN_BG)
+        for col in range(4, 10):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_RED_BG)
+
+        Colorado.add_borders_to_column(ws, 14, 1, ws.max_row, which='right', border_style='medium')
+        Colorado.add_borders_to_column(ws, 21, 1, ws.max_row, which='vertical')
+        for col in range(20, 27):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_RED_BG)
+
+        writer.close()
         Report.open_docx_in_app(file_path)
 
     def salton_sea(self):
@@ -235,21 +258,74 @@ class Colorado():
         df = df.sort_index()  # Sort to move units row to position 0
         return df.reset_index(drop=True)
 
-    def export_to_excel(self, file_name: Path):
+    def export_to_excel(self, file_name: Path) -> pd.ExcelWriter:
         df_data = pd.DataFrame(self.df)
 
         # df_data = MainFrame.insert_units_row(df_data, units)
 
-        with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
-            df_data.to_excel(writer, sheet_name='Colorado River', index=False)
-            ws = writer.sheets['Colorado River']
-            ws.freeze_panes = ws['B2']
-            # Date column format
-            #
-            for row in range(1, len(df_data) + 2):
-                cell = ws.cell(row=row, column=1)
-                # cell.number_format = 'yyyy'
-                Colorado.format_sheet(ws, df_data)
+        writer =  pd.ExcelWriter(file_name, engine='openpyxl')
+        df_data.to_excel(writer, sheet_name='Colorado River', index=False)
+        ws = writer.sheets['Colorado River']
+        ws.freeze_panes = ws['B2']
+        # Date column format
+        #
+        for row in range(1, len(df_data) + 2):
+            cell = ws.cell(row=row, column=1)
+            # cell.number_format = 'yyyy'
+            Colorado.format_sheet(ws, df_data)
+
+        return ws, writer
+
+    @staticmethod
+    def color_column(
+            ws,
+            column: str | int,  # e.g. "C" or 3
+            start_row: int,
+            end_row: int,
+            fg_color: str = "FFFFFF",  # foreground / fill color (hex without #)
+            bg_color: str = None,  # optional separate background (usually same as fg)
+            text_color: str = "000000",  # font color (usually black)
+    ) -> None:
+        """
+        Apply fill (background) and font color to a specific column over a row range.
+
+        Args:
+            ws: openpyxl worksheet object
+            column: column letter ("A", "C") or column number (1-based)
+            start_row: first row to color (inclusive)
+            end_row: last row to color (inclusive)
+            fg_color: fill color hex (e.g. "FFFF00" = yellow) - without #
+            bg_color: if you want different background vs foreground (rare)
+            text_color: font color hex (e.g. "FF0000" = red)
+
+        Example:
+            color_column(ws, "D", 5, 25, fg_color="FFD966", text_color="000000")
+        """
+        # Normalize column to letter
+        if isinstance(column, int):
+            col_letter = get_column_letter(column)
+        else:
+            col_letter = column.upper()
+
+        # Decide fill color (most people mean background when they say "background color")
+        fill_color = bg_color if bg_color else fg_color
+
+        # Create fill style
+        fill = PatternFill(
+            start_color=fill_color,
+            end_color=fill_color,
+            fill_type="solid"
+        )
+
+        # Create font style
+        font = Font(name='Arial Narrow', size=10, color=text_color)
+
+        # Apply to each cell in the range
+        for row in range(start_row, end_row + 1):
+            cell = ws[f"{col_letter}{row}"]
+            cell.fill = fill
+            cell.font = font
+
 
     @staticmethod
     def create_df(min_year, max_year, headers):
@@ -621,3 +697,131 @@ class Colorado():
         df.loc[start_idx: start_idx + len(values) - 1, target_column] = values
 
         return df
+
+
+    def color_column(
+            ws,
+            column: str | int,  # e.g. "C" or 3
+            start_row: int,
+            end_row: int,
+            fg_color: str = "FFFFFF",  # foreground / fill color (hex without #)
+            bg_color: str = None,  # optional separate background (usually same as fg)
+            text_color: str = "000000",  # font color (usually black)
+    ) -> None:
+        """
+        Apply fill (background) and font color to a specific column over a row range.
+
+        Args:
+            ws: openpyxl worksheet object
+            column: column letter ("A", "C") or column number (1-based)
+            start_row: first row to color (inclusive)
+            end_row: last row to color (inclusive)
+            fg_color: fill color hex (e.g. "FFFF00" = yellow) - without #
+            bg_color: if you want different background vs foreground (rare)
+            text_color: font color hex (e.g. "FF0000" = red)
+
+        Example:
+            color_column(ws, "D", 5, 25, fg_color="FFD966", text_color="000000")
+        """
+        # Normalize column to letter
+        if isinstance(column, int):
+            col_letter = get_column_letter(column)
+        else:
+            col_letter = column.upper()
+
+        # Decide fill color (most people mean background when they say "background color")
+        fill_color = bg_color if bg_color else fg_color
+
+        # Create fill style
+        fill = PatternFill(
+            start_color=fill_color,
+            end_color=fill_color,
+            fill_type="solid"
+        )
+
+        # Create font style
+        font = Font(name='Arial Narrow', size=10, color=text_color)
+
+        # Apply to each cell in the range
+        for row in range(start_row, end_row + 1):
+            cell = ws[f"{col_letter}{row}"]
+            cell.fill = fill
+            cell.font = font
+
+    @staticmethod
+    def add_borders_to_column(
+            ws,
+            column: str | int,  # "C" or 3
+            start_row: int,
+            end_row: int,
+            border_style: str = "thin",  # thin, medium, thick, dashed, dotted, double, etc.
+            which: str = "all",  # "all", "outer", "horizontal", "vertical", "top", "bottom", "left", "right"
+            color: str = "000000"  # hex color without #
+    ) -> None:
+        """
+        Apply borders to every cell in a specified column over a range of rows.
+
+        Args:
+            ws: openpyxl worksheet object
+            column: column letter ("B") or 1-based column number
+            start_row: first row (inclusive)
+            end_row: last row (inclusive)
+            border_style: 'thin', 'medium', 'thick', 'dashed', 'dotted', 'double', ...
+            which: which borders to apply
+                   - "all": full box around each cell
+                   - "outer": only top of first + bottom of last + left + right
+                   - "horizontal": top + bottom only
+                   - "vertical": left + right only
+                   - or single side: "top", "bottom", "left", "right"
+            color: border color (hex without #)
+
+        Examples:
+            add_borders_to_column(ws, "D", 5, 25, border_style="medium", which="all")
+            add_borders_to_column(ws, 2, 2, 100, "thin", "horizontal", "808080")  # gray horizontal lines
+        """
+        # Normalize column to letter
+        if isinstance(column, int):
+            col_letter = get_column_letter(column)
+        else:
+            col_letter = str(column).upper()
+
+        # Define side style
+        side = Side(border_style=border_style, color=color)
+
+        # Prepare border objects based on 'which'
+        if which == "all":
+            full_border = Border(left=side, right=side, top=side, bottom=side)
+            cell_border = full_border
+        elif which == "outer":
+            # Only outer perimeter of the whole range
+            for row in range(start_row, end_row + 1):
+                cell = ws[f"{col_letter}{row}"]
+                border = Border()
+                if row == start_row:
+                    border.top = side
+                if row == end_row:
+                    border.bottom = side
+                border.left = side
+                border.right = side
+                cell.border = border
+            return  # special case — skip the loop below
+        elif which == "horizontal":
+            cell_border = Border(top=side, bottom=side)
+        elif which == "vertical":
+            cell_border = Border(left=side, right=side)
+        elif which == "top":
+            cell_border = Border(top=side)
+        elif which == "bottom":
+            cell_border = Border(bottom=side)
+        elif which == "left":
+            cell_border = Border(left=side)
+        elif which == "right":
+            cell_border = Border(right=side)
+        else:
+            raise ValueError(
+                f"Invalid 'which' value: {which}. Use 'all', 'outer', 'horizontal', 'vertical', 'top', 'bottom', 'left', 'right'")
+
+        # Apply to each cell in range
+        for row in range(start_row, end_row + 1):
+            cell = ws[f"{col_letter}{row}"]
+            cell.border = cell_border
