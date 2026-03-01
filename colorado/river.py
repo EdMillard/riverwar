@@ -44,6 +44,7 @@ DIFF_7_5 = 'Diff 7.5'
 MEAD_EVAPORATION = 'Mead Evaporation'
 MEAD = 'Mead'
 POWELL = 'Powell'
+POWELL_ELEVATION = 'Powell Elevation'
 POWELL_EVAPORATION = 'Powell Evaporation'
 GLEN_CANYON = 'Glen Canyon'
 LEES_FERRY_USGS = 'Lees Ferry USGS'
@@ -74,7 +75,7 @@ class Colorado():
                         INFLOW, INFLOW_UNREGULATED,
                         UPPER_BASIN_CU, UPPER_BASIN_CO, UPPER_BASIN_UT, UPPER_BASIN_WY, UPPER_BASIN_NM, UPPER_BASIN_AZ,
                         LEES_FERRY_NATURAL, BORDER_NATURAL,
-                        GILA_CU, GILA_NATURAL, SALTON_ELEVATION, ALAMO_RIVER, NEW_RIVER]
+                        GILA_CU, GILA_NATURAL, POWELL_ELEVATION, SALTON_ELEVATION, ALAMO_RIVER, NEW_RIVER]
         self.df = Colorado.create_df(self.start_year, self.end_year, self.headers)
         self.export()
 
@@ -87,23 +88,27 @@ class Colorado():
         )
         self.df[column_name] = df1[inp_column_name].combine_first(df1[column_name])
 
-    def export(self):
-        self.upper_basin_cu_from_excel()
-        self.natural_flow_from_excel()
-
-        # usbr_lake_mead_elevation_ft = 6123
-
-        df_ca = Colorado.read_csv('data/USBR_Reports/ca/usbr_ca_total_diversion.csv', sep='\s+')
+    def lower_basin_annual_reports(self):
+        df_ca = Colorado.read_csv('data/USBR_Reports/ca/usbr_ca_total_consumptive_use.csv', sep='\s+')
         self.merge_annual_column(df_ca, CA)
 
-        df_az = Colorado.read_csv('data/USBR_Reports/az/usbr_az_total_diversion.csv', sep='\s+')
+        df_az = Colorado.read_csv('data/USBR_Reports/az/usbr_az_total_consumptive_use.csv', sep='\s+')
         self.merge_annual_column(df_az, AZ)
 
-        df_nv = Colorado.read_csv('data/USBR_Reports/nv/usbr_nv_total_diversion.csv', sep='\s+')
+        df_nv = Colorado.read_csv('data/USBR_Reports/nv/usbr_nv_total_consumptive_use.csv', sep='\s+')
         self.merge_annual_column(df_nv, NV)
 
         df_mx = Colorado.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
         self.merge_annual_column(df_mx, MEXICO)
+
+    def export(self):
+        self.upper_basin_cu_from_excel()
+        self.natural_flow_from_excel()
+        self.lf_natural_flow_from_excel()
+
+        # usbr_lake_mead_elevation_ft = 6123
+
+        self.lower_basin_annual_reports()
 
         df_hoover = Colorado.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
         self.merge_annual_column(df_hoover, HOOVER_RELEASE)
@@ -122,6 +127,9 @@ class Colorado():
         usbr_lake_powell_storage_af = 509
         self.usbr_last_value(usbr_lake_powell_storage_af, title=POWELL)
 
+        usbr_lake_powell_elevation_af = 508
+        self.usbr_last_value(usbr_lake_powell_elevation_af, title=POWELL_ELEVATION)
+
         self.usgs_annuals('09380000', title=LEES_FERRY_USGS)
 
         usbr_lake_powell_evap_af = 510
@@ -136,15 +144,17 @@ class Colorado():
         usbr_lake_powell_unregulated_inflow_af = 4301
         self.usbr_annuals(usbr_lake_powell_unregulated_inflow_af, title=INFLOW_UNREGULATED)
 
+        self.salton_sea()
 
+        file_path = Path('Colorado_River_Math.xlsx')
+        self.export_to_excel(file_path)
+        Report.open_docx_in_app(file_path)
+
+    def salton_sea(self):
         self.usgs_annuals('10254730', title=ALAMO_RIVER)          # 10254580 Alamo at border
         self.usgs_annuals('10255550', title=NEW_RIVER)    # 10254970 New at border
 
         self.usgs_value('10254005', start_year=1988, title=SALTON_ELEVATION, parameterCd='62614', statCd='00003')
-
-        file_path = Path('colorado_river.xlsx')
-        self.export_to_excel(file_path)
-        Report.open_docx_in_app(file_path)
 
     def lake_powell(self, clicked_str):
         annuals_total = None
@@ -268,9 +278,31 @@ class Colorado():
                     max_col = max(max_col, cell.column)
         return max_col
 
+    def lf_natural_flow_from_excel(self):
+        wb = openpyxl.load_workbook('data/Colorado_River/LFnatFlow1906-2024.2024.9.12.xlsx', data_only=True)
+        ws = wb['Calendar Year']
+        # ws = wb['AnnualCYTotalNaturalFlow']
+        # ws = wb['TotalNaturalFlow']   # Monthly
+        gage_row = 3
+        header_row = 5
+        unit_row = 6
+        data_start_row = 62 # 1964
+        data_end_row = 122  # 2020
+        year_column_index = 1
+        max_used_column = Colorado.max_used_column(ws)
+        for column_index in range(ws.min_column, max_used_column + 1):
+            # gage = ws.cell(row=gage_row, column=column_index).value
+            # header = ws.cell(row=header_row, column=column_index).value
+            # units = ws.cell(row=unit_row, column=column_index).value
+
+            if column_index == 2: # Lees Ferry
+                pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+                self.df.loc[0: 0 + len(values) - 1, LEES_FERRY_NATURAL] = values
+
+
     def natural_flow_from_excel(self):
         wb = openpyxl.load_workbook('data/Colorado_River/NaturalFlows1906-2020_20221215.xlsx', data_only=True)
-        ws = wb['AnnualWYTotalNaturalFlow']
+        ws = wb['AnnualCYTotalNaturalFlow']
         # ws = wb['AnnualCYTotalNaturalFlow']
         # ws = wb['TotalNaturalFlow']   # Monthly
         gage_row = 3
@@ -289,15 +321,16 @@ class Colorado():
                 year_column_index = column_index
 
             if gage == '09380000': # Lees Ferry
-                pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-                self.df.loc[0: 0 + len(values) - 1, LEES_FERRY_NATURAL] = values
+                pass
+                # pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+                # self.df.loc[0: 0 + len(values) - 1, LEES_FERRY_NATURAL] = values
             elif gage == '09429490': # Imperial
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
                 self.df.loc[0: 0 + len(values) - 1, BORDER_NATURAL] = values
 
     def upper_basin_cu_from_excel(self):
-        wb = openpyxl.load_workbook('data/Colorado_River/v24.5_UB_CU_WY_Annual.xlsx', data_only=True)
-        ws = wb['WY_Pivot']
+        wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
+        ws = wb['CY Pivot']
         header_row = 2
         unit_row = 3
         data_start_row = 4 # 1971
@@ -308,10 +341,10 @@ class Colorado():
             header = ws.cell(row=header_row, column=column_index).value
             units = ws.cell(row=unit_row, column=column_index).value
 
-            if units == 'Water Year':
+            if units == 'Calendar Year':
                 year_column_index = column_index
 
-            if header == 'Total Result':
+            if header == 'Grand Total':
                 pairs, values = Colorado.read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
                 self.df.loc[7: 7 + len(values) - 1, UPPER_BASIN_CU] = values
             if header == 'Colorado':
