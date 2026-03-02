@@ -41,9 +41,10 @@ NV = 'NV'
 LOWER_BASIN_CU = 'Lower Basin CU'
 HOOVER_USGS = 'Hoover USGS'
 HOOVER_RELEASE = 'Hoover Release'
-H_M = 'H-M'
+H_M = 'Hv-Mx'
 DIFF_7_5 = 'Diff 7.5'
 MEAD_EVAPORATION = 'Mead Evaporation'
+DIAMOND_CREEK = 'Diamond Creek'
 MEAD = 'Mead'
 POWELL = 'Powell'
 POWELL_ELEVATION = 'Powell Elevation'
@@ -59,9 +60,9 @@ UPPER_BASIN_WY = 'WY'
 UPPER_BASIN_NM = 'NM'
 UPPER_BASIN_AZ = 'AZ_'
 
-
 BORDER_NATURAL = 'Natural Border'
 LEES_FERRY_NATURAL = 'Natural Lees Ferry'
+GC_INFLOW = "GC Inflow"
 GILA_NATURAL = "Natural Gila"
 GILA_CU = "Gila Consumptive Use"
 SALTON_ELEVATION = 'Salton Elevation'
@@ -77,7 +78,12 @@ PLUS = " + "
 CLOSE = ")"
 UPPER_CU = 'UPPER CU'
 LOWER_CU = 'LOWER CU'
+MX_TREATY = 'MX TREATY'
 
+LIGHT_RED_BG = 'fff0f0'
+LIGHT_GREEN_BG = 'e8ffe0'
+LIGHT_BLUE_BG = 'e0e0ff'
+LIGHT_YELLOW_BG = 'ffffd0'
 
 class Colorado():
     def __init__(self):
@@ -85,15 +91,15 @@ class Colorado():
         self.end_year = 2026
         self.headers = [LEES_FERRY_NATURAL, BORDER_NATURAL,
                         NV, AZ, CA, LOWER_BASIN_CU, MEXICO, MEAD_EVAPORATION, HOOVER_RELEASE,
-                        HOOVER_USGS, H_M, DIFF_7_5, MEAD,
+                        H_M, DIFF_7_5, HOOVER_USGS, DIAMOND_CREEK, MEAD,
                         POWELL,POWELL_EVAPORATION, GLEN_CANYON, LEES_FERRY_USGS,
                         INFLOW, INFLOW_UNREGULATED,
                         UPPER_BASIN_CU, UPPER_BASIN_CO, UPPER_BASIN_UT, UPPER_BASIN_WY, UPPER_BASIN_NM, UPPER_BASIN_AZ,
-                        GILA_CU, GILA_NATURAL, POWELL_ELEVATION,
+                        GC_INFLOW, GILA_NATURAL, POWELL_ELEVATION,
                         SALTON_ELEVATION, SALTON_INFLOW, ALAMO_RIVER, NEW_RIVER, WHITEWATER]
         self.df = Colorado.create_df(self.start_year, self.end_year, self.headers)
 
-        self.headers_iii_c = [IIIC, EQUALS, BORDER_NATURAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE]
+        self.headers_iii_c = [IIIC, EQUALS, BORDER_NATURAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, MX_TREATY, HOOVER_RELEASE]
         self.df_iii_c = Colorado.create_df(self.start_year, self.end_year, self.headers_iii_c)
 
         file_path = Path('Colorado_River_Math.xlsx')
@@ -136,7 +142,10 @@ class Colorado():
         df[MINUS] = [f"- (" for row in range(2, len(df) + 2)]
         df[LOWER_CU] = [f"='Colorado River'!G{row} + 'Colorado River'!I{row}" for row in range(2, len(df) + 2)]
         df[PLUS] = [f"+" for row in range(2, len(df) + 2)]
-        df[UPPER_CU] = [f"='Colorado River'!U{row}" for row in range(2, len(df) + 2)]
+        df[UPPER_CU] = [f"='Colorado River'!V{row}" for row in range(2, len(df) + 2)]
+
+        df[MX_TREATY] = [f"='Colorado River'!H{row}" for row in range(2, len(df) + 2)]
+        df[HOOVER_RELEASE] = [f"='Colorado River'!J{row}" for row in range(2, len(df) + 2)]
 
         df[CLOSE] = [f")" for row in range(2, len(df) + 2)]
 
@@ -146,6 +155,14 @@ class Colorado():
         Colorado.set_column_alignment(ws, 5, 2, len(df) + 2, horizontal='center')
         Colorado.set_column_alignment(ws, 7, 2, len(df) + 2, horizontal='center')
         Colorado.set_column_alignment(ws, 9, 2, len(df) + 2, horizontal='center')
+
+        Colorado.color_column(ws, 4, 2, ws.max_row, bg_color=LIGHT_GREEN_BG)
+        Colorado.color_column(ws, 6, 2, ws.max_row, bg_color=LIGHT_RED_BG)
+        Colorado.color_column(ws, 8, 2, ws.max_row, bg_color=LIGHT_RED_BG)
+
+        ws.column_dimensions['C'].width = 3
+        ws.column_dimensions['E'].width = 3
+        ws.column_dimensions['G'].width = 3
 
         Colorado.set_column_negative_red(ws, 2, 2, len(df) + 2)
 
@@ -171,8 +188,8 @@ class Colorado():
         self.usgs_annuals('09421500', title=HOOVER_USGS)
 
         # FIXME - Have to change these to handle column chamges automatically
-        self.df['H-M'] = [f'=J{row}-I{row}' for row in range(2, len(self.df) + 2)]
-        self.df['Diff 7.5'] = [f'=L{row}-7.5' for row in range(2, len(self.df) + 2)]
+        self.df[H_M] = [f'=J{row}-H{row}' for row in range(2, len(self.df) + 2)]
+        self.df[DIFF_7_5] = [f'=K{row}-7.5' for row in range(2, len(self.df) + 2)]
 
         usbr_lake_mead_storage_af = 6124
         self.usbr_last_value(usbr_lake_mead_storage_af, title=MEAD, month=10)
@@ -183,7 +200,8 @@ class Colorado():
         usbr_lake_powell_elevation_af = 508
         self.usbr_last_value(usbr_lake_powell_elevation_af, title=POWELL_ELEVATION)
 
-        self.usgs_annuals('09380000', title=LEES_FERRY_USGS)
+        self.usgs_annuals('09404200', title=DIAMOND_CREEK, start_year=2007, offset=1)
+        self.usgs_annuals('ere  a', title=LEES_FERRY_USGS)
 
         usbr_lake_powell_evap_af = 510
         self.usbr_annuals(usbr_lake_powell_evap_af, title=POWELL_EVAPORATION)
@@ -197,12 +215,11 @@ class Colorado():
         usbr_lake_powell_unregulated_inflow_af = 4301
         self.usbr_annuals(usbr_lake_powell_unregulated_inflow_af, title=INFLOW_UNREGULATED)
 
+        self.df[GC_INFLOW][43:len(self.df)-2] = [f'=N{row}-S{row}' for row in range(45, len(self.df))]
+
         self.salton_sea()
 
         ws = self.export_to_excel(self.df, writer, sheet_name)
-
-        LIGHT_RED_BG = 'fff0f0'
-        LIGHT_GREEN_BG = 'f8fff0'
 
         Colorado.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
         Colorado.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
@@ -213,10 +230,26 @@ class Colorado():
         for col in range(4, 10):
             Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_RED_BG)
 
-        Colorado.add_borders_to_column(ws, 14, 1, ws.max_row, which='right', border_style='medium')
-        Colorado.add_borders_to_column(ws, 21, 1, ws.max_row, which='vertical')
-        for col in range(20, 27):
+        Colorado.color_column(ws, 13, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
+        Colorado.color_column(ws, 14, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
+
+        LOWER_BASIN_END_COL = 15
+        for col in range(LOWER_BASIN_END_COL, LOWER_BASIN_END_COL+2):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_BLUE_BG)
+
+        Colorado.color_column(ws, 17, 2, ws.max_row, bg_color=LIGHT_RED_BG)
+
+        Colorado.add_borders_to_column(ws, LOWER_BASIN_END_COL, 1, ws.max_row, which='right', border_style='medium')
+        Colorado.add_borders_to_column(ws, 22, 1, ws.max_row, which='vertical')
+        for col in range(18, 22):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
+
+        for col in range(22, 28):
             Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_RED_BG)
+
+        Colorado.color_column(ws, 31, 2, ws.max_row, bg_color=LIGHT_BLUE_BG)
+        for col in range(32, 36):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
 
         return ws
 
@@ -225,7 +258,7 @@ class Colorado():
         self.usgs_annuals('10255550', title=NEW_RIVER)    # 10254970 New at border
         self.usgs_annuals('10259540', title=WHITEWATER)
 
-        self.df[SALTON_INFLOW] = [f'=SUM(AF{row}:AH{row})' for row in range(2, len(self.df) + 2)]
+        self.df[SALTON_INFLOW] = [f'=SUM(AG{row}:AI{row})' for row in range(2, len(self.df) + 2)]
 
         self.usgs_value('10254005', start_year=1988, title=SALTON_ELEVATION, parameterCd='62614', statCd='00003')
 
@@ -560,7 +593,7 @@ class Colorado():
 
         return pairs, values
 
-    def usgs_annuals(self, id, title='', start_year=None, parameterCd='00060', statCd='00003', month=10):
+    def usgs_annuals(self, id, title='', start_year=None, parameterCd='00060', statCd='00003', month=10, offset=0):
         annuals = []
         values = []
         if not start_year:
@@ -588,7 +621,10 @@ class Colorado():
                 print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
 
         if title:
-            self.df[title] = values
+            if len(values) != len(self.df[title]):
+                self.insert_values_from_year(self.df, title, start_year, values, offset=offset)
+            else:
+                self.df[title] = values
 
         return values
 
@@ -697,7 +733,8 @@ class Colorado():
             df: pd.DataFrame,
             target_column: str,
             start_year: int,
-            values: list
+            values: list,
+            offset = 0
     ) -> pd.DataFrame:
         """
         Inserts a list of values into an existing column of a DataFrame,
@@ -730,7 +767,7 @@ class Colorado():
         if matching_rows.empty:
             raise LookupError(f"Year {start_year} not found in DataFrame")
 
-        start_idx = matching_rows.index[0]
+        start_idx = matching_rows.index[0] + offset
 
         # Check if there are enough rows after start_idx
         required_rows = len(values)
