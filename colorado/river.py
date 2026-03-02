@@ -47,7 +47,6 @@ MEAD_EVAPORATION = 'Mead Evaporation'
 DIAMOND_CREEK = 'Diamond Creek'
 MEAD = 'Mead'
 POWELL = 'Powell'
-POWELL_ELEVATION = 'Powell Elevation'
 POWELL_EVAPORATION = 'Powell Evaporation'
 GLEN_CANYON = 'Glen Canyon'
 LEES_FERRY_USGS = 'Lees Ferry USGS'
@@ -65,6 +64,8 @@ LEES_FERRY_NATURAL = 'Natural Lees Ferry'
 GC_INFLOW = "GC Inflow"
 GILA_NATURAL = "Natural Gila"
 GILA_CU = "Gila Consumptive Use"
+MEAD_ELEVATION = 'Mead Elevation'
+POWELL_ELEVATION = 'Powell Elevation'
 SALTON_ELEVATION = 'Salton Elevation'
 SALTON_INFLOW = 'Salton Inflow'
 ALAMO_RIVER = 'Alamo River'
@@ -82,7 +83,8 @@ MX_TREATY = 'MX TREATY'
 
 LIGHT_RED_BG = 'fff0f0'
 LIGHT_GREEN_BG = 'e8ffe0'
-LIGHT_BLUE_BG = 'e0e0ff'
+LIGHT_BLUE_BG = 'e0f0ff'
+LIGHT_PURPLE_BG = 'ffe0ff'
 LIGHT_YELLOW_BG = 'ffffd0'
 
 class Colorado():
@@ -95,7 +97,7 @@ class Colorado():
                         POWELL,POWELL_EVAPORATION, GLEN_CANYON, LEES_FERRY_USGS,
                         INFLOW, INFLOW_UNREGULATED,
                         UPPER_BASIN_CU, UPPER_BASIN_CO, UPPER_BASIN_UT, UPPER_BASIN_WY, UPPER_BASIN_NM, UPPER_BASIN_AZ,
-                        GC_INFLOW, GILA_NATURAL, POWELL_ELEVATION,
+                        GC_INFLOW, MEAD_ELEVATION, POWELL_ELEVATION,
                         SALTON_ELEVATION, SALTON_INFLOW, ALAMO_RIVER, NEW_RIVER, WHITEWATER]
         self.df = Colorado.create_df(self.start_year, self.end_year, self.headers)
 
@@ -149,7 +151,7 @@ class Colorado():
 
         df[CLOSE] = [f")" for row in range(2, len(df) + 2)]
 
-        ws = self.export_to_excel(df, writer, sheet_name)
+        ws, df_data = self.export_to_excel(df, writer, sheet_name)
 
         Colorado.set_column_alignment(ws, 3, 2, len(df) + 2, horizontal='center')
         Colorado.set_column_alignment(ws, 5, 2, len(df) + 2, horizontal='center')
@@ -165,6 +167,7 @@ class Colorado():
         ws.column_dimensions['G'].width = 3
 
         Colorado.set_column_negative_red(ws, 2, 2, len(df) + 2)
+        Colorado.format_header(ws, df_data)
 
         return ws
 
@@ -172,8 +175,6 @@ class Colorado():
         Colorado.upper_basin_cu_from_excel(self.df)
         Colorado.natural_flow_from_excel(self.df)
         Colorado.lf_natural_flow_from_excel(self.df)
-
-        # usbr_lake_mead_elevation_ft = 6123
 
         self.lower_basin_annual_reports(self.df)
 
@@ -197,11 +198,14 @@ class Colorado():
         usbr_lake_powell_storage_af = 509
         self.usbr_last_value(usbr_lake_powell_storage_af, title=POWELL)
 
+        usbr_lake_mead_elevation_ft = 6123
+        self.usbr_last_value(usbr_lake_mead_elevation_ft, title=MEAD_ELEVATION, divisor=1)
+
         usbr_lake_powell_elevation_af = 508
-        self.usbr_last_value(usbr_lake_powell_elevation_af, title=POWELL_ELEVATION)
+        self.usbr_last_value(usbr_lake_powell_elevation_af, title=POWELL_ELEVATION, divisor=1)
 
         self.usgs_annuals('09404200', title=DIAMOND_CREEK, start_year=2007, offset=1)
-        self.usgs_annuals('ere  a', title=LEES_FERRY_USGS)
+        self.usgs_annuals('09380000', title=LEES_FERRY_USGS)
 
         usbr_lake_powell_evap_af = 510
         self.usbr_annuals(usbr_lake_powell_evap_af, title=POWELL_EVAPORATION)
@@ -215,11 +219,11 @@ class Colorado():
         usbr_lake_powell_unregulated_inflow_af = 4301
         self.usbr_annuals(usbr_lake_powell_unregulated_inflow_af, title=INFLOW_UNREGULATED)
 
-        self.df[GC_INFLOW][43:len(self.df)-2] = [f'=N{row}-S{row}' for row in range(45, len(self.df))]
+        self.df[GC_INFLOW][43:len(self.df)] = [f'=N{row}-S{row}' for row in range(45, len(self.df)+2)]
 
         self.salton_sea()
 
-        ws = self.export_to_excel(self.df, writer, sheet_name)
+        ws, df_data = self.export_to_excel(self.df, writer, sheet_name)
 
         Colorado.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
         Colorado.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
@@ -230,10 +234,12 @@ class Colorado():
         for col in range(4, 10):
             Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_RED_BG)
 
+        # USGS
         Colorado.color_column(ws, 13, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
         Colorado.color_column(ws, 14, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
 
         LOWER_BASIN_END_COL = 15
+        # Reservoirs
         for col in range(LOWER_BASIN_END_COL, LOWER_BASIN_END_COL+2):
             Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_BLUE_BG)
 
@@ -241,15 +247,23 @@ class Colorado():
 
         Colorado.add_borders_to_column(ws, LOWER_BASIN_END_COL, 1, ws.max_row, which='right', border_style='medium')
         Colorado.add_borders_to_column(ws, 22, 1, ws.max_row, which='vertical')
+
+        # USGS
+        Colorado.color_column(ws, 28, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
         for col in range(18, 22):
             Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
+        for col in range(32, 36):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
 
+        # Upper Basin CUL
         for col in range(22, 28):
             Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_RED_BG)
 
-        Colorado.color_column(ws, 31, 2, ws.max_row, bg_color=LIGHT_BLUE_BG)
-        for col in range(32, 36):
-            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_YELLOW_BG)
+        # Elevations
+        for col in range(29, 32):
+            Colorado.color_column(ws, col, 2, ws.max_row, bg_color=LIGHT_PURPLE_BG)
+
+        Colorado.format_header(ws, df_data)
 
         return ws
 
@@ -317,14 +331,24 @@ class Colorado():
             for cell in row:
                 cell.number_format = '0.00'
 
-        # Variable name ahd units Row centered
-        #
+    # Variable name ahd units Row centered
+    #
+    @staticmethod
+    def format_header(ws, df):
+
+        start_row = 1
+        end_row = 2
+        start_col = 1
+        end_col = len(df.columns) + 1
         ws.row_dimensions[1].height = 25
-        for col in range(1, len(df.columns) + 1):
+        for col in range(1, end_col):
             ws.column_dimensions[get_column_letter(col)].width = 5
-            for row in range(1, 2):
+            for row in range(start_row, end_row):
                 cell = ws.cell(row=row, column=col)
                 cell.alignment = Alignment(wrap_text=True, vertical='top', horizontal='center')
+
+        Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='none')
+        Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='outer')
 
     @staticmethod
     def insert_units_row(df, variable_name_to_units):
@@ -341,7 +365,7 @@ class Colorado():
         df = df.sort_index()  # Sort to move units row to position 0
         return df.reset_index(drop=True)
 
-    def export_to_excel(self, df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str) -> openpyxl.worksheet.worksheet.Worksheet:
+    def export_to_excel(self, df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str):
         df_data = pd.DataFrame(df)
 
         # df_data = MainFrame.insert_units_row(df_data, units)
@@ -351,12 +375,13 @@ class Colorado():
         ws.freeze_panes = ws['B2']
         # Date column format
         #
-        for row in range(1, len(df_data) + 2):
-            cell = ws.cell(row=row, column=1)
-            # cell.number_format = 'yyyy'
-            Colorado.format_sheet(ws, df_data)
+        # for row in range(1, len(df_data) + 2):
+        #    cell = ws.cell(row=row, column=1)
+        #   cell.number_format = 'yyyy'
 
-        return ws
+        Colorado.format_sheet(ws, df_data)
+
+        return ws, df_data
 
     @staticmethod
     def color_column(
@@ -693,7 +718,7 @@ class Colorado():
 
         return values
 
-    def usbr_last_value(self, id, title='', cfs_to_af=False, month=10):
+    def usbr_last_value(self, id, title='', cfs_to_af=False, month=10, divisor=1000000):
         years = []
         annuals = []
         values = []
@@ -712,13 +737,13 @@ class Colorado():
             # total = daily_release_ft['val'].sum()
             af = daily_af[-1]
             years.append(year + 1)
-            values.append(af[1] / 1000000)
+            values.append(af[1] / divisor)
             annuals.append(af)
 
         if title:
             print(title)
             for annual in annuals:
-                print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+                print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
 
         if title:
             year = self.df['Year'][0]
@@ -785,9 +810,10 @@ class Colorado():
     @staticmethod
     def add_borders_to_column(
             ws,
-            column: str | int,  # "C" or 3
+            start_col: int,
             start_row: int,
             end_row: int,
+            end_col: int = None,
             border_style: str = "thin",  # thin, medium, thick, dashed, dotted, double, etc.
             which: str = "all",  # "all", "outer", "horizontal", "vertical", "top", "bottom", "left", "right"
             color: str = "000000"  # hex color without #
@@ -797,9 +823,10 @@ class Colorado():
 
         Args:
             ws: openpyxl worksheet object
-            column: column letter ("B") or 1-based column number
+            start_col: 1-based column number
             start_row: first row (inclusive)
             end_row: last row (inclusive)
+            end_col: last col (inclusive)
             border_style: 'thin', 'medium', 'thick', 'dashed', 'dotted', 'double', ...
             which: which borders to apply
                    - "all": full box around each cell
@@ -813,12 +840,8 @@ class Colorado():
             add_borders_to_column(ws, "D", 5, 25, border_style="medium", which="all")
             add_borders_to_column(ws, 2, 2, 100, "thin", "horizontal", "808080")  # gray horizontal lines
         """
-        # Normalize column to letter
-        if isinstance(column, int):
-            col_letter = get_column_letter(column)
-        else:
-            col_letter = str(column).upper()
-
+        if end_col is None:
+            end_col = start_col
         # Define side style
         side = Side(border_style=border_style, color=color)
 
@@ -826,18 +849,24 @@ class Colorado():
         if which == "all":
             full_border = Border(left=side, right=side, top=side, bottom=side)
             cell_border = full_border
+        elif which == "none":
+            cell_border = Border(left=None, right=None, top=None, bottom=None)
         elif which == "outer":
             # Only outer perimeter of the whole range
-            for row in range(start_row, end_row + 1):
-                cell = ws[f"{col_letter}{row}"]
-                border = Border()
-                if row == start_row:
-                    border.top = side
-                if row == end_row:
-                    border.bottom = side
-                border.left = side
-                border.right = side
-                cell.border = border
+            for col in range(start_col, end_col + 1):
+                for row in range(start_row, end_row + 1):
+                    col_letter = get_column_letter(col)
+                    cell = ws[f"{col_letter}{row}"]
+                    border = Border()
+                    if row == start_row:
+                        border.top = side
+                    if row == end_row:
+                        border.bottom = side
+                    if col == start_col:
+                        border.left = side
+                    if col == end_col:
+                        border.right = side
+                    cell.border = border
             return  # special case — skip the loop below
         elif which == "horizontal":
             cell_border = Border(top=side, bottom=side)
@@ -856,9 +885,11 @@ class Colorado():
                 f"Invalid 'which' value: {which}. Use 'all', 'outer', 'horizontal', 'vertical', 'top', 'bottom', 'left', 'right'")
 
         # Apply to each cell in range
-        for row in range(start_row, end_row + 1):
-            cell = ws[f"{col_letter}{row}"]
-            cell.border = cell_border
+        for col in range(start_col, end_col + 1):
+            for row in range(start_row, end_row + 1):
+                col_letter = get_column_letter(col)
+                cell = ws[f"{col_letter}{row}"]
+                cell.border = cell_border
 
     @staticmethod
     def set_column_alignment(
