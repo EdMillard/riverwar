@@ -105,12 +105,10 @@ class Colorado():
         self.df_iii_c = Colorado.create_df(self.start_year, self.end_year, self.headers_iii_c)
 
         file_path = Path('Colorado_River_Math.xlsx')
-        writer =  pd.ExcelWriter(file_path, engine='openpyxl')
+        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+            ws = self.export_all(writer, 'Colorado River')
+            ws = self.export_iii_c(writer, 'iii(c)', self.df_iii_c)
 
-        ws = self.export_all(writer, 'Colorado River')
-        ws = self.export_iii_c(writer, 'iii(c)', self.df_iii_c)
-
-        writer.close()
         Report.open_docx_in_app(file_path)
 
     def merge_annual_column(self, df:pd.DataFrame, annual_df:pd.DataFrame,
@@ -347,7 +345,7 @@ class Colorado():
                 cell = ws.cell(row=row, column=col)
                 cell.alignment = Alignment(wrap_text=True, vertical='top', horizontal='center')
 
-        Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='none')
+        # Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='none')
         Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='outer')
 
     @staticmethod
@@ -986,6 +984,7 @@ class Colorado():
         else:
             # Standard: explicit minus sign in red
             fmt = f"{base_format};[Red]-{base_format}"
+
 
         for row in range(start_row, end_row + 1):
             cell = ws[f"{col_letter}{row}"]
