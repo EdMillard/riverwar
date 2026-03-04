@@ -22,6 +22,7 @@ SOFTWARE.
 from pathlib import Path
 import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl import Workbook
 from graph.water import WaterGraph
 from source import usbr_rise
 from source.water_year_info import WaterYearInfo
@@ -31,6 +32,7 @@ import pandas as pd
 from source.usgs_gage import USGSGage, daily_to_water_year
 from typing import List, Tuple, Any
 from sheet import sheet
+from datetime import datetime
 
 MEXICO = 'Mexico'
 CA = 'CA'
@@ -109,6 +111,9 @@ class Colorado:
             self.export_all(writer, 'Colorado River')
             self.export_iii_c(writer, 'iii(c)', self.df_iii_c)
 
+            wb: Workbook = writer.book
+            wb.calcMode = "auto"  # ensure automatic calculation
+
         notes_path = Path('Colorado_River_Notes.xlsx')
         sheet.copy_worksheet_to_new_workbook(
             source_wb_path=notes_path,
@@ -138,8 +143,10 @@ class Colorado:
         df.loc[57:, BORDER_NATURAL] = self.df[LEES_FERRY_NATURAL].values[57:]
         df[MINUS] = [f"- (" for _ in range(2, len(df) + 2)]
         df[LOWER_CU] = [f"='Colorado River'!G{row} + 'Colorado River'!I{row}" for row in range(2, len(df) + 2)]
+        df[LOWER_CU] = df[LOWER_CU].astype(str)
         df[PLUS] = [f"+" for _ in range(2, len(df) + 2)]
         df[UPPER_CU] = [f"='Colorado River'!V{row}" for row in range(2, len(df) + 2)]
+        df[UPPER_CU] = df[UPPER_CU].astype(str)
 
         df[MX_TREATY] = [f"='Colorado River'!H{row}" for row in range(2, len(df) + 2)]
         df[HOOVER_RELEASE] = [f"='Colorado River'!J{row}" for row in range(2, len(df) + 2)]
@@ -177,6 +184,7 @@ class Colorado:
         Colorado.lower_basin_annual_reports(self.df)
 
         self.df[LOWER_BASIN_CU] = [f'=SUM(D{row}:F{row})' for row in range(2, len(self.df) + 2)]
+        self.df[LOWER_BASIN_CU] = self.df[LOWER_BASIN_CU].astype(str)
 
         df_mead_evap = sheet.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
         sheet.merge_annual_column(self.df, df_mead_evap, MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
@@ -187,8 +195,6 @@ class Colorado:
         self.usgs_annuals('09421500', title=HOOVER_USGS)
 
         # FIXME - Have to change these to handle column changes automatically
-        self.df[H_M] = [f'=J{row}-H{row}' for row in range(2, len(self.df) + 2)]
-        self.df[DIFF_7_5] = [f'=K{row}-7.5' for row in range(2, len(self.df) + 2)]
 
         usbr_lake_mead_storage_af = 6124
         self.usbr_last_value(usbr_lake_mead_storage_af, title=MEAD, month=10)
@@ -223,8 +229,18 @@ class Colorado:
 
         ws, df_data = Colorado.export_to_excel(self.df, writer, sheet_name)
 
+        dest_col_h_m = sheet.get_column_number(ws, H_M)
+        dest_col_diff = sheet.get_column_number(ws, DIFF_7_5)
+
+        for row in range(2, len(self.df) + 2):   # adjust range
+            formula = f"=J{row} - H{row}"
+            ws.cell(row=row, column=dest_col_h_m).value = formula
+            formula = f"=K{row}-7.5"
+            ws.cell(row=row, column=dest_col_diff).value = formula
+
         sheet.color_column(ws, 8, 2, ws.max_row, bg_color=LOWER_BASIN_AR_FLOW)
         sheet.color_column(ws, 10, 2, ws.max_row, bg_color=LOWER_BASIN_AR_FLOW)
+        sheet.set_column_negative_red(ws, 12, 2, ws.max_row)
 
         sheet.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
         sheet.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
@@ -266,6 +282,10 @@ class Colorado:
 
         sheet.format_header(ws, df_data)
 
+        current_str = datetime.now().strftime("%m/%d/%Y %I:%M%p")
+        ws.cell(row=1, column=len(self.headers)+2).value = current_str
+
+        ws.sheet_properties.fullCalcOnLoad = True
         return ws
 
     def salton_sea(self):

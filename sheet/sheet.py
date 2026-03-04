@@ -27,6 +27,8 @@ from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
+from typing import Optional
+
 
 def read_csv(filename, sep='\s+', comment_char='#'):
     cleaned_lines = []
@@ -376,16 +378,43 @@ def set_column_negative_red(
 
     if use_parentheses:
         # Accounting style: positives normal, negatives red + parentheses
-        fmt = f"{base_format};[Red]({base_format})"
+        fmt = f"{base_format};[red]({base_format})"
     else:
         # Standard: explicit minus sign in red
-        fmt = f"{base_format};[Red]-{base_format}"
+        fmt = f"{base_format};[red]-{base_format}"
 
 
     for row in range(start_row, end_row + 1):
         cell = ws[f"{col_letter}{row}"]
         cell.number_format = fmt
 
+def get_column_letter_insensitive(ws, header_text):
+    target = header_text.lower().strip()
+    for cell in ws[1]:
+        if cell.value and str(cell.value).lower().strip() == target:
+            return cell.column_letter
+    return None
+
+def get_column_number(
+    ws,
+    header: str,
+    case_sensitive: bool = True
+) -> Optional[int]:
+    """
+    Returns the 1-based column number (A=1) for the given header in row 1.
+    Returns None if not found.
+    """
+    target = header if case_sensitive else header.lower()
+
+    for col_idx, cell in enumerate(ws[1], start=1):
+        cell_value = cell.value
+        if cell_value is None:
+            continue
+        compare_value = cell_value if case_sensitive else str(cell_value).lower()
+        if compare_value == target:
+            return col_idx
+
+    return None
 
 def copy_worksheet_to_new_workbook(source_wb_path:Path, sheet_name:str, target_wb_path:Path=None):
     # Load source
