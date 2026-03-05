@@ -42,7 +42,12 @@ def read_csv(filename, sep='\s+', comment_char='#'):
 
     # Now feed the cleaned text to pandas
     clean_text = '\n'.join(cleaned_lines)
-    df = pd.read_csv(StringIO(clean_text), sep=sep, comment=comment_char)
+    try:
+        df = pd.read_csv(StringIO(clean_text), sep=sep, comment=comment_char)
+    except Exception as e:
+        print(f"Read csv {filename} error: {e}")
+        df = pd.DataFrame()
+
     return df
 
 def format_sheet(ws, df):

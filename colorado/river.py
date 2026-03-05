@@ -41,6 +41,7 @@ NV = 'NV'
 LOWER_BASIN_CU = 'Lower Basin CU'
 HOOVER_USGS = 'Hoover USGS'
 HOOVER_RELEASE = 'Hoover Release'
+GLEN_CANYON_RELEASE = 'Glen Canyon Release'
 H_M = 'Hv-Mx'
 DIFF_7_5 = 'Diff 7.5'
 MEAD_EVAPORATION = 'Mead Evaporation'
@@ -103,7 +104,8 @@ class Colorado:
                         SALTON_ELEVATION, SALTON_INFLOW, ALAMO_RIVER, NEW_RIVER, WHITEWATER]
         self.df = Colorado.create_df(self.start_year, self.end_year, self.headers)
 
-        self.headers_iii_c = [IIIC, EQUALS, BORDER_NATURAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, MX_TREATY, HOOVER_RELEASE]
+        self.headers_iii_c = [IIIC, EQUALS, BORDER_NATURAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, MX_TREATY,
+                              HOOVER_RELEASE, GLEN_CANYON_RELEASE]
         self.df_iii_c = Colorado.create_df(self.start_year, self.end_year, self.headers_iii_c)
 
         file_path = Path('Colorado_River_Math.xlsx')
@@ -149,7 +151,13 @@ class Colorado:
         df[UPPER_CU] = df[UPPER_CU].astype(str)
 
         df[MX_TREATY] = [f"='Colorado River'!H{row}" for row in range(2, len(df) + 2)]
-        df[HOOVER_RELEASE] = [f"='Colorado River'!J{row}" for row in range(2, len(df) + 2)]
+        #df[HOOVER_RELEASE] = [f"='Colorado River'!J{row}" for row in range(2, len(df) + 2)]
+
+        df_hoover = sheet.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
+        sheet.merge_annual_column(df, df_hoover, HOOVER_RELEASE)
+
+        df_glen_canyon = sheet.read_csv('data/USBR_Reports/releases/usbr_releases_glen_canyon_dam.csv', sep='\s+')
+        sheet.merge_annual_column(df, df_glen_canyon, GLEN_CANYON_RELEASE)
 
         df[CLOSE] = [f")" for _ in range(2, len(df) + 2)]
 
