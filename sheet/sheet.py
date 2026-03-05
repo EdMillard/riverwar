@@ -22,13 +22,21 @@ SOFTWARE.
 from pathlib import Path
 from copy import copy
 from io import StringIO
+import openpyxl
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
+from source.usgs_gage import USGSGage, daily_to_water_year
+from source.water_year_info import WaterYearInfo
 from typing import Optional
-
+from graph.water import WaterGraph
+from source import usbr_rise
+import numpy as np
+from typing import List, Tuple, Any
+import colorado.lb as lb
+import colorado.ub as ub
 
 def read_csv(filename, sep='\s+', comment_char='#'):
     cleaned_lines = []
@@ -50,7 +58,327 @@ def read_csv(filename, sep='\s+', comment_char='#'):
 
     return df
 
-def format_sheet(ws, df):
+def export_to_excel(df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str):
+    df_data = pd.DataFrame(df)
+
+    # df_data = MainFrame.insert_units_row(df_data, units)
+
+    df_data.to_excel(writer, sheet_name=sheet_name, index=False)
+    ws = writer.sheets[sheet_name]
+    ws.freeze_panes = ws['B2']
+    # Date column format
+    #
+    # for row in range(1, len(df_data) + 2):
+    #    cell = ws.cell(row=row, column=1)
+    #   cell.number_format = 'yyyy'
+
+    format_sheet(ws)
+
+    return ws, df_data
+
+def max_used_column(ws):
+    """
+    Return the 1-based column index of the *right-most* cell that contains
+    a value (int, float, str, datetime, bool, …).
+    Formatted-but-empty cells are ignored.
+    """
+    max_col = 0
+    # iter_rows() yields every cell that openpyxl knows about.
+    # Empty cells are still present if they have a style, but .value is None.
+    for row in ws.iter_rows():
+        for cell in row:
+            if cell.value is not None:
+                max_col = max(max_col, cell.column)
+    return max_col
+
+def read_year_value_pairs(
+        ws,
+        year_col: int,
+        value_col: int,
+        start_row: int,
+        end_row: int
+) -> Tuple[List[Any], List[Any]]:
+    """
+    Reads year and value pairs from an openpyxl worksheet.
+
+    Parameters:
+    -----------
+    ws : openpyxl.worksheet.worksheet.Worksheet
+        The worksheet object to read from
+    year_col : int
+        Column index for the year (1 = A, 2 = B, etc.)
+    value_col : int
+        Column index for the value (1 = A, 2 = B, etc.)
+    start_row : int
+        First row to read (inclusive, 1-based)
+    end_row : int
+        Last row to read (inclusive, 1-based)
+
+    Returns:
+    --------
+    List[Tuple[year, value]]
+        List of (year, value) tuples
+        - year will be int if possible, else str
+        - value will be a float/int if numeric, else str
+
+    Example:
+    --------
+    wb = load_workbook("data.xlsx")
+    ws = wb["Sheet1"]
+    pairs = read_year_value_pairs(ws, year_col=1, value_col=3, start_row=2, end_row=50)
+    """
+    pairs = []
+    values = []
+
+    for row in range(start_row, end_row + 1):
+        # Get cells (1-based indexing in openpyxl)
+        year_cell = ws.cell(row=row, column=year_col)
+        value_cell = ws.cell(row=row, column=value_col)
+
+        year = year_cell.value
+        value = value_cell.value
+
+        # Try to convert year to int (common for year columns)
+        if year is not None:
+            try:
+                year = int(year)
+            except (ValueError, TypeError):
+                pass  # keep as is (str or None)
+
+        # Try to convert value to float/int
+        if value is not None:
+            try:
+                if isinstance(value, (int, float)):
+                    pass  # already numeric
+                elif str(value).replace(".", "").replace("-", "").isdigit():
+                    value = float(value) if "." in str(value) else int(value)
+                else:
+                    value = str(value).strip()
+            except (ValueError, TypeError):
+                value = str(value).strip() if value is not None else None
+
+        # Only append if we have a year (skip completely empty rows)
+        if year is not None:
+            pairs.append((year, value / 1000000))
+            values.append(value / 1000000)
+
+    return pairs, values
+
+def create_df(min_year, max_year, headers):
+    years = list(range(min_year, max_year + 1))
+
+    df = pd.DataFrame(index=range(len(years)), columns=['Year'] + headers)
+    df['Year'] = years
+    df.iloc[:, 1:] = pd.NA
+
+    print(df.head())
+    return df
+
+def lf_natural_flow_from_excel(df: pd.DataFrame):
+    wb = openpyxl.load_workbook('data/Colorado_River/LFnatFlow1906-2024.2024.9.12.xlsx', data_only=True)
+    ws = wb['Calendar Year']
+    # ws = wb['AnnualCYTotalNaturalFlow']
+    # ws = wb['TotalNaturalFlow']   # Monthly
+    data_start_row = 62 # 1964
+    data_end_row = 122  # 2020
+    year_column_index = 1
+    for column_index in range(ws.min_column, max_used_column(ws) + 1):
+        # gage = ws.cell(row=gage_row, column=column_index).value
+        # header = ws.cell(row=header_row, column=column_index).value
+        # units = ws.cell(row=unit_row, column=column_index).value
+
+        if column_index == 2: # Lees Ferry
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[0: 0 + len(values) - 1, ub.LEES_FERRY_NATURAL] = values
+
+def natural_flow_from_excel(df:pd.DataFrame):
+    wb = openpyxl.load_workbook('data/Colorado_River/NaturalFlows1906-2020_20221215.xlsx', data_only=True)
+    ws = wb['AnnualCYTotalNaturalFlow']
+    # ws = wb['AnnualCYTotalNaturalFlow']
+    # ws = wb['TotalNaturalFlow']   # Monthly
+    gage_row = 3
+    unit_row = 6
+    data_start_row = 65 # 1964
+    data_end_row = 121  # 2020
+    year_column_index = 3
+    for column_index in range(ws.min_column,  max_used_column(ws) + 1):
+        gage = ws.cell(row=gage_row, column=column_index).value
+        # header = ws.cell(row=header_row, column=column_index).value
+        units = ws.cell(row=unit_row, column=column_index).value
+
+        if units == 'Water Year':
+            year_column_index = column_index
+
+        if gage == '09429490': # Imperial
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[0: 0 + len(values) - 1, lb.BORDER_NATURAL] = values
+
+def upper_basin_cu_from_excel(df:pd.DataFrame):
+    wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
+    ws = wb['CY Pivot']
+    header_row = 2
+    unit_row = 3
+    data_start_row = 4 # 1971
+    data_end_row = 57  # 2024, 2025 is partial not usable
+    year_column_index = 1
+    for column_index in range(ws.min_column, max_used_column(ws) + 1):
+        header = ws.cell(row=header_row, column=column_index).value
+        units = ws.cell(row=unit_row, column=column_index).value
+
+        if units == 'Calendar Year':
+            year_column_index = column_index
+
+        if header == 'Grand Total':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[7: 7 + len(values) - 1, ub.CU] = values
+        if header == 'Colorado':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[7: 7 + len(values) - 1, ub.CU_CO] = values
+        elif header == 'Utah':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[7: 7 + len(values) - 1, ub.CU_UT] = values
+        elif header == 'Wyoming':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[7: 7 + len(values) - 1, ub.CU_WY] = values
+        elif header == 'NewMexico':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[7: 7 + len(values) - 1, ub.CU_NM] = values
+        elif header == 'Arizona':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
+            df.loc[7: 7 + len(values) - 1, ub.CU_AZ] = values
+
+def usgs_annuals(df, gage_id, start_year, end_year, title='', parameterCd='00060', statCd='00003', month=10, offset=0):
+    annuals = []
+    values = []
+    if month != 1:
+        start_year -= 1
+    for year in range(start_year, end_year):
+        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+        gage = USGSGage(gage_id)
+        daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameterCd,
+                                        statCd=statCd)
+        annual_af = daily_to_water_year(daily_af)
+        result = (annual_af[0]['dt'], annual_af[0]['val'])
+        annuals.append(result)
+        if len(annual_af) == 1:
+            values.append(annual_af[0][1] / 1000000)
+            annuals.append(annual_af[0])
+        else:
+            print('Multiple years returned')
+
+    if title:
+        print(title)
+        for annual in annuals:
+            print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+
+    if title:
+        if len(values) != len(df[title]):
+            insert_values_from_year(df, title, start_year, values, offset=offset)
+        else:
+            df[title] = values
+
+    return values
+
+def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060', statCd='00003', month=10):
+    years = []
+    annuals = []
+    values = []
+    if month != 1:
+        start_year -= 1
+    for year in range(start_year, end_year):
+        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+        gage = USGSGage(gage_id)
+        daily_feet = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameterCd,
+                                        statCd=statCd)
+        # total = daily_release_ft['val'].sum()
+        feet = daily_feet[-1]
+        years.append(year + 1)
+        values.append(feet[1])
+        annuals.append(feet)
+
+    if title:
+        print(title)
+        for annual in annuals:
+            # print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+            print(f'{annual[0]} {annual[1]:10.2f} ')
+
+    if title:
+        insert_values_from_year(df, title, start_year, values)
+
+    return values
+
+
+def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1000000):
+    years = []
+    annuals = []
+    values = []
+    if month != 1:
+        start_year -= 1
+    for year in range(start_year, end_year):
+        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+        if cfs_to_af:
+            info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
+            daily_af = WaterGraph.convert_cfs_to_af_per_day(daily_cfs)
+        else:
+            info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
+
+        # total = daily_release_ft['val'].sum()
+        af = daily_af[-1]
+        years.append(year + 1)
+        values.append(af[1] / divisor)
+        annuals.append(af)
+
+    if title:
+        print(title)
+        for annual in annuals:
+            print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
+
+    if title:
+        year = df['Year'][0]
+        if np.isnan(year):
+            df['Year'] = years
+        df[title] = values
+
+    return values
+
+def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10):
+    annuals = []
+    values = []
+    start_year = start_year
+    if month != 1:
+        start_year -= 1
+    for year in range(start_year, end_year):
+        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+        if cfs_to_af:
+            info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
+            daily_af = WaterGraph.convert_cfs_to_af_per_day(daily_cfs)
+        else:
+            info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
+
+        # total = daily_release_ft['val'].sum()
+        annual_af = WaterGraph.daily_to_water_year(daily_af, water_year_month=month)
+        if len(annual_af) == 1:
+            values.append(annual_af[0][1] / 1000000)
+            annuals.append(annual_af[0])
+        else:
+            print('Multiple years returned')
+
+
+    if title:
+        print(title)
+        for annual in annuals:
+            print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+
+    if title:
+        df[title] = values
+
+    return values
+
+def format_sheet(ws):
     # Set font for everything
     red_font = Font(name='Arial Narrow', size=10, color="700000")
     green_font = Font(name='Arial Narrow', size=10, color="007000")
@@ -173,7 +501,7 @@ def insert_values_from_year(
     Parameters:
     - df: pandas DataFrame with a 'Year' column
     - target_column: name of the existing column to update
-    - start_year: integer year where insertion begins
+    - start_year: integer year when insertion begins
     - values: list of values to insert (len(values) determines how many rows are updated)
 
     Returns:
@@ -383,11 +711,10 @@ def set_column_negative_red(
 
     if use_parentheses:
         # Accounting style: positives normal, negatives red + parentheses
-        fmt = f"{base_format};[red]({base_format})"
+        fmt = f"{base_format};[{negative_color}]({base_format})"
     else:
         # Standard: explicit minus sign in red
-        fmt = f"{base_format};[red]-{base_format}"
-
+        fmt = f"{base_format};[{negative_color}]-{base_format}"
 
     for row in range(start_row, end_row + 1):
         cell = ws[f"{col_letter}{row}"]

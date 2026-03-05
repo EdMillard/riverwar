@@ -26,7 +26,7 @@ import wx.adv
 import wx.lib.agw.aui as aui
 from api.times_series import TimeSeries
 from wxui.graphic_panel import GraphicPanel
-from colorado import river
+import colorado.river
 
 class WxAbstraction(object):
     def __init__(self, main_frame, ui_object):
@@ -112,7 +112,8 @@ class MainFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.notebook, 1, wx.EXPAND)
         self.SetSizer(sizer)
-        self.colorado = river.Colorado()
+
+        colorado.river.run()
 
     def handle_click(self, clicked_str:str, start:int, end:int, line_text:str, parent=None):
         pass
