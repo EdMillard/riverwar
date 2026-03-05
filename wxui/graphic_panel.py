@@ -23,7 +23,7 @@ import wx
 import wx.adv
 import matplotlib
 from source.water_year_info import WaterYearInfo
-from dwcd.water_year import TimeSeries
+from api.times_series import TimeSeries
 matplotlib.use('WxAgg')
 from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.figure import Figure

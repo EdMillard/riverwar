@@ -24,7 +24,7 @@ from wxui.progress_bar import ProgressBar
 import wx
 import wx.adv
 import wx.lib.agw.aui as aui
-from dwcd.water_year import TimeSeries
+from api.times_series import TimeSeries
 from wxui.graphic_panel import GraphicPanel
 from colorado import river
 
