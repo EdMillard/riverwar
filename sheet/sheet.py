@@ -37,6 +37,23 @@ import numpy as np
 from typing import List, Tuple, Any
 import colorado.lb as lb
 import colorado.ub as ub
+from abc import ABC, abstractmethod
+
+class Sheet(ABC):
+    def __init__(self):
+        pass
+
+    def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame) -> Worksheet:
+        self.load_df(df_main)
+        return self.build_sheet(writer, sheet_name)
+
+    @abstractmethod
+    def load_df(self, df_main : pd.DataFrame):
+        pass
+
+    @abstractmethod
+    def build_sheet(self, writer: pd.ExcelWriter, sheet_name: str) -> openpyxl.worksheet.worksheet.Worksheet:
+        pass
 
 def read_csv(filename, sep='\s+', comment_char='#'):
     cleaned_lines = []

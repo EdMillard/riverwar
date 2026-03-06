@@ -50,3 +50,14 @@ NEW_RIVER = "New River"
 WHITEWATER = "Whitewater"
 
 LOWER_BASIN_AR_FLOW = 'b3cac7'
+
+IMPERIAL_TOTAL_CU = 'Imperial Total CU'
+
+IMPERIAL_CU = 'Imperial CU'
+IMPERIAL_DIVERSION = 'Imperial Diversion'
+IMPERIAL_RETURN = 'Imperial Return'
+
+COACHELLA_CU = 'Coachella CU'
+COACHELLA_DIVERSION = 'Coachella Diversion'
+COACHELLA_RETURN = 'Coachella Return'
+

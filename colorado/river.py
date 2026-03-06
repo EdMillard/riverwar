@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
-import openpyxl
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from source import usbr_rise
@@ -32,10 +31,14 @@ import colorado.allb as allb
 import pandas as pd
 from report.doc import Report
 from sheet import sheet
+from sheet.sheet import Sheet
 from colorado.iii_c import III_C
+from colorado.imperial import Imperial
 
-class Colorado:
+
+class Colorado(Sheet):
     def __init__(self):
+        super().__init__()
         self.start_year = 1964
         self.end_year = 2026
         self.headers = [ub.LEES_FERRY_NATURAL, lb.BORDER_NATURAL,
@@ -45,27 +48,10 @@ class Colorado:
                         ub.INFLOW, ub.INFLOW_UNREGULATED,
                         ub.CU, ub.CU_CO, ub.CU_UT, ub.CU_WY,
                         ub.CU_NM, ub.CU_AZ,
-                        lb.GC_INFLOW, lb.MEAD_ELEVATION, ub.POWELL_ELEVATION,
-                        lb.SALTON_ELEVATION, lb.SALTON_INFLOW, lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER]
+                        lb.GC_INFLOW, lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
         self.df = sheet.create_df(self.start_year, self.end_year, self.headers)
 
-
-
-    @staticmethod
-    def lower_basin_annual_reports(df: pd.DataFrame):
-        df_ca = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_total_consumptive_use.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_ca, lb.CU_CA)
-
-        df_az = sheet.read_csv('data/USBR_Reports/az/usbr_az_total_consumptive_use.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_az, lb.CU_AZ)
-
-        df_nv = sheet.read_csv('data/USBR_Reports/nv/usbr_nv_total_consumptive_use.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_nv,lb.CU_NV)
-
-        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_mx, lb.MEXICO)
-
-    def export(self, writer: pd.ExcelWriter, sheet_name:str) -> openpyxl.worksheet.worksheet.Worksheet:
+    def load_df(self, df_main : pd.DataFrame):
         sheet.upper_basin_cu_from_excel(self.df)
         sheet.natural_flow_from_excel(self.df)
         sheet.lf_natural_flow_from_excel(self.df)
@@ -114,8 +100,7 @@ class Colorado:
 
         self.df[lb.GC_INFLOW][43:len(self.df)] = [f'=N{row}-S{row}' for row in range(45, len(self.df)+2)]
 
-        self.salton_sea()
-
+    def build_sheet(self, writer: pd.ExcelWriter, sheet_name:str) -> Worksheet:
         ws, df_data = sheet.export_to_excel(self.df, writer, sheet_name)
 
         dest_col_h_m = sheet.get_column_number(ws, lb.H_M)
@@ -166,7 +151,7 @@ class Colorado:
             sheet.color_column(ws, col, 2, ws.max_row, bg_color=allb.LIGHT_ORANGE_BG)
 
         # Elevations
-        for col in range(29, 32):
+        for col in range(29, 31):
             sheet.color_column(ws, col, 2, ws.max_row, bg_color=allb.LIGHT_PURPLE_BG)
 
         sheet.format_header(ws, df_data)
@@ -177,14 +162,19 @@ class Colorado:
         ws.sheet_properties.fullCalcOnLoad = True
         return ws
 
-    def salton_sea(self):
-        sheet.usgs_annuals(self.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER)          # 10254580 Alamo at border
-        sheet.usgs_annuals(self.df, '10255550', self.start_year, self.end_year, title=lb.NEW_RIVER)    # 10254970 New at border
-        sheet.usgs_annuals(self.df, '10259540', self.start_year, self.end_year, title=lb.WHITEWATER)
+    @staticmethod
+    def lower_basin_annual_reports(df: pd.DataFrame):
+        df_ca = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_total_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(df, df_ca, lb.CU_CA)
 
-        self.df[lb.SALTON_INFLOW] = [f'=SUM(AG{row}:AI{row})' for row in range(2, len(self.df) + 2)]
+        df_az = sheet.read_csv('data/USBR_Reports/az/usbr_az_total_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(df, df_az, lb.CU_AZ)
 
-        sheet.usgs_value(self.df, '10254005', 1988, self.end_year, title=lb.SALTON_ELEVATION, parameterCd='62614', statCd='00003')
+        df_nv = sheet.read_csv('data/USBR_Reports/nv/usbr_nv_total_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(df, df_nv,lb.CU_NV)
+
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
+        sheet.merge_annual_column(df, df_mx, lb.MEXICO)
 
     @staticmethod
     def lake_powell(clicked_str):
@@ -210,17 +200,19 @@ class Colorado:
 
 def run():
     iii_c = III_C()
+    imperial = Imperial()
     colorado = Colorado()
 
-    file_path = Path('Colorado_River_Math.xlsx')
+    file_path = Path('excel/Colorado_River_Math.xlsx')
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        colorado.export(writer, 'Colorado River')
+        colorado.export(writer, 'Colorado River', colorado.df)
         iii_c.export(writer, 'iii(c)', colorado.df)
+        imperial.export(writer, 'Imperial', colorado.df)
 
         wb: Workbook = writer.book
         wb.calcMode = "auto"  # ensure automatic calculation
 
-    notes_path = Path('Colorado_River_Notes.xlsx')
+    notes_path = Path('excel/Colorado_River_Notes.xlsx')
     sheet.copy_worksheet_to_new_workbook(
         source_wb_path=notes_path,
         sheet_name="Notes",
