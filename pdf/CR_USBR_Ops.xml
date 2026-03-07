@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<indexing>
+ <object alt="" name="Image4" object_type="graphic"/>
+ <object alt="" name="Object1" object_type="ole"/>
+ <object alt="" name="Image5" object_type="graphic"/>
+ <paragraph index="25" node_type="writer">Colorado River</paragraph>
+ <paragraph index="26" node_type="writer">Reservoir Operations And Accounting</paragraph>
+ <paragraph index="27" node_type="writer">Prepared by: Ed Millard</paragraph>
+ <paragraph index="28" node_type="writer">Water Policy Advisor to Colorado Rep. Larry Don Suckla</paragraph>
+ <paragraph index="29" node_type="writer">Date: March 7, 2026</paragraph>
+ <paragraph index="30" node_type="writer">Version  1.3g</paragraph>
+ <paragraph index="31" node_type="writer">Living Document, Work in Progress, Don’t Sue Me, Join Me</paragraph>
+ <object index="33" name="Table of Contents1" object_type="section"/>
+ <object index="34" name="Table of Contents1_Head" object_type="section"/>
+ <paragraph index="35" node_type="writer" parent_index="34">Table of Contents</paragraph>
+ <paragraph index="37" node_type="writer" parent_index="33">Executive Summary	3</paragraph>
+ <paragraph index="38" node_type="writer" parent_index="33">Disclaimer	4</paragraph>
+ <paragraph index="39" node_type="writer" parent_index="33">Operations, Accounting and NEPA	4</paragraph>
+ <paragraph index="40" node_type="writer" parent_index="33">Colorado River System Accounting	4</paragraph>
+ <paragraph index="41" node_type="writer" parent_index="33">Gila River Accounting Transparency	4</paragraph>
+ <paragraph index="42" node_type="writer" parent_index="33">The Math Dataset	4</paragraph>
+ <paragraph index="43" node_type="writer" parent_index="33">Table 1 – The Math	5</paragraph>
+ <paragraph index="44" node_type="writer" parent_index="33">Lower Basin Annual Report Accessibility	7</paragraph>
+ <paragraph index="45" node_type="writer" parent_index="33">CRBFC Lake Powell Inflow Forecasts	7</paragraph>
+ <paragraph index="46" node_type="writer" parent_index="33">Run-of-the-River Operations at Glen Canyon Dam	8</paragraph>
+ <paragraph index="47" node_type="writer" parent_index="33">Compact Compliance Infrastructure Protection Pool (CCIPP)	12</paragraph>
+ <paragraph index="48" node_type="writer" parent_index="33">Power Water Stranded and Potentially Stranded	13</paragraph>
+ <paragraph index="51" node_type="writer">Executive Summary</paragraph>
+ <paragraph index="52" node_type="writer">We ask the Bureau choose No Alternative or Basic Coordination to operate the River</paragraph>
+ <paragraph index="53" node_type="writer">In light of the LaFond 2024 memo it appear imperative the Bureau be prepared to switch to Run of the River with annualized flow matching to protect power head and infrastructure at which point releases from Powell would be based on what the River provides</paragraph>
+ <paragraph index="54" node_type="writer">We propose a new Compact Compliance and Infrastructure Protection Pool(CCIPP), pronounced sip.  This pool could hold stranded Upper Basin water rights like Ute Animas La Plata water and shuttered power plant water like Nucla and San Juan. This is not a lot of water but over time could be and would help protect infrastructure</paragraph>
+ <paragraph index="55" node_type="writer">Disclaimer</paragraph>
+ <paragraph index="56" node_type="writer">Disclaimer: I, Ed Millard, am a knowledgeable citizen but I do not speak for Colorado or the UCRC.  I do not work for the State of Colorado.  I am an informal water policy advisor to Colorado Representative Larry Don Suckla who represents counties in Southwestern Colorado and have been for more than a decade.  I am not a lawyer. I an not a Professional Engineer. I am concerned the current doom loop in the Colorado River will not end well for anyone.  There are many legal arguments in this paper, they should in no way be treated as actual legal threats or basis for actual litigation even if they sound that way.  They are provided purely to spark conversation about and better understanding of these complex issues among people who are not lawyers.</paragraph>
+ <paragraph index="57" node_type="writer">Operations, Accounting and NEPA</paragraph>
+ <paragraph index="58" node_type="writer">Colorado River System Accounting</paragraph>
+ <paragraph index="59" node_type="writer">For the river to work the math has to work.</paragraph>
+ <paragraph index="61" node_type="writer">Gila River Accounting Transparency</paragraph>
+ <paragraph index="62" node_type="writer">It is imperative USBR establish uniform transparency in water accounting under the Article II definition of the Colorado River System which includes the Gila River and its tributaries:</paragraph>
+ <paragraph index="63" node_type="writer">(a) The term “Colorado River System” means that portion of the Colorado River and its tributaries within the United States of America</paragraph>
+ <paragraph index="64" node_type="writer">With the possibility of future litigation and alteration of how the Compact works this unfortunate black hole in system accounting needs to be remedied.  The Gila and its tributaries should have the same consumptive use, loss and natural flow accounting as the rest of the system.  This data is essential for litigation and to understand the math.</paragraph>
+ <paragraph index="65" node_type="writer">The Math Dataset</paragraph>
+ <paragraph index="66" node_type="writer">Below is Table 1 which is a first attempt to collect all of the essential Colorado River System data, in one place to understand the math, as far back as is available.  This a Foundational Principle. The table is not verified, it is a daunting task to verify it, make it easier to understand and finish.  Ideally USBR can take over this role so there is a trusted standard dataset where we can all go to get this data in an easily accessible way without having to write all this code or collect it ourselves.  We all need to understand the math, this is a way to do that.</paragraph>
+ <paragraph index="67" node_type="writer">Table 1 – The Math</paragraph>
+ <paragraph index="68" node_type="writer">The data below is not validated. Treat it as a straw man for an essential data set we all need to understand the math of this system.  This data comes from multiple disparate sources.  It was very hard to assemble and will be hard to validate.  Do not trust it or use it in anything important, at least yet.</paragraph>
+ <paragraph index="69" node_type="writer">This data is a work in progress.  It is a living document. Always use the latest version of the spreadsheet found here:</paragraph>
+ <paragraph index="70" node_type="writer">https://www.varuna.io/LOTR/Colorado_River_Math.xlsx</paragraph>
+ <paragraph index="71" node_type="writer">Some data, USBR RISE and USGS, are still on Water Year, Oct 1.  Everything has to migrate to Calendar year to match the Compact accounting standard</paragraph>
+ <paragraph index="72" node_type="writer">The Bureau doesn’t provide up to date provisional data for Natural Flow at the border which is needed for III(c) calculations below.  This goes only to 2020, we have to use the Lee’s Ferry provisional natural flow after that which is inherently low.</paragraph>
+ <paragraph index="75" node_type="writer">Lower Basin Annual Report Accessibility</paragraph>
+ <paragraph index="76" node_type="writer">Ideally the Bureau should make all of its Lower Basin Annual Report data back to 1964 available in a similar machine accessible way, spreadsheets or CSV files.  We’ve made a first attempt at this.  Its pretty good but needs more verification and hasn’t been updated since 2022.  It would be better if the USBR provide this data as a standard, trusted service, not necessarily in this format, maybe you already have it, couldn’t find it.  Volunteers are welcome.  I’ve been busy :)</paragraph>
+ <paragraph index="77" node_type="writer">Riverwar Lower Basin Annual Report CSV data</paragraph>
+ <paragraph index="78" node_type="writer">You need a special Python function to read these somewhat non standard CSV files, we need to fix this.  The code is on github, it needs a lot of work to be usable by others. A user interface either by web or a cross platform app is needed to visualize and make this data more accessible to non programmers. There is some cross platform desktop code here used on another project.</paragraph>
+ <paragraph index="79" node_type="writer">CRBFC Lake Powell Inflow Forecasts</paragraph>
+ <paragraph index="80" node_type="writer">With the increasingly dire state of Lake Powell infrastructure described below its imperative that Inflow forecasts be the best they can be.  The margins are very thin protecting power head and maintaining Run of the River.  Excessively optimistic forecasts could lead to releasing water that would be critical to infrastructure protection.</paragraph>
+ <paragraph index="81" node_type="writer">To this end we ask the Bureau establish a small, independent panel, to evaluate the performance of all relevant models at the end of runoff each year and rate them so we have a guide to which model to trust the most the following year.  There may be different models which excel at drought years vs normal years so it may not be simple. Some models may only be available or excel in some sub-basins.</paragraph>
+ <paragraph index="82" node_type="writer">At the recent ASO seminar we were alarmed to hear that CRBFC was abandoning any effort to use ASO snow pack data in their model. We are aware there have been structural problems making this difficult.  In basins where this data is available it would seem essential to better informing these critical forecasts.  </paragraph>
+ <paragraph index="83" node_type="writer">We ask this panel to determine a way to either successfully integrate this data in the CRBFC model or to integrate ASO WRF-Hydro, or any other successful model, in the Powell inflow forecast.  It might worth considering having a defined API under which any very successful model be integrated in this forecast, but this has to be done very carefully to preserves the forecasts integrity and avoid chaos. </paragraph>
+ <paragraph index="84" node_type="writer">The Bureau needs to identify, reward, use and promote models which excel and incentivize everyone to step up their game in these increasingly desperate times.  Best performing models need to be integrated into the critical forecast. Consideration should be given to creating financial incentives for the best Modelers to compete for and win this coveted role.</paragraph>
+ <paragraph index="85" node_type="writer">Run-of-the-River Operations at Glen Canyon Dam</paragraph>
+ <paragraph index="87" node_type="writer">Objective 1: Lake Powell had real value to the Upper Basin in the 80’s and 90’s when there were surplus inflows stored there.  Those days are over.  Rather than appreciating and cherishing that precious reserve Arizona took it for granted. They used litigation threats and gaming to abuse it. Since 2007 it’s become a liability to the Upper Basin as the Lower Basin drained it to mitigate a problem, the structural deficit, entirely of their making.  Since Lake Powell is now being used to squeeze the Upper Basin for water instead of protect us it may be time to let it go.</paragraph>
+ <paragraph index="89" node_type="writer">Objective 2: The 2007 Interim Guidelines are “Interim” for a reason.  When they were signed the Upper Basin knew they would fail, they wouldn’t fix anything.  They agreed to them only because threatened litigation was worse.  Despite the Bureau’s claims to the contrary, and in absence of a seven states compromise, we are relatively certain the only path forward is to revert to the Long Range Operating Criteria backed by Run of the River to protect the power head and turbines in Lake Powell, and this is OK. The Bureau has no authority to impose an arbitrary new alternative on the seven states though they do have the authority to protect their infrastructure and endangered fish.</paragraph>
+ <paragraph index="91" node_type="writer">Objective 3: We hope to counter inflammatory rhetoric, terms like “crashed river”, “dancing with dead pool” and “turbines will stop turning” being used to pressure and rush stakeholders, like those of us in Colorado, into accepting deep cuts in our Compact water use.  With Run of the River the river will instead be OK, not great, risky yes, but OK if managed carefully, very carefully.</paragraph>
+ <paragraph index="93" node_type="writer">As outlined in this 2024 Technical Memo the Bureau can not risk using bypass tubes to operate the Colorado River below Glen Canyon if they lose the power head at 3490’.</paragraph>
+ <paragraph index="95" node_type="writer">Establishment of Interim Operating Guidance for Glen Canyon Dam</paragraph>
+ <paragraph index="96" node_type="writer">Richard LaFond</paragraph>
+ <paragraph index="97" node_type="writer">Date: 2024.03.27</paragraph>
+ <paragraph index="98" node_type="writer">Director, Technical Service Center</paragraph>
+ <paragraph index="100" node_type="writer">The following page has the essential conclusions.</paragraph>
+ <paragraph index="102" node_type="writer">The Bureau already has authority, in fact an obligation, to protect their infrastructure and endangered fish. Therefor, before Lake Powell loses its power head the Bureau needs to set a power head elevation they are going to defend, possibly 3510’, 3500’ is risky.</paragraph>
+ <paragraph index="103" node_type="writer">
+Reservoir coordination with Lake Mead and releases called for in whatever guidelines are in force will end and the Bureau will switch to Run of the River(ROTR), flow matching on an annualized basis:
+</paragraph>
+ <paragraph index="104" node_type="writer">Outflow = Inflow - Losses</paragraph>
+ <paragraph index="106" node_type="writer">Glen Canyon will be generating power and revenue though output will be limited by the low power head. This is better than the alternative, no power.</paragraph>
+ <paragraph index="107" node_type="writer">
+Fish have flows so their bellies aren’t on the bottom of the river :)  Fish experts like Jack Schmidt will need to weigh in on this flow regime.  If bypass tubes are used and they fail after loss of power head flows could be lost in the Grand Canyon imperiling endangered fish.  This is bad.</paragraph>
+ <paragraph index="109" node_type="writer">In Glen Canyon, at low head, I think one turbine needs 1,600–2,300 cfs (per Reclamation estimates). This equates to roughly 1.2–1.7 MAF. Another common figure used is a conservative 2.3 MAF for one year’s operation.  As spring runoff winds down the Bureau must insure there will be enough water in the lake to reach the start of the next Spring runoff.  The great people at the Bureau can work out these details.</paragraph>
+ <paragraph index="111" node_type="writer">They would hopefully be running 2 or 3 turbines, they can turn a turbine off and on to fine tune the target</paragraph>
+ <paragraph index="112" node_type="writer">
+The river can run like this indefinitely if Bureau ops people are careful. Hopefully there will be no catastrophic crisis which is key here.</paragraph>
+ <paragraph index="114" node_type="writer">When Powell is in ROTR coordination will be significantly restricted and the two basins will be somewhat decoupled.  As long as the Lower Basin can’t use Lake Mead elevations to drawn down Lake Powell, there is nothing to draw, what the Bureau and the Lower Basin do regarding shortages and assigned water becomes irrelevant to the Upper Basin. </paragraph>
+ <paragraph index="116" node_type="writer">If snow pack improves you can easily revert to guideline releases.  Then the basins would recouple and coordination would matter again.</paragraph>
+ <paragraph index="118" node_type="writer">ROTR is included in one DEIS alternative, Maximum Flexibility submitted by the NGO’s.  It predictably performs much better protecting critical elevation than the others. In extreme traces like the one we are in this year critical elevation can still be breached if the next year’s spring runoff is less than the minimum to operate one turbine.</paragraph>
+ <paragraph index="120" node_type="writer">It is highly desirable that initial units like Flaming Gorge retain as much usable water as possible so that, in event of a catastrophic inflow year like the current one, power head can be maintained in Lake Powell. This can be justified by protection of infrastructure under coordinated operations.</paragraph>
+ <paragraph index="122" node_type="writer">Compact Compliance Infrastructure Protection Pool (CCIPP) </paragraph>
+ <paragraph index="123" node_type="writer">Three circumstances require establishment of a new pool in Lake Powell immediately, with or without Seven States agreement. This is a kind of gap water but actually real. Its pronounced “sip”: </paragraph>
+ <paragraph index="124" node_type="writer">Compact Compliance Pool Infrastructure Protection Pool 
+</paragraph>
+ <paragraph index="125" node_type="writer">It is imperative power head be protected at elevation 3510’ in light of the USBR LaFond 2024 memo.  Bypass tubes can not safely run the river. A pool buffering this elevation is required.  A safety margin is needed if extended Run of The River operations are required.  USBR should really like this pool right now.</paragraph>
+ <paragraph index="126" node_type="writer">The Upper Basin has significant established water rights that must be used “exclusively” in the Upper Basin as defined in Article III(a).  These include Winters tribal water rights, in particular the two Ute Tribes in Colorado in Animas La Plata totaling about 32,000 AF/year, and water rights for power plants that have been or will be retired.  This water is going to the Lower Basin for free which is inappropriate under III(a) for an established Upper Basin water right,</paragraph>
+ <paragraph index="127" node_type="writer">Its imperative the Upper Basin have more control over the timing of releases of water under established Upper Basin water rights from Lake Powell to better balance infrastructure protection and compact compliance under Article III(d) and the 10 year 7.5 MAF moving average.  Examples of problematic Arizona behavior in this area were litigation threats to increase releases from Lake Powell to 9 MAF, and documented manipulation of releases of Lake Powell by the Lower Basin under those terms which are pushing the Upper Basin toward compact noncompliance right now contrary to Section 603 in the 1968 Colorado River Basin Project Act.</paragraph>
+ <paragraph index="129" node_type="writer">A brief summary of this stranded gap water:</paragraph>
+ <paragraph index="130" node_type="writer"> 32,000 AFY Animas La Plata Settled Tribal Winters water rights</paragraph>
+ <paragraph index="131" node_type="writer">   5,000 AFY Nucla</paragraph>
+ <paragraph index="132" node_type="writer">   8,000 AFY San Juan</paragraph>
+ <paragraph index="133" node_type="writer"> 45,000 AFY Subtotal</paragraph>
+ <paragraph index="134" node_type="writer"> 30,000 AFY Navajo</paragraph>
+ <paragraph index="135" node_type="writer"> 75,000 AFY Subtotal</paragraph>
+ <paragraph index="136" node_type="writer"> 31,000 AFY Pending, don’t count on it</paragraph>
+ <paragraph index="137" node_type="writer">106,000 AFY Total, don’t count on the last 31,000</paragraph>
+ <paragraph index="139" node_type="writer">It should be made clear we are not proposing to withhold this water from the Lower Basin so it is not an Article III(e) problem.  As John Entsminger famously said at CRWUA, “Gravity Works”.  Once this water is in Lake Powell its going to them, all we are asking is to control when because its an Upper Basin water right and its our prerogative.</paragraph>
+ <paragraph index="141" node_type="writer">Creation of this pool has many perils which must be prevented:</paragraph>
+ <paragraph index="143" node_type="writer">The consumptive use required under III(a) is Powell evaporation, IANAL.</paragraph>
+ <paragraph index="144" node_type="writer">Under no circumstances can water from this pool be sold to the Lower Basin or to USBR acting in its role as Lower Basin Water Master.  This would be an Article III(a) violation and compromise The Wall.  The Wall can not be compromised by this pool</paragraph>
+ <paragraph index="145" node_type="writer">Under no circumstances can this pool support or encourage speculation, its a Foundational Principal.</paragraph>
+ <paragraph index="146" node_type="writer">Water rights which can participate in this pool must be carefully restricted to Ute ALP water and stranded power plant water for now.  It cant become a destination for buy and dried Ag water</paragraph>
+ <paragraph index="147" node_type="writer">Constraints must be developed on when this water is released from Lake Powell. Presumably it would ONLY be when there is a legally recognized compact compliance call.  UCRC would be first entity to proposed this, probably in consultation with the involved state and the water rights holder</paragraph>
+ <paragraph index="148" node_type="writer">Careful consideration has to be given to how this water right can be monetized by the rights holder.  Most probably this would involve sale of the water release to an entity seeking compact compliance protection, like a city with junior water rights… BUT ONLY IN THE UPPER BASIN.  The water would be released to offset their curtailment obligation. Again this can not be allowed to be a buy and dry mechanism for Ag so the water rights eligible have to be closely controlled.</paragraph>
+ <paragraph index="150" node_type="writer">Power Water Stranded and Potentially Stranded </paragraph>
+ <paragraph index="151" node_type="writer">This needs verification before use in decision making:</paragraph>
+ <paragraph index="153" node_type="writer">The cumulative water associated with the shuttered and scheduled-to-shut-down coal-fired power plants in the Upper Colorado River Basin states (Colorado, New Mexico, Utah, and Wyoming) that use Colorado River Basin sources totals approximately 55,000–65,000 acre-feet per year (AF/yr) in consumptive use (primarily evaporative losses for cooling) when all retirements are completed. This estimate aggregates the primary operational water rights or average annual consumptive volumes directly tied to these facilities, based on U.S. Bureau of Reclamation Consumptive Uses and Losses reports, U.S. Energy Information Administration data, utility filings, and analyses from sources such as the Energy and Policy Institute and Western Resource Advocates (historical averages 1991–2018 place Upper Basin thermal power consumptive use at ~144,000–162,000 AF/yr overall, with coal plants dominating).</paragraph>
+ <paragraph index="154" node_type="writer">
+These savings represent a potential “water dividend” for the basin upon full retirement, though actual reallocation depends on state water law (prior appropriation), utility retention of rights (e.g., for future uses like hydrogen production or to avoid abandonment), and any transfers, leases, or instream flow protections. Volumes reflect average annual consumptive use or decreed entitlements attributable to plant operations; diversion may be higher with return flows.
+Shuttered Plants (Already Ceased Using Water):</paragraph>
+ <paragraph index="155" node_type="writer">Nucla Station (Colorado, San Miguel River tributary): Shuttered 2019; ~4,000–5,000 AF/yr.</paragraph>
+ <paragraph index="156" node_type="writer">San Juan Generating Station (New Mexico, San Juan River): Fully shuttered 2022; ~8,000 AF/yr (with portions for associated uses).</paragraph>
+ <paragraph index="158" node_type="writer">Subtotal for shuttered plants: ~12,000–13,000 AF/yr (already realized savings).</paragraph>
+ <paragraph index="160" node_type="writer">Navajo Generating Station, now shuttered in Arizona had 34,100 acre-feet under long-term contractual consumptive use allocation approved in 1968 by the Navajo Tribal Council, it used about 20,000-28,000 af in practice.  Its not clear if Arizona would put this water in the CCIPP though.</paragraph>
+ <paragraph index="161" node_type="writer">
+Scheduled Shutdowns (Water Use to Cease Upon Retirement):
+</paragraph>
+ <paragraph index="162" node_type="writer">Craig Generating Station (Colorado, Yampa River tributary): Units 1 (delayed potentially to post-March 2026), 2 (2028), and 3 (2029); full by late 2028–2029; ~16,000–16,400 AF/yr (e.g., ~7,394–8,400 AF in recent filings; collective Craig/Hayden rights ~19,000–21,000 AF/yr).</paragraph>
+ <paragraph index="163" node_type="writer">Hayden Generating Station (Colorado, Yampa River tributary): Unit 2 (2027), Unit 1 (2028); ~4,400–5,000 AF/yr.</paragraph>
+ <paragraph index="164" node_type="writer">Four Corners Generating Station (New Mexico, San Juan River): Full retirement no later than 2038 (potentially extended); ~17,000–24,000 AF/yr (2020 average ~17,000 AF consumptive; up to ~27,000 AF diversion makeup).</paragraph>
+ <paragraph index="165" node_type="writer">Bonanza Power Plant (Utah, Green River): ~2030; ~6,700–7,600 AF/yr (average ~6,672 AF consumptive; primary right ~7,600 AF/yr).</paragraph>
+ <paragraph index="166" node_type="writer">
+Subtotal for scheduled plants: ~44,000–53,000 AF/yr (phased realization, with most by 2030–2038; subject to delays from reliability needs or federal orders).
+Grand Total Upon Full Shutdown of Listed Plants
+Approximately 55,000–65,000 AF/yr in aggregate consumptive use freed up (shuttered + scheduled). </paragraph>
+ <paragraph index="167" node_type="writer">This excludes plants like Jim Bridger (Wyoming, Green River; ~25,000–33,000 AF/yr when coal-active) where coal retirements have been canceled or converted to gas (reducing but not eliminating water needs) and no firm full-shutdown date exists.
+Key considerations:</paragraph>
+ <paragraph index="168" node_type="writer">Historical Upper Basin coal/thermal averages (~162,000 AF/yr peak) suggest broader retirements could yield more, but not all plants use Colorado River Basin sources, and some rights may persist.</paragraph>
+ <paragraph index="169" node_type="writer">Post-closure, water often remains available for reallocation (e.g., discussions for Yampa River instream flows or green hydrogen), but no widespread permanent abandonment has occurred.</paragraph>
+ <paragraph index="170" node_type="writer">Closure Schedules face uncertainty from demand growth (AI data centers), federal interventions, and economics. Volumes are estimates from operational data, not fixed decrees in all cases.</paragraph>
+</indexing>

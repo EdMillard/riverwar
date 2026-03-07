@@ -4,6 +4,7 @@ data/cdss
 data/USBR_RISE  
 data/USGS_Gages
 data/USBR_Reports/generated
+pdf_reader/data
 .idea
 __pycache__/
 basins/__pycache__/
