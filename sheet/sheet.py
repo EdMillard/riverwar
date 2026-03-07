@@ -39,6 +39,9 @@ import colorado.lb as lb
 import colorado.ub as ub
 from abc import ABC, abstractmethod
 
+cn = lambda ws, name: get_column_number(ws, name)
+cl = lambda ws, name: get_column_letter_insensitive(ws, name)
+
 class Sheet(ABC):
     def __init__(self):
         pass

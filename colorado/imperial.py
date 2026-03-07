@@ -26,6 +26,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
 from sheet import sheet
 from sheet.sheet import Sheet
+from sheet.sheet import cl, cn
 
 class Imperial(Sheet):
     def __init__(self):
@@ -34,9 +35,7 @@ class Imperial(Sheet):
         self.end_year = 2026
 
         self.headers = [lb.SALTON_ELEVATION, lb.SALTON_INFLOW, lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER,
-                            lb.IMPERIAL_TOTAL_CU,
-                            lb.IMPERIAL_DIVERSION, lb.IMPERIAL_CU, lb.IMPERIAL_RETURN,
-                            lb.COACHELLA_DIVERSION, lb.COACHELLA_CU, lb.COACHELLA_RETURN]
+                            lb.IMPERIAL_TOTAL_CU, lb.IMPERIAL_CU, lb.COACHELLA_CU]
         self.df = sheet.create_df(self.start_year, self.end_year, self.headers)
 
     def load_df(self, df_main : pd.DataFrame):
@@ -50,37 +49,22 @@ class Imperial(Sheet):
 
         self.lower_basin_annual_reports(self.df)
 
+
     def build_sheet(self, writer: pd.ExcelWriter, sheet_name: str) -> Worksheet:
 
         ws, df_data = sheet.export_to_excel(self.df, writer, sheet_name)
 
-        imperial_total_cu_col = sheet.get_column_number(ws, lb.IMPERIAL_TOTAL_CU)
-
-        imperial_diversion_col = sheet.get_column_letter_insensitive(ws, lb.IMPERIAL_DIVERSION)
-        imperial_cu_col = sheet.get_column_letter_insensitive(ws, lb.IMPERIAL_CU)
-        imperial_return_col = sheet.get_column_number(ws, lb.IMPERIAL_RETURN)
-
-        coachella_diversion_col = sheet.get_column_letter_insensitive(ws, lb.COACHELLA_DIVERSION)
-        coachella_cu_col = sheet.get_column_letter_insensitive(ws, lb.COACHELLA_CU)
-        coachella_return_col = sheet.get_column_number(ws, lb.COACHELLA_RETURN)
         for row in range(2, len(self.df) + 2):
-            formula = f"={imperial_diversion_col}{row} - {imperial_cu_col}{row}"
-            ws.cell(row=row, column=imperial_return_col).value = formula
+            formula = f"={cl(ws, lb.IMPERIAL_CU)}{row} + {cl(ws, lb.COACHELLA_CU)}{row}"
+            ws.cell(row=row, column=cn(ws, lb.IMPERIAL_TOTAL_CU)).value = formula
 
-            formula = f"={coachella_diversion_col}{row} - {coachella_cu_col}{row}"
-            ws.cell(row=row, column=coachella_return_col).value = formula
+        sheet.color_column(ws, cn(ws, lb.SALTON_ELEVATION), 2, ws.max_row, bg_color=allb.LIGHT_PURPLE_BG)
 
-            formula = f"={imperial_cu_col}{row} + {coachella_cu_col}{row}"
-            ws.cell(row=row, column=imperial_total_cu_col).value = formula
-
-        sheet.color_column(ws, 2, 2, ws.max_row, bg_color=allb.LIGHT_PURPLE_BG)
-
-        for col in range(3, 7):
+        for col in range(cn(ws, lb.SALTON_INFLOW), cn(ws, lb.WHITEWATER)+1):
             sheet.color_column(ws, col, 2, ws.max_row, bg_color=allb.LIGHT_YELLOW_BG)
 
-        sheet.color_column(ws, 7, 2, ws.max_row, bg_color=allb.LIGHT_RED_BG)
-        sheet.color_column(ws, 9, 2, ws.max_row, bg_color=allb.LIGHT_RED_BG)
-        sheet.color_column(ws, 12, 2, ws.max_row, bg_color=allb.LIGHT_RED_BG)
+        for col in range(cn(ws, lb.IMPERIAL_TOTAL_CU), cn(ws, lb.COACHELLA_CU)+1):
+            sheet.color_column(ws, col, 2, ws.max_row, bg_color=allb.LIGHT_RED_BG)
 
         sheet.format_header(ws, df_data)
 
@@ -90,14 +74,14 @@ class Imperial(Sheet):
     def lower_basin_annual_reports(df: pd.DataFrame):
         df_len = len(df) + 2
 
-        df_div = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_imperial_irrigation_diversion.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_div, lb.IMPERIAL_DIVERSION)
+        # df_div = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_imperial_irrigation_diversion.csv', sep='\s+')
+        # sheet.merge_annual_column(df, df_div, lb.IMPERIAL_DIVERSION)
 
         df_cu = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_imperial_irrigation_consumptive_use.csv', sep='\s+')
         sheet.merge_annual_column(df, df_cu, lb.IMPERIAL_CU)
 
-        df_div = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_coachella_diversion.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_div, lb.COACHELLA_DIVERSION)
+        # df_div = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_coachella_diversion.csv', sep='\s+')
+        # sheet.merge_annual_column(df, df_div, lb.COACHELLA_DIVERSION)
 
         df_cu = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_coachella_consumptive_use.csv', sep='\s+')
         sheet.merge_annual_column(df, df_cu, lb.COACHELLA_CU)
