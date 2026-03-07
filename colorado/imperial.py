@@ -20,9 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import colorado.lb as lb
-import colorado.ub as ub
-import colorado.allb as allb
-from openpyxl.worksheet.worksheet import Worksheet
+import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
 from sheet.sheet import Sheet
@@ -30,15 +28,12 @@ from sheet.sheet import cl, cn
 
 class Imperial(Sheet):
     def __init__(self):
-        super().__init__()
-        self.start_year = 1964
-        self.end_year = 2026
+        headers = [lb.SALTON_ELEVATION, lb.SALTON_INFLOW,
+                   lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER,
+                   lb.IMPERIAL_TOTAL_CU, lb.IMPERIAL_CU, lb.COACHELLA_CU]
+        super().__init__(headers)
 
-        self.headers = [lb.SALTON_ELEVATION, lb.SALTON_INFLOW, lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER,
-                            lb.IMPERIAL_TOTAL_CU, lb.IMPERIAL_CU, lb.COACHELLA_CU]
-        self.df = sheet.create_df(self.start_year, self.end_year, self.headers)
-
-    def load_df(self, df_main : pd.DataFrame):
+    def load_df(self, df_compact : pd.DataFrame) -> None:
         sheet.usgs_annuals(self.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER)          # 10254580 Alamo at border
         sheet.usgs_annuals(self.df, '10255550', self.start_year, self.end_year, title=lb.NEW_RIVER)    # 10254970 New at border
         sheet.usgs_annuals(self.df, '10259540', self.start_year, self.end_year, title=lb.WHITEWATER)
@@ -50,30 +45,20 @@ class Imperial(Sheet):
         self.lower_basin_annual_reports(self.df)
 
 
-    def build_sheet(self, writer: pd.ExcelWriter, sheet_name: str) -> Worksheet:
-
-        ws, df_data = sheet.export_to_excel(self.df, writer, sheet_name)
-
+    def build_sheet(self) -> None:
+        ws = self.ws
         for row in range(2, len(self.df) + 2):
             formula = f"={cl(ws, lb.IMPERIAL_CU)}{row} + {cl(ws, lb.COACHELLA_CU)}{row}"
             ws.cell(row=row, column=cn(ws, lb.IMPERIAL_TOTAL_CU)).value = formula
 
-        sheet.color_column(ws, cn(ws, lb.SALTON_ELEVATION), 2, ws.max_row, bg_color=allb.LIGHT_PURPLE_BG)
+        self.set_bg(lb.SALTON_ELEVATION, color=all_b.LIGHT_PURPLE_BG)
+        self.set_bg(lb.SALTON_INFLOW, to=lb.WHITEWATER, color=all_b.LIGHT_YELLOW_BG)
+        self.set_bg(lb.IMPERIAL_TOTAL_CU, to=lb.COACHELLA_CU, color=all_b.LIGHT_RED_BG)
 
-        for col in range(cn(ws, lb.SALTON_INFLOW), cn(ws, lb.WHITEWATER)+1):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=allb.LIGHT_YELLOW_BG)
-
-        for col in range(cn(ws, lb.IMPERIAL_TOTAL_CU), cn(ws, lb.COACHELLA_CU)+1):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=allb.LIGHT_RED_BG)
-
-        sheet.format_header(ws, df_data)
-
-        return ws
+        self.format_header()
 
     @staticmethod
     def lower_basin_annual_reports(df: pd.DataFrame):
-        df_len = len(df) + 2
-
         # df_div = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_imperial_irrigation_diversion.csv', sep='\s+')
         # sheet.merge_annual_column(df, df_div, lb.IMPERIAL_DIVERSION)
 

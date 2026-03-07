@@ -25,3 +25,6 @@ LIGHT_BLUE_BG = 'e0f0ff'
 LIGHT_PURPLE_BG = 'ffe0ff'
 LIGHT_YELLOW_BG = 'ffffd0'
 LIGHT_ORANGE_BG = 'ffb66c'
+
+COMPACT = 'Compact'
+III_C = 'III(c)'

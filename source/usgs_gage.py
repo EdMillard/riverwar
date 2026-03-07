@@ -42,9 +42,10 @@ update_gages = False
 
 
 def print_last_value(abbrev, a, alias=''):
-    last_date = a['dt'][-1]
-    last_val = a['val'][-1]
-    print(f'\tUSGS - {abbrev} {last_date} {last_val} {alias}')
+    # last_date = a['dt'][-1]
+    # last_val = a['val'][-1]
+    # print(f'\tUSGS - {abbrev} {last_date} {last_val} {alias}')
+    pass
 
 
 class USGSGage(object):

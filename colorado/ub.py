@@ -30,7 +30,7 @@ LEES_FERRY_USGS = 'Lees Ferry USGS'
 INFLOW = 'Inflow'
 INFLOW_UNREGULATED = 'Inflow Unregulated'
 
-CU = 'Upper Basin CU'
+III_A_UB = 'III(a) Upper'
 CU_CO = 'CO'
 CU_UT = 'UT'
 CU_WY = 'WY'

@@ -20,13 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 BORDER_NATURAL = 'Natural Border'
+LOWER_BASIN_AR_FLOW = 'b3cac7'
 
 MEXICO = 'Mexico'
 
 CU_CA = 'CA'
 CU_AZ = 'AZ'
 CU_NV = 'NV'
-CU = 'Lower Basin CU'
+III_A_LB = 'III(a) Lower'
 
 HOOVER_USGS = 'Hoover USGS'
 HOOVER_RELEASE = 'Hoover Release'
@@ -43,13 +44,14 @@ MEAD_ELEVATION = 'Mead Elevation'
 GILA_NATURAL = "Natural Gila"
 GILA_CU = "Gila Consumptive Use"
 
+# Imperial/Salton Sea
+IMPERIAL = 'Imperial'
+
 SALTON_ELEVATION = 'Salton Elevation'
 SALTON_INFLOW = 'Salton Inflow'
 ALAMO_RIVER = 'Alamo River'
 NEW_RIVER = "New River"
 WHITEWATER = "Whitewater"
-
-LOWER_BASIN_AR_FLOW = 'b3cac7'
 
 IMPERIAL_TOTAL_CU = 'Imperial Total CU'
 

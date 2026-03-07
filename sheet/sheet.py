@@ -43,20 +43,64 @@ cn = lambda ws, name: get_column_number(ws, name)
 cl = lambda ws, name: get_column_letter_insensitive(ws, name)
 
 class Sheet(ABC):
-    def __init__(self):
-        pass
+    def __init__(self, headers: List[str]):
+        self.start_year: int = 1964
+        self.end_year: int = 2026
+        self.headers: List[str] = headers
+        self.df: pd.DataFrame = create_df(self.start_year, self.end_year, headers)
+        self.ws: Optional[Worksheet] = None
 
     def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame) -> Worksheet:
         self.load_df(df_main)
-        return self.build_sheet(writer, sheet_name)
+        self.ws, self.df = export_to_excel(self.df, writer, sheet_name)
+        self.build_sheet()
+        return self.ws
 
     @abstractmethod
-    def load_df(self, df_main : pd.DataFrame):
+    def load_df(self, df_compact : pd.DataFrame) -> None:
         pass
 
     @abstractmethod
-    def build_sheet(self, writer: pd.ExcelWriter, sheet_name: str) -> openpyxl.worksheet.worksheet.Worksheet:
+    def build_sheet(self) -> None:
         pass
+
+    def set_bg(self, name:str, to:str=None, color:str="ffffff") -> None:
+        name_col_num = cn(self.ws, name)
+        if name_col_num:
+            if to is None:
+                color_column(self.ws, name_col_num, 2, self.ws.max_row, bg_color=color)
+            else:
+                for col in range(name_col_num, cn(self.ws, to)+1):
+                    color_column(self.ws, col, 2, self.ws.max_row, bg_color=color)
+        else:
+            print(f'set_bg name not in sheet: {name}')
+
+    def set_column_width(self, name:str, width:int) -> None:
+        self.ws.column_dimensions[cl(self.ws, name)].width = width
+
+    def set_column_alignment(self, name:str, horizontal:str) -> None:
+        set_column_alignment(self.ws, cn(self.ws, name), 2, len(self.df) + 2, horizontal=horizontal)
+
+    def set_column_negative_red(self, name: str) -> None:
+        set_column_negative_red(self.ws, cn(self.ws, name), 2, len(self.df) + 2)
+
+    # Variable name ahd units Row centered
+    #
+    def format_header(self):
+        start_row = 1
+        end_row = 2
+        start_col = 1
+        end_col = len(self.df.columns) + 1
+        self.ws.row_dimensions[1].height = 25
+        for col in range(1, end_col):
+            self.ws.column_dimensions[get_column_letter(col)].width = 5
+            for row in range(start_row, end_row):
+                cell = self.ws.cell(row=row, column=col)
+                cell.alignment = Alignment(wrap_text=True, vertical='top', horizontal='center')
+
+        # Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='none')
+        add_borders_to_column(self.ws, start_col, start_row, end_row - 1, end_col=end_col - 1, which='outer')
+
 
 def read_csv(filename, sep='\s+', comment_char='#'):
     cleaned_lines = []
@@ -191,7 +235,7 @@ def create_df(min_year, max_year, headers):
     df['Year'] = years
     df.iloc[:, 1:] = pd.NA
 
-    print(df.head())
+    # print(df.head())
     return df
 
 def lf_natural_flow_from_excel(df: pd.DataFrame):
@@ -250,7 +294,7 @@ def upper_basin_cu_from_excel(df:pd.DataFrame):
 
         if header == 'Grand Total':
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.CU] = values
+            df.loc[7: 7 + len(values) - 1, ub.III_A_UB] = values
         if header == 'Colorado':
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
             df.loc[7: 7 + len(values) - 1, ub.CU_CO] = values
@@ -266,6 +310,7 @@ def upper_basin_cu_from_excel(df:pd.DataFrame):
         elif header == 'Arizona':
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
             df.loc[7: 7 + len(values) - 1, ub.CU_AZ] = values
+
 
 def usgs_annuals(df, gage_id, start_year, end_year, title='', parameterCd='00060', statCd='00003', month=10, offset=0):
     annuals = []
@@ -287,10 +332,10 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameterCd='00060
         else:
             print('Multiple years returned')
 
-    if title:
-        print(title)
-        for annual in annuals:
-            print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+    # if title:
+    #    print(title)
+    #    for annual in annuals:
+    #        print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
 
     if title:
         if len(values) != len(df[title]):
@@ -318,11 +363,10 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
         values.append(feet[1])
         annuals.append(feet)
 
-    if title:
-        print(title)
-        for annual in annuals:
-            # print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
-            print(f'{annual[0]} {annual[1]:10.2f} ')
+    # if title:
+    #     print(title)
+    #    for annual in annuals:
+    #       print(f'{annual[0]} {annual[1]:10.2f} ')
 
     if title:
         insert_values_from_year(df, title, start_year, values)
@@ -351,10 +395,10 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
         values.append(af[1] / divisor)
         annuals.append(af)
 
-    if title:
-        print(title)
-        for annual in annuals:
-            print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
+    # if title:
+    #    print(title)
+    #    for annual in annuals:
+    #        print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
 
     if title:
         year = df['Year'][0]
@@ -388,10 +432,10 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
             print('Multiple years returned')
 
 
-    if title:
-        print(title)
-        for annual in annuals:
-            print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+    # if title:
+    #    print(title)
+    #    for annual in annuals:
+    #        print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
 
     if title:
         df[title] = values
@@ -413,24 +457,6 @@ def format_sheet(ws):
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=ws.max_column):
         for cell in row:
             cell.number_format = '0.00'
-
-# Variable name ahd units Row centered
-#
-def format_header(ws, df):
-    start_row = 1
-    end_row = 2
-    start_col = 1
-    end_col = len(df.columns) + 1
-    ws.row_dimensions[1].height = 25
-    for col in range(1, end_col):
-        ws.column_dimensions[get_column_letter(col)].width = 5
-        for row in range(start_row, end_row):
-            cell = ws.cell(row=row, column=col)
-            cell.alignment = Alignment(wrap_text=True, vertical='top', horizontal='center')
-
-    # Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='none')
-    add_borders_to_column(ws, start_col, start_row, end_row - 1, end_col=end_col - 1, which='outer')
-
 
 def insert_units_row(df, variable_name_to_units):
     variable_names = df.columns.tolist()
