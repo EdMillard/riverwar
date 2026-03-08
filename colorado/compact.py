@@ -33,7 +33,7 @@ from sheet.sheet import cl, cn
 
 class Compact(Sheet):
     def __init__(self):
-        headers = [ub.LEES_FERRY_NATURAL, lb.BORDER_NATURAL,
+        headers = [ub.NATURAL_LEES_FERRY, lb.NATURAL_IMPERIAL,
                         lb.CU_NV, lb.CU_AZ, lb.CU_CA, lb.III_A_LB, lb.MEXICO, lb.MEAD_EVAPORATION, lb.HOOVER_RELEASE,
                         lb.H_M, lb.DIFF_7_5, lb.HOOVER_USGS, lb.DIAMOND_CREEK, lb.MEAD,
                         ub.POWELL,ub.POWELL_EVAPORATION, ub.GLEN_CANYON, ub.LEES_FERRY_USGS,
@@ -101,49 +101,41 @@ class Compact(Sheet):
             formula = f"=K{row}-7.5"
             ws.cell(row=row, column=dest_col_diff).value = formula
 
-        self.set_bg(lb.MEXICO, color=lb.LOWER_BASIN_AR_FLOW)
-        self.set_bg(lb.HOOVER_RELEASE, color=lb.LOWER_BASIN_AR_FLOW)
+        self.set_bg(lb.MEXICO, color=all_b.USBR_AR_FLOW)
+        self.set_bg(lb.HOOVER_RELEASE, color=all_b.USBR_AR_FLOW)
+
         self.set_column_negative_red(lb.DIFF_7_5)
 
         sheet.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
         sheet.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
         sheet.add_borders_to_column(ws, 7, 1, ws.max_row, which='vertical')
 
-        self.set_bg(lb.BORDER_NATURAL, ub.LEES_FERRY_NATURAL, color=all_b.LIGHT_GREEN_BG)
-        self.set_bg(lb.CU_NV, lb.III_A_LB, color=all_b.LIGHT_RED_BG)
-        for col in range(2, 4):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_GREEN_BG)
-        for col in range(4, 8):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_RED_BG)
+        self.set_bg(ub.NATURAL_LEES_FERRY, lb.NATURAL_IMPERIAL, color=all_b.USBR_NATURAL_BG)
+        self.set_bg(lb.CU_NV, lb.III_A_LB, color=all_b.USBR_AR_CU_BG)
 
         # USGS
-        sheet.color_column(ws, 13, 2, ws.max_row, bg_color=all_b.LIGHT_YELLOW_BG)
-        sheet.color_column(ws, 14, 2, ws.max_row, bg_color=all_b.LIGHT_YELLOW_BG)
+        self.set_bg(lb.HOOVER_USGS, lb.DIAMOND_CREEK, color=all_b.USGS_BG)
 
         lower_basin_end_col = 15
         # Reservoirs
-        for col in range(lower_basin_end_col, lower_basin_end_col+2):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_BLUE_BG)
-
-        sheet.color_column(ws, 17, 2, ws.max_row, bg_color=all_b.LIGHT_ORANGE_BG)
+        self.set_bg(lb.MEAD, color=all_b.LIGHT_BLUE_BG)
+        self.set_bg(ub.POWELL, color=all_b.LIGHT_BLUE_BG)
+        self.set_bg(ub.POWELL_EVAPORATION, color=all_b.EVAPORATION_BG)
 
         sheet.add_borders_to_column(ws, lower_basin_end_col, 1, ws.max_row, which='right', border_style='medium')
         sheet.add_borders_to_column(ws, 22, 1, ws.max_row, which='vertical')
 
+        self.set_bg(lb.MEAD_EVAPORATION, color=all_b.EVAPORATION_BG)
+
         # USGS
-        sheet.color_column(ws, 28, 2, ws.max_row, bg_color=all_b.LIGHT_YELLOW_BG)
-        for col in range(18, 22):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_YELLOW_BG)
-        for col in range(32, 36):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_YELLOW_BG)
+        self.set_bg(ub.GLEN_CANYON_RELEASE, ub.INFLOW_UNREGULATED, color=all_b.USGS_BG)
+        self.set_bg(lb.GC_INFLOW, color=all_b.USGS_BG)
 
         # Upper Basin CUL
-        for col in range(22, 28):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_ORANGE_BG)
+        self.set_bg(ub.III_A_UB, ub.CU_AZ, color=all_b.USBR_UB_CUL_BG)
 
         # Elevations
-        for col in range(29, 31):
-            sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_PURPLE_BG)
+        self.set_bg(lb.MEAD_ELEVATION, ub.POWELL_ELEVATION, color=all_b.USBR_RISE_ELEVATION_BG)
 
         self.format_header()
 

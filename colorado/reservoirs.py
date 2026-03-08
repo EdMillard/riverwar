@@ -116,7 +116,8 @@ class Reservoirs(Sheet):
     def build_sheet(self) -> None:
         ws = self.ws
 
-        self.set_bg(lb.SALTON_INFLOW, to=lb.WHITEWATER, color=all_b.LIGHT_YELLOW_BG)
-        self.set_bg(lb.IMPERIAL_TOTAL_CU, to=lb.COACHELLA_CU, color=all_b.LIGHT_RED_BG)
+        self.set_bg(lb.HAVASU, to=ub.BLUE_MESA, color=all_b.USBR_RISE_ACTIVE_CAPACITY_BG)
+        self.set_bg(lb.MEAD_EVAPORATION, to=ub.POWELL_EVAPORATION, color=all_b.EVAPORATION_BG)
+        self.set_bg(lb.MEAD_ELEVATION, to=ub.POWELL_ELEVATION, color=all_b.USBR_RISE_ELEVATION_BG)
 
         self.format_header()

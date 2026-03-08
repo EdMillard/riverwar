@@ -36,7 +36,7 @@ LOWER_CU = 'LOWER CU'
 
 class III_C(Sheet):
     def __init__(self):
-        headers = [IIIC, EQUALS, lb.BORDER_NATURAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, lb.MX_TREATY,
+        headers = [IIIC, EQUALS, lb.NATURAL_IMPERIAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, lb.MX_TREATY,
                               lb.HOOVER_RELEASE, ub.GLEN_CANYON_RELEASE]
         super().__init__(headers)
 
@@ -47,15 +47,15 @@ class III_C(Sheet):
 
         sheet.natural_flow_from_excel(self.df)
 
-        self.df.loc[57:, lb.BORDER_NATURAL] = df_compact[ub.LEES_FERRY_NATURAL].values[57:]
+        self.df.loc[57:, lb.NATURAL_IMPERIAL] = df_compact[ub.NATURAL_LEES_FERRY].values[57:]
         self.df[MINUS] = [f"- (" for _ in range(2, df_len)]
         self.df[LOWER_CU] = [f"='{all_b.COMPACT}'!G{row} + '{all_b.COMPACT}'!I{row}" for row in range(2, df_len)]
         self.df[LOWER_CU] = self.df[LOWER_CU].astype(str)
         self.df[PLUS] = [f"+" for _ in range(2, df_len)]
-        self.df[UPPER_CU] = [f"={all_b.COMPACT}!V{row}" for row in range(2, df_len)]
+        self.df[UPPER_CU] = [f"='{all_b.COMPACT}'!V{row}" for row in range(2, df_len)]
         self.df[UPPER_CU] = self.df[UPPER_CU].astype(str)
 
-        self.df[lb.MX_TREATY] = [f"={all_b.COMPACT}'!H{row}" for row in range(2, df_len)]
+        self.df[lb.MX_TREATY] = [f"='{all_b.COMPACT}'!H{row}" for row in range(2, df_len)]
 
         df_hoover = sheet.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df_hoover, lb.HOOVER_RELEASE)
@@ -68,18 +68,18 @@ class III_C(Sheet):
     def build_sheet(self)-> None:
         self.set_column_negative_red(IIIC)
 
-        self.set_column_width(EQUALS, 2)
+        self.set_column_width(EQUALS, 1)
         self.set_column_alignment(EQUALS, horizontal='center')
-        self.set_column_width(MINUS, 2)
+        self.set_column_width(MINUS, 1)
         self.set_column_alignment(MINUS, horizontal='center')
-        self.set_column_width(PLUS, 2)
+        self.set_column_width(PLUS, 1)
         self.set_column_alignment(PLUS, horizontal='center')
-        self.set_column_width(CLOSE, 2)
+        self.set_column_width(CLOSE, 1)
         self.set_column_alignment(CLOSE, horizontal='center')
 
-        self.set_bg(lb.MX_TREATY, lb.HOOVER_RELEASE, color=lb.LOWER_BASIN_AR_FLOW)
-        self.set_bg(lb.BORDER_NATURAL, color=all_b.LIGHT_GREEN_BG)
-        self.set_bg(UPPER_CU, color=all_b.LIGHT_RED_BG)
-        self.set_bg(UPPER_CU, color=all_b.LIGHT_ORANGE_BG)
+        self.set_bg(lb.MX_TREATY, ub.GLEN_CANYON_RELEASE, color=all_b.USBR_AR_FLOW)
+        self.set_bg(lb.NATURAL_IMPERIAL, color=all_b.USBR_NATURAL_BG)
+        self.set_bg(LOWER_CU, color=all_b.USBR_AR_CU_BG)
+        self.set_bg(UPPER_CU, color=all_b.USBR_UB_CUL_BG)
 
         self.format_header()

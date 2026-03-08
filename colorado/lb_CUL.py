@@ -34,7 +34,8 @@ class LB_CUL(Sheet):
         super().__init__(headers)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
-        sheet.lower_basin_cu_from_excel(self.df)
+        # sheet.lower_basin_cu_from_excel(self.df)
+        pass
 
     def build_sheet(self) -> None:
         ws = self.ws

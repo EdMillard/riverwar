@@ -254,7 +254,7 @@ def lf_natural_flow_from_excel(df: pd.DataFrame):
 
         if column_index == 2: # Lees Ferry
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[0: 0 + len(values) - 1, ub.LEES_FERRY_NATURAL] = values
+            df.loc[0: 0 + len(values) - 1, ub.NATURAL_LEES_FERRY] = values
 
 def natural_flow_from_excel(df:pd.DataFrame):
     wb = openpyxl.load_workbook('data/Colorado_River/NaturalFlows1906-2020_20221215.xlsx', data_only=True)
@@ -276,8 +276,7 @@ def natural_flow_from_excel(df:pd.DataFrame):
 
         if gage == '09429490': # Imperial
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[0: 0 + len(values) - 1, lb.BORDER_NATURAL] = values
-
+            df.loc[0: 0 + len(values) - 1, lb.NATURAL_IMPERIAL] = values
 
 def worksheet_to_dict_of_dicts(
         ws: Worksheet,
@@ -385,56 +384,79 @@ def creat_month_year_df(years: List[int]) -> pd.DataFrame:
         'Total': 0
     })
 
+states = {
+    '04': 'az',
+    '06': 'ca',
+    '32': 'nv',
+    '35': 'nm',
+    '49': 'ut',
+}
+
+def get_node(node_code: str, area_reference: Dict[str, Dict], calc_type:str, years: List[int], nodes: Dict) -> pd.DataFrame:
+    parts = node_code.split('_')
+    if len(parts) != 3:
+        print(f'Invalid node code: {node_code}')
+        return pd.DataFrame()
+    state_code = parts[0]
+    # down_stream_node = parts[1]
+    node: str = parts[2]
+    area = area_reference.get(node, None)
+    if area:
+        area_name:str | None = area.get('REPORTING_AREA', None)
+        if area_name:
+            state = states.get(state_code, None)
+            node_name = f"{state}_{area_name.lower()}_{calc_type}"
+            df: Union[pd.DataFrame, None] = nodes.get(node_name, None)
+            if df is None:
+                df = creat_month_year_df(years)
+                nodes[node_name] = df
+        else:
+            print('Reporting area not found')
+            return pd.DataFrame()
+    else:
+        print(f'node code not found: {area}')
+        return pd.DataFrame()
+
+    return df
+
 def lower_basin_cu_from_excel(df:pd.DataFrame):
 
-    wb = openpyxl.load_workbook('data/Colorado_River/1971-2024 Lower Colorado River System CUL Data.xlsx', data_only=True)
+    wb: Workbook = openpyxl.load_workbook('data/Colorado_River/1971-2024 Lower Colorado River System CUL Data.xlsx', data_only=True)
+    area_reference = worksheet_to_dict_of_dicts(wb['Area_Reference'], 1, 2, 'HU8_CODE')
+    ws: Worksheet = wb['Tributary']
 
-    ws = wb['Area_Reference']
-    area_reference = worksheet_to_dict_of_dicts(ws, 1, 2, 'HU8_CODE')
+    header_row: int = 1
+    years: List[int] = list(range(1971, 2024))
 
-    ws = wb['Tributary']
-
-    header_row = 1
-    years = list(range(1971, 2024))
-
-    out_path = Path('data/USBR_Lower_Colorado_CUL')
+    out_path: Path = Path('data/USBR_Lower_Colorado_CUL')
     ensure_directory(out_path)
 
-    headers = []
+    headers: List[str] = []
     for column_index in range(ws.min_column, 20):
-        header = ws.cell(row=header_row, column=column_index).value
+        header: str = ws.cell(row=header_row, column=column_index).value
         headers.append(header)
 
-    states: dict[str, list[dict]] = {}
     nodes: dict[str, pd.DataFrame] = {}
     df:  Union[pd.DataFrame, None] = None
-    year = 0
+    year: int = 0
+    calc_type: str | None = None
+    node_code: str | None = None
     for row in ws.iter_rows(min_row=2):
         column_index = 0
         for cell in row:
             if column_index < len(headers):
                 header = headers[column_index]
                 if header == 'STATE_CODE':
-                    state: list[dict] | None = states.get(cell.value, None)
-                    if state is None:
-                        state = []
-                        states[cell.value] = state
+                    pass
                 elif header == 'NODE_CODE':
-                    parts = cell.value.split('_')
-                    if len(parts) != 3:
-                        continue
-                    state_node = parts[0]
-                    down_stream_node = parts[1]
-                    node: str = parts[2]
-                    df: Union[pd.DataFrame, None] = nodes.get(node, None)
-                    if df is None:
-                        nodes[node] = creat_month_year_df(years)
+                    node_code = cell.value
                 elif header == 'SOURCE':
                     pass
                 elif header == 'CALC_TYPE':
-                    pass
+                    calc_type = cell.value.lower()
                 elif header == 'Year':
                     year = cell.value
+                    df = get_node(node_code, area_reference, calc_type, years, nodes)
                 elif header == 'Total':
                     df.loc[df['Year'] == year, header] += int(cell.value)
                 elif header is None:
@@ -449,11 +471,11 @@ def lower_basin_cu_from_excel(df:pd.DataFrame):
                 pass
             column_index += 1
 
-        for key, df in nodes.items():
-            out_csv_path = out_path / f'{key}.csv'
-            df.to_csv(out_csv_path, index=False,
-                      quoting=csv.QUOTE_NONE,  # ← most important for no quotes
-                      escapechar='\\')
+    for key, df in nodes.items():
+        out_csv_path = out_path / f'{key}.csv'
+        df.to_csv(out_csv_path, index=False,
+                  quoting=csv.QUOTE_NONE,  # ← most important for no quotes
+                  escapechar='\\')
 
 def upper_basin_cu_from_excel(df:pd.DataFrame):
     wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
