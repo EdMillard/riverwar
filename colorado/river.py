@@ -28,18 +28,25 @@ from report.doc import Report
 from sheet import sheet
 from colorado.iii_c import III_C
 from colorado.imperial import Imperial
+from colorado.reservoirs import Reservoirs
 from colorado.compact import Compact
+from colorado.lb_CUL import LB_CUL
 
 
 def run():
     iii_c = III_C()
     imperial = Imperial()
+    reservoirs = Reservoirs()
     compact = Compact()
+    lb_CUL = LB_CUL()
 
     file_path = Path('excel/Colorado_River_Math.xlsx')
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+        lb_CUL.export(writer, lb.IMPERIAL, compact.df)
+
         compact.export(writer, all_b.COMPACT, compact.df)
         iii_c.export(writer, all_b.III_C, compact.df)
+        reservoirs.export(writer, all_b.RESERVOIRS, compact.df)
         imperial.export(writer, lb.IMPERIAL, compact.df)
 
         wb: Workbook = writer.book

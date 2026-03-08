@@ -34,10 +34,11 @@ from typing import Optional
 from graph.water import WaterGraph
 from source import usbr_rise
 import numpy as np
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Dict, Union
 import colorado.lb as lb
 import colorado.ub as ub
 from abc import ABC, abstractmethod
+import csv
 
 cn = lambda ws, name: get_column_number(ws, name)
 cl = lambda ws, name: get_column_letter_insensitive(ws, name)
@@ -277,6 +278,183 @@ def natural_flow_from_excel(df:pd.DataFrame):
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
             df.loc[0: 0 + len(values) - 1, lb.BORDER_NATURAL] = values
 
+
+def worksheet_to_dict_of_dicts(
+        ws: Worksheet,
+        header_row: int,
+        data_start_row: int,
+        key_name: str
+) -> Dict[Any, Dict[str, Any]]:
+    """
+    Convert an openpyxl worksheet into a dictionary of dictionaries.
+
+    The outer dict uses values from the column named `key_name` (in header_row)
+    as keys. Each inner dict contains all other columns using header names as keys.
+
+    Skips rows where the key cell is empty/None.
+
+    Args:
+        ws: openpyxl Worksheet object
+        header_row: Row number (1-based) containing column headers
+        data_start_row: First row of actual data (1-based)
+        key_name: Exact header name to use as the primary key
+
+    Returns:
+        Dict where keys are values from the key column, values are dicts of {header: cell_value}
+
+    Example:
+        {
+            "Arizona": {"Year": 2024, "Jan": 1200.5, "Feb": 1150.0, ...},
+            "California": {"Year": 2024, "Jan": 4500.0, ...},
+            ...
+        }
+    """
+    if not isinstance(ws, Worksheet):
+        raise TypeError("ws must be an openpyxl Worksheet object")
+
+    # Get header row values (1-based row)
+    headers = []
+    header_cells = ws[header_row]
+    for cell in header_cells:
+        if cell.value is None:
+            headers.append(f"Column{cell.column_letter}")  # fallback for empty headers
+        else:
+            # Convert to string and strip (clean common issues)
+            headers.append(str(cell.value).strip())
+
+    # Find the index (0-based) of our key column
+    try:
+        key_index = headers.index(key_name)
+    except ValueError:
+        raise ValueError(
+            f"Key name '{key_name}' not found in headers on row {header_row}. "
+            f"Available headers: {headers}"
+        )
+
+    result = {}
+
+    # Process data rows
+    for row_idx in range(data_start_row, ws.max_row + 1):
+        row_cells = ws[row_idx]
+        if not row_cells:  # empty row
+            continue
+
+        # Get the key value
+        key_cell = row_cells[key_index]
+        key_value = key_cell.value
+
+        # Skip rows where key is empty/None
+        if key_value is None or (isinstance(key_value, str) and not key_value.strip()):
+            continue
+
+        # Make inner dict for this row
+        row_dict = {}
+        for col_idx, header in enumerate(headers):
+            if header == key_name:
+                continue  # skip the key itself in the inner dict (optional – remove if you want it included)
+            cell = row_cells[col_idx]
+            row_dict[header] = cell.value
+
+        # Store using the key
+        # If duplicate keys exist, last one wins (you can change to raise error or collect list)
+        result[key_value] = row_dict
+
+    return result
+
+def ensure_directory(path: str | Path) -> Path:
+    """Create directory (and parents) if it doesn't exist"""
+    directory = Path(path)
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
+
+def creat_month_year_df(years: List[int]) -> pd.DataFrame:
+    return pd.DataFrame({
+        'Year': years,
+        'January': 0,
+        'February': 0,
+        'March': 0,
+        'April': 0,
+        'May': 0,
+        'June': 0,
+        'July': 0,
+        'August': 0,
+        'September': 0,
+        'October': 0,
+        'November': 0,
+        'December': 0,
+        'Total': 0
+    })
+
+def lower_basin_cu_from_excel(df:pd.DataFrame):
+
+    wb = openpyxl.load_workbook('data/Colorado_River/1971-2024 Lower Colorado River System CUL Data.xlsx', data_only=True)
+
+    ws = wb['Area_Reference']
+    area_reference = worksheet_to_dict_of_dicts(ws, 1, 2, 'HU8_CODE')
+
+    ws = wb['Tributary']
+
+    header_row = 1
+    years = list(range(1971, 2024))
+
+    out_path = Path('data/USBR_Lower_Colorado_CUL')
+    ensure_directory(out_path)
+
+    headers = []
+    for column_index in range(ws.min_column, 20):
+        header = ws.cell(row=header_row, column=column_index).value
+        headers.append(header)
+
+    states: dict[str, list[dict]] = {}
+    nodes: dict[str, pd.DataFrame] = {}
+    df:  Union[pd.DataFrame, None] = None
+    year = 0
+    for row in ws.iter_rows(min_row=2):
+        column_index = 0
+        for cell in row:
+            if column_index < len(headers):
+                header = headers[column_index]
+                if header == 'STATE_CODE':
+                    state: list[dict] | None = states.get(cell.value, None)
+                    if state is None:
+                        state = []
+                        states[cell.value] = state
+                elif header == 'NODE_CODE':
+                    parts = cell.value.split('_')
+                    if len(parts) != 3:
+                        continue
+                    state_node = parts[0]
+                    down_stream_node = parts[1]
+                    node: str = parts[2]
+                    df: Union[pd.DataFrame, None] = nodes.get(node, None)
+                    if df is None:
+                        nodes[node] = creat_month_year_df(years)
+                elif header == 'SOURCE':
+                    pass
+                elif header == 'CALC_TYPE':
+                    pass
+                elif header == 'Year':
+                    year = cell.value
+                elif header == 'Total':
+                    df.loc[df['Year'] == year, header] += int(cell.value)
+                elif header is None:
+                    pass
+                else:
+                    month = header
+                    try:
+                        df.loc[df['Year'] == year, month] += int(cell.value)
+                    except KeyError:
+                        print(header)
+            else:
+                pass
+            column_index += 1
+
+        for key, df in nodes.items():
+            out_csv_path = out_path / f'{key}.csv'
+            df.to_csv(out_csv_path, index=False,
+                      quoting=csv.QUOTE_NONE,  # ← most important for no quotes
+                      escapechar='\\')
+
 def upper_basin_cu_from_excel(df:pd.DataFrame):
     wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
     ws = wb['CY Pivot']
@@ -404,7 +582,13 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
         year = df['Year'][0]
         if np.isnan(year):
             df['Year'] = years
-        df[title] = values
+        print(len(df[title]), len(values))
+        if len(df[title]) == len(values):
+            df[title] = values
+        else:
+            print(f'usbr_last_value {title} {len(df[title])} {len(values)}')
+            insert_values_from_year(df, title, start_year, values)
+
 
     return values
 

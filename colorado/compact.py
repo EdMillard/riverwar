@@ -29,7 +29,7 @@ import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
 from sheet.sheet import Sheet
-
+from sheet.sheet import cl, cn
 
 class Compact(Sheet):
     def __init__(self):
@@ -92,23 +92,25 @@ class Compact(Sheet):
 
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
-        dest_col_h_m = sheet.get_column_number(ws, lb.H_M)
-        dest_col_diff = sheet.get_column_number(ws, lb.DIFF_7_5)
 
+        dest_col_h_m = cn(ws, lb.H_M)
+        dest_col_diff = cn(ws, lb.DIFF_7_5)
         for row in range(2, len(self.df) + 2):   # adjust range
             formula = f"=J{row} - H{row}"
             ws.cell(row=row, column=dest_col_h_m).value = formula
             formula = f"=K{row}-7.5"
             ws.cell(row=row, column=dest_col_diff).value = formula
 
-        sheet.color_column(ws, 8, 2, ws.max_row, bg_color=lb.LOWER_BASIN_AR_FLOW)
-        sheet.color_column(ws, 10, 2, ws.max_row, bg_color=lb.LOWER_BASIN_AR_FLOW)
-        sheet.set_column_negative_red(ws, 12, 2, ws.max_row)
+        self.set_bg(lb.MEXICO, color=lb.LOWER_BASIN_AR_FLOW)
+        self.set_bg(lb.HOOVER_RELEASE, color=lb.LOWER_BASIN_AR_FLOW)
+        self.set_column_negative_red(lb.DIFF_7_5)
 
         sheet.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
         sheet.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
         sheet.add_borders_to_column(ws, 7, 1, ws.max_row, which='vertical')
 
+        self.set_bg(lb.BORDER_NATURAL, ub.LEES_FERRY_NATURAL, color=all_b.LIGHT_GREEN_BG)
+        self.set_bg(lb.CU_NV, lb.III_A_LB, color=all_b.LIGHT_RED_BG)
         for col in range(2, 4):
             sheet.color_column(ws, col, 2, ws.max_row, bg_color=all_b.LIGHT_GREEN_BG)
         for col in range(4, 8):

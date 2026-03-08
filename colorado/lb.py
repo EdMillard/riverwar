@@ -35,11 +35,16 @@ H_M = 'Hv-Mx'
 DIFF_7_5 = 'Diff 7.5'
 MX_TREATY = 'MX TREATY'
 
-MEAD_EVAPORATION = 'Mead Evaporation'
 DIAMOND_CREEK = 'Diamond Creek'
 GC_INFLOW = "GC Inflow"
+
+HAVASU = 'Havasu'
+HAVASU_ELEVATION = 'Havasu Elevation'
+HAVASU_EVAPORATION = 'Havasu Evaporation'
+
 MEAD = 'Mead'
 MEAD_ELEVATION = 'Mead Elevation'
+MEAD_EVAPORATION = 'Mead Evaporation'
 
 GILA_NATURAL = "Natural Gila"
 GILA_CU = "Gila Consumptive Use"

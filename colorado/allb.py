@@ -28,3 +28,4 @@ LIGHT_ORANGE_BG = 'ffb66c'
 
 COMPACT = 'Compact'
 III_C = 'III(c)'
+RESERVOIRS = 'Reservoirs'

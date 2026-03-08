@@ -19,23 +19,27 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-LEES_FERRY_NATURAL = 'Natural Lees Ferry'
+import colorado.lb as lb
+import colorado.ub as ub
+import colorado.allb as all_b
+import pandas as pd
+from sheet.sheet import Sheet
+from sheet.sheet import cl, cn
+from sheet import sheet
 
-GLEN_CANYON_RELEASE = 'Glen Canyon Release'
-POWELL = 'Powell'
-POWELL_EVAPORATION = 'Powell Evaporation'
-POWELL_ELEVATION = 'Powell Elevation'
-GLEN_CANYON = 'Glen Canyon'
-LEES_FERRY_USGS = 'Lees Ferry USGS'
-INFLOW = 'Inflow'
-INFLOW_UNREGULATED = 'Inflow Unregulated'
 
-FLAMING_GORGE = 'Flaming Gorge'
-BLUE_MESA = 'Blue Mesa'
+class LB_CUL(Sheet):
+    def __init__(self):
+        headers = [lb.MEAD]
+        super().__init__(headers)
 
-III_A_UB = 'III(a) Upper'
-CU_CO = 'CO'
-CU_UT = 'UT'
-CU_WY = 'WY'
-CU_NM = 'NM'
-CU_AZ = 'AZ_'
+    def load_df(self, df_compact : pd.DataFrame) -> None:
+        sheet.lower_basin_cu_from_excel(self.df)
+
+    def build_sheet(self) -> None:
+        ws = self.ws
+
+        # self.set_bg(lb.SALTON_INFLOW, to=lb.WHITEWATER, color=all_b.LIGHT_YELLOW_BG)
+        # self.set_bg(lb.IMPERIAL_TOTAL_CU, to=lb.COACHELLA_CU, color=all_b.LIGHT_RED_BG)
+
+        self.format_header()
