@@ -122,8 +122,8 @@ class Compact(Sheet):
         self.set_bg(ub.POWELL, color=all_b.LIGHT_BLUE_BG)
         self.set_bg(ub.POWELL_EVAPORATION, color=all_b.EVAPORATION_BG)
 
-        sheet.add_borders_to_column(ws, lower_basin_end_col, 1, ws.max_row, which='right', border_style='medium')
-        sheet.add_borders_to_column(ws, 22, 1, ws.max_row, which='vertical')
+        # sheet.add_borders_to_column(ws, lower_basin_end_col, 1, ws.max_row, which='right', border_style='medium')
+        # sheet.add_borders_to_column(ws, 22, 1, ws.max_row, which='vertical')
 
         self.set_bg(lb.MEAD_EVAPORATION, color=all_b.EVAPORATION_BG)
 

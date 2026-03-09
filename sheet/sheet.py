@@ -38,22 +38,21 @@ from typing import List, Tuple, Any, Dict, Union
 import colorado.lb as lb
 import colorado.ub as ub
 from abc import ABC, abstractmethod
-import csv
 
 cn = lambda ws, name: get_column_number(ws, name)
 cl = lambda ws, name: get_column_letter_insensitive(ws, name)
 
 class Sheet(ABC):
-    def __init__(self, headers: List[str]):
-        self.start_year: int = 1964
-        self.end_year: int = 2026
+    def __init__(self, headers: List[str], start_year:int=1964, end_year:int=2026):
+        self.start_year: int = start_year
+        self.end_year: int = end_year
         self.headers: List[str] = headers
         self.df: pd.DataFrame = create_df(self.start_year, self.end_year, headers)
         self.ws: Optional[Worksheet] = None
 
-    def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame) -> Worksheet:
+    def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame, number_format:str='0.00') -> Worksheet:
         self.load_df(df_main)
-        self.ws, self.df = export_to_excel(self.df, writer, sheet_name)
+        self.ws, self.df = export_to_excel(self.df, writer, sheet_name, number_format=number_format)
         self.build_sheet()
         return self.ws
 
@@ -76,8 +75,16 @@ class Sheet(ABC):
         else:
             print(f'set_bg name not in sheet: {name}')
 
-    def set_column_width(self, name:str, width:int) -> None:
-        self.ws.column_dimensions[cl(self.ws, name)].width = width
+    def set_column_width(self, name:str, width:int, to:str=None) -> None:
+        name_col_num = cn(self.ws, name)
+        if name_col_num:
+            if to is None:
+                self.ws.column_dimensions[cl(self.ws, name)].width = width
+            else:
+                for col in range(name_col_num, cn(self.ws, to)+1):
+                    letter = get_column_letter(col)
+                    self.ws.column_dimensions[letter].width = width
+                    # color_column(self.ws, col, 2, self.ws.max_row, bg_color=color)
 
     def set_column_alignment(self, name:str, horizontal:str) -> None:
         set_column_alignment(self.ws, cn(self.ws, name), 2, len(self.df) + 2, horizontal=horizontal)
@@ -102,6 +109,8 @@ class Sheet(ABC):
         # Colorado.add_borders_to_column(ws, start_col, start_row, end_row-1, end_col=end_col-1, which='none')
         add_borders_to_column(self.ws, start_col, start_row, end_row - 1, end_col=end_col - 1, which='outer')
 
+        self.set_column_width('Year', 4)
+
 
 def read_csv(filename, sep='\s+', comment_char='#'):
     cleaned_lines = []
@@ -123,7 +132,7 @@ def read_csv(filename, sep='\s+', comment_char='#'):
 
     return df
 
-def export_to_excel(df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str):
+def export_to_excel(df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str, number_format:str='0.00'):
     df_data = pd.DataFrame(df)
 
     # df_data = MainFrame.insert_units_row(df_data, units)
@@ -137,7 +146,7 @@ def export_to_excel(df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str):
     #    cell = ws.cell(row=row, column=1)
     #   cell.number_format = 'yyyy'
 
-    format_sheet(ws)
+    format_sheet(ws, number_format=number_format)
 
     return ws, df_data
 
@@ -161,7 +170,8 @@ def read_year_value_pairs(
         year_col: int,
         value_col: int,
         start_row: int,
-        end_row: int
+        end_row: int,
+        divisor=1_000_000
 ) -> Tuple[List[Any], List[Any]]:
     """
     Reads year and value pairs from an openpyxl worksheet.
@@ -224,8 +234,8 @@ def read_year_value_pairs(
 
         # Only append if we have a year (skip completely empty rows)
         if year is not None:
-            pairs.append((year, value / 1000000))
-            values.append(value / 1000000)
+            pairs.append((year, value / divisor))
+            values.append(value / divisor)
 
     return pairs, values
 
@@ -366,7 +376,7 @@ def ensure_directory(path: str | Path) -> Path:
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
-def creat_month_year_df(years: List[int]) -> pd.DataFrame:
+def create_month_year_df(years: List[int]) -> pd.DataFrame:
     return pd.DataFrame({
         'Year': years,
         'January': 0,
@@ -383,99 +393,6 @@ def creat_month_year_df(years: List[int]) -> pd.DataFrame:
         'December': 0,
         'Total': 0
     })
-
-states = {
-    '04': 'az',
-    '06': 'ca',
-    '32': 'nv',
-    '35': 'nm',
-    '49': 'ut',
-}
-
-def get_node(node_code: str, area_reference: Dict[str, Dict], calc_type:str, years: List[int], nodes: Dict) -> pd.DataFrame:
-    parts = node_code.split('_')
-    if len(parts) != 3:
-        print(f'Invalid node code: {node_code}')
-        return pd.DataFrame()
-    state_code = parts[0]
-    # down_stream_node = parts[1]
-    node: str = parts[2]
-    area = area_reference.get(node, None)
-    if area:
-        area_name:str | None = area.get('REPORTING_AREA', None)
-        if area_name:
-            state = states.get(state_code, None)
-            node_name = f"{state}_{area_name.lower()}_{calc_type}"
-            df: Union[pd.DataFrame, None] = nodes.get(node_name, None)
-            if df is None:
-                df = creat_month_year_df(years)
-                nodes[node_name] = df
-        else:
-            print('Reporting area not found')
-            return pd.DataFrame()
-    else:
-        print(f'node code not found: {area}')
-        return pd.DataFrame()
-
-    return df
-
-def lower_basin_cu_from_excel(df:pd.DataFrame):
-
-    wb: Workbook = openpyxl.load_workbook('data/Colorado_River/1971-2024 Lower Colorado River System CUL Data.xlsx', data_only=True)
-    area_reference = worksheet_to_dict_of_dicts(wb['Area_Reference'], 1, 2, 'HU8_CODE')
-    ws: Worksheet = wb['Tributary']
-
-    header_row: int = 1
-    years: List[int] = list(range(1971, 2024))
-
-    out_path: Path = Path('data/USBR_Lower_Colorado_CUL')
-    ensure_directory(out_path)
-
-    headers: List[str] = []
-    for column_index in range(ws.min_column, 20):
-        header: str = ws.cell(row=header_row, column=column_index).value
-        headers.append(header)
-
-    nodes: dict[str, pd.DataFrame] = {}
-    df:  Union[pd.DataFrame, None] = None
-    year: int = 0
-    calc_type: str | None = None
-    node_code: str | None = None
-    for row in ws.iter_rows(min_row=2):
-        column_index = 0
-        for cell in row:
-            if column_index < len(headers):
-                header = headers[column_index]
-                if header == 'STATE_CODE':
-                    pass
-                elif header == 'NODE_CODE':
-                    node_code = cell.value
-                elif header == 'SOURCE':
-                    pass
-                elif header == 'CALC_TYPE':
-                    calc_type = cell.value.lower()
-                elif header == 'Year':
-                    year = cell.value
-                    df = get_node(node_code, area_reference, calc_type, years, nodes)
-                elif header == 'Total':
-                    df.loc[df['Year'] == year, header] += int(cell.value)
-                elif header is None:
-                    pass
-                else:
-                    month = header
-                    try:
-                        df.loc[df['Year'] == year, month] += int(cell.value)
-                    except KeyError:
-                        print(header)
-            else:
-                pass
-            column_index += 1
-
-    for key, df in nodes.items():
-        out_csv_path = out_path / f'{key}.csv'
-        df.to_csv(out_csv_path, index=False,
-                  quoting=csv.QUOTE_NONE,  # ← most important for no quotes
-                  escapechar='\\')
 
 def upper_basin_cu_from_excel(df:pd.DataFrame):
     wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
@@ -512,7 +429,8 @@ def upper_basin_cu_from_excel(df:pd.DataFrame):
             df.loc[7: 7 + len(values) - 1, ub.CU_AZ] = values
 
 
-def usgs_annuals(df, gage_id, start_year, end_year, title='', parameterCd='00060', statCd='00003', month=10, offset=0):
+def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='00060', stat_cd='00003',
+                 month=10, offset=0, divisor=1_000_000):
     annuals = []
     values = []
     if month != 1:
@@ -521,13 +439,13 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameterCd='00060
         ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         gage = USGSGage(gage_id)
-        daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameterCd,
-                                        statCd=statCd)
+        daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
+                                        statCd=stat_cd)
         annual_af = daily_to_water_year(daily_af)
         result = (annual_af[0]['dt'], annual_af[0]['val'])
         annuals.append(result)
         if len(annual_af) == 1:
-            values.append(annual_af[0][1] / 1000000)
+            values.append(annual_af[0][1] / divisor)
             annuals.append(annual_af[0])
         else:
             print('Multiple years returned')
@@ -535,7 +453,7 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameterCd='00060
     # if title:
     #    print(title)
     #    for annual in annuals:
-    #        print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+    #        print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
 
     if title:
         if len(values) != len(df[title]):
@@ -574,7 +492,7 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
     return values
 
 
-def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1000000):
+def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1_000_000):
     years = []
     annuals = []
     values = []
@@ -614,7 +532,7 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
 
     return values
 
-def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10):
+def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1_000_000):
     annuals = []
     values = []
     start_year = start_year
@@ -632,23 +550,22 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
         # total = daily_release_ft['val'].sum()
         annual_af = WaterGraph.daily_to_water_year(daily_af, water_year_month=month)
         if len(annual_af) == 1:
-            values.append(annual_af[0][1] / 1000000)
+            values.append(annual_af[0][1] / divisor)
             annuals.append(annual_af[0])
         else:
             print('Multiple years returned')
 
-
     # if title:
     #    print(title)
     #    for annual in annuals:
-    #        print(f'{annual[0]} {annual[1] / 1000000:10.2f} ')
+    #        print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
 
     if title:
         df[title] = values
 
     return values
 
-def format_sheet(ws):
+def format_sheet(ws, number_format:str='0.00'):
     # Set font for everything
     red_font = Font(name='Arial Narrow', size=10, color="700000")
     green_font = Font(name='Arial Narrow', size=10, color="007000")
@@ -662,7 +579,7 @@ def format_sheet(ws):
     # Set default float format for all columns except date
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=ws.max_column):
         for cell in row:
-            cell.number_format = '0.00'
+            cell.number_format = number_format
 
 def insert_units_row(df, variable_name_to_units):
     variable_names = df.columns.tolist()
@@ -729,8 +646,9 @@ def color_column(
         cell.font = font
 
 def merge_annual_column(df:pd.DataFrame, annual_df:pd.DataFrame,
-                        column_name:str, inp_column_name='Total'):
-    annual_df[inp_column_name] = annual_df[inp_column_name] / 1_000_000
+                        column_name:str, inp_column_name='Total', divisor=1_000_000):
+    if divisor != 1:
+        annual_df[inp_column_name] = annual_df[inp_column_name] / divisor
     df1 = df.merge(
         annual_df[['Year', inp_column_name]],
         on='Year',

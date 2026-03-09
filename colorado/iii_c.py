@@ -68,13 +68,10 @@ class III_C(Sheet):
     def build_sheet(self)-> None:
         self.set_column_negative_red(IIIC)
 
-        self.set_column_width(EQUALS, 1)
+
         self.set_column_alignment(EQUALS, horizontal='center')
-        self.set_column_width(MINUS, 1)
         self.set_column_alignment(MINUS, horizontal='center')
-        self.set_column_width(PLUS, 1)
         self.set_column_alignment(PLUS, horizontal='center')
-        self.set_column_width(CLOSE, 1)
         self.set_column_alignment(CLOSE, horizontal='center')
 
         self.set_bg(lb.MX_TREATY, ub.GLEN_CANYON_RELEASE, color=all_b.USBR_AR_FLOW)
@@ -83,3 +80,10 @@ class III_C(Sheet):
         self.set_bg(UPPER_CU, color=all_b.USBR_UB_CUL_BG)
 
         self.format_header()
+
+        self.set_column_width(EQUALS, 2)
+        self.set_column_width(MINUS, 2)
+        self.set_column_width(PLUS, 2)
+        self.set_column_width(CLOSE, 2)
+
+
