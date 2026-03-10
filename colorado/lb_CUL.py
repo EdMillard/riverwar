@@ -29,7 +29,7 @@ from sheet import sheet
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl import Workbook
 from typing import List, Dict, Union
-from sheet.sheet import cl, cn
+from sheet.sheet import cl
 import csv
 
 class LB_CUL(Sheet):
@@ -70,7 +70,8 @@ class LB_CUL(Sheet):
             lb.UT_VIRGIN_IRRIGATION_CU, lb.UT_VIRGIN_M_AND_I_CU
         ]
         super().__init__(headers, start_year=1971, end_year=2024)
-        # lower_basin_cu_from_excel(self.path, start_year=self.start_year, end_year=self.end_year)
+        self.years: List[int] = list(range(self.start_year, self.end_year+1))
+        # lower_basin_cu_from_excel(self.path, years)
 
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
@@ -166,63 +167,163 @@ class LB_CUL(Sheet):
         df = sheet.read_csv(path / 'ut_virgin_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_M_AND_I_CU, divisor=divisor)
 
-
-
     @staticmethod
-    def set_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str, start_row=1) -> None:
+    def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str, start_row=1) -> None:
         col_idx = df.columns.get_loc(column_name) + 1  # 1-based
         for i in range(start_row, len(df)+1):
             excel_row = i + 1
             f = formula.replace("[row]", str(excel_row))
             ws.cell(row=excel_row, column=col_idx, value=f)
 
+    @staticmethod
+    def set_row_formula(
+            ws: Worksheet,
+            df: pd.DataFrame,
+            formula_template: str,
+            target_row: int,
+            start_col: str | int | None = None,
+            end_col: str | int | None = None,
+            start_data_row: int = 2,
+            header: str = ''
+    ) -> None:
+        """
+        Puts the same formula pattern across a range of columns in one specific row.
+
+        Parameters:
+        - ws: openpyxl Worksheet
+        - df: pandas DataFrame (used only to know column order/names)
+        - formula_template: str with placeholder e.g. '=AVERAGE({col_letter}{start_data_row}:{col_letter}[row-1])'
+        - target_row: the Excel row number where formulas should be written
+        - start_col / end_col: optional column limits (can be named, letter or 1-based index)
+        - start_data_row: usually 2 (first data row after header)
+
+        Example:
+            formula = '=AVERAGE(B{start}:B[row-1])'
+            set_row_formula(ws, df, formula, target_row=15, start_data_row=2)
+            → puts in row 15: =AVERAGE(B2:B14), =AVERAGE(C2:C14), etc.
+        """
+        from openpyxl.utils import get_column_letter, column_index_from_string
+
+        # Determine column range
+        all_cols = list(df.columns)
+        n_cols = len(all_cols)
+
+        # Resolve start_col and end_col to 0-based indices in df
+        if start_col is None:
+            start_idx = 0
+        elif isinstance(start_col, str):
+            if start_col in all_cols:
+                start_idx = all_cols.index(start_col)
+            else:
+                start_idx = column_index_from_string(start_col) - 1
+        else:
+            start_idx = int(start_col) - 1  # assume 1-based → 0-based
+
+        if end_col is None:
+            end_idx = n_cols - 1
+        elif isinstance(end_col, str):
+            if end_col in all_cols:
+                end_idx = all_cols.index(end_col)
+            else:
+                end_idx = column_index_from_string(end_col) - 1
+        else:
+            end_idx = int(end_col) - 1
+
+        start_idx = max(0, start_idx)
+        end_idx = min(n_cols - 1, end_idx)
+
+        for col_idx in range(start_idx, end_idx + 1):  # 0-based in df
+            col_letter = get_column_letter(col_idx + 1)  # 1-based for Excel
+            excel_col = col_idx + 1
+
+            # Replace placeholders
+            f = formula_template
+            f = f.replace("[row]", str(target_row))
+            f = f.replace("{col_letter}", col_letter)
+            f = f.replace("{col}", col_letter)
+            f = f.replace("[col]", col_letter)
+
+            # Common patterns for dynamic row ranges
+            f = f.replace("{start}", str(start_data_row))
+            f = f.replace("[start]", str(start_data_row))
+            f = f.replace("{start_row}", str(start_data_row))
+            f = f.replace("[start_row]", str(start_data_row))
+
+            # Optional: [row-1], [row+1], etc.
+            import re
+            def offset_replacer(m):
+                try:
+                    offset = int(m.group(1))
+                    return str(target_row + offset)
+                except:
+                    return m.group(0)
+
+            f = re.sub(r'\[row([+-]\d+)]', offset_replacer, f)
+
+            # Write formula to cell
+            ws.cell(row=target_row, column=excel_col, value=f)
+        ws.cell(row=target_row, column=start_col-1, value=header)
+
+
     def build_sheet(self) -> None:
         self.set_bg(lb.USGS_GILA_DOME, color=all_b.USGS_BG)
 
-        col1 = cl(self.ws, lb.AZ_GILA_CU)
-        col2 = cl(self.ws, lb.AZ_LITTLE_COLORADO_CU)
-        col3 = cl(self.ws, lb.AZ_VIRGIN_CU)
+        formula = '=AVERAGE({col_letter}2:{col_letter}[row-1])'
+        ws: Worksheet = self.ws
+        number_format = '#,##0;-#,##0'
+        target_row = len(self.years) + 2
+        last_row = len(self.years) + 1
+        LB_CUL.set_row_formula(ws, self.df, formula, target_row=target_row, start_data_row=2,
+                               start_col=2, end_col=ws.max_column, header='Avg')
+        sheet.set_number_format(ws, target_row, target_row+1, 2, ws.max_column, number_format=number_format)
+        sheet.set_font(ws, start_row=target_row, end_row=target_row+1, start_col=2, end_col=ws.max_column)
+        sheet.set_font(ws, start_row=target_row, end_row=target_row+1, start_col=1, end_col=1)
+
+        col1 = cl(ws, lb.AZ_GILA_CU)
+        col2 = cl(ws, lb.AZ_LITTLE_COLORADO_CU)
+        col3 = cl(ws, lb.AZ_VIRGIN_CU)
         formula = f'={col1}[row]+{col2}[row]+{col3}[row]'
-        LB_CUL.set_formula(self.ws, self.df, formula, lb.AZ_TRIBUTARY_CU)
+        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_TRIBUTARY_CU)
 
-        col1 = cl(self.ws, lb.NV_VIRGIN_CU)
-        col2 = cl(self.ws, lb.NV_MUDDY_CU)
-        col3 = cl(self.ws, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU)
+        col1 = cl(ws, lb.NV_VIRGIN_CU)
+        col2 = cl(ws, lb.NV_MUDDY_CU)
+        col3 = cl(ws, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU)
         formula = f'={col1}[row]+{col2}[row]+{col3}[row]'
-        LB_CUL.set_formula(self.ws, self.df, formula, lb.NV_TRIBUTARY_CU)
+        LB_CUL.set_col_formula(ws, self.df, formula, lb.NV_TRIBUTARY_CU)
 
-        col1 = cl(self.ws, lb.AZ_GILA_IRRIGATION_CU)
-        col2 = cl(self.ws, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU)
+        col1 = cl(ws, lb.AZ_GILA_IRRIGATION_CU)
+        col2 = cl(ws, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU)
         formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_formula(self.ws, self.df, formula, lb.AZ_GILA_CU)
-        self.set_bg(lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU, color=all_b.USBR_LB_CUL_BG)
+        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_GILA_CU)
+        self.set_bg(lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(self.ws, lb.AZ_LITTLE_COLORADO_IRRIGATION_CU)
-        col2 = cl(self.ws, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU)
+        col1 = cl(ws, lb.AZ_LITTLE_COLORADO_IRRIGATION_CU)
+        col2 = cl(ws, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU)
         formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_formula(self.ws, self.df, formula, lb.AZ_LITTLE_COLORADO_CU)
-        self.set_bg(lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU, color=all_b.USBR_LB_CUL_BG)
+        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_LITTLE_COLORADO_CU)
+        self.set_bg(lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU,
+                    color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(self.ws, lb.AZ_VIRGIN_IRRIGATION_CU)
-        col2 = cl(self.ws, lb.AZ_VIRGIN_M_AND_I_CU)
+        col1 = cl(ws, lb.AZ_VIRGIN_IRRIGATION_CU)
+        col2 = cl(ws, lb.AZ_VIRGIN_M_AND_I_CU)
         formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_formula(self.ws, self.df, formula, lb.AZ_VIRGIN_CU)
-        self.set_bg(lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG)
+        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_VIRGIN_CU)
+        self.set_bg(lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(self.ws, lb.NV_VIRGIN_IRRIGATION_CU)
-        col2 = cl(self.ws, lb.NV_VIRGIN_M_AND_I_CU)
+        col1 = cl(ws, lb.NV_VIRGIN_IRRIGATION_CU)
+        col2 = cl(ws, lb.NV_VIRGIN_M_AND_I_CU)
         formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_formula(self.ws, self.df, formula, lb.NV_VIRGIN_CU)
-        self.set_bg(lb.NV_VIRGIN_IRRIGATION_CU, lb.NV_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG)
+        LB_CUL.set_col_formula(ws, self.df, formula, lb.NV_VIRGIN_CU)
+        self.set_bg(lb.NV_VIRGIN_IRRIGATION_CU, lb.NV_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(self.ws, lb.NV_MUDDY_IRRIGATION_CU)
-        col2 = cl(self.ws, lb.NV_MUDDY_M_AND_I_CU)
+        col1 = cl(ws, lb.NV_MUDDY_IRRIGATION_CU)
+        col2 = cl(ws, lb.NV_MUDDY_M_AND_I_CU)
         formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_formula(self.ws, self.df, formula, lb.NV_MUDDY_CU)
-        self.set_bg(lb.NV_MUDDY_IRRIGATION_CU, lb.NV_MUDDY_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG)
+        LB_CUL.set_col_formula(ws, self.df, formula, lb.NV_MUDDY_CU)
+        self.set_bg(lb.NV_MUDDY_IRRIGATION_CU, lb.NV_MUDDY_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        self.set_bg(lb.NM_GILA_IRRIGATION_CU, lb.NM_GILA_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG)
-        self.set_bg(lb.UT_VIRGIN_IRRIGATION_CU, lb.UT_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.NM_GILA_IRRIGATION_CU, lb.NM_GILA_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.UT_VIRGIN_IRRIGATION_CU, lb.UT_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
         self.format_header()
 
@@ -264,13 +365,12 @@ def get_node(node_code: str, area_reference: Dict[str, Dict], calc_type:str, yea
 
     return df
 
-def lower_basin_cu_from_excel(out_path: Path, start_year:int=1971, end_year:int=2024):
+def lower_basin_cu_from_excel(out_path: Path, years):
     wb: Workbook = openpyxl.load_workbook('data/Colorado_River/1971-2024 Lower Colorado River System CUL Data.xlsx', data_only=True)
     area_reference = sheet.worksheet_to_dict_of_dicts(wb['Area_Reference'], 1, 2, 'HU8_CODE')
     ws: Worksheet = wb['Tributary']
 
     header_row: int = 1
-    years: List[int] = list(range(start_year, end_year+1))
 
     sheet.ensure_directory(out_path)
 

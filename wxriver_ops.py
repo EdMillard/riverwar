@@ -22,15 +22,45 @@ SOFTWARE.
 from pathlib import Path
 from openpyxl import Workbook
 import colorado.lb as lb
+import colorado.ub as ub
 import colorado.allb as all_b
-import pandas as pd
 from report.doc import Report
 from sheet import sheet
-from colorado.iii_c import III_C
-from colorado.imperial import Imperial
-from colorado.reservoirs import Reservoirs
-from colorado.compact import Compact
-from colorado.lb_CUL import LB_CUL
+from sheet.sheet import Sheet
+import pandas as pd
+from scipy.interpolate import interp1d
+import warnings
+
+class Colorado_River_Ops(Sheet):
+    def __init__(self):
+        headers = [lb.MEAD_ELEVATION, lb.MEAD, ub.POWELL_ELEVATION, ub.POWELL, ub.FLAMING_GORGE, ub.BLUE_MESA]
+        super().__init__(headers, start_year=2026, end_year=2026)
+
+
+    def load_df(self, df_compact : pd.DataFrame) -> None:
+        df_len = len(self.df) + 2
+        usbr_lake_mead_elevation_ft = 6123
+        sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.start_year, self.end_year, title=lb.MEAD_ELEVATION, divisor=1)
+
+        usbr_lake_mead_storage_af = 6124
+        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.start_year, self.end_year, title=lb.MEAD, month=10, divisor=1)
+
+        usbr_lake_powell_elevation_af = 508
+        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, self.start_year, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
+
+        usbr_lake_powell_storage_af = 509
+        sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.start_year, self.end_year, title=ub.POWELL, divisor=1)
+
+        usbr_flaming_gorge_storage_af = 3371
+        sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, self.start_year, self.end_year, title=ub.FLAMING_GORGE, divisor=1)
+
+        usbr_blue_mesa_storage_af = 76
+        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.start_year, self.end_year, title=ub.BLUE_MESA, divisor=1)
+
+    def build_sheet(self)-> None:
+        # self.set_bg(lb.MX_TREATY, ub.GLEN_CANYON_RELEASE, color=all_b.USBR_AR_FLOW)
+
+        self.format_header()
 
 
 def run():
@@ -43,35 +73,16 @@ def run():
     now = get_lake_powell_capacity(3530.19, elev_col='Elevation_ft_NAVD88', cap_col='Capacity_acrefeet') - deadpool
     print(f'3530.19:\t{now:8,.0f}\n3510.00:\t{a3510:8,.0f}\t{now-a3510:8,.0f}\n3500.00:\t{a3500:8,.0f}\t{now-a3500:8,.0f}\n3490.00:\t{a3490:8,.0f}\t{now-a3490:8,.0f}')
 
-    iii_c = III_C()
-    imperial = Imperial()
-    reservoirs = Reservoirs()
-    compact = Compact()
-    lb_CUL = LB_CUL()
-
-    file_path = Path('excel/Colorado_River_Math.xlsx')
+    river_ops = Colorado_River_Ops()
+    file_path = Path('excel/Colorado_River_Ops.xlsx')
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        lb_CUL.export(writer, lb.LB_CUL, compact.df, number_format='#,##0;-#,##0')
-        compact.export(writer, all_b.COMPACT, compact.df)
-        iii_c.export(writer, all_b.III_C, compact.df)
-        reservoirs.export(writer, all_b.RESERVOIRS, compact.df)
-        imperial.export(writer, lb.IMPERIAL, compact.df)
+        river_ops.export(writer, all_b.OPERATIONS, None, number_format='#,##0;-#,##0')
 
         wb: Workbook = writer.book
         wb.calcMode = "auto"  # ensure automatic calculation
 
-    notes_path = Path('excel/Colorado_River_Notes.xlsx')
-    sheet.copy_worksheet_to_new_workbook(
-        source_wb_path=notes_path,
-        sheet_name="Notes",
-        target_wb_path=file_path
-    )
     Report.open_docx_in_app(file_path)
 
-
-import pandas as pd
-from scipy.interpolate import interp1d
-import warnings
 
 def get_lake_powell_capacity(
     elevation_ft: float,
@@ -121,3 +132,7 @@ def get_lake_powell_capacity(
     capacity = interpolator(elevation_ft)
 
     return float(capacity)
+
+
+if __name__ == "__main__":
+    run()

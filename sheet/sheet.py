@@ -50,7 +50,7 @@ class Sheet(ABC):
         self.df: pd.DataFrame = create_df(self.start_year, self.end_year, headers)
         self.ws: Optional[Worksheet] = None
 
-    def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame, number_format:str='0.00') -> Worksheet:
+    def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame | None, number_format:str='0.00') -> Worksheet:
         self.load_df(df_main)
         self.ws, self.df = export_to_excel(self.df, writer, sheet_name, number_format=number_format)
         self.build_sheet()
@@ -64,14 +64,16 @@ class Sheet(ABC):
     def build_sheet(self) -> None:
         pass
 
-    def set_bg(self, name:str, to:str=None, color:str="ffffff") -> None:
+    def set_bg(self, name:str, to:str=None, color:str="ffffff", start_row=2, end_row=None) -> None:
         name_col_num = cn(self.ws, name)
+        if end_row is None:
+            end_row = self.ws.max_row
         if name_col_num:
             if to is None:
-                color_column(self.ws, name_col_num, 2, self.ws.max_row, bg_color=color)
+                color_column(self.ws, name_col_num, start_row, end_row, bg_color=color)
             else:
                 for col in range(name_col_num, cn(self.ws, to)+1):
-                    color_column(self.ws, col, 2, self.ws.max_row, bg_color=color)
+                    color_column(self.ws, col, start_row, end_row, bg_color=color)
         else:
             print(f'set_bg name not in sheet: {name}')
 
@@ -565,7 +567,7 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
 
     return values
 
-def format_sheet(ws, number_format:str='0.00'):
+def format_sheet(ws: Worksheet, number_format:str='0.00'):
     # Set font for everything
     red_font = Font(name='Arial Narrow', size=10, color="700000")
     green_font = Font(name='Arial Narrow', size=10, color="007000")
@@ -576,10 +578,57 @@ def format_sheet(ws, number_format:str='0.00'):
             cell.font = black_font
             # cell.fill = red_fill
 
-    # Set default float format for all columns except date
-    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=2, max_col=ws.max_column):
+    set_number_format(ws, 2, ws.max_row, 2, ws.max_column, number_format=number_format)
+
+def set_number_format(ws: Worksheet, start_row:int, end_row:int, start_col:int, end_col:int, number_format:str='0.00'):
+    for row in ws.iter_rows(min_row=start_row, max_row=end_row, min_col=start_col, max_col=end_col):
         for cell in row:
             cell.number_format = number_format
+
+
+def set_font(
+        ws: Worksheet,
+        start_row: int,
+        end_row: int,
+        start_col: int,
+        end_col: int,
+        font_name: str = 'Arial Narrow',
+        font_size: int = 10,
+        font_color: str = '000000',  # black by default (RRGGBB hex without #)
+        bg_color: str | None = None  # optional background fill (RRGGBB)
+):
+    """
+    Apply font (and optional background fill) to a rectangular range of cells.
+
+    Args:
+        ws: openpyxl Worksheet
+        start_row, end_row: 1-based row numbers (inclusive)
+        start_col, end_col: 1-based column numbers (inclusive)
+        font_name: e.g. 'Arial Narrow', 'Calibri'
+        font_size: point size
+        font_color: hex color string without # (e.g. 'FF0000' = red)
+        bg_color: optional hex background color (e.g. 'FFFFCC'), or None
+    """
+    # Create font object
+    font = Font(name=font_name, size=font_size, color=font_color)
+
+    # Create fill object only if bg_color is provided
+    fill = None
+    if bg_color:
+        fill = PatternFill(start_color=bg_color, end_color=bg_color, fill_type='solid')
+
+    # Iterate over the range using 1-based indices (openpyxl uses 1-based)
+    for row in ws.iter_rows(
+            min_row=start_row,
+            max_row=end_row,
+            min_col=start_col,
+            max_col=end_col,
+            values_only=False  # we need cell objects, not values
+    ):
+        for cell in row:
+            cell.font = font
+            if fill is not None:
+                cell.fill = fill
 
 def insert_units_row(df, variable_name_to_units):
     variable_names = df.columns.tolist()
@@ -597,7 +646,7 @@ def insert_units_row(df, variable_name_to_units):
 
 
 def color_column(
-        ws,
+        ws: Worksheet,
         column: str | int,  # e.g. "C" or 3
         start_row: int,
         end_row: int,
