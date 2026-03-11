@@ -156,12 +156,13 @@ class USGSGage(object):
             daily_discharge = new_data
 
         print_last_value(self.site, daily_discharge, alias=alias)
-        value_column = f'{parameterCd}_{statCd}'
-        summary = usgs_csv_summary(file_path, value_column=value_column)
+
+        # value_column = f'{parameterCd}_{statCd}'
+        # summary = usgs_csv_summary(file_path, value_column=value_column)
         #print(f"{file_path} {summary}")
-        value_cfs = summary['total_sum']
-        value_af = value_cfs * 1.983459
-        print(f"{file_path} {summary['first_date']}-{summary['last_date']} {value_af:10.2f} AF")
+        # value_cfs = summary['total_sum']
+        # value_af = value_cfs * 1.983459
+       #  print(f"\t{file_path} {summary['first_date']}-{summary['last_date']} {value_af:10.2f} AF")
 
         return daily_discharge
 

@@ -20,11 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import datetime
+from datetime import datetime
 import json
 import numpy as np
 import requests
 from pathlib import Path
 from source.water_year_info import WaterYearInfo
+from typing import Dict, Any, Union
 
 debug = True
 
@@ -338,10 +340,17 @@ def request_catalog_item(catalog_item_id_str, prefix=''):
 def load_json(file_path):
     f = file_path.open(mode='r')
     data = json.load(f)
-    info = {'Location': data['Location'],
-            'Parameter Name': data['Parameter Name:'],
-            'Timestep': data['Timestep'],
-            'Units': data['Units']}
+
+    info = {}
+    response = data.get('Response', None)
+    if response is None:
+        info['Location'] = data['Location']
+        info['Parameter Name'] = data.get('Parameter Name', None)
+        info['Timestep'] = data.get('Timestep', None)
+        info['Units'] = data.get('Units', None)
+    else:
+        print(f"{file_path} {response}")
+        file_path.unlink(missing_ok=True)
 
     try:
         pass
@@ -448,6 +457,81 @@ def catalog():
         else:
             print(record_title)
 
+
+def usbr_rise_json_summary(
+        file_path: Union[str, Path],
+        value_key: str = "result",  # usually "result" for the numeric value
+        datetime_key: str = "dateTime",  # usually "dateTime"
+) -> Dict[str, Any]:
+    """
+    Reads a USBR RISE-style JSON file and returns:
+      - first_date: earliest datetime
+      - last_date: most recent datetime
+      - total_sum: sum of the value_key column (e.g. evaporation in af)
+      - Additional metadata (name, units, record count, average)
+
+    Example:
+        result = usbr_rise_json_summary("lake_powell_evaporation.json")
+        print(result)
+    """
+    file_path = Path(file_path)
+    if not file_path.is_file():
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    # Extract top-level metadata
+    loc = data.get("Location", {})
+    name = loc.get("Name", "Unknown location")
+    units = data.get("Units", "unknown")
+    param = data.get("Parameter Name:", "unknown parameter")
+    timestep = data.get("Timestep", "unknown")
+
+    # Collect all valid time-series records
+    records = []
+    for key in data:
+        if key.isdigit():  # numeric string keys like "0", "1", ...
+            item = data[key]
+            if datetime_key in item and value_key in item:
+                try:
+                    dt_str = item[datetime_key]
+                    # Handle possible ISO variations (UTC/Z, no timezone, etc.)
+                    dt_str_clean = dt_str.replace('Z', '+00:00')
+                    dt = datetime.fromisoformat(dt_str_clean)
+
+                    val = float(item[value_key])
+                    records.append((dt, val))
+                except (ValueError, TypeError) as e:
+                    print(f"Skipping invalid record {key}: {e}")
+                    continue
+
+    if not records:
+        raise ValueError("No valid dateTime + result records found in JSON")
+
+    # Sort by date (just in case they're not already ordered)
+    records.sort(key=lambda x: x[0])
+
+    first_date = records[0][0]
+    last_date = records[-1][0]
+    total_sum = sum(val for _, val in records)
+    count = len(records)
+    avg_daily = total_sum / count if count > 0 else 0
+
+    return {
+        "location_name": name,
+        "parameter": param,
+        "units": units,
+        "timestep": timestep,
+        "first_date": first_date,
+        "last_date": last_date,
+        "total_sum": round(total_sum, 2),
+        "num_records": count,
+        "avg_daily_value": round(avg_daily, 2),
+        "value_key_used": value_key,
+        "records_parsed": count,
+        "total_keys_in_file": len(data)
+    }
 
 '''
     SW Colorado

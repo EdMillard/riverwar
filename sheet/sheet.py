@@ -540,14 +540,12 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
         year = df['Year'][0]
         if np.isnan(year):
             df['Year'] = years
-        print(len(df[title]), len(values))
+        # print(len(df[title]), len(values))
         if len(df[title]) == len(values):
             df[title] = values
         else:
             print(f'usbr_last_value {title} {len(df[title])} {len(values)}')
             insert_values_from_year(df, title, start_year, values)
-
-
     return values
 
 def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1_000_000):

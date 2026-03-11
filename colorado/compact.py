@@ -44,6 +44,9 @@ class Compact(Sheet):
         super().__init__(headers)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
+        usbr_lake_powell_elevation_af = 508
+        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
+
         sheet.upper_basin_cu_from_excel(self.df)
         sheet.natural_flow_from_excel(self.df)
         sheet.lf_natural_flow_from_excel(self.df)
@@ -71,7 +74,7 @@ class Compact(Sheet):
         sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.start_year, self.end_year, title=lb.MEAD_ELEVATION, divisor=1)
 
         usbr_lake_powell_elevation_af = 508
-        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, self.start_year, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
+        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
 
         sheet.usgs_annuals(self.df, '09404200', 2007, self.end_year,  title=lb.DIAMOND_CREEK, offset=1)
         sheet.usgs_annuals(self.df, '09380000', self.start_year, self.end_year, title=ub.LEES_FERRY_USGS)

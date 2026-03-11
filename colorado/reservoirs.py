@@ -85,7 +85,7 @@ class Reservoirs(Sheet):
         sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, self.start_year, self.end_year,  title=ub.FLAMING_GORGE)
 
         usbr_blue_mesa_storage_af = 76
-        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, 1966, self.end_year,  title=ub.BLUE_MESA)
+        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, 1967, self.end_year,  title=ub.BLUE_MESA)
 
         # Evap
         usbr_lake_mohave_evap_af = 1776
@@ -110,7 +110,7 @@ class Reservoirs(Sheet):
         sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.start_year, self.end_year, title=lb.MEAD_ELEVATION, divisor=1)
 
         usbr_lake_powell_elevation_af = 508
-        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, self.start_year, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
+        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
 
 
     def build_sheet(self) -> None:
