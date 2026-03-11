@@ -23,6 +23,7 @@ import datetime
 import requests
 import numpy as np
 from pathlib import Path
+import pandas as pd
 from source import usbr_report
 from rw.util import reshape_annual_range
 from source.water_year_info import WaterYearInfo
@@ -155,13 +156,24 @@ class USGSGage(object):
             daily_discharge = new_data
 
         print_last_value(self.site, daily_discharge, alias=alias)
+        value_column = f'{parameterCd}_{statCd}'
+        summary = usgs_csv_summary(file_path, value_column=value_column)
+        #print(f"{file_path} {summary}")
+        value_cfs = summary['total_sum']
+        value_af = value_cfs * 1.983459
+        print(f"{file_path} {summary['first_date']}-{summary['last_date']} {value_af:10.2f} AF")
+
         return daily_discharge
 
-    def load_time_series_csv(self, filename, parameterCd='00060', statCd='00003'):
+    def load_time_series_csv(self, filename:str, parameterCd:str ='00060', statCd:str ='00003'):
         date_time_format = "%Y-%m-%d"
 
         f = open(filename, )
         content = f.read()
+        if content.startswith('#  No sites found matching all criteria'):
+            a = np.zeros(1, [('dt', 'datetime64[s]'), ('val', 'f')])
+            print(f"No sites found matching all criteria {filename}")
+            return a
         strings = content.split('\n')
         headers = []
         line = 0
@@ -232,7 +244,7 @@ class USGSGage(object):
         url += str(parameterCd)
         url += '&statCd='
         url += str(statCd)
-        print(f'USGS daily:  {url}')
+        print(f'USGS daily: {file_path} {url}')
         r = requests.get(url)
         if r.status_code == 200:
             if r.text.startswith('<!DOCTYPE html>'):
@@ -391,6 +403,84 @@ def convert_cfs_to_af_per_day(cfs):
     af['val'] = cfs['val'] * 1.983459
     return af
 
+def usgs_csv_summary(
+    file_path: str | Path,
+    value_column: str = '',             # e.g. discharge column (adjust as needed)
+    datetime_col: str = 'datetime',
+    skip_rows: int = 2,                       # USGS daily files usually have 2 metadata header rows
+    sep: str = '\t',                          # tab-delimited is standard for USGS DV files
+) -> dict:
+    """
+    Reads a USGS daily values CSV file (tab-delimited) from the given file path
+    and returns:
+      - first_date: earliest datetime (pd.Timestamp)
+      - last_date: most recent datetime (pd.Timestamp)
+      - total_sum: sum of the specified value column (float)
+      - additional info (num_days, column used, etc.)
+
+    Example:
+        result = usgs_csv_summary('data/USGS_09520500_dv_2023-2024.txt')
+        print(result)
+    """
+    file_path = Path(file_path)  # normalize to Path object
+    if not file_path.is_file():
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    # Read the file
+    na_values = ['', 'NaN', 'None', 'Ice', 'Eqp', '---']
+
+    df = pd.read_csv(
+        file_path,
+        sep=sep,
+        skiprows=skip_rows,
+        na_values=na_values,
+        comment='#',                                          # in case extra comment lines
+        engine='python'                                       # more forgiving parsing
+    )
+
+    df[datetime_col] = pd.to_datetime(
+        df[datetime_col],
+        format='%Y-%m-%d',  # or '%Y-%m-%d %H:%M' if some rows have time
+        errors='coerce'  # bad dates become NaT
+    )
+
+    # Clean column names (remove leading/trailing spaces)
+    df.columns = df.columns.str.strip()
+
+    # Auto-detect value column if the exact name isn't found
+    if value_column not in df.columns:
+        possible = [c for c in df.columns if '00060' in c or value_column.split('_')[-1] in c]
+        if possible:
+            value_column = possible[0]
+            # print(f"Auto-detected value column: '{value_column}'")
+        else:
+            raise ValueError(
+                f"Value column '{value_column}' not found. "
+                f"Available columns: {list(df.columns)}"
+            )
+
+    # Convert to numeric (handle any non-numeric junk)
+    df[value_column] = pd.to_numeric(df[value_column], errors='coerce')
+
+    # Drop rows with missing values in the target column
+    df_valid = df.dropna(subset=[value_column])
+
+    if df_valid.empty:
+        raise ValueError(f"No valid numeric data found in column '{value_column}'")
+
+    first_date = df_valid[datetime_col].min()
+    last_date  = df_valid[datetime_col].max()
+    total_sum  = df_valid[value_column].sum()
+
+    return {
+        'first_date': first_date,
+        'last_date': last_date,
+        'total_sum': total_sum,
+        'value_column_used': value_column,
+        'num_valid_days': len(df_valid),
+        'total_rows_in_file': len(df),
+        'units_hint': 'cfs-days (typical for discharge parameter 00060)'
+    }
 
 """
 def usgs_daily_discharge(site, start_date, end_date):

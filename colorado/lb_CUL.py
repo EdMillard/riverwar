@@ -38,18 +38,20 @@ class LB_CUL(Sheet):
 
         headers = [
             lb.AZ_TRIBUTARY_CU, lb.NV_TRIBUTARY_CU,
-            lb.USGS_GILA_DOME,
+            lb.AZ_GILA_DOME_USGS,
 
             lb.AZ_GILA_CU,
             lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_M_AND_I_CU, lb.AZ_GILA_MINERALS_CU,
             lb.AZ_GILA_LIVESTOCK_CU, lb.AZ_GILA_STOCK_POND_CU,
             lb.AZ_GILA_RESERVOIR_MEASURED_CU, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU,
+            lb.AZ_GILA_TEP_CU, lb.AZ_GILA_WITHIN_SYSTEM_CU,
 
-            lb.AZ_LITTLE_COLORADO_CU,
+            lb.AZ_LITTLE_COLORADO_CAMERON_USGS, lb.AZ_LITTLE_COLORADO_CU,
             lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, lb.AZ_LITTLE_COLORADO_M_AND_I_CU,
             lb.AZ_LITTLE_COLORADO_MINERALS_CU,
             lb.AZ_LITTLE_COLORADO_LIVESTOCK_CU, lb.AZ_LITTLE_COLORADO_STOCK_POND_CU,
             lb.AZ_LITTLE_COLORADO_RESERVOIR_MEASURED_CU, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU,
+            lb.AZ_LITTLE_COLORADO_TEP_CU, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU,
 
             lb.AZ_VIRGIN_CU,
             lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU,
@@ -78,10 +80,17 @@ class LB_CUL(Sheet):
 
         divisor = 1
 
-        sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.USGS_GILA_DOME,
-                           divisor=1)
-
         path = self.path
+
+        # Little Colorado River Abv Mouth NR Desert View, AZ
+        # sheet.usgs_annuals(self.df, '09402300', 1990, self.end_year, title=lb.AZ_LITTLE_COLORADO_MOUTH_USGS, divisor=1)
+
+        # Little Colorado River Near Cameron, AZ
+        sheet.usgs_annuals(self.df, '09402000', 1981, self.end_year, title=lb.AZ_LITTLE_COLORADO_CAMERON_USGS,
+                           offset=1, divisor=1)
+
+        # AZ Gila
+        sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1)
         df = sheet.read_csv(path / 'az_gila_irrigation.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_GILA_IRRIGATION_CU, divisor=divisor)
 
@@ -102,8 +111,14 @@ class LB_CUL(Sheet):
 
         df = sheet.read_csv(path / 'az_gila_unmeasured_reservoirs.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU, divisor=divisor)
-        # AZ TEP
-        # AZ within system
+
+        df = sheet.read_csv(path / 'az_gila_tep.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_TEP_CU, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_within_system.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_WITHIN_SYSTEM_CU, divisor=divisor)
+
+        # AZ Little Colorado
 
         df = sheet.read_csv(path / 'az_little_colorado_irrigation.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, divisor=divisor)
@@ -120,47 +135,55 @@ class LB_CUL(Sheet):
         df = sheet.read_csv(path / 'az_little_colorado_stockpond.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_STOCK_POND_CU, divisor=divisor)
 
-        df = sheet.read_csv(path / 'az_gila_measured_reservoirs.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_little_colorado_measured_reservoirs.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_RESERVOIR_MEASURED_CU, divisor=divisor)
 
-        df = sheet.read_csv(path / 'az_gila_unmeasured_reservoirs.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_little_colorado_unmeasured_reservoirs.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU, divisor=divisor)
 
+        df = sheet.read_csv(path / 'az_little_colorado_tep.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_TEP_CU, divisor=divisor)
 
+        df = sheet.read_csv(path / 'az_little_colorado_within_system.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU, divisor=divisor)
+
+        # AZ Virgin
         df = sheet.read_csv(path / 'az_virgin_irrigation.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_IRRIGATION_CU, divisor=divisor)
 
         df = sheet.read_csv(path / 'az_virgin_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_M_AND_I_CU, divisor=divisor)
 
-
+        # AZ Trib
         df = sheet.read_csv(path / 'az_trib_below_lake_mead_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CU, divisor=divisor)
 
+        # NV Virgin
         df = sheet.read_csv(path / 'nv_virgin_irrigation.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_IRRIGATION_CU, divisor=divisor)
 
         df = sheet.read_csv(path / 'nv_virgin_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_M_AND_I_CU, divisor=divisor)
 
+        # NV Muddy
         df = sheet.read_csv(path / 'nv_muddy_irrigation.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_IRRIGATION_CU, divisor=divisor)
 
         df = sheet.read_csv(path / 'nv_muddy_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_M_AND_I_CU, divisor=divisor)
 
-
+        # NV Trib
         df = sheet.read_csv(path / 'nv_trib_above_lake_mead_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU, divisor=divisor)
 
-
+        # NM Gila
         df = sheet.read_csv(path / 'nm_gila_irrigation.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NM_GILA_IRRIGATION_CU, divisor=divisor)
 
         df = sheet.read_csv(path / 'nm_gila_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NM_GILA_M_AND_I_CU, divisor=divisor)
 
-
+        # UT Virgin
         df = sheet.read_csv(path / 'ut_virgin_irrigation.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_IRRIGATION_CU, divisor=divisor)
 
@@ -266,7 +289,6 @@ class LB_CUL(Sheet):
 
 
     def build_sheet(self) -> None:
-        self.set_bg(lb.USGS_GILA_DOME, color=all_b.USGS_BG)
 
         formula = '=AVERAGE({col_letter}2:{col_letter}[row-1])'
         ws: Worksheet = self.ws
@@ -279,56 +301,55 @@ class LB_CUL(Sheet):
         sheet.set_font(ws, start_row=target_row, end_row=target_row+1, start_col=2, end_col=ws.max_column)
         sheet.set_font(ws, start_row=target_row, end_row=target_row+1, start_col=1, end_col=1)
 
-        col1 = cl(ws, lb.AZ_GILA_CU)
-        col2 = cl(ws, lb.AZ_LITTLE_COLORADO_CU)
-        col3 = cl(ws, lb.AZ_VIRGIN_CU)
-        formula = f'={col1}[row]+{col2}[row]+{col3}[row]'
-        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_TRIBUTARY_CU)
+        # Sum AZ Rivers
+        columns = [lb.AZ_GILA_CU, lb.AZ_LITTLE_COLORADO_CU, lb.AZ_VIRGIN_CU]
+        sheet.formula_add(ws, self.df, lb.AZ_TRIBUTARY_CU, columns)
 
-        col1 = cl(ws, lb.NV_VIRGIN_CU)
-        col2 = cl(ws, lb.NV_MUDDY_CU)
-        col3 = cl(ws, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU)
-        formula = f'={col1}[row]+{col2}[row]+{col3}[row]'
-        LB_CUL.set_col_formula(ws, self.df, formula, lb.NV_TRIBUTARY_CU)
+        # Sum NV Rivers
+        columns = [lb.NV_VIRGIN_CU, lb.NV_MUDDY_CU, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU]
+        sheet.formula_add(ws, self.df, lb.NV_TRIBUTARY_CU, columns)
 
-        col1 = cl(ws, lb.AZ_GILA_IRRIGATION_CU)
-        col2 = cl(ws, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU)
-        formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_GILA_CU)
-        self.set_bg(lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        # AZ Gila
+        self.set_bg(lb.AZ_GILA_DOME_USGS, color=all_b.USGS_BG)
+        sheet.formula_sum(ws, self.df, lb.AZ_GILA_CU, lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_WITHIN_SYSTEM_CU)
+        self.set_bg(lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_WITHIN_SYSTEM_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(ws, lb.AZ_LITTLE_COLORADO_IRRIGATION_CU)
-        col2 = cl(ws, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU)
-        formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_LITTLE_COLORADO_CU)
-        self.set_bg(lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU,
+        # AZ Little Colorado
+        self.set_bg(lb.AZ_LITTLE_COLORADO_CAMERON_USGS, color=all_b.USGS_BG)
+        sheet.formula_sum(ws, self.df, lb.AZ_LITTLE_COLORADO_CU, lb.AZ_LITTLE_COLORADO_IRRIGATION_CU,
+                          lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU)
+        self.set_bg(lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU,
                     color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(ws, lb.AZ_VIRGIN_IRRIGATION_CU)
-        col2 = cl(ws, lb.AZ_VIRGIN_M_AND_I_CU)
-        formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_col_formula(ws, self.df, formula, lb.AZ_VIRGIN_CU)
+        # AZ Virgin
+        sheet.formula_sum(ws, self.df, lb.AZ_VIRGIN_CU, lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU)
         self.set_bg(lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(ws, lb.NV_VIRGIN_IRRIGATION_CU)
-        col2 = cl(ws, lb.NV_VIRGIN_M_AND_I_CU)
-        formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_col_formula(ws, self.df, formula, lb.NV_VIRGIN_CU)
+        # AZ Trib Below
+        self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+
+        # NV Trib Above
+        self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+
+        # NV Virgin
+        sheet.formula_sum(ws, self.df, lb.NV_VIRGIN_CU, lb.NV_VIRGIN_IRRIGATION_CU, lb.NV_VIRGIN_M_AND_I_CU)
         self.set_bg(lb.NV_VIRGIN_IRRIGATION_CU, lb.NV_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
-        col1 = cl(ws, lb.NV_MUDDY_IRRIGATION_CU)
-        col2 = cl(ws, lb.NV_MUDDY_M_AND_I_CU)
-        formula = f'=SUM({col1}[row]:{col2}[row])'
-        LB_CUL.set_col_formula(ws, self.df, formula, lb.NV_MUDDY_CU)
+        # NV Muddy
+        sheet.formula_sum(ws, self.df, lb.NV_MUDDY_CU, lb.NV_MUDDY_IRRIGATION_CU, lb.NV_MUDDY_M_AND_I_CU)
         self.set_bg(lb.NV_MUDDY_IRRIGATION_CU, lb.NV_MUDDY_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
+        # NM Gila
+        sheet.formula_sum(ws, self.df, lb.NM_GILA_CU, lb.NM_GILA_IRRIGATION_CU, lb.NM_GILA_M_AND_I_CU)
         self.set_bg(lb.NM_GILA_IRRIGATION_CU, lb.NM_GILA_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
-        self.set_bg(lb.UT_VIRGIN_IRRIGATION_CU, lb.UT_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+
+        # UT Virgin
+        sheet.formula_sum(ws, self.df, lb.UT_VIRGIN_IRRIGATION_CU, lb.UT_VIRGIN_M_AND_I_CU, lb.NM_GILA_M_AND_I_CU)
+        self.set_bg(lb.UT_VIRGIN_CU, lb.UT_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
         self.format_header()
 
         self.set_column_width(lb.AZ_TRIBUTARY_CU, 6, to=lb.UT_VIRGIN_M_AND_I_CU,)
-
 
 states = {
     '04': 'az',

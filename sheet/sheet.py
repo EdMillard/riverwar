@@ -28,7 +28,7 @@ from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
-from source.usgs_gage import USGSGage, daily_to_water_year
+from source.usgs_gage import USGSGage, daily_to_water_year, usgs_csv_summary
 from source.water_year_info import WaterYearInfo
 from typing import Optional
 from graph.water import WaterGraph
@@ -51,9 +51,21 @@ class Sheet(ABC):
         self.ws: Optional[Worksheet] = None
 
     def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame | None, number_format:str='0.00') -> Worksheet:
-        self.load_df(df_main)
-        self.ws, self.df = export_to_excel(self.df, writer, sheet_name, number_format=number_format)
-        self.build_sheet()
+        try:
+            self.load_df(df_main)
+        except Exception as e:
+            print(f"export load_df {sheet_name} error: {e}")
+
+        try:
+            self.ws, self.df = export_to_excel(self.df, writer, sheet_name, number_format=number_format)
+        except Exception as e:
+            print(f"export_to_excel load_df {sheet_name} error: {e}")
+
+        try:
+            self.build_sheet()
+        except Exception as e:
+            print(f"export_to_excel load_df {sheet_name} error: {e}")
+
         return self.ws
 
     @abstractmethod
@@ -112,7 +124,6 @@ class Sheet(ABC):
         add_borders_to_column(self.ws, start_col, start_row, end_row - 1, end_col=end_col - 1, which='outer')
 
         self.set_column_width('Year', 4)
-
 
 def read_csv(filename, sep='\s+', comment_char='#'):
     cleaned_lines = []
@@ -452,6 +463,7 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
         else:
             print('Multiple years returned')
 
+
     # if title:
     #    print(title)
     #    for annual in annuals:
@@ -493,6 +505,19 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
 
     return values
 
+def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=10)-> float:
+    if month != 1:
+        year -= 1
+    ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+    water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+    if cfs_to_af:
+        info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
+        daily_af = WaterGraph.convert_cfs_to_af_per_day(daily_cfs)
+    else:
+        info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
+
+    af = daily_af[-1]
+    return af
 
 def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1_000_000):
     years = []
@@ -501,16 +526,7 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
     if month != 1:
         start_year -= 1
     for year in range(start_year, end_year):
-        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
-        water_year_info = WaterYearInfo.get_water_year(ts, month=month)
-        if cfs_to_af:
-            info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
-            daily_af = WaterGraph.convert_cfs_to_af_per_day(daily_cfs)
-        else:
-            info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
-
-        # total = daily_release_ft['val'].sum()
-        af = daily_af[-1]
+        af = usbr_get_last_value(gage_id, year, cfs_to_af=cfs_to_af, month=month)
         years.append(year + 1)
         values.append(af[1] / divisor)
         annuals.append(af)
@@ -585,6 +601,30 @@ def set_number_format(ws: Worksheet, start_row:int, end_row:int, start_col:int, 
         for cell in row:
             cell.number_format = number_format
 
+def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str, start_row=1) -> None:
+    col_idx = df.columns.get_loc(column_name) + 1  # 1-based
+    for i in range(start_row, len(df)+1):
+        excel_row = i + 1
+        f = formula.replace("[row]", str(excel_row))
+        ws.cell(row=excel_row, column=col_idx, value=f)
+
+def formula_add(ws: Worksheet, df: pd.DataFrame, target_column: str, column_names: List[str]):
+    formula = f'='
+    for i, column_name in enumerate(column_names):
+        letter = cl(ws, column_name)
+        if i == 0:
+            formula += f'{letter}[row]'
+        else:
+            formula += f'+{letter}[row]'
+
+    set_col_formula(ws, df, formula, target_column)
+
+def formula_sum(ws: Worksheet, df: pd.DataFrame, target_column: str, first_column: str, last_column:str):
+    col1 = cl(ws, first_column)
+    col2 = cl(ws, last_column)
+    formula = f'=SUM({col1}[row]:{col2}[row])'
+
+    set_col_formula(ws, df, formula, target_column)
 
 def set_font(
         ws: Worksheet,

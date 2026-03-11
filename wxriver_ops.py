@@ -33,34 +33,39 @@ import warnings
 
 class Colorado_River_Ops(Sheet):
     def __init__(self):
-        headers = [lb.MEAD_ELEVATION, lb.MEAD, ub.POWELL_ELEVATION, ub.POWELL, ub.FLAMING_GORGE, ub.BLUE_MESA]
+        headers = [lb.MEAD_ELEVATION, ub.POWELL_ELEVATION, '1', lb.MEAD, ub.POWELL, ub.FLAMING_GORGE, ub.BLUE_MESA]
         super().__init__(headers, start_year=2026, end_year=2026)
 
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         df_len = len(self.df) + 2
         usbr_lake_mead_elevation_ft = 6123
-        sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.start_year, self.end_year, title=lb.MEAD_ELEVATION, divisor=1)
+        mead_elevation = sheet.usbr_get_last_value(usbr_lake_mead_elevation_ft, self.start_year)
 
         usbr_lake_mead_storage_af = 6124
-        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.start_year, self.end_year, title=lb.MEAD, month=10, divisor=1)
+        mead_storage = sheet.usbr_get_last_value(usbr_lake_mead_storage_af, self.start_year)
 
         usbr_lake_powell_elevation_af = 508
-        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, self.start_year, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
+        powell_elevation = sheet.usbr_get_last_value(usbr_lake_powell_elevation_af, self.start_year)
 
         usbr_lake_powell_storage_af = 509
-        sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.start_year, self.end_year, title=ub.POWELL, divisor=1)
+        powell_storage = sheet.usbr_get_last_value(usbr_lake_powell_storage_af, self.start_year)
 
-        usbr_flaming_gorge_storage_af = 3371
-        sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, self.start_year, self.end_year, title=ub.FLAMING_GORGE, divisor=1)
+        usbr_flaming_gorge_storage_af = 337
+        flaming_gorge_storage = sheet.usbr_get_last_value(usbr_flaming_gorge_storage_af, self.start_year)
 
         usbr_blue_mesa_storage_af = 76
-        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.start_year, self.end_year, title=ub.BLUE_MESA, divisor=1)
+        blue_mesa_storage = sheet.usbr_get_last_value(usbr_blue_mesa_storage_af, self.start_year)
+
+        pass
 
     def build_sheet(self)-> None:
         # self.set_bg(lb.MX_TREATY, ub.GLEN_CANYON_RELEASE, color=all_b.USBR_AR_FLOW)
 
         self.format_header()
+
+        self.set_column_width(lb.MEAD_ELEVATION, 5, to=ub.POWELL_ELEVATION)
+        self.set_column_width(lb.MEAD, 7, to=ub.BLUE_MESA)
 
 
 def run():

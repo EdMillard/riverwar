@@ -123,9 +123,9 @@ def annual_af(item_id, start_date='', end_date='', csv=False):
 
 
 def print_last_value(abbrev, a, alias=''):
-    last_date = a['dt'][-1]
-    last_val = a['val'][-1]
-    print(f'\tUSBR - {abbrev:>8s} {last_date} {last_val} {alias}')
+    # last_date = a['dt'][-1]
+    # last_val = a['val'][-1]
+    # print(f'\tUSBR - {abbrev:>8s} {last_date} {last_val} {alias}')
     pass
 
 def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, update=False, alias=''):
