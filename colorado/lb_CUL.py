@@ -29,7 +29,6 @@ from sheet import sheet
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl import Workbook
 from typing import List, Dict, Union
-from sheet.sheet import cl
 import csv
 
 class LB_CUL(Sheet):
@@ -198,108 +197,12 @@ class LB_CUL(Sheet):
             f = formula.replace("[row]", str(excel_row))
             ws.cell(row=excel_row, column=col_idx, value=f)
 
-    @staticmethod
-    def set_row_formula(
-            ws: Worksheet,
-            df: pd.DataFrame,
-            formula_template: str,
-            target_row: int,
-            start_col: str | int | None = None,
-            end_col: str | int | None = None,
-            start_data_row: int = 2,
-            header: str = ''
-    ) -> None:
-        """
-        Puts the same formula pattern across a range of columns in one specific row.
-
-        Parameters:
-        - ws: openpyxl Worksheet
-        - df: pandas DataFrame (used only to know column order/names)
-        - formula_template: str with placeholder e.g. '=AVERAGE({col_letter}{start_data_row}:{col_letter}[row-1])'
-        - target_row: the Excel row number where formulas should be written
-        - start_col / end_col: optional column limits (can be named, letter or 1-based index)
-        - start_data_row: usually 2 (first data row after header)
-
-        Example:
-            formula = '=AVERAGE(B{start}:B[row-1])'
-            set_row_formula(ws, df, formula, target_row=15, start_data_row=2)
-            → puts in row 15: =AVERAGE(B2:B14), =AVERAGE(C2:C14), etc.
-        """
-        from openpyxl.utils import get_column_letter, column_index_from_string
-
-        # Determine column range
-        all_cols = list(df.columns)
-        n_cols = len(all_cols)
-
-        # Resolve start_col and end_col to 0-based indices in df
-        if start_col is None:
-            start_idx = 0
-        elif isinstance(start_col, str):
-            if start_col in all_cols:
-                start_idx = all_cols.index(start_col)
-            else:
-                start_idx = column_index_from_string(start_col) - 1
-        else:
-            start_idx = int(start_col) - 1  # assume 1-based → 0-based
-
-        if end_col is None:
-            end_idx = n_cols - 1
-        elif isinstance(end_col, str):
-            if end_col in all_cols:
-                end_idx = all_cols.index(end_col)
-            else:
-                end_idx = column_index_from_string(end_col) - 1
-        else:
-            end_idx = int(end_col) - 1
-
-        start_idx = max(0, start_idx)
-        end_idx = min(n_cols - 1, end_idx)
-
-        for col_idx in range(start_idx, end_idx + 1):  # 0-based in df
-            col_letter = get_column_letter(col_idx + 1)  # 1-based for Excel
-            excel_col = col_idx + 1
-
-            # Replace placeholders
-            f = formula_template
-            f = f.replace("[row]", str(target_row))
-            f = f.replace("{col_letter}", col_letter)
-            f = f.replace("{col}", col_letter)
-            f = f.replace("[col]", col_letter)
-
-            # Common patterns for dynamic row ranges
-            f = f.replace("{start}", str(start_data_row))
-            f = f.replace("[start]", str(start_data_row))
-            f = f.replace("{start_row}", str(start_data_row))
-            f = f.replace("[start_row]", str(start_data_row))
-
-            # Optional: [row-1], [row+1], etc.
-            import re
-            def offset_replacer(m):
-                try:
-                    offset = int(m.group(1))
-                    return str(target_row + offset)
-                except:
-                    return m.group(0)
-
-            f = re.sub(r'\[row([+-]\d+)]', offset_replacer, f)
-
-            # Write formula to cell
-            ws.cell(row=target_row, column=excel_col, value=f)
-        ws.cell(row=target_row, column=start_col-1, value=header)
-
 
     def build_sheet(self) -> None:
-
-        formula = '=AVERAGE({col_letter}2:{col_letter}[row-1])'
         ws: Worksheet = self.ws
-        number_format = '#,##0;-#,##0'
-        target_row = len(self.years) + 2
+
         last_row = len(self.years) + 1
-        LB_CUL.set_row_formula(ws, self.df, formula, target_row=target_row, start_data_row=2,
-                               start_col=2, end_col=ws.max_column, header='Avg')
-        sheet.set_number_format(ws, target_row, target_row+1, 2, ws.max_column, number_format=number_format)
-        sheet.set_font(ws, start_row=target_row, end_row=target_row+1, start_col=2, end_col=ws.max_column)
-        sheet.set_font(ws, start_row=target_row, end_row=target_row+1, start_col=1, end_col=1)
+        sheet.formula_average(ws, self.df, self.years)
 
         # Sum AZ Rivers
         columns = [lb.AZ_GILA_CU, lb.AZ_LITTLE_COLORADO_CU, lb.AZ_VIRGIN_CU]

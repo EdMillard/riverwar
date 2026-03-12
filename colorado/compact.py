@@ -30,6 +30,7 @@ import pandas as pd
 from sheet import sheet
 from sheet.sheet import Sheet
 from sheet.sheet import cl, cn
+from typing import List
 
 class Compact(Sheet):
     def __init__(self):
@@ -41,7 +42,10 @@ class Compact(Sheet):
                         ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY,
                         ub.CU_NM, ub.CU_AZ,
                         lb.GC_INFLOW, lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
-        super().__init__(headers)
+        super().__init__(headers,  end_year=2024)
+        self.years: List[int] = list(range(self.start_year, self.end_year+1))
+        pass
+
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         usbr_lake_powell_elevation_af = 508
@@ -52,9 +56,6 @@ class Compact(Sheet):
         sheet.lf_natural_flow_from_excel(self.df)
 
         Compact.lower_basin_annual_reports(self.df)
-
-        self.df[lb.III_A_LB] = [f'=SUM(D{row}:F{row})' for row in range(2, len(self.df) + 2)]
-        self.df[lb.III_A_LB] = self.df[lb.III_A_LB].astype(str)
 
         df_mead_evap = sheet.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
         sheet.merge_annual_column(self.df, df_mead_evap, lb.MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
@@ -91,27 +92,24 @@ class Compact(Sheet):
         usbr_lake_powell_unregulated_inflow_af = 4301
         sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, self.start_year, self.end_year, title=ub.INFLOW_UNREGULATED)
 
-        self.df[lb.GC_INFLOW][43:len(self.df)] = [f'=N{row}-S{row}' for row in range(45, len(self.df)+2)]
-
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
 
-        dest_col_h_m = cn(ws, lb.H_M)
-        dest_col_diff = cn(ws, lb.DIFF_7_5)
-        for row in range(2, len(self.df) + 2):   # adjust range
-            formula = f"=J{row} - H{row}"
-            ws.cell(row=row, column=dest_col_h_m).value = formula
-            formula = f"=K{row}-7.5"
-            ws.cell(row=row, column=dest_col_diff).value = formula
+        sheet.formula_average(ws, self.df, self.years, number_format='#,##0.00;-#,##0,00')
+
+        sheet.formula_subtract_constant(ws, self.df, lb.DIFF_7_5, lb.H_M, "7.5")
+        self.set_column_negative_red(lb.DIFF_7_5)
+
+        sheet.formula_sum(ws, self.df, lb.III_A_LB, lb.CU_NV, lb.CU_CA)
+        sheet.formula_subtract(ws, self.df, lb.H_M, lb.HOOVER_RELEASE, lb.MEXICO)
+        sheet.formula_subtract(ws, self.df, lb.GC_INFLOW, lb.DIAMOND_CREEK, ub.LEES_FERRY_USGS, start_row=44)
 
         self.set_bg(lb.MEXICO, color=all_b.USBR_AR_FLOW)
         self.set_bg(lb.HOOVER_RELEASE, color=all_b.USBR_AR_FLOW)
 
-        self.set_column_negative_red(lb.DIFF_7_5)
-
-        sheet.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
-        sheet.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
-        sheet.add_borders_to_column(ws, 7, 1, ws.max_row, which='vertical')
+        # sheet.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
+        # sheet.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
+        # sheet.add_borders_to_column(ws, 7, 1, ws.max_row, which='vertical')
 
         self.set_bg(ub.NATURAL_LEES_FERRY, lb.NATURAL_IMPERIAL, color=all_b.USBR_NATURAL_BG)
         self.set_bg(lb.CU_NV, lb.III_A_LB, color=all_b.USBR_AR_CU_BG)
@@ -119,7 +117,6 @@ class Compact(Sheet):
         # USGS
         self.set_bg(lb.HOOVER_USGS, lb.DIAMOND_CREEK, color=all_b.USGS_BG)
 
-        lower_basin_end_col = 15
         # Reservoirs
         self.set_bg(lb.MEAD, color=all_b.LIGHT_BLUE_BG)
         self.set_bg(ub.POWELL, color=all_b.LIGHT_BLUE_BG)
@@ -131,7 +128,7 @@ class Compact(Sheet):
         self.set_bg(lb.MEAD_EVAPORATION, color=all_b.EVAPORATION_BG)
 
         # USGS
-        self.set_bg(ub.GLEN_CANYON_RELEASE, ub.INFLOW_UNREGULATED, color=all_b.USGS_BG)
+        self.set_bg(ub.GLEN_CANYON, ub.INFLOW_UNREGULATED, color=all_b.USGS_BG)
         self.set_bg(lb.GC_INFLOW, color=all_b.USGS_BG)
 
         # Upper Basin CUL

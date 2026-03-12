@@ -25,6 +25,7 @@ import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
 from sheet.sheet import Sheet
+from typing import List
 
 IIIC = "iii(c)"
 EQUALS = "="
@@ -38,7 +39,8 @@ class III_C(Sheet):
     def __init__(self):
         headers = [IIIC, EQUALS, lb.NATURAL_IMPERIAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, lb.MX_TREATY,
                               lb.HOOVER_RELEASE, ub.GLEN_CANYON_RELEASE]
-        super().__init__(headers)
+        super().__init__(headers,  end_year=2024)
+        self.years: List[int] = list(range(self.start_year, self.end_year+1))
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         df_len = len(self.df) + 2
@@ -67,7 +69,6 @@ class III_C(Sheet):
 
     def build_sheet(self)-> None:
         self.set_column_negative_red(IIIC)
-
 
         self.set_column_alignment(EQUALS, horizontal='center')
         self.set_column_alignment(MINUS, horizontal='center')
