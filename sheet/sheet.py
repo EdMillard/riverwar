@@ -38,6 +38,7 @@ from typing import List, Tuple, Any, Dict, Union
 import colorado.lb as lb
 import colorado.ub as ub
 from abc import ABC, abstractmethod
+import re
 
 cn = lambda ws, name: get_column_number(ws, name)
 cl = lambda ws, name: get_column_letter_insensitive(ws, name)
@@ -439,7 +440,7 @@ def upper_basin_cu_from_excel(df:pd.DataFrame):
             df.loc[7: 7 + len(values) - 1, ub.CU_NM] = values
         elif header == 'Arizona':
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.CU_AZ] = values
+            df.loc[7: 7 + len(values) - 1, ub.AZ_CU] = values
 
 
 def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='00060', stat_cd='00003',
@@ -544,7 +545,7 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
         if len(df[title]) == len(values):
             df[title] = values
         else:
-            print(f'usbr_last_value {title} {len(df[title])} {len(values)}')
+            # print(f'usbr_last_value {title} {len(df[title])} {len(values)}')
             insert_values_from_year(df, title, start_year, values)
     return values
 
@@ -617,7 +618,55 @@ def formula_add(ws: Worksheet, df: pd.DataFrame, target_column: str, column_name
 
     set_col_formula(ws, df, formula, target_column)
 
-def formula_subtract(ws: Worksheet, df: pd.DataFrame, target_column: str, minuend: str, subtrahend: str, start_row:int=0):
+
+def replace_header_names_with_column_letters(
+        ws: openpyxl.worksheet.worksheet.Worksheet,
+        formula: str,
+        header_row: int = 1
+) -> str:
+    """
+    Replaces header names in single quotes (e.g. 'III(a) Lower') with column letters (A, B, ...)
+    by looking them up in the specified header row of the worksheet.
+
+    Example input formula:
+        "=('III(a) Lower' - 2.6) + ('III(a) Upper' - 4.4)"
+
+    Returns something like:
+        "=(C2 - 2.6) + (E2 - 4.4)"   (assuming row 2 is the data row)
+    """
+    # Create a mapping: header name → column letter
+    header_to_col = {}
+    for col_idx in range(1, ws.max_column + 1):
+        cell_value = ws.cell(row=header_row, column=col_idx).value
+        if cell_value is not None:
+            # Convert to string and strip whitespace for safer matching
+            header_name = str(cell_value).strip()
+            if header_name:  # skip empty headers
+                header_to_col[header_name] = get_column_letter(col_idx)
+
+    # Find all header names inside single quotes
+    # Pattern matches anything inside '…' (non-greedy)
+    def replacer(match):
+        name = match.group(1).strip()  # remove any extra spaces inside quotes
+        col_letter = header_to_col.get(name)
+        if col_letter is None:
+            print(f"Warning: Header '{name}' not found in row {header_row}")
+            return match.group(0)  # keep original if not found
+        # Replace with just the column letter (Excel will understand C2, E2, etc. implicitly)
+        new_string = col_letter + '[row]'
+        return new_string
+
+    # Replace 'Header Name' → C  (or whatever letter)
+    # We use re.sub with a callback function
+    modified = re.sub(r"'([^']+)'", replacer, formula)
+
+    return modified
+
+def formula(ws: Worksheet, df: pd.DataFrame, target_column: str, formula: str, start_row:int=1):
+    modified = replace_header_names_with_column_letters(ws, formula)
+    set_col_formula(ws, df, modified, target_column, start_row)
+
+def formula_subtract(ws: Worksheet, df: pd.DataFrame, target_column: str, minuend: str, subtrahend: str, start_row:int=1):
     formula = f'={cl(ws, minuend)}[row]-{cl(ws, subtrahend)}[row]'
     set_col_formula(ws, df, formula, target_column, start_row)
 

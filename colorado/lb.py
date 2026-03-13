@@ -23,13 +23,17 @@ NATURAL_IMPERIAL = 'Natural Imperial'
 
 MEXICO = 'Mexico'
 
-CU_CA = 'CA'
-CU_AZ = 'AZ'
-CU_NV = 'NV'
+LB_CU = 'LB CU'
+CA_CU = 'CA CU'
+AZ_CU = 'AZ CU'
+NV_CU = 'NV CU'
 III_A_LB = 'III(a) Lower'
+III_B = 'III(b)'
 LB_CUL = 'LB CUL'
 
 HOOVER_USGS = 'Hoover USGS'
+NIB_MORELOS_USGS = 'NIB Morelos USGS'
+
 HOOVER_RELEASE = 'Hoover Release'
 H_M = 'Hv-Mx'
 DIFF_7_5 = 'Diff 7.5'

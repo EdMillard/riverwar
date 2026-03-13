@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.utils import get_column_letter, column_index_from_string
+import openpyxl
 from source import usbr_rise
 from source.water_year_info import WaterYearInfo
 from datetime import datetime
@@ -29,32 +31,36 @@ import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
 from sheet.sheet import Sheet
-from sheet.sheet import cl, cn
 from typing import List
 
 class Compact(Sheet):
     def __init__(self):
-        headers = [ub.NATURAL_LEES_FERRY, lb.NATURAL_IMPERIAL,
-                        lb.CU_NV, lb.CU_AZ, lb.CU_CA, lb.III_A_LB, lb.MEXICO, lb.MEAD_EVAPORATION, lb.HOOVER_RELEASE,
-                        lb.H_M, lb.DIFF_7_5, lb.HOOVER_USGS, lb.DIAMOND_CREEK, lb.MEAD,
-                        ub.POWELL,ub.POWELL_EVAPORATION, ub.GLEN_CANYON, ub.LEES_FERRY_USGS,
-                        ub.INFLOW, ub.INFLOW_UNREGULATED,
-                        ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY,
-                        ub.CU_NM, ub.CU_AZ,
-                        lb.GC_INFLOW, lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
+        headers = [all_b.III_A, all_b.III_C, all_b.III_C_AZ, all_b.III_D,
+                   lb.MEXICO, lb.NIB_MORELOS_USGS, lb.NATURAL_IMPERIAL,
+                   lb.III_A_LB, lb.III_B,
+                   lb.LB_CU, lb.CA_CU, lb.AZ_CU, lb.NV_CU,
+                   lb.MEAD_EVAPORATION, lb.HOOVER_RELEASE,
+                   lb.H_M, lb.DIFF_7_5, lb.HOOVER_USGS,
+                   lb.MEAD, lb.DIAMOND_CREEK, lb.GC_INFLOW,
+                   ub.LEES_FERRY_USGS, ub.GLEN_CANYON,
+                   ub.POWELL,ub.POWELL_EVAPORATION,
+                   ub.NATURAL_LEES_FERRY,
+                   ub.INFLOW, ub.INFLOW_UNREGULATED,
+                   ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY,
+                   ub.CU_NM, ub.AZ_CU,
+                   lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
         super().__init__(headers,  end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
         pass
 
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
-        usbr_lake_powell_elevation_af = 508
-        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
+
+        sheet.usgs_annuals(self.df, '09522000', self.start_year, self.end_year, title=lb.NIB_MORELOS_USGS)
 
         sheet.upper_basin_cu_from_excel(self.df)
         sheet.natural_flow_from_excel(self.df)
         sheet.lf_natural_flow_from_excel(self.df)
-
         Compact.lower_basin_annual_reports(self.df)
 
         df_mead_evap = sheet.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
@@ -92,18 +98,40 @@ class Compact(Sheet):
         usbr_lake_powell_unregulated_inflow_af = 4301
         sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, self.start_year, self.end_year, title=ub.INFLOW_UNREGULATED)
 
+        usbr_lake_powell_elevation_af = 508
+        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
+
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
 
         sheet.formula_average(ws, self.df, self.years, number_format='#,##0.00;-#,##0,00')
 
+        self.set_bg(lb.NATURAL_IMPERIAL, color=all_b.USBR_NATURAL_BG)
+        sheet.formula(ws, self.df, lb.NATURAL_IMPERIAL, f"='{ub.NATURAL_LEES_FERRY}' + 0.8", start_row=58)
+        self.set_bg(lb.NATURAL_IMPERIAL, color=all_b.LIGHT_RED_BG, start_row=59)
+
         sheet.formula_subtract_constant(ws, self.df, lb.DIFF_7_5, lb.H_M, "7.5")
         self.set_column_negative_red(lb.DIFF_7_5)
 
-        sheet.formula_sum(ws, self.df, lb.III_A_LB, lb.CU_NV, lb.CU_CA)
+        iii_a = [lb.III_A_LB, ub.III_A_UB]
+        sheet.formula_add(ws, self.df, all_b.III_A, iii_a)
+
+        values = sheet.usgs_annuals(self.df, '09380000', 1955, self.end_year) # ub.LEES_FERRY_USGS
+        ten_year = Compact.moving_average_10yr(values)
+        Compact.write_column(ws, all_b.III_D, ten_year)
+        sheet.formula_sum(ws, self.df, lb.LB_CU, lb.CA_CU, lb.NV_CU)
         sheet.formula_subtract(ws, self.df, lb.H_M, lb.HOOVER_RELEASE, lb.MEXICO)
+
+        sheet.formula(ws, self.df, all_b.III_C, f"='{lb.NATURAL_IMPERIAL}' - ('{lb.III_A_LB}' + '{lb.III_B}' + '{ub.III_A_UB}')")
+        self.set_column_negative_red(all_b.III_C)
+        sheet.formula(ws, self.df, all_b.III_C_AZ, f"='{lb.NATURAL_IMPERIAL}' - 16")
+        self.set_column_negative_red(all_b.III_C_AZ)
+        sheet.formula(ws, self.df, lb.III_B, f"=MAX(0, '{lb.LB_CU}' - 7.5)")
+        sheet.formula(ws, self.df, lb.III_A_LB, f"=MIN(7.5, '{lb.LB_CU}')")
+
         sheet.formula_subtract(ws, self.df, lb.GC_INFLOW, lb.DIAMOND_CREEK, ub.LEES_FERRY_USGS, start_row=44)
 
+        self.set_bg(lb.NIB_MORELOS_USGS, color=all_b.USGS_BG)
         self.set_bg(lb.MEXICO, color=all_b.USBR_AR_FLOW)
         self.set_bg(lb.HOOVER_RELEASE, color=all_b.USBR_AR_FLOW)
 
@@ -111,31 +139,23 @@ class Compact(Sheet):
         # sheet.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
         # sheet.add_borders_to_column(ws, 7, 1, ws.max_row, which='vertical')
 
-        self.set_bg(ub.NATURAL_LEES_FERRY, lb.NATURAL_IMPERIAL, color=all_b.USBR_NATURAL_BG)
-        self.set_bg(lb.CU_NV, lb.III_A_LB, color=all_b.USBR_AR_CU_BG)
+        self.set_bg(ub.NATURAL_LEES_FERRY, color=all_b.USBR_NATURAL_BG)
+        self.set_bg(lb.LB_CU, to=lb.NV_CU, color=all_b.USBR_AR_CU_BG)
 
-        # USGS
-        self.set_bg(lb.HOOVER_USGS, lb.DIAMOND_CREEK, color=all_b.USGS_BG)
-
-        # Reservoirs
+        self.set_bg(lb.HOOVER_USGS, color=all_b.USGS_BG)
+        self.set_bg(lb.MEAD_EVAPORATION, color=all_b.EVAPORATION_BG)
         self.set_bg(lb.MEAD, color=all_b.LIGHT_BLUE_BG)
-        self.set_bg(ub.POWELL, color=all_b.LIGHT_BLUE_BG)
-        self.set_bg(ub.POWELL_EVAPORATION, color=all_b.EVAPORATION_BG)
 
         # sheet.add_borders_to_column(ws, lower_basin_end_col, 1, ws.max_row, which='right', border_style='medium')
         # sheet.add_borders_to_column(ws, 22, 1, ws.max_row, which='vertical')
 
-        self.set_bg(lb.MEAD_EVAPORATION, color=all_b.EVAPORATION_BG)
-
-        # USGS
-        self.set_bg(ub.GLEN_CANYON, ub.INFLOW_UNREGULATED, color=all_b.USGS_BG)
-        self.set_bg(lb.GC_INFLOW, color=all_b.USGS_BG)
-
-        # Upper Basin CUL
-        self.set_bg(ub.III_A_UB, ub.CU_AZ, color=all_b.USBR_UB_CUL_BG)
-
-        # Elevations
-        self.set_bg(lb.MEAD_ELEVATION, ub.POWELL_ELEVATION, color=all_b.USBR_RISE_ELEVATION_BG)
+        self.set_bg(lb.DIAMOND_CREEK, to=ub.GLEN_CANYON, color=all_b.USGS_BG)
+        self.set_bg(ub.NATURAL_LEES_FERRY, color=all_b.USBR_NATURAL_BG)
+        self.set_bg(ub.POWELL, color=all_b.LIGHT_BLUE_BG)
+        self.set_bg(ub.POWELL_EVAPORATION, color=all_b.EVAPORATION_BG)
+        self.set_bg(ub.INFLOW, to=ub.INFLOW_UNREGULATED, color=all_b.USGS_BG)
+        self.set_bg(ub.III_A_UB, to=ub.AZ_CU, color=all_b.USBR_UB_CUL_BG)
+        self.set_bg(lb.MEAD_ELEVATION, to=ub.POWELL_ELEVATION, color=all_b.USBR_RISE_ELEVATION_BG)
 
         self.format_header()
 
@@ -145,15 +165,78 @@ class Compact(Sheet):
         ws.sheet_properties.fullCalcOnLoad = True
 
     @staticmethod
+    def moving_average_10yr(data):
+        """
+        Compute 10-year simple moving average.
+        Returns only the averages (starting from index 9 / 10th element).
+        If fewer than 10 values, returns empty list.
+        """
+        if len(data) < 10:
+            return []
+
+        result = []
+        for i in range(9, len(data)):
+            window = data[i - 9: i + 1]  # 10 elements
+            result.append(sum(window) / 10)
+
+        return result
+
+    @staticmethod
+    def write_column(
+            ws,
+            header_name: str,
+            values: list,
+            header_row: int = 1,  # row where headers live (usually 1)
+            data_start_row: int = 2,  # where to begin writing the values
+            case_sensitive: bool = False,  # set to True if header match must be exact case
+            overwrite: bool = True  # whether to overwrite existing cells in the column
+    ):
+        """
+        Finds the column with the given header_name in the specified header_row,
+        then writes the list of values downward starting from data_start_row.
+
+        Returns the column letter where data was written, or None if header not found.
+        """
+        # Find the column letter by searching the header row
+        col_letter = None
+        for col_idx in range(1, ws.max_column + 1):
+            cell = ws.cell(row=header_row, column=col_idx)
+            if cell.value is not None:
+                val_str = str(cell.value).strip()
+                match = (val_str == header_name) if case_sensitive else (val_str.lower() == header_name.lower())
+                if match:
+                    col_letter = get_column_letter(col_idx)
+                    break
+
+        if col_letter is None:
+            raise ValueError(f"Header '{header_name}' not found in row {header_row}")
+
+        # Get column index for writing
+        col_idx = openpyxl.utils.column_index_from_string(col_letter)
+
+        # Write the values
+        for i, value in enumerate(values):
+            row_num = data_start_row + i
+            cell = ws.cell(row=row_num, column=col_idx)
+            if overwrite or cell.value is None:
+                cell.value = value
+
+        # Optional: auto-fit column width
+        max_len = max(len(str(header_name)), max((len(str(v)) for v in values), default=0))
+        ws.column_dimensions[col_letter].width = max_len + 2
+
+        return col_letter
+
+    @staticmethod
     def lower_basin_annual_reports(df: pd.DataFrame):
         df_ca = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_total_consumptive_use.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_ca, lb.CU_CA)
+        sheet.merge_annual_column(df, df_ca, lb.CA_CU)
 
         df_az = sheet.read_csv('data/USBR_Reports/az/usbr_az_total_consumptive_use.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_az, lb.CU_AZ)
+        sheet.merge_annual_column(df, df_az, lb.AZ_CU)
 
         df_nv = sheet.read_csv('data/USBR_Reports/nv/usbr_nv_total_consumptive_use.csv', sep='\s+')
-        sheet.merge_annual_column(df, df_nv,lb.CU_NV)
+        sheet.merge_annual_column(df, df_nv,lb.NV_CU)
 
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
         sheet.merge_annual_column(df, df_mx, lb.MEXICO)

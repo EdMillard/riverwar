@@ -27,7 +27,6 @@ from sheet import sheet
 from sheet.sheet import Sheet
 from typing import List
 
-IIIC = "iii(c)"
 EQUALS = "="
 MINUS = " - ("
 PLUS = "+"
@@ -37,14 +36,14 @@ LOWER_CU = 'LOWER CU'
 
 class III_C(Sheet):
     def __init__(self):
-        headers = [IIIC, EQUALS, lb.NATURAL_IMPERIAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, lb.MX_TREATY,
+        headers = [all_b.III_C, EQUALS, lb.NATURAL_IMPERIAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, lb.MX_TREATY,
                               lb.HOOVER_RELEASE, ub.GLEN_CANYON_RELEASE]
         super().__init__(headers,  end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         df_len = len(self.df) + 2
-        self.df[IIIC] = [f"=D{row}-( F{row} + H{row})" for row in range(2, df_len)]
+        self.df[all_b.III_C] = [f"=D{row}-( F{row} + H{row})" for row in range(2, df_len)]
         self.df[EQUALS] = [f"=" for _ in range(2, df_len)]
 
         sheet.natural_flow_from_excel(self.df)
@@ -68,7 +67,7 @@ class III_C(Sheet):
         self.df[CLOSE] = [f")" for _ in range(2, df_len)]
 
     def build_sheet(self)-> None:
-        self.set_column_negative_red(IIIC)
+        self.set_column_negative_red(all_b.III_C)
 
         self.set_column_alignment(EQUALS, horizontal='center')
         self.set_column_alignment(MINUS, horizontal='center')

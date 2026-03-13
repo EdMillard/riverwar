@@ -28,6 +28,11 @@ LIGHT_PURPLE_BG = 'ffe0ff'
 LIGHT_YELLOW_BG = 'ffffd0'
 LIGHT_ORANGE_BG = 'ffc080'
 
+III_A = "III(a)"
+III_C = 'III(c)'
+III_C_AZ = "III(c) AZ"
+III_D = "III(d)"
+
 USBR_NATURAL_BG = LIGHT_GREEN_BG
 
 USBR_AR_FLOW = 'b3cac7'
@@ -47,5 +52,4 @@ USGS_BG = 'efefd0'
 CDSS_BG = 'e0e0c0'
 
 COMPACT = 'Compact'
-III_C = 'III(c)'
 RESERVOIRS = 'Reservoirs'

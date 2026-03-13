@@ -177,7 +177,7 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
 
     if not alias:
         alias = info.get('Parameter Name')
-    print_last_value(str(item_id), a, alias=alias)
+    # print_last_value(str(item_id), a, alias=alias)
     return info, a
 
 def request(item_id, file_name, start_date='', end_date='', csv=False):
