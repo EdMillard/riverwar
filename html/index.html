@@ -6,11 +6,7 @@
   <title>Colorado River Research - Varuna</title>
   <meta name="description" content="Colorado River Chronology, Mexico Treaty Diplomacy, and related research.">
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       height: 100%;
       margin: 0;
@@ -37,7 +33,6 @@
       color: #4da6ff;
       font-size: 2.4rem;
       font-weight: bold;
-      font-family: Arial, Helvetica, sans-serif;
     }
     .layout {
       display: flex;
@@ -74,9 +69,7 @@
       padding: 1rem 0.8rem;
       box-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
-    .sidebar-nav ul {
-      list-style: none;
-    }
+    .sidebar-nav ul { list-style: none; }
     .sidebar-nav a {
       color: #4da6ff;
       text-decoration: none;
@@ -87,10 +80,7 @@
       font-size: 0.875rem;
       white-space: nowrap;
     }
-    .sidebar-nav a:hover {
-      text-decoration: underline;
-      color: #80c4ff;
-    }
+    .sidebar-nav a:hover { text-decoration: underline; color: #80c4ff; }
     .right-content {
       margin-left: 180px;
       flex: 1;
@@ -101,24 +91,84 @@
     }
     .main {
       flex: 1;
-      background-color: #0a1f3a;      /* Now matches header/title background exactly */
+      background-color: #0a1f3a;
       border: 1px solid #333;
       border-radius: 8px;
-      margin: 0.5rem;
-      padding: 3rem;
+      margin: 0.5rem 1rem 0.5rem 0.5rem;
+      padding: 2rem 2.5rem;
       box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
       font-family: Arial, Helvetica, sans-serif;
       color: #e0e0e0;
     }
-    .coming-soon {
-      color: #4da6ff;
-      font-size: 3rem;
-      font-weight: bold;
-      text-align: center;
+    .entries {
+      max-width: 900px;
+      margin: 0 auto;
     }
+    .entry {
+      margin-bottom: 2.2rem;
+      padding-bottom: 1.8rem;
+      border-bottom: 1px solid #444;
+    }
+    .entry-date {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #4da6ff;
+      margin-bottom: 0.4rem;
+    }
+    .entry-hr {
+      border: none;
+      border-top: 1px solid #4da6ff; /* Full opacity, matches nav bar top/left lines */
+      margin: 0.8rem 0 1.2rem 0;
+    }
+    .entry-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      border-left: 2px solid #4da6ff44; /* vertical line separator */
+      padding-left: 1.2rem;
+    }
+    .thumbnail {
+      width: 180px;
+      height: 240px;
+      flex-shrink: 0;
+      background-color: #222;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      transition: transform 0.2s;
+    }
+    .thumbnail:hover {
+      transform: scale(1.03);
+    }
+    .thumbnail a {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .entry-text {
+      flex: 1;
+      min-width: 300px;
+    }
+    .entry-title {
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
+      color: #4da6ff;
+    }
+    .entry-desc {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    .entry-link {
+      color: #80c4ff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .entry-link:hover { text-decoration: underline; }
     footer {
       background: #0d0d0d;
       color: #aaa;
@@ -130,9 +180,9 @@
       .header-content { left: 0; }
       .left-sidebar { position: static; width: 100%; height: auto; }
       .right-content { margin-left: 0; padding-top: 4rem; }
-      .avatar { margin: 0.5rem auto; }
-      .main { margin: 0.5rem; padding: 2rem; }
-      .coming-soon { font-size: 2.5rem; }
+      .main { margin: 0.5rem; padding: 1.5rem; }
+      .entry-content { flex-direction: column; border-left: none; padding-left: 0; }
+      .thumbnail { width: 100%; height: 200px; }
     }
   </style>
 </head>
@@ -156,7 +206,29 @@
 
     <div class="right-content">
       <main class="main">
-        <div class="coming-soon">Coming soon</div>
+        <div class="entries">
+          <div class="entry">
+            <div class="entry-date">March 14, 2026</div>
+            <hr class="entry-hr">  <!-- horizontal line below date -->
+            <div class="entry-content">
+              <div class="thumbnail">
+                <a href="https://www.varuna.io/Colorado/pdf/CR_CCIP.pdf" target="_blank">
+                  <img src="https://www.varuna.io/Colorado/thumb/CR_CCIP.png" alt="Compact Compliance Infrastructure Protection Pool Thumbnail">
+                </a>
+              </div>
+              <div class="entry-text">
+                <h2 class="entry-title">Compact Compliance Infrastructure Protection Pool (CCIP)</h2>
+                <p class="entry-desc">
+                  Policy proposal for establishing a Compact Compliance Infrastructure Protection Pool in Lake Powell to protect Upper Basin water rights, ensure Colorado River Compact compliance (Article III(d)/(e)), and safeguard infrastructure at elevation 3510'. Focuses on exclusive Upper Basin use of tribal and stranded power water, retiming releases, sideboards against Lower Basin sales/speculation, and monetization options via controlled forbearance or USBR purchases.
+                </p>
+                <a href="https://www.varuna.io/Colorado/pdf/CR_CCIP.pdf" class="entry-link" target="_blank">Read the full document (PDF)</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Future entries can be added here -->
+
+        </div>
       </main>
     </div>
 
