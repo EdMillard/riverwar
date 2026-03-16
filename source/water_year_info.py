@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import calendar
 from datetime import date, datetime, timedelta
 import numpy as np
 import pandas as pd
@@ -31,14 +32,14 @@ class WaterYearInfo:
     format_float = '12.6f'
     verify_tolerance = 1e-9
 
-    def __init__(self, year, start_date, end_date):
+    def __init__(self, year:int, start_date:date, end_date:date):
         self.year = year
         self.start_date = start_date
         self.end_date = end_date
         self.is_current_water_year = False
 
     @staticmethod
-    def get_water_year(input_date, month=10):
+    def get_water_year(input_date:date | datetime, month:int=1):
         """
         Calculate the water year and its start/end dates for a given date.
         Water year starts on Nov 1 and ends on Oct 31.
@@ -62,15 +63,23 @@ class WaterYearInfo:
             start_date = date(water_year, 1, 1)
             end_date = date(water_year, 12, 31)
         else:
-            if input_date.month >= 10:
+            if input_date.month >= month:
                 water_year = input_date.year + 1
             else:
                 water_year = input_date.year
-            start_date = date(water_year - 1, 10, 1)
-            end_date = date(water_year, 9, 30)  # FIXME have to get days in month here, this assumes Sept
+            start_date = date(water_year - 1, month, 1)
+            end_date = date(water_year, month-1, WaterYearInfo.last_day_of_month(month-1))
 
         water_year_info = WaterYearInfo(water_year, start_date, end_date)
         return water_year_info
+
+    @staticmethod
+    def last_day_of_month(year: int, month: int) -> int:
+        """
+        Returns the last day of the given month/year.
+        Handles leap years automatically.
+        """
+        return calendar.monthrange(year, month)[1]
 
     @staticmethod
     def is_current_datetime_greater(given_date, hours_offset=24):

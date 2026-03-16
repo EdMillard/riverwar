@@ -21,6 +21,7 @@ SOFTWARE.
 """
 from pathlib import Path
 from copy import copy
+from datetime import date, datetime, timedelta
 from io import StringIO
 import openpyxl
 from openpyxl import load_workbook, Workbook
@@ -164,7 +165,7 @@ def export_to_excel(df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str, num
 
     return ws, df_data
 
-def max_used_column(ws):
+def max_used_column(ws: Worksheet):
     """
     Return the 1-based column index of the *right-most* cell that contains
     a value (int, float, str, datetime, bool, …).
@@ -180,7 +181,7 @@ def max_used_column(ws):
     return max_col
 
 def read_year_value_pairs(
-        ws,
+        ws: Worksheet,
         year_col: int,
         value_col: int,
         start_row: int,
@@ -253,14 +254,149 @@ def read_year_value_pairs(
 
     return pairs, values
 
-def create_df(min_year, max_year, headers):
+def create_df(min_year: int, max_year: int, headers: List[str]):
     years = list(range(min_year, max_year + 1))
 
     df = pd.DataFrame(index=range(len(years)), columns=['Year'] + headers)
     df['Year'] = years
     df.iloc[:, 1:] = pd.NA
 
-    # print(df.head())
+    return df
+
+def create_daily_df(
+        start_date: date | str | tuple[int, int, int],
+        end_date: date | str | tuple[int, int, int],
+        headers: list[str],
+        include_end_date: bool = True
+) -> pd.DataFrame:
+    """
+    Creates a DataFrame with one row per day between start_date and end_date (inclusive by default),
+    with a proper datetime64[ns] index (date only) and the requested columns filled with pd.NA.
+
+    Parameters:
+        start_date: date, 'YYYY-MM-DD' string, or (year, month, day) tuple
+        end_date:   date, 'YYYY-MM-DD' string, or (year, month, day) tuple
+        headers: list of column names (excluding the date)
+        include_end_date: whether to include the end_date row (default True)
+
+    Returns:
+        DataFrame with daily date index
+    """
+    # Normalize inputs to datetime
+    if isinstance(start_date, (tuple, list)):
+        start_date = date(*start_date)
+    if isinstance(end_date, (tuple, list)):
+        end_date = date(*end_date)
+
+    start = pd.to_datetime(start_date)
+    end = pd.to_datetime(end_date)
+
+    # Generate daily date range
+    dates = pd.date_range(
+        start=start,
+        end=end,
+        freq='D',
+        inclusive='both' if include_end_date else 'left'
+    )
+
+    # Create empty DataFrame
+    df = pd.DataFrame(
+        index=dates,
+        columns=headers,
+        dtype='object'
+    )
+
+    df[:] = pd.NA
+
+    # Optional: make index name nicer
+    df.index.name = 'date'
+
+    return df
+1
+
+def fill_df_from_structured_array(
+    df: pd.DataFrame,
+    arr: np.ndarray,
+    value_column_name: str = None,
+    date_column_name: str = None,
+    method: str = 'setitem'   # or 'loc' / 'at'
+) -> pd.DataFrame:
+    """
+    Fills values from a structured array [('dt', '<M8[s]'), ('val', '<f4')]
+    into the DataFrame, matching on date (truncating time to date-only).
+
+    Assumes:
+    - If df.index is datetime-like → uses index for matching
+    - If df has a date column → uses that column (specify date_column_name)
+
+    Parameters:
+        df: DataFrame with daily dates (index or column)
+        arr: structured ndarray with fields 'dt' and 'val'
+        value_column_name: optional - name of column in df to fill
+                           (if None, assumes there's only one data column)
+        date_column_name: required only if date is not the index
+        method: 'setitem' (fastest), 'loc', or 'at'
+
+    Returns:
+        Modified DataFrame (in place)
+    """
+    if not len(arr):
+        return df
+
+    # Extract dates and values
+    dates = arr['dt'].astype('datetime64[D]')   # truncate to day
+    values = arr['val']
+
+    # Determine where dates live
+    if isinstance(df.index, (pd.DatetimeIndex, pd.RangeIndex)):
+        date_source = 'index'
+        df_dates = df.index.floor('D') if df.index.dtype == 'datetime64[ns]' else df.index
+    elif date_column_name is not None and date_column_name in df.columns:
+        date_source = 'column'
+        df_dates = pd.to_datetime(df[date_column_name]).dt.floor('D')
+    else:
+        raise ValueError("Could not find date information. "
+                         "Use date_column_name= or make sure index is datetime-like.")
+
+    # Choose target column
+    if value_column_name is None:
+        data_cols = [c for c in df.columns if c not in (date_column_name or [])]
+        if len(data_cols) != 1:
+            raise ValueError("value_column_name required when >1 non-date column exists")
+        value_column_name = data_cols[0]
+
+    if value_column_name not in df.columns:
+        raise ValueError(f"Column '{value_column_name}' not found in DataFrame")
+
+    # Fastest method: vectorized boolean indexing + numpy assignment
+    if method == 'setitem':
+        for dt, val in zip(dates, values):
+            mask = df_dates == dt
+            if mask.any():
+                df.loc[mask, value_column_name] = val
+
+    elif method == 'loc':
+        # Alternative (sometimes clearer)
+        for dt, val in zip(dates, values):
+            if date_source == 'index':
+                if dt in df.index:
+                    df.loc[dt, value_column_name] = val
+            else:
+                mask = df[date_column_name].dt.date == dt.astype('datetime64[D]').astype(date)
+                if mask.any():
+                    df.loc[mask, value_column_name] = val
+
+    elif method == 'at':
+        # Fastest for single-cell writes when index is unique
+        if date_source != 'index':
+            raise ValueError("'at' method only supported when date is index")
+        for dt, val in zip(dates, values):
+            if dt in df.index:
+                df.at[dt, value_column_name] = val
+
+    else:
+        raise ValueError("method must be 'setitem', 'loc' or 'at'")
+
     return df
 
 def lf_natural_flow_from_excel(df: pd.DataFrame):
@@ -444,25 +580,27 @@ def upper_basin_cu_from_excel(df:pd.DataFrame):
 
 
 def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='00060', stat_cd='00003',
-                 month=10, offset=0, divisor=1_000_000):
+                 month=1, offset=0, divisor=1_000_000):
     annuals = []
     values = []
     if month != 1:
         start_year -= 1
-    for year in range(start_year, end_year):
+    for year in range(start_year, end_year+1):
         ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
-        gage = USGSGage(gage_id)
+        gage = USGSGage(gage_id, water_year_info)
         daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
                                         statCd=stat_cd)
         annual_af = daily_to_water_year(daily_af)
-        result = (annual_af[0]['dt'], annual_af[0]['val'])
-        annuals.append(result)
+        # result = (annual_af[0]['dt'], annual_af[0]['val'])
+        # annuals.append(result)
         if len(annual_af) == 1:
             values.append(annual_af[0][1] / divisor)
             annuals.append(annual_af[0])
+        elif annual_af is None:
+            print(f'No years returned {gage_id} {year}')
         else:
-            print('Multiple years returned')
+            print(f'Multiple years returned  {gage_id} {year}')
 
 
     # if title:
@@ -478,16 +616,16 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
 
     return values
 
-def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060', statCd='00003', month=10):
+def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060', statCd='00003', month=1):
     years = []
     annuals = []
     values = []
     if month != 1:
         start_year -= 1
-    for year in range(start_year, end_year):
+    for year in range(start_year, end_year+1):
         ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
-        gage = USGSGage(gage_id)
+        gage = USGSGage(gage_id, water_year_info)
         daily_feet = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameterCd,
                                         statCd=statCd)
         # total = daily_release_ft['val'].sum()
@@ -506,7 +644,7 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
 
     return values
 
-def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=10)-> float:
+def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=1)-> float:
     if month != 1:
         year -= 1
     ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
@@ -520,13 +658,13 @@ def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=10)-> float:
     af = daily_af[-1]
     return af
 
-def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1_000_000):
+def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=1, divisor=1_000_000):
     years = []
     annuals = []
     values = []
     if month != 1:
         start_year -= 1
-    for year in range(start_year, end_year):
+    for year in range(start_year, end_year+1):
         af = usbr_get_last_value(gage_id, year, cfs_to_af=cfs_to_af, month=month)
         years.append(year + 1)
         values.append(af[1] / divisor)
@@ -549,13 +687,13 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
             insert_values_from_year(df, title, start_year, values)
     return values
 
-def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=10, divisor=1_000_000):
+def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=1, divisor=1_000_000, offset=0):
     annuals = []
     values = []
     start_year = start_year
     if month != 1:
         start_year -= 1
-    for year in range(start_year, end_year):
+    for year in range(start_year, end_year+1):
         ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         if cfs_to_af:
@@ -569,8 +707,10 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
         if len(annual_af) == 1:
             values.append(annual_af[0][1] / divisor)
             annuals.append(annual_af[0])
+        elif annual_af is None:
+            print(f'No years returned {gage_id} {year}')
         else:
-            print('Multiple years returned')
+            print(f'Multiple years returned {gage_id} {year}')
 
     # if title:
     #    print(title)
@@ -578,7 +718,10 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
     #        print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
 
     if title:
-        df[title] = values
+        if len(values) != len(df[title]):
+            insert_values_from_year(df, title, start_year, values, offset=offset)
+        else:
+            df[title] = values
 
     return values
 

@@ -35,13 +35,6 @@ from colorado.lb_CUL import LB_CUL
 
 def run():
     # Elevation_ft_NAVD88,Elevation_ft_NGVD29,Area_acres,Capacity_acrefeet
-    deadpool = 1_578_783
-
-    a3510 = get_lake_powell_capacity(3510.0, elev_col='Elevation_ft_NAVD88', cap_col='Capacity_acrefeet') - deadpool
-    a3500 = get_lake_powell_capacity(3500.0, elev_col='Elevation_ft_NAVD88', cap_col='Capacity_acrefeet') - deadpool
-    a3490 = get_lake_powell_capacity(3490.0, elev_col='Elevation_ft_NAVD88', cap_col='Capacity_acrefeet') - deadpool
-    now = get_lake_powell_capacity(3530.19, elev_col='Elevation_ft_NAVD88', cap_col='Capacity_acrefeet') - deadpool
-    print(f'3530.19:\t{now:8,.0f}\n3510.00:\t{a3510:8,.0f}\t{now-a3510:8,.0f}\n3500.00:\t{a3500:8,.0f}\t{now-a3500:8,.0f}\n3490.00:\t{a3490:8,.0f}\t{now-a3490:8,.0f}')
 
     iii_c = III_C()
     imperial = Imperial()

@@ -23,6 +23,7 @@ import datetime
 from datetime import datetime
 import json
 import numpy as np
+import pandas as pd
 import requests
 from pathlib import Path
 from source.water_year_info import WaterYearInfo
@@ -41,7 +42,7 @@ class USBRRise(object):
         pass
 
 
-def daily_to_water_year(a, water_year_month=10):
+def daily_to_water_year(a, water_year_month=1):
     dt = datetime.date(1, water_year_month, 1)
     total = 0
     result = []
@@ -153,6 +154,11 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
         if file_path.exists():
             info, previous_data = load_json(file_path)
             if previous_data is not None and len(previous_data):
+                dt = previous_data[0]['dt']  # numpy.datetime64
+                dt_pd = pd.Timestamp(dt)
+                if dt_pd.date() != water_year_info.start_date:
+                    print(f'Misaligned water year, reloading: {file_path}')
+                    update = True
                 if water_year_info is not None and water_year_info.is_current_water_year:
                     last_date = previous_data[-1][0]
                     update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)

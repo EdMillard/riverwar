@@ -73,10 +73,10 @@ class Reservoirs(Sheet):
     def load_df(self, df_compact : pd.DataFrame) -> None:
         # Active Capacity
         usbr_lake_havasu_storage_af = 6128
-        sheet.usbr_last_value(self.df, usbr_lake_havasu_storage_af, self.start_year, self.end_year, title=lb.HAVASU, month=10)
+        sheet.usbr_last_value(self.df, usbr_lake_havasu_storage_af, self.start_year, self.end_year, title=lb.HAVASU)
 
         usbr_lake_mead_storage_af = 6124
-        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.start_year, self.end_year, title=lb.MEAD, month=10)
+        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.start_year, self.end_year, title=lb.MEAD)
 
         usbr_lake_powell_storage_af = 509
         sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.start_year, self.end_year,  title=ub.POWELL)

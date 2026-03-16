@@ -85,8 +85,7 @@ class LB_CUL(Sheet):
         # sheet.usgs_annuals(self.df, '09402300', 1990, self.end_year, title=lb.AZ_LITTLE_COLORADO_MOUTH_USGS, divisor=1)
 
         # Little Colorado River Near Cameron, AZ
-        sheet.usgs_annuals(self.df, '09402000', 1981, self.end_year, title=lb.AZ_LITTLE_COLORADO_CAMERON_USGS,
-                           offset=1, divisor=1)
+        sheet.usgs_annuals(self.df, '09402000', 1981, self.end_year, title=lb.AZ_LITTLE_COLORADO_CAMERON_USGS, divisor=1)
 
         # AZ Gila
         sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1)

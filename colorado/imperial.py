@@ -40,7 +40,7 @@ class Imperial(Sheet):
 
         self.df[lb.SALTON_INFLOW] = [f'=SUM(D{row}:F{row})' for row in range(2, len(self.df) + 2)]
 
-        sheet.usgs_value(self.df, '10254005', 1988, self.end_year, title=lb.SALTON_ELEVATION, parameterCd='62614', statCd='00003')
+        sheet.usgs_value(self.df, '10254005', 1989, self.end_year, title=lb.SALTON_ELEVATION, parameterCd='62614', statCd='00003')
 
         self.lower_basin_annual_reports(self.df)
 

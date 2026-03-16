@@ -35,24 +35,22 @@ from typing import List
 
 class Compact(Sheet):
     def __init__(self):
-        headers = [all_b.III_A, all_b.III_C, all_b.III_C_AZ, all_b.III_D,
-                   lb.MEXICO, lb.NIB_MORELOS_USGS, lb.NATURAL_IMPERIAL,
-                   lb.III_A_LB, lb.III_B,
+        headers = [all_b.III_A, all_b.III_C, all_b.III_C_AZ,
+                   lb.NIB_MORELOS_USGS, lb.AZ_GILA_CU, lb.NATURAL_IMPERIAL,
+                   lb.MEXICO, lb.III_A_LB, lb.III_B,
                    lb.LB_CU, lb.CA_CU, lb.AZ_CU, lb.NV_CU,
                    lb.MEAD_EVAPORATION, lb.HOOVER_RELEASE,
                    lb.H_M, lb.DIFF_7_5, lb.HOOVER_USGS,
                    lb.MEAD, lb.DIAMOND_CREEK, lb.GC_INFLOW,
-                   ub.LEES_FERRY_USGS, ub.GLEN_CANYON,
+                   all_b.III_D, ub.LEES_FERRY_USGS, ub.GLEN_CANYON,
                    ub.POWELL,ub.POWELL_EVAPORATION,
                    ub.NATURAL_LEES_FERRY,
                    ub.INFLOW, ub.INFLOW_UNREGULATED,
                    ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY,
-                   ub.CU_NM, ub.AZ_CU,
+                   ub.CU_NM, ub.AZ_CU, ub.FLAMING_GORGE,
                    lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
         super().__init__(headers,  end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
-        pass
-
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
 
@@ -72,7 +70,7 @@ class Compact(Sheet):
         sheet.usgs_annuals(self.df, '09421500', self.start_year, self.end_year, title=lb.HOOVER_USGS)
 
         usbr_lake_mead_storage_af = 6124
-        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.start_year, self.end_year, title=lb.MEAD, month=10)
+        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.start_year, self.end_year, title=lb.MEAD)
 
         usbr_lake_powell_storage_af = 509
         sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.start_year, self.end_year,  title=ub.POWELL)
@@ -80,14 +78,11 @@ class Compact(Sheet):
         usbr_lake_mead_elevation_ft = 6123
         sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.start_year, self.end_year, title=lb.MEAD_ELEVATION, divisor=1)
 
-        usbr_lake_powell_elevation_af = 508
-        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
-
         sheet.usgs_annuals(self.df, '09404200', 2007, self.end_year,  title=lb.DIAMOND_CREEK, offset=1)
         sheet.usgs_annuals(self.df, '09380000', self.start_year, self.end_year, title=ub.LEES_FERRY_USGS)
 
         usbr_lake_powell_evap_af = 510
-        sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, self.start_year, self.end_year,  title=ub.POWELL_EVAPORATION)
+        sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, 1965, self.end_year,  title=ub.POWELL_EVAPORATION)
 
         usbr_lake_powell_release_total_af = 4354
         sheet.usbr_annuals(self.df, usbr_lake_powell_release_total_af, self.start_year, self.end_year, title=ub.GLEN_CANYON)
@@ -101,10 +96,22 @@ class Compact(Sheet):
         usbr_lake_powell_elevation_af = 508
         sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION, divisor=1)
 
+        usbr_flaming_gorge_storage_af = 337
+        sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, self.start_year, self.end_year,  title=ub.FLAMING_GORGE)
+
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
 
+        cn = lambda ws, name: sheet.get_column_number(ws, name)
+
+        sheet.add_borders_to_column(ws, 1, 1, ws.max_row, end_col=ws.max_column, which='outer')
+        sheet.add_borders_to_column(ws, cn(ws, all_b.III_A), 1, ws.max_row+1, end_col=cn(ws, all_b.III_D), which='outer')
+        sheet.add_borders_to_column(ws, cn(ws, all_b.III_D), 1, ws.max_row-1, end_col=cn(ws, ub.LEES_FERRY_USGS), which='left')
+
+        #sheet.formula(ws, self.df, lb.AZ_GILA_CU, f"='LB CUL'!'{lb.AZ_GILA_CU}' / 1000000")
+
         sheet.formula_average(ws, self.df, self.years, number_format='#,##0.00;-#,##0,00')
+        sheet.add_borders_to_column(ws, 1, ws.max_row-1, ws.max_row-1, end_col=ws.max_column, which='outer')
 
         self.set_bg(lb.NATURAL_IMPERIAL, color=all_b.USBR_NATURAL_BG)
         sheet.formula(ws, self.df, lb.NATURAL_IMPERIAL, f"='{ub.NATURAL_LEES_FERRY}' + 0.8", start_row=58)
@@ -135,10 +142,6 @@ class Compact(Sheet):
         self.set_bg(lb.MEXICO, color=all_b.USBR_AR_FLOW)
         self.set_bg(lb.HOOVER_RELEASE, color=all_b.USBR_AR_FLOW)
 
-        # sheet.add_borders_to_column(ws, 1, 1, ws.max_row, which='vertical')
-        # sheet.add_borders_to_column(ws, 3, 1, ws.max_row, which='right')
-        # sheet.add_borders_to_column(ws, 7, 1, ws.max_row, which='vertical')
-
         self.set_bg(ub.NATURAL_LEES_FERRY, color=all_b.USBR_NATURAL_BG)
         self.set_bg(lb.LB_CU, to=lb.NV_CU, color=all_b.USBR_AR_CU_BG)
 
@@ -146,15 +149,17 @@ class Compact(Sheet):
         self.set_bg(lb.MEAD_EVAPORATION, color=all_b.EVAPORATION_BG)
         self.set_bg(lb.MEAD, color=all_b.LIGHT_BLUE_BG)
 
-        # sheet.add_borders_to_column(ws, lower_basin_end_col, 1, ws.max_row, which='right', border_style='medium')
-        # sheet.add_borders_to_column(ws, 22, 1, ws.max_row, which='vertical')
-
-        self.set_bg(lb.DIAMOND_CREEK, to=ub.GLEN_CANYON, color=all_b.USGS_BG)
+        self.set_bg(lb.DIAMOND_CREEK, to=lb.GC_INFLOW, color=all_b.USGS_BG)
+        self.set_bg(ub.LEES_FERRY_USGS, to=ub.GLEN_CANYON, color=all_b.USGS_BG)
         self.set_bg(ub.NATURAL_LEES_FERRY, color=all_b.USBR_NATURAL_BG)
+
         self.set_bg(ub.POWELL, color=all_b.LIGHT_BLUE_BG)
         self.set_bg(ub.POWELL_EVAPORATION, color=all_b.EVAPORATION_BG)
+
         self.set_bg(ub.INFLOW, to=ub.INFLOW_UNREGULATED, color=all_b.USGS_BG)
         self.set_bg(ub.III_A_UB, to=ub.AZ_CU, color=all_b.USBR_UB_CUL_BG)
+        self.set_bg(ub.FLAMING_GORGE, color=all_b.LIGHT_BLUE_BG)
+
         self.set_bg(lb.MEAD_ELEVATION, to=ub.POWELL_ELEVATION, color=all_b.USBR_RISE_ELEVATION_BG)
 
         self.format_header()
@@ -258,7 +263,7 @@ class Compact(Sheet):
 
         if clicked_str == 'Lake Powell Elevation':
             ts = pd.Timestamp('2025-11-01 00:00:00')
-            water_year_info = WaterYearInfo.get_water_year(ts, month=10)
+            water_year_info = WaterYearInfo.get_water_year(ts)
             usbr_lake_powell_elevation_af = 508
             usbr_rise.load(usbr_lake_powell_elevation_af, water_year_info=water_year_info)
         return annuals_total
