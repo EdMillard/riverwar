@@ -19,8 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pathlib import Path
 from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.utils import get_column_letter, column_index_from_string
+from openpyxl.utils import get_column_letter
 import openpyxl
 from source import usbr_rise
 from source.water_year_info import WaterYearInfo
@@ -36,7 +37,7 @@ from typing import List
 class Compact(Sheet):
     def __init__(self):
         headers = [all_b.III_A, all_b.III_C, all_b.III_C_AZ,
-                   lb.NIB_MORELOS_USGS, lb.AZ_GILA_CU, lb.NATURAL_IMPERIAL,
+                   lb.NIB_MORELOS_USGS, lb.AZ_GILA_DOME_USGS, lb.AZ_GILA_CU, lb.NATURAL_IMPERIAL,
                    lb.MEXICO, lb.III_A_LB, lb.III_B,
                    lb.LB_CU, lb.CA_CU, lb.AZ_CU, lb.NV_CU,
                    lb.MEAD_EVAPORATION, lb.HOOVER_RELEASE,
@@ -60,6 +61,12 @@ class Compact(Sheet):
         sheet.natural_flow_from_excel(self.df)
         sheet.lf_natural_flow_from_excel(self.df)
         Compact.lower_basin_annual_reports(self.df)
+
+        sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1000000)
+
+        path = Path('data/USBR_Lower_Colorado_CUL/Tributary')
+        df = sheet.read_csv(path / 'az_gila_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_CU, divisor=1000000)
 
         df_mead_evap = sheet.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
         sheet.merge_annual_column(self.df, df_mead_evap, lb.MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
@@ -108,8 +115,6 @@ class Compact(Sheet):
         sheet.add_borders_to_column(ws, cn(ws, all_b.III_A), 1, ws.max_row+1, end_col=cn(ws, all_b.III_D), which='outer')
         sheet.add_borders_to_column(ws, cn(ws, all_b.III_D), 1, ws.max_row-1, end_col=cn(ws, ub.LEES_FERRY_USGS), which='left')
 
-        #sheet.formula(ws, self.df, lb.AZ_GILA_CU, f"='LB CUL'!'{lb.AZ_GILA_CU}' / 1000000")
-
         sheet.formula_average(ws, self.df, self.years, number_format='#,##0.00;-#,##0,00')
         sheet.add_borders_to_column(ws, 1, ws.max_row-1, ws.max_row-1, end_col=ws.max_column, which='outer')
 
@@ -139,6 +144,8 @@ class Compact(Sheet):
         sheet.formula_subtract(ws, self.df, lb.GC_INFLOW, lb.DIAMOND_CREEK, ub.LEES_FERRY_USGS, start_row=44)
 
         self.set_bg(lb.NIB_MORELOS_USGS, color=all_b.USGS_BG)
+        self.set_bg(lb.AZ_GILA_DOME_USGS, color=all_b.USGS_BG)
+        self.set_bg(lb.AZ_GILA_CU, color=all_b.USBR_LB_CUL_BG)
         self.set_bg(lb.MEXICO, color=all_b.USBR_AR_FLOW)
         self.set_bg(lb.HOOVER_RELEASE, color=all_b.USBR_AR_FLOW)
 

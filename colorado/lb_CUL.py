@@ -28,13 +28,13 @@ import openpyxl
 from sheet import sheet
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl import Workbook
-from typing import List, Dict, Union
+from typing import List, Dict
 import csv
 
 class LB_CUL(Sheet):
     def __init__(self):
         self.path:Path = Path('data/USBR_Lower_Colorado_CUL/Tributary')
-
+        generate_cul_totals(self.path)
         headers = [
             lb.AZ_TRIBUTARY_CU, lb.NV_TRIBUTARY_CU,
             lb.AZ_GILA_DOME_USGS,
@@ -196,7 +196,6 @@ class LB_CUL(Sheet):
             f = formula.replace("[row]", str(excel_row))
             ws.cell(row=excel_row, column=col_idx, value=f)
 
-
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
 
@@ -343,3 +342,165 @@ def lower_basin_cu_from_excel(out_path: Path, years):
         if not all_rows_are_zero:
             out_csv_path = out_path / f'{key}.csv'
             df.to_csv(out_csv_path, index=False, quoting=csv.QUOTE_NONE,  escapechar='\\', sep=' ')
+
+import pandas as pd
+from pathlib import Path
+from typing import List, Union
+
+def sum_csv_files_by_year(
+    csv_files: List[Union[str, Path]],
+    output_path: Union[str, Path],
+    year_column: str = 'Year',
+    encoding: str = 'utf-8'
+) -> pd.DataFrame:
+    """
+    Sums numeric columns across CSV files, aligning rows by the 'Year' column (treated as int).
+    Keeps 'Year' as a regular column in the output (does not sum it).
+    """
+    if not csv_files:
+        raise ValueError("No CSV files provided")
+
+    csv_paths = [Path(f) for f in csv_files]
+    output_path = Path(output_path)
+
+    # ── Load first file ───────────────────────────────────────────────────────
+    df_total = pd.read_csv(
+        csv_paths[0],
+        encoding=encoding,
+        dtype=str,                   # read everything as string first → safer
+        sep=r'\s+',
+        low_memory=False
+    )
+
+    print(f"\nBase file: {csv_paths[0].name}")
+    print("Columns found:", list(df_total.columns))
+    print("First few rows:\n", df_total.head(3))
+
+    # Try to find the year column (robust matching)
+    year_col = None
+    for col in df_total.columns:
+        if str(col).strip().lower() in ['year', 'yr', year_column.lower()]:
+            year_col = col
+            break
+
+    if year_col is None:
+        raise KeyError(
+            f"Could not find a 'Year' column in {csv_paths[0].name}.\n"
+            f"Available columns: {list(df_total.columns)}"
+        )
+
+    # Convert year to integer (after stripping any weird whitespace)
+    df_total[year_col] = pd.to_numeric(df_total[year_col], errors='coerce').astype('Int64')
+    df_total = df_total.dropna(subset=[year_col])  # drop rows where year is invalid
+
+    # Set as index (but we'll bring it back later)
+    df_total = df_total.set_index(year_col).sort_index()
+
+    print(f"Using '{year_col}' as year column. Unique years: {sorted(df_total.index.unique())}")
+
+    # ── Process remaining files ───────────────────────────────────────────────
+    for path in csv_paths[1:]:
+        df = pd.read_csv(
+            path,
+            encoding=encoding,
+            dtype=str,
+            sep=r'\s+',
+            low_memory=False
+        )
+
+        print(f"\nProcessing: {path.name}")
+        print("Columns:", list(df.columns))
+
+        # Find year column in this file
+        this_year_col = None
+        for col in df.columns:
+            if str(col).strip().lower() in ['year', 'yr', year_column.lower()]:
+                this_year_col = col
+                break
+
+        if this_year_col is None:
+            print(f"→ Skipping {path.name} — no 'Year' column found")
+            continue
+
+        df[this_year_col] = pd.to_numeric(df[this_year_col], errors='coerce').astype('Int64')
+        df = df.dropna(subset=[this_year_col])
+        df = df.set_index(this_year_col).sort_index()
+
+        # Only add numeric columns that exist in both
+        numeric_cols = df.select_dtypes(include='number').columns.intersection(
+            df_total.select_dtypes(include='number').columns
+        )
+
+        if len(numeric_cols) == 0:
+            print(f"→ No common numeric columns — skipping addition")
+            continue
+
+        # Align and add (missing years get 0)
+        df_total[numeric_cols] = df_total[numeric_cols].add(
+            df[numeric_cols].reindex(df_total.index, fill_value=0),
+            fill_value=0
+        )
+
+        print(f"→ Added {len(numeric_cols)} numeric columns from {path.name}")
+
+    # Bring Year back as column
+    df_total = df_total.reset_index(names=year_column)
+
+    # Save
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df_total.to_csv(output_path, index=False, sep=' ', encoding=encoding)
+
+    print(f"\nDone. Saved to: {output_path}")
+    print(f"Final shape: {df_total.shape}")
+    print(f"Years: {sorted(df_total[year_column].unique())}")
+
+    return df_total
+
+def generate_cul_totals(path:Path):
+    out = path / "az_gila_total_cu.csv"
+    remove_file(out)
+    files = find_files(Path(path), "az_gila*")
+
+    sum_csv_files_by_year(files, out, year_column='Year')
+    pass
+
+
+def remove_file(file_path: str | Path) -> bool:
+    """
+    Safely delete a file at the given path.
+
+    Returns:
+        True  → file was successfully deleted
+        False → file did not exist (no error raised)
+
+    Raises:
+        IsADirectoryError → if the path points to a directory
+        PermissionError   → if access denied
+        OSError           → other OS-level errors
+    """
+    path = Path(file_path)
+
+    try:
+        path.unlink(missing_ok=True)  # missing_ok=True → no error if file doesn't exist
+        print(f"Removed: {path}")
+        return True
+    except IsADirectoryError:
+        print(f"Error: {path} is a directory, not a file.")
+        return False
+    except PermissionError:
+        print(f"Error: Permission denied for {path}")
+        return False
+    except OSError as e:
+        print(f"Error removing {path}: {e}")
+        return False
+
+def find_files(directory: str | Path, pattern: str) -> list[str]:
+    """
+    Find files using pathlib.glob (Python 3.5+)
+    """
+    base_dir = Path(directory).resolve()
+    return sorted([
+        str(path)
+        for path in base_dir.glob(pattern)
+        if path.is_file()
+    ])
