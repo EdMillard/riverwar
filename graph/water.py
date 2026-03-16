@@ -133,7 +133,7 @@ class WaterGraph(object):
                     xytext=(x_lim[1], y), textcoords='data', verticalalignment='center',
                     arrowprops=dict(arrowstyle="-", connectionstyle="arc3", color=color))
 
-    def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, x_labels=True, running_average_years=10,
+    def bars(self, a, sub_plot=0, title='', color='royalblue', label=None, x_labels=True, running_average_years=1,
              ymin=0, ymax=0, yinterval=1,
              xlabel='', xmin=0, xmax=0, xinterval=1, bar_width=0.9,
              ylabel='', format_func=format_af):
@@ -427,7 +427,7 @@ class WaterGraph(object):
         return a
 
     @staticmethod
-    def daily_to_water_year(a, water_year_month=10):
+    def daily_to_water_year(a, water_year_month=1):
         dt = datetime.date(1, water_year_month, 1)
         total = 0
         result = []
