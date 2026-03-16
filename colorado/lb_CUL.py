@@ -34,159 +34,91 @@ import csv
 class LB_CUL(Sheet):
     def __init__(self):
         self.path:Path = Path('data/USBR_Lower_Colorado_CUL/Tributary')
-        generate_cul_totals(self.path)
         headers = [
-            lb.AZ_TRIBUTARY_CU, lb.NV_TRIBUTARY_CU,
+            lb.LB_TRIBUTARY_CUL,
+            lb.AZ_TRIBUTARY_CUL, lb.NV_TRIBUTARY_CUL, lb.UT_TRIBUTARY_CUL,  lb.NM_TRIBUTARY_CUL,
+
             lb.AZ_GILA_DOME_USGS,
-
-            lb.AZ_GILA_CU,
-            lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_M_AND_I_CU, lb.AZ_GILA_MINERALS_CU,
-            lb.AZ_GILA_LIVESTOCK_CU, lb.AZ_GILA_STOCK_POND_CU,
-            lb.AZ_GILA_RESERVOIR_MEASURED_CU, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU,
-            lb.AZ_GILA_TEP_CU, lb.AZ_GILA_WITHIN_SYSTEM_CU,
-
-            lb.AZ_LITTLE_COLORADO_CAMERON_USGS, lb.AZ_LITTLE_COLORADO_CU,
-            lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, lb.AZ_LITTLE_COLORADO_M_AND_I_CU,
-            lb.AZ_LITTLE_COLORADO_MINERALS_CU,
-            lb.AZ_LITTLE_COLORADO_LIVESTOCK_CU, lb.AZ_LITTLE_COLORADO_STOCK_POND_CU,
-            lb.AZ_LITTLE_COLORADO_RESERVOIR_MEASURED_CU, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU,
-            lb.AZ_LITTLE_COLORADO_TEP_CU, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU,
-
-            lb.AZ_VIRGIN_CU,
-            lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU,
-
-            lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CU,
-            lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU,
-
-            lb.NV_MUDDY_CU,
-            lb.NV_MUDDY_IRRIGATION_CU, lb.NV_MUDDY_M_AND_I_CU,
-
-            lb.NV_VIRGIN_CU,
-            lb.NV_VIRGIN_IRRIGATION_CU, lb.NV_VIRGIN_M_AND_I_CU,
-
-            lb.NM_GILA_CU,
-            lb.NM_GILA_IRRIGATION_CU, lb.NM_GILA_M_AND_I_CU,
-
-            lb.UT_VIRGIN_CU,
-            lb.UT_VIRGIN_IRRIGATION_CU, lb.UT_VIRGIN_M_AND_I_CU
+            lb.GILA_CUL, lb.AZ_GILA_CUL, lb.NM_GILA_CUL,
+            lb.AZ_LITTLE_COLORADO_CAMERON_USGS, lb.LITTLE_COLORADO_CUL, lb.AZ_LITTLE_COLORADO_CUL, lb.NM_LITTLE_COLORADO_CUL,
+            lb.AZ_VIRGIN_LITTLEFIELD_USGS, lb.VIRGIN_CUL, lb.AZ_VIRGIN_CUL, lb.NV_VIRGIN_CUL, lb.UT_VIRGIN_CUL,
+            lb.AZ_BILL_WILLIAMS_USGS, lb.AZ_BILL_WILLIAMS_CUL,
+            lb.NV_MUDDY_MOAPA_USGS, lb.NV_MUDDY_CUL,
+            lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL, lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL, lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL
         ]
         super().__init__(headers, start_year=1971, end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
+
+        # generate_cul_totals(self.path)
         # lower_basin_cu_from_excel(self.path, years)
 
-
     def load_df(self, df_compact : pd.DataFrame) -> None:
-
         divisor = 1
-
         path = self.path
 
+
+
+        # AZ Gila
+        sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1)
+        df = sheet.read_csv(path / 'az_gila_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_CUL, divisor=divisor)
+        # self.load_df_az_gila()
+
+        # AZ Little Colorado
         # Little Colorado River Abv Mouth NR Desert View, AZ
         # sheet.usgs_annuals(self.df, '09402300', 1990, self.end_year, title=lb.AZ_LITTLE_COLORADO_MOUTH_USGS, divisor=1)
 
         # Little Colorado River Near Cameron, AZ
         sheet.usgs_annuals(self.df, '09402000', 1981, self.end_year, title=lb.AZ_LITTLE_COLORADO_CAMERON_USGS, divisor=1)
-
-        # AZ Gila
-        sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1)
-        df = sheet.read_csv(path / 'az_gila_irrigation.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_IRRIGATION_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_M_AND_I_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_mineral_resources.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_MINERALS_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_livestock.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_LIVESTOCK_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_stockpond.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_STOCK_POND_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_measured_reservoirs.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_RESERVOIR_MEASURED_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_unmeasured_reservoirs.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_RESERVOIR_UNMEASURED_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_tep.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_TEP_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_gila_within_system.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_WITHIN_SYSTEM_CU, divisor=divisor)
-
-        # AZ Little Colorado
-
-        df = sheet.read_csv(path / 'az_little_colorado_irrigation.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_M_AND_I_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_mineral_resources.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_MINERALS_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_livestock.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_LIVESTOCK_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_stockpond.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_STOCK_POND_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_measured_reservoirs.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_RESERVOIR_MEASURED_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_unmeasured_reservoirs.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_tep.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_TEP_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'az_little_colorado_within_system.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'az_little_colorado_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_CUL, divisor=divisor)
+        # self.load_df_az_little_colorado()
 
         # AZ Virgin
-        df = sheet.read_csv(path / 'az_virgin_irrigation.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_IRRIGATION_CU, divisor=divisor)
+        #  USGS 09415000: Virgin River at Littlefield, AZ
+        sheet.usgs_annuals(self.df, '09415000', self.start_year, self.end_year, title=lb.AZ_VIRGIN_LITTLEFIELD_USGS, divisor=1)
+        df = sheet.read_csv(path / 'az_virgin_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_CUL, divisor=divisor)
+        # self.load_df_az_virgin()
 
-        df = sheet.read_csv(path / 'az_virgin_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_M_AND_I_CU, divisor=divisor)
+        # AZ Bill Williams
+        # USGS 09426620: Bill Williams River Near Parker, AZ
+        sheet.usgs_annuals(self.df, '09426620', 1988, self.end_year, title=lb.AZ_BILL_WILLIAMS_USGS, divisor=1)
+        df = sheet.read_csv(path / 'az_bill_williams_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_BILL_WILLIAMS_CUL, divisor=divisor)
 
         # AZ Trib
-        df = sheet.read_csv(path / 'az_trib_below_lake_mead_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'az_trib_above_lake_mead_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL, divisor=divisor)
 
         # NV Virgin
-        df = sheet.read_csv(path / 'nv_virgin_irrigation.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_IRRIGATION_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'nv_virgin_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_M_AND_I_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'nv_virgin_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_CUL, divisor=divisor)
 
         # NV Muddy
-        df = sheet.read_csv(path / 'nv_muddy_irrigation.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_IRRIGATION_CU, divisor=divisor)
-
-        df = sheet.read_csv(path / 'nv_muddy_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_M_AND_I_CU, divisor=divisor)
+        # USGS 09419515: Muddy River above Lake Mead near Overton, NV.
+        # USGS 09416000 Muddy River near Moapa, NV.
+        sheet.usgs_annuals(self.df, '09416000', self.start_year, self.end_year, title=lb.NV_MUDDY_MOAPA_USGS, divisor=1)
+        df = sheet.read_csv(path / 'nv_muddy_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_CUL, divisor=divisor)
 
         # NV Trib
-        df = sheet.read_csv(path / 'nv_trib_above_lake_mead_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'nv_trib_above_lake_mead_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL, divisor=divisor)
 
         # NM Gila
-        df = sheet.read_csv(path / 'nm_gila_irrigation.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.NM_GILA_IRRIGATION_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'nm_gila_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NM_GILA_CUL, divisor=divisor)
 
-        df = sheet.read_csv(path / 'nm_gila_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.NM_GILA_M_AND_I_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'nm_little_colorado_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NM_LITTLE_COLORADO_CUL, divisor=divisor)
 
         # UT Virgin
-        df = sheet.read_csv(path / 'ut_virgin_irrigation.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_IRRIGATION_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'ut_virgin_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_CUL, divisor=divisor)
 
-        df = sheet.read_csv(path / 'ut_virgin_m_i_other.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_M_AND_I_CU, divisor=divisor)
+        df = sheet.read_csv(path / 'ut_trib_above_lake_mead_total_cu.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL, divisor=divisor)
 
     @staticmethod
     def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str, start_row=1) -> None:
@@ -199,58 +131,220 @@ class LB_CUL(Sheet):
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
 
-        last_row = len(self.years) + 1
+        sheet.add_borders_to_column(ws, 1, 1, ws.max_row, end_col=ws.max_column, which='outer')
+
         sheet.formula_average(ws, self.df, self.years)
+        sheet.add_borders_to_column(ws, 1, ws.max_row-1, ws.max_row-1, end_col=ws.max_column, which='outer')
+
+        self.set_bg(lb.LB_TRIBUTARY_CUL, to=lb.NM_TRIBUTARY_CUL, color=all_b.USBR_LB_CUL_BG)
+
+        # Sum LB Rivers
+        columns = [lb.AZ_TRIBUTARY_CUL, lb.NV_TRIBUTARY_CUL, lb.UT_TRIBUTARY_CUL, lb.NM_TRIBUTARY_CUL]
+        sheet.formula_add(ws, self.df, lb.LB_TRIBUTARY_CUL, columns)
 
         # Sum AZ Rivers
-        columns = [lb.AZ_GILA_CU, lb.AZ_LITTLE_COLORADO_CU, lb.AZ_VIRGIN_CU]
-        sheet.formula_add(ws, self.df, lb.AZ_TRIBUTARY_CU, columns)
+        columns = [lb.AZ_GILA_CUL, lb.AZ_LITTLE_COLORADO_CUL, lb.AZ_VIRGIN_CUL, lb.AZ_BILL_WILLIAMS_CUL, lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL]
+        sheet.formula_add(ws, self.df, lb.AZ_TRIBUTARY_CUL, columns)
 
         # Sum NV Rivers
-        columns = [lb.NV_VIRGIN_CU, lb.NV_MUDDY_CU, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU]
-        sheet.formula_add(ws, self.df, lb.NV_TRIBUTARY_CU, columns)
+        columns = [lb.NV_VIRGIN_CUL, lb.NV_MUDDY_CUL, lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL]
+        sheet.formula_add(ws, self.df, lb.NV_TRIBUTARY_CUL, columns)
+
+        # Sum UT Rivers
+        columns = [lb.UT_VIRGIN_CUL, lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL]
+        sheet.formula_add(ws, self.df, lb.UT_TRIBUTARY_CUL, columns)
+
+        # Sum NM Rivers
+        columns = [lb.NM_GILA_CUL, lb.NM_LITTLE_COLORADO_CUL]
+        sheet.formula_add(ws, self.df, lb.NM_TRIBUTARY_CUL, columns)
 
         # AZ Gila
         self.set_bg(lb.AZ_GILA_DOME_USGS, color=all_b.USGS_BG)
-        sheet.formula_sum(ws, self.df, lb.AZ_GILA_CU, lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_WITHIN_SYSTEM_CU)
-        self.set_bg(lb.AZ_GILA_IRRIGATION_CU, lb.AZ_GILA_WITHIN_SYSTEM_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.GILA_CUL,  color=all_b.USBR_LB_CUL_BG)
+        columns = [lb.AZ_GILA_CUL, lb.NM_GILA_CUL]
+        sheet.formula_add(ws, self.df, lb.GILA_CUL, columns)
+        self.set_bg(lb.AZ_GILA_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # sheet.formula_sum(ws, self.df, lb.AZ_GILA_CUL, lb.AZ_GILA_IRRIGATION_CUL, lb.AZ_GILA_WITHIN_SYSTEM_CUL)
+        # self.set_bg(lb.AZ_GILA_IRRIGATION_CUL, lb.AZ_GILA_WITHIN_SYSTEM_CUL, color=all_b.USBR_LB_CULL_BG, end_row=last_row)
 
         # AZ Little Colorado
         self.set_bg(lb.AZ_LITTLE_COLORADO_CAMERON_USGS, color=all_b.USGS_BG)
-        sheet.formula_sum(ws, self.df, lb.AZ_LITTLE_COLORADO_CU, lb.AZ_LITTLE_COLORADO_IRRIGATION_CU,
-                          lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU)
-        self.set_bg(lb.AZ_LITTLE_COLORADO_IRRIGATION_CU, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CU,
-                    color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_BG)
+        columns = [lb.AZ_LITTLE_COLORADO_CUL, lb.NM_LITTLE_COLORADO_CUL]
+        sheet.formula_add(ws, self.df, lb.LITTLE_COLORADO_CUL, columns)
+        self.set_bg(lb.AZ_LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # sheet.formula_sum(ws, self.df, lb.AZ_LITTLE_COLORADO_CUL, lb.AZ_LITTLE_COLORADO_IRRIGATION_CUL,
+        #                  lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CUL)
+        # self.set_bg(lb.AZ_LITTLE_COLORADO_IRRIGATION_CUL, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CUL,
+        #             color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
         # AZ Virgin
-        sheet.formula_sum(ws, self.df, lb.AZ_VIRGIN_CU, lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU)
-        self.set_bg(lb.AZ_VIRGIN_IRRIGATION_CU, lb.AZ_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.AZ_VIRGIN_LITTLEFIELD_USGS, color=all_b.USGS_BG)
+        self.set_bg(lb.VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        columns = [lb.AZ_VIRGIN_CUL, lb.NV_VIRGIN_CUL, lb.UT_VIRGIN_CUL]
+        sheet.formula_add(ws, self.df, lb.VIRGIN_CUL, columns)
+        self.set_bg(lb.AZ_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # sheet.formula_sum(ws, self.df, lb.AZ_VIRGIN_CUL, lb.AZ_VIRGIN_IRRIGATION_CUL, lb.AZ_VIRGIN_M_AND_I_CUL)
+        # self.set_bg(lb.AZ_VIRGIN_IRRIGATION_CUL, lb.AZ_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+
+        # AZ Bill Williams
+        self.set_bg(lb.AZ_BILL_WILLIAMS_USGS, color=all_b.USGS_BG)
+        self.set_bg(lb.AZ_BILL_WILLIAMS_CUL,  color=all_b.USBR_LB_CUL_BG)
 
         # AZ Trib Below
-        self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
         # NV Trib Above
-        self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
         # NV Virgin
-        sheet.formula_sum(ws, self.df, lb.NV_VIRGIN_CU, lb.NV_VIRGIN_IRRIGATION_CU, lb.NV_VIRGIN_M_AND_I_CU)
-        self.set_bg(lb.NV_VIRGIN_IRRIGATION_CU, lb.NV_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.NV_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # sheet.formula_sum(ws, self.df, lb.NV_VIRGIN_CUL, lb.NV_VIRGIN_IRRIGATION_CUL, lb.NV_VIRGIN_M_AND_I_CUL)
+        # self.set_bg(lb.NV_VIRGIN_IRRIGATION_CUL, lb.NV_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
         # NV Muddy
-        sheet.formula_sum(ws, self.df, lb.NV_MUDDY_CU, lb.NV_MUDDY_IRRIGATION_CU, lb.NV_MUDDY_M_AND_I_CU)
-        self.set_bg(lb.NV_MUDDY_IRRIGATION_CU, lb.NV_MUDDY_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.NV_MUDDY_MOAPA_USGS, color=all_b.USGS_BG)
+        self.set_bg(lb.NV_MUDDY_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # sheet.formula_sum(ws, self.df, lb.NV_MUDDY_CUL, lb.NV_MUDDY_IRRIGATION_CUL, lb.NV_MUDDY_M_AND_I_CUL)
+        # self.set_bg(lb.NV_MUDDY_IRRIGATION_CUL, lb.NV_MUDDY_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
 
         # NM Gila
-        sheet.formula_sum(ws, self.df, lb.NM_GILA_CU, lb.NM_GILA_IRRIGATION_CU, lb.NM_GILA_M_AND_I_CU)
-        self.set_bg(lb.NM_GILA_IRRIGATION_CU, lb.NM_GILA_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.NM_GILA_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # sheet.formula_sum(ws, self.df, lb.NM_GILA_CUL, lb.NM_GILA_IRRIGATION_CUL, lb.NM_GILA_M_AND_I_CUL)
+        # self.set_bg(lb.NM_GILA_IRRIGATION_CUL, lb.NM_GILA_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+
+        # NM Gila
+        self.set_bg(lb.NM_LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_BG)
 
         # UT Virgin
-        sheet.formula_sum(ws, self.df, lb.UT_VIRGIN_IRRIGATION_CU, lb.UT_VIRGIN_M_AND_I_CU, lb.NM_GILA_M_AND_I_CU)
-        self.set_bg(lb.UT_VIRGIN_CU, lb.UT_VIRGIN_M_AND_I_CU, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.UT_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        # sheet.formula_sum(ws, self.df, lb.UT_VIRGIN_IRRIGATION_CUL, lb.UT_VIRGIN_M_AND_I_CUL, lb.NM_GILA_M_AND_I_CUL)
+        # self.set_bg(lb.UT_VIRGIN_CUL, lb.UT_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+
+        # UT Trib Above
+        self.set_bg(lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_BG)
+
+        sheet.clear_range(ws, ws.max_row, ws.max_row, 1, ws.max_column)
 
         self.format_header()
 
-        self.set_column_width(lb.AZ_TRIBUTARY_CU, 6, to=lb.UT_VIRGIN_M_AND_I_CU,)
+        self.set_column_width(lb.LB_TRIBUTARY_CUL, 6, to=lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL)
+
+    def load_df_az_gila(self):
+        divisor = 1
+        path = self.path
+
+        df = sheet.read_csv(path / 'az_gila_irrigation.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_IRRIGATION_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_M_AND_I_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_mineral_resources.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_MINERALS_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_livestock.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_LIVESTOCK_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_stockpond.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_STOCK_POND_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_measured_reservoirs.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_RESERVOIR_MEASURED_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_unmeasured_reservoirs.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_RESERVOIR_UNMEASURED_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_tep.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_TEP_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_gila_within_system.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_GILA_WITHIN_SYSTEM_CUL, divisor=divisor)
+
+    def load_df_az_little_colorado(self):
+        divisor = 1
+        path = self.path
+
+        df = sheet.read_csv(path / 'az_little_colorado_irrigation.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_IRRIGATION_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_M_AND_I_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_mineral_resources.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_MINERALS_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_livestock.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_LIVESTOCK_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_stockpond.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_STOCK_POND_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_measured_reservoirs.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_RESERVOIR_MEASURED_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_unmeasured_reservoirs.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_RESERVOIR_UNMEASURED_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_tep.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_TEP_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_little_colorado_within_system.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CUL, divisor=divisor)
+
+    def load_df_az_virgin(self):
+        divisor = 1
+        path = self.path
+
+        df = sheet.read_csv(path / 'az_virgin_irrigation.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_IRRIGATION_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'az_virgin_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_M_AND_I_CUL, divisor=divisor)
+
+    def load_df_nv_virgin(self):
+        divisor = 1
+        path = self.path
+        df = sheet.read_csv(path / 'nv_virgin_irrigation.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_IRRIGATION_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'nv_virgin_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_M_AND_I_CUL, divisor=divisor)
+
+    def load_df_nv_muddy(self):
+        divisor = 1
+        path = self.path
+        df = sheet.read_csv(path / 'nv_muddy_irrigation.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_IRRIGATION_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'nv_muddy_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_M_AND_I_CUL, divisor=divisor)
+
+    def load_df_nv_above_lake_mead(self):
+        divisor = 1
+        path = self.path
+        df = sheet.read_csv(path / 'nv_trib_above_lake_mead_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CUL, divisor=divisor)
+
+    def load_df_nm_gila(self):
+        divisor = 1
+        path = self.path
+        df = sheet.read_csv(path / 'nm_gila_irrigation.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NM_GILA_IRRIGATION_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'nm_gila_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.NM_GILA_M_AND_I_CUL, divisor=divisor)
+
+    def load_df_ut_trib(self):
+        divisor = 1
+        path = self.path
+        df = sheet.read_csv(path / 'ut_virgin_irrigation.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_IRRIGATION_CUL, divisor=divisor)
+
+        df = sheet.read_csv(path / 'ut_virgin_m_i_other.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_M_AND_I_CUL, divisor=divisor)
 
 states = {
     '04': 'az',
@@ -367,7 +461,7 @@ def sum_csv_files_by_year(
     df_total = pd.read_csv(
         csv_paths[0],
         encoding=encoding,
-        dtype=str,                   # read everything as string first → safer
+        # dtype=str,                   # read everything as string first → safer
         sep=r'\s+',
         low_memory=False
     )
@@ -403,7 +497,7 @@ def sum_csv_files_by_year(
         df = pd.read_csv(
             path,
             encoding=encoding,
-            dtype=str,
+            # dtype=str,
             sep=r'\s+',
             low_memory=False
         )
@@ -427,8 +521,10 @@ def sum_csv_files_by_year(
         df = df.set_index(this_year_col).sort_index()
 
         # Only add numeric columns that exist in both
-        numeric_cols = df.select_dtypes(include='number').columns.intersection(
-            df_total.select_dtypes(include='number').columns
+        number_total_cols = df_total.select_dtypes(include='number')
+        number_cols = df.select_dtypes(include='number')
+        numeric_cols = number_cols.columns.intersection(
+            number_total_cols.columns
         )
 
         if len(numeric_cols) == 0:
@@ -457,13 +553,42 @@ def sum_csv_files_by_year(
     return df_total
 
 def generate_cul_totals(path:Path):
-    out = path / "az_gila_total_cu.csv"
-    remove_file(out)
-    files = find_files(Path(path), "az_gila*")
+    generate_cul_river_total(path, 'az_gila')
+    generate_cul_river_total(path, 'az_little_colorado')
+    generate_cul_river_total(path, 'az_virgin')
+    generate_cul_river_total(path, 'az_bill_williams')
+    generate_cul_river_total(path, 'az_trib_above_lake_mead')
 
-    sum_csv_files_by_year(files, out, year_column='Year')
-    pass
+    generate_cul_river_total(path, 'nv_muddy')
+    generate_cul_river_total(path, 'nv_trib_above_lake_mead')
+    generate_cul_river_total(path, 'nv_virgin')
 
+    generate_cul_river_total(path, 'nm_gila')
+    generate_cul_river_total(path, 'nm_little_colorado')
+
+    generate_cul_river_total(path, 'ut_trib_above_lake_mead')
+    generate_cul_river_total(path, 'ut_virgin')
+
+    generate_cul_river_total(path, '*gila_total_cu', out_file='gila_total_cu.csv')
+    generate_cul_river_total(path, '*virgin_total_cu', out_file='virgin_total_cu.csv')
+    generate_cul_river_total(path, '*little_colorado_total_cu', out_file='little_colorado_total_cu.csv')
+
+    generate_cul_river_total(path, 'nv_*total_cu.csv', out_file='nv_tributary_total_cu.csv')
+    generate_cul_river_total(path, 'ut_*total_cu.csv', out_file='ut_tributary_total_cu.csv')
+    generate_cul_river_total(path, 'nm_*total_cu.csv', out_file='nm_tributary_total_cu.csv')
+    generate_cul_river_total(path, 'az_*total_cu.csv', out_file='az_tributary_total_cu.csv')
+
+    generate_cul_river_total(path, '*tributary_total_cu.csv', out_file='lb_tributary_total_cu.csv')
+
+def generate_cul_river_total(path:Path, river:str, out_file:str | None=None):
+    if out_file is None:
+        out_path = path / f"{river}_total_cu.csv"
+    else:
+        out_path = path / out_file
+
+    remove_file(out_path)
+    files = find_files(Path(path), f"{river}*")
+    sum_csv_files_by_year(files, out_path, year_column='Year')
 
 def remove_file(file_path: str | Path) -> bool:
     """
