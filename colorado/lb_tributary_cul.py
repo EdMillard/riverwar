@@ -31,7 +31,7 @@ from openpyxl import Workbook
 from typing import List, Dict
 import csv
 
-class LB_CUL(Sheet):
+class LBTributaryCUL(Sheet):
     def __init__(self):
         self.path:Path = Path('data/USBR_Lower_Colorado_CUL/Tributary')
         headers = [
@@ -50,7 +50,7 @@ class LB_CUL(Sheet):
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
 
         # generate_cul_totals(self.path)
-        # lower_basin_cu_from_excel(self.path, years)
+        # lower_basin_cu_from_excel(self.path, self.years)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         divisor = 1
@@ -118,14 +118,6 @@ class LB_CUL(Sheet):
 
         df = sheet.read_csv(path / 'ut_trib_above_lake_mead_total_cu.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL, divisor=divisor)
-
-    @staticmethod
-    def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str, start_row=1) -> None:
-        col_idx = df.columns.get_loc(column_name) + 1  # 1-based
-        for i in range(start_row, len(df)+1):
-            excel_row = i + 1
-            f = formula.replace("[row]", str(excel_row))
-            ws.cell(row=excel_row, column=col_idx, value=f)
 
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
@@ -552,79 +544,29 @@ def sum_csv_files_by_year(
     return df_total
 
 def generate_cul_totals(path:Path):
-    generate_cul_river_total(path, 'az_gila')
-    generate_cul_river_total(path, 'az_little_colorado')
-    generate_cul_river_total(path, 'az_virgin')
-    generate_cul_river_total(path, 'az_bill_williams')
-    generate_cul_river_total(path, 'az_trib_above_lake_mead')
+    sheet.generate_cul_river_total(path, 'az_gila')
+    sheet.generate_cul_river_total(path, 'az_little_colorado')
+    sheet.generate_cul_river_total(path, 'az_virgin')
+    sheet.generate_cul_river_total(path, 'az_bill_williams')
+    sheet.generate_cul_river_total(path, 'az_trib_above_lake_mead')
 
-    generate_cul_river_total(path, 'nv_muddy')
-    generate_cul_river_total(path, 'nv_trib_above_lake_mead')
-    generate_cul_river_total(path, 'nv_virgin')
+    sheet.generate_cul_river_total(path, 'nv_muddy')
+    sheet.generate_cul_river_total(path, 'nv_trib_above_lake_mead')
+    sheet.generate_cul_river_total(path, 'nv_virgin')
 
-    generate_cul_river_total(path, 'nm_gila')
-    generate_cul_river_total(path, 'nm_little_colorado')
+    sheet.generate_cul_river_total(path, 'nm_gila')
+    sheet.generate_cul_river_total(path, 'nm_little_colorado')
 
-    generate_cul_river_total(path, 'ut_trib_above_lake_mead')
-    generate_cul_river_total(path, 'ut_virgin')
+    sheet.generate_cul_river_total(path, 'ut_trib_above_lake_mead')
+    sheet.generate_cul_river_total(path, 'ut_virgin')
 
-    generate_cul_river_total(path, '*gila_total_cu', out_file='gila_total_cu.csv')
-    generate_cul_river_total(path, '*virgin_total_cu', out_file='virgin_total_cu.csv')
-    generate_cul_river_total(path, '*little_colorado_total_cu', out_file='little_colorado_total_cu.csv')
+    sheet.generate_cul_river_total(path, '*gila_total_cu', out_file='gila_total_cu.csv')
+    sheet.generate_cul_river_total(path, '*virgin_total_cu', out_file='virgin_total_cu.csv')
+    sheet.generate_cul_river_total(path, '*little_colorado_total_cu', out_file='little_colorado_total_cu.csv')
 
-    generate_cul_river_total(path, 'nv_*total_cu.csv', out_file='nv_tributary_total_cu.csv')
-    generate_cul_river_total(path, 'ut_*total_cu.csv', out_file='ut_tributary_total_cu.csv')
-    generate_cul_river_total(path, 'nm_*total_cu.csv', out_file='nm_tributary_total_cu.csv')
-    generate_cul_river_total(path, 'az_*total_cu.csv', out_file='az_tributary_total_cu.csv')
+    sheet.generate_cul_river_total(path, 'nv_*total_cu.csv', out_file='nv_tributary_total_cu.csv')
+    sheet.generate_cul_river_total(path, 'ut_*total_cu.csv', out_file='ut_tributary_total_cu.csv')
+    sheet.generate_cul_river_total(path, 'nm_*total_cu.csv', out_file='nm_tributary_total_cu.csv')
+    sheet.generate_cul_river_total(path, 'az_*total_cu.csv', out_file='az_tributary_total_cu.csv')
 
-    generate_cul_river_total(path, '*tributary_total_cu.csv', out_file='lb_tributary_total_cu.csv')
-
-def generate_cul_river_total(path:Path, river:str, out_file:str | None=None):
-    if out_file is None:
-        out_path = path / f"{river}_total_cu.csv"
-    else:
-        out_path = path / out_file
-
-    remove_file(out_path)
-    files = find_files(Path(path), f"{river}*")
-    sum_csv_files_by_year(files, out_path, year_column='Year')
-
-def remove_file(file_path: str | Path) -> bool:
-    """
-    Safely delete a file at the given path.
-
-    Returns:
-        True  → file was successfully deleted
-        False → file did not exist (no error raised)
-
-    Raises:
-        IsADirectoryError → if the path points to a directory
-        PermissionError   → if access denied
-        OSError           → other OS-level errors
-    """
-    path = Path(file_path)
-
-    try:
-        path.unlink(missing_ok=True)  # missing_ok=True → no error if file doesn't exist
-        print(f"Removed: {path}")
-        return True
-    except IsADirectoryError:
-        print(f"Error: {path} is a directory, not a file.")
-        return False
-    except PermissionError:
-        print(f"Error: Permission denied for {path}")
-        return False
-    except OSError as e:
-        print(f"Error removing {path}: {e}")
-        return False
-
-def find_files(directory: str | Path, pattern: str) -> list[str]:
-    """
-    Find files using pathlib.glob (Python 3.5+)
-    """
-    base_dir = Path(directory).resolve()
-    return sorted([
-        str(path)
-        for path in base_dir.glob(pattern)
-        if path.is_file()
-    ])
+    sheet.generate_cul_river_total(path, '*tributary_total_cu.csv', out_file='lb_tributary_total_cu.csv')
