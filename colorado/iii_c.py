@@ -50,13 +50,13 @@ class III_C(Sheet):
 
         self.df.loc[57:, lb.NATURAL_IMPERIAL] = df_compact[ub.NATURAL_LEES_FERRY].values[57:]
         self.df[MINUS] = [f"- (" for _ in range(2, df_len)]
-        self.df[LOWER_CU] = [f"='{all_b.COMPACT}'!G{row} + '{all_b.COMPACT}'!I{row}" for row in range(2, df_len)]
+        self.df[LOWER_CU] = [f"='{all_b.COMPACT_SHEET}'!G{row} + '{all_b.COMPACT_SHEET}'!I{row}" for row in range(2, df_len)]
         self.df[LOWER_CU] = self.df[LOWER_CU].astype(str)
         self.df[PLUS] = [f"+" for _ in range(2, df_len)]
-        self.df[UPPER_CU] = [f"='{all_b.COMPACT}'!V{row}" for row in range(2, df_len)]
+        self.df[UPPER_CU] = [f"='{all_b.COMPACT_SHEET}'!V{row}" for row in range(2, df_len)]
         self.df[UPPER_CU] = self.df[UPPER_CU].astype(str)
 
-        self.df[lb.MX_TREATY] = [f"='{all_b.COMPACT}'!H{row}" for row in range(2, df_len)]
+        self.df[lb.MX_TREATY] = [f"='{all_b.COMPACT_SHEET}'!H{row}" for row in range(2, df_len)]
 
         df_hoover = sheet.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df_hoover, lb.HOOVER_RELEASE)

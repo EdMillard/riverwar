@@ -21,9 +21,7 @@ SOFTWARE.
 """
 from pathlib import Path
 from openpyxl import Workbook
-import colorado.lb as lb
 import colorado.allb as all_b
-import pandas as pd
 from report.doc import Report
 from sheet import sheet
 from colorado.iii_c import III_C
@@ -40,23 +38,25 @@ def run():
     imperial = Imperial()
     reservoirs = Reservoirs()
     compact = Compact()
-    lb_CUL = LB_CUL()
+    lb_cul = LB_CUL()
 
     file_path = Path('excel/Colorado_River_Math.xlsx')
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        compact.export(writer, all_b.COMPACT, compact.df)
-        iii_c.export(writer, all_b.III_C, compact.df)
-        lb_CUL.export(writer, lb.LB_CUL, compact.df, number_format='#,##0;-#,##0')
-        reservoirs.export(writer, all_b.RESERVOIRS, compact.df)
-        imperial.export(writer, lb.IMPERIAL, compact.df)
+        compact.export(writer, all_b.COMPACT_SHEET, compact.df)
+        iii_c.export(writer, all_b.III_C_SHEET, compact.df)
+        lb_cul.export(writer, all_b.LB_CUL_TRIBUTARY_SHEET, compact.df, number_format='#,##0;-#,##0')
+        reservoirs.export(writer, all_b.RESERVOIRS_SHEET, compact.df)
+        imperial.export(writer, all_b.IMPERIAL_SHEET, compact.df)
 
         wb: Workbook = writer.book
         wb.calcMode = "auto"  # ensure automatic calculation
+        wb.calculation.fullCalcOnLoad = True
+        wb.calculation.forceFullCalc = True
 
-    notes_path = Path('excel/Colorado_River_Notes.xlsx')
+    notes_path = Path(f'excel/Colorado_River_{all_b.NOTES_SHEET}.xlsx')
     sheet.copy_worksheet_to_new_workbook(
         source_wb_path=notes_path,
-        sheet_name="Notes",
+        sheet_name=all_b.NOTES_SHEET,
         target_wb_path=file_path
     )
     Report.open_docx_in_app(file_path)

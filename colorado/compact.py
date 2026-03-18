@@ -85,7 +85,7 @@ class Compact(Sheet):
         usbr_lake_mead_elevation_ft = 6123
         sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.start_year, self.end_year, title=lb.MEAD_ELEVATION, divisor=1)
 
-        sheet.usgs_annuals(self.df, '09404200', 2007, self.end_year,  title=lb.DIAMOND_CREEK, offset=1)
+        sheet.usgs_annuals(self.df, '09404200', 2007, self.end_year,  title=lb.DIAMOND_CREEK)
         sheet.usgs_annuals(self.df, '09380000', self.start_year, self.end_year, title=ub.LEES_FERRY_USGS)
 
         usbr_lake_powell_evap_af = 510

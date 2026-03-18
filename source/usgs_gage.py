@@ -274,17 +274,26 @@ class USGSGage(object):
         else:
             print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
 
+    @staticmethod
+    def daily_year_valid(daily_discharge_cfs, water_year_info:WaterYearInfo, file_path:Path|str)-> bool:
+        valid:bool = False
+        start_dt = daily_discharge_cfs[0]['dt']
+        start_dt_pd = pd.Timestamp(start_dt)
+        end_dt = daily_discharge_cfs[-1]['dt']
+        end_dt_pd = pd.Timestamp(end_dt)
+        if start_dt_pd.date() == water_year_info.start_date or end_dt_pd.date() == water_year_info.end_date:
+            valid = True
+        else:
+            print(f'Misaligned water year, reloading: {file_path} {start_dt_pd.date()} {water_year_info.start_date} {end_dt_pd.date()} {water_year_info.end_date}')
+        return valid
+
     def load_daily_discharge(self, file_path, water_year_info: WaterYearInfo, update=update_gages, parameterCd='00060', statCd='00003'):
         if not len(self.daily_discharge_cfs):
             if not file_path.exists():
                 print('USGS path doesn\'t exist: ', file_path)
                 return None
             self.daily_discharge_cfs = self.load_time_series_csv(file_path, parameterCd=parameterCd, statCd=statCd)
-            dt = self.daily_discharge_cfs[0]['dt']  # numpy.datetime64
-            dt_pd = pd.Timestamp(dt)
-            if dt_pd.date() != water_year_info.start_date:
-                print(f'Misaligned water year, reloading: {file_path}')
-                # self.daily_discharge_cfs = None
+            if not self.daily_year_valid(self.daily_discharge_cfs, water_year_info, file_path):
                 print('Gage updating from USGS: ', self.site_name, ' ', water_year_info.start_date, ' to ', water_year_info.end_date)
                 self.request_daily_discharge(file_path, str(water_year_info.start_date), str(water_year_info.end_date), append=False,
                                              parameterCd=parameterCd, statCd=statCd)
@@ -409,7 +418,6 @@ def daily_cfs_to_monthly_af(a, start_year=0, end_year=0):
         month += 1
 
     return a
-
 
 def convert_cfs_to_af_per_day(cfs):
     af = np.empty(len(cfs), [('dt', 'datetime64[s]'), ('val', 'f')])

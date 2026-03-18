@@ -589,19 +589,24 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
         ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         gage = USGSGage(gage_id, water_year_info)
-        daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
+        try:
+            daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
                                         statCd=stat_cd)
-        annual_af = daily_to_water_year(daily_af)
-        # result = (annual_af[0]['dt'], annual_af[0]['val'])
-        # annuals.append(result)
-        if len(annual_af) == 1:
-            values.append(annual_af[0][1] / divisor)
-            annuals.append(annual_af[0])
-        elif annual_af is None:
-            print(f'No years returned {gage_id} {year}')
-        else:
-            print(f'Multiple years returned  {gage_id} {year}')
-
+            annual_af = daily_to_water_year(daily_af)
+            # result = (annual_af[0]['dt'], annual_af[0]['val'])
+            # annuals.append(result)
+            if len(annual_af) == 1:
+                values.append(annual_af[0][1] / divisor)
+                annuals.append(annual_af[0])
+            elif annual_af is None:
+                print(f'No years returned {gage_id} {year}')
+            elif len(annual_af) == 0:
+                print(f'usgs_annuals no years returned  {gage_id} {year}')
+                values.append(0)
+            else:
+                print(f'usgs_annuals multiple years returned  {gage_id} {year} {annual_af}')
+        except Exception as e:
+            print(f"usgs_annuals {gage_id}  error: {e}")
 
     # if title:
     #    print(title)
@@ -703,14 +708,20 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
             info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
 
         # total = daily_release_ft['val'].sum()
-        annual_af = WaterGraph.daily_to_water_year(daily_af, water_year_month=month)
-        if len(annual_af) == 1:
-            values.append(annual_af[0][1] / divisor)
-            annuals.append(annual_af[0])
-        elif annual_af is None:
-            print(f'No years returned {gage_id} {year}')
-        else:
-            print(f'Multiple years returned {gage_id} {year}')
+        try:
+            annual_af = WaterGraph.daily_to_water_year(daily_af, water_year_month=month)
+            if len(annual_af) == 1:
+                values.append(annual_af[0][1] / divisor)
+                annuals.append(annual_af[0])
+            elif annual_af is None:
+                print(f'usbr_annuals No years returned {gage_id} {year}')
+            elif len(annual_af) == 0:
+                print(f'usbr_annuals no years returned  {gage_id} {year}')
+                values.append(0)
+            else:
+                print(f'Multiple years returned {gage_id} {year}')
+        except Exception as e:
+            print(f"usbr_annuals {gage_id}  error: {e}")
 
     # if title:
     #    print(title)
@@ -1038,7 +1049,10 @@ def merge_annual_column(df:pd.DataFrame, annual_df:pd.DataFrame,
         on='Year',
         how='left'  # keeps all rows from df1, fills NaN where no match
     )
-    df[column_name] = df1[inp_column_name].combine_first(df1[column_name])
+    try:
+        df[column_name] = df1[inp_column_name].combine_first(df1[column_name])
+    except Exception as e:
+        print(f"merge_annual_column {inp_column_name} {column_name} error: {e}")
 
 def insert_values_from_year(
         df: pd.DataFrame,
@@ -1369,3 +1383,52 @@ def copy_worksheet_to_new_workbook(source_wb_path:Path, sheet_name:str, target_w
 
     # Save target workbook
     target_wb.save(target_wb_path or "new_workbook.xlsx")
+
+def clear_range(ws: Worksheet, start_row: int, end_row: int,
+                start_col: int, end_col: int,
+                clear_contents: bool = True,
+                clear_formatting: bool = True) -> None:
+    """
+    Clears a rectangular range of cells in an openpyxl worksheet.
+
+    Parameters:
+    - ws: the worksheet object
+    - start_row, end_row: 1-based row indices (inclusive)
+    - start_col, end_col: 1-based column indices (inclusive)
+    - clear_contents: if True, removes values and formulas
+    - clear_formatting: if True, resets fill (background color), font, alignment, border, number_format
+
+    Example usage:
+        clear_range(ws, start_row=5, end_row=20, start_col=2, end_col=10)
+    """
+    # Default "no style" objects
+    no_fill = PatternFill(fill_type=None)
+    default_font = Font()
+    default_alignment = Alignment()
+    default_border = Border()
+    default_number_format = 'General'
+
+    for row in range(start_row, end_row + 1):
+        for col in range(start_col, end_col + 1):
+            cell = ws.cell(row=row, column=col)
+
+            if clear_contents:
+                cell.value = None  # removes text, numbers, dates, formulas, hyperlinks, etc.
+
+            if clear_formatting:
+                # Reset the most common formatting properties
+                cell.fill = no_fill
+                cell.font = default_font
+                cell.alignment = default_alignment
+                cell.border = default_border
+                cell.number_format = default_number_format
+
+                # Optional: reset protection, comment, data validation, etc. if needed
+                # cell.protection = Protection(locked=True, hidden=False)
+                # cell.comment = None
+                # (data validation requires ws.data_validations.remove(...))
+
+    # Note: Conditional formatting, merged cells, tables, charts are NOT cleared by this function.
+    # If you need to remove conditional formatting from the range, see:
+    # ws.conditional_formatting = {}   # (nuclear option - removes ALL CF from sheet)
+    # or more targeted removal via ws.conditional_formatting.remove('A1:Z99')

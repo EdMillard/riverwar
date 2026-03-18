@@ -56,8 +56,6 @@ class LB_CUL(Sheet):
         divisor = 1
         path = self.path
 
-
-
         # AZ Gila
         sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1)
         df = sheet.read_csv(path / 'az_gila_total_cu.csv', sep='\s+')
@@ -65,6 +63,7 @@ class LB_CUL(Sheet):
         # self.load_df_az_gila()
 
         # AZ Little Colorado
+
         # Little Colorado River Abv Mouth NR Desert View, AZ
         # sheet.usgs_annuals(self.df, '09402300', 1990, self.end_year, title=lb.AZ_LITTLE_COLORADO_MOUTH_USGS, divisor=1)
 
