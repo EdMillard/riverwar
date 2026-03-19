@@ -31,9 +31,9 @@ from openpyxl import Workbook
 from typing import List, Dict, Union
 import csv
 
-class LBMainCUL(Sheet):
+class LBMainstreamCUL(Sheet):
     def __init__(self):
-        self.path:Path = Path('data/USBR_Lower_Colorado_CUL/Main')
+        self.path:Path = Path('data/USBR_Lower_Colorado_CUL/Mainstream')
         headers = [
             lb.CA_TOTAL, lb.CA_AGRICULTURE, lb.CA_M_I_OTHER, lb.CA_OUTSIDE_SYSTEM,
             lb.AZ_TOTAL, lb.AZ_AGRICULTURE, lb.AZ_M_I_OTHER, lb.AZ_POWER, lb.AZ_WITHIN_SYSTEM,
@@ -42,36 +42,35 @@ class LBMainCUL(Sheet):
         super().__init__(headers, start_year=1971, end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
 
+        # lower_basin_cul_from_excel(self.path, self.years)
         # generate_cul_totals(self.path)
-        # lower_basin_cu_from_excel(self.path, self.years)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         divisor = 1
         path = self.path
 
-        df = sheet.read_csv(path / 'California_agriculture.csv', sep='\s+')
+        df = sheet.read_csv(path / 'california_agriculture.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.CA_AGRICULTURE, divisor=divisor)
-        df = sheet.read_csv(path / 'California_m_i_other.csv', sep='\s+')
+        df = sheet.read_csv(path / 'california_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.CA_M_I_OTHER, divisor=divisor)
-        df = sheet.read_csv(path / 'California_outside_system.csv', sep='\s+')
+        df = sheet.read_csv(path / 'california_outside_system.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.CA_OUTSIDE_SYSTEM, divisor=divisor)
 
-        df = sheet.read_csv(path / 'Arizona_agriculture.csv', sep='\s+')
+        df = sheet.read_csv(path / 'arizona_agriculture.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_AGRICULTURE, divisor=divisor)
-        df = sheet.read_csv(path / 'Arizona_m_i_other.csv', sep='\s+')
+        df = sheet.read_csv(path / 'arizona_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_M_I_OTHER, divisor=divisor)
-        df = sheet.read_csv(path / 'Arizona_tep.csv', sep='\s+')
+        df = sheet.read_csv(path / 'arizona_tep.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_POWER, divisor=divisor)
-        df = sheet.read_csv(path / 'Arizona_within_system.csv', sep='\s+')
+        df = sheet.read_csv(path / 'arizona_within_system.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_WITHIN_SYSTEM, divisor=divisor)
 
-        df = sheet.read_csv(path / 'Nevada_agriculture.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nevada_agriculture.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_AGRICULTURE, divisor=divisor)
-        df = sheet.read_csv(path / 'Nevada_m_i_other.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nevada_m_i_other.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_M_I_OTHER, divisor=divisor)
-        df = sheet.read_csv(path / 'Nevada_tep.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nevada_tep.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_POWER, divisor=divisor)
-
 
     def build_sheet(self) -> None:
         ws: Worksheet = self.ws
@@ -103,7 +102,7 @@ def get_state_node(state_name: str, calc_type:str, years: List[int], nodes: Dict
 
     return df
 
-def lower_basin_cu_from_excel(out_path: Path, years):
+def lower_basin_cul_from_excel(out_path: Path, years):
     wb: Workbook = openpyxl.load_workbook('data/Colorado_River/1971-2024 Lower Colorado River System CUL Data.xlsx', data_only=True)
     ws: Worksheet = wb['Mainstream']
 
@@ -127,7 +126,7 @@ def lower_basin_cu_from_excel(out_path: Path, years):
             if column_index < len(headers):
                 header = headers[column_index]
                 if header == 'STATE_NAME':
-                    state_name = cell.value
+                    state_name = cell.value.lower()
                 elif header == 'SOURCE':
                     pass
                 elif header == 'CALC_TYPE':
@@ -157,5 +156,7 @@ def lower_basin_cu_from_excel(out_path: Path, years):
             df.to_csv(out_csv_path, index=False, quoting=csv.QUOTE_NONE,  escapechar='\\', sep=' ')
 
 def generate_cul_totals(path:Path):
-    # generate_cul_river_total(path, 'az_gila')
-    pass
+    sheet.generate_cul_river_total(path, 'arizona', out_file='arizona_total_cul.csv')
+    sheet.generate_cul_river_total(path, 'california', out_file='california_total_cul.csv')
+    sheet.generate_cul_river_total(path, 'nevada', out_file='nevada_total_cul.csv')
+    sheet.generate_cul_river_total(path, '*total_cul.csv', out_file='lb_states_total_cul.csv')

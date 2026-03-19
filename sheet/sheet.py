@@ -543,7 +543,7 @@ def create_month_year_df(years: List[int]) -> pd.DataFrame:
         'Total': 0
     })
 
-def upper_basin_cu_from_excel(df:pd.DataFrame):
+def upper_basin_cul_from_excel(df:pd.DataFrame):
     wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
     ws = wb['CY Pivot']
     header_row = 2
@@ -1543,14 +1543,17 @@ def sum_csv_files_by_year(
 
     return df_total
 
-def generate_cul_river_total(path:Path, river:str, out_file:str | None=None):
+def generate_cul_river_total(path:Path, river:str, out_file:str | None=None,
+                             exclude:str | None=None):
     if out_file is None:
-        out_path = path / f"{river}_total_cu.csv"
+        out_path = path / f"{river}_total_cul.csv"
     else:
         out_path = path / out_file
 
     remove_file(out_path)
-    files = find_files(Path(path), f"{river}*")
+    files = find_files(path, f"{river}*")
+    if exclude is not None:
+        files.remove(exclude)
     sum_csv_files_by_year(files, out_path, year_column='Year')
 
 def remove_file(file_path: str | Path) -> bool:

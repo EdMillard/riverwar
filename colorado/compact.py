@@ -57,7 +57,7 @@ class Compact(Sheet):
 
         sheet.usgs_annuals(self.df, '09522000', self.start_year, self.end_year, title=lb.NIB_MORELOS_USGS)
 
-        sheet.upper_basin_cu_from_excel(self.df)
+        sheet.upper_basin_cul_from_excel(self.df)
         sheet.natural_flow_from_excel(self.df)
         sheet.lf_natural_flow_from_excel(self.df)
         Compact.lower_basin_annual_reports(self.df)
@@ -65,7 +65,7 @@ class Compact(Sheet):
         sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1000000)
 
         path = Path('data/USBR_Lower_Colorado_CUL/Tributary')
-        df = sheet.read_csv(path / 'az_gila_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_gila_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_GILA_CUL, divisor=1000000)
 
         df_mead_evap = sheet.read_csv('data/Colorado_River/mead_evap.csv', sep=',')

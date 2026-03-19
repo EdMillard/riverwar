@@ -29,24 +29,25 @@ from colorado.imperial import Imperial
 from colorado.reservoirs import Reservoirs
 from colorado.compact import Compact
 from colorado.lb_tributary_cul import LBTributaryCUL
-from colorado.lb_main_cul import LBMainCUL
+from colorado.lb_mainstream_cul import LBMainstreamCUL
+from colorado.lb_reservoir_cul import LBReservoirCUL
 
 def run():
-    # Elevation_ft_NAVD88,Elevation_ft_NGVD29,Area_acres,Capacity_acrefeet
-
-    lb_main_cul = LBMainCUL()
     iii_c = III_C()
     imperial = Imperial()
     reservoirs = Reservoirs()
     compact = Compact()
+    lb_mainstream_cul = LBMainstreamCUL()
     lb_tributary_cul = LBTributaryCUL()
+    lb_reservoir_cul = LBReservoirCUL()
 
     file_path = Path('excel/Colorado_River_Math.xlsx')
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
         compact.export(writer, all_b.COMPACT_SHEET, compact.df)
         iii_c.export(writer, all_b.III_C_SHEET, compact.df)
-        lb_main_cul.export(writer, all_b.LB_MAINSTEM_CUL_SHEET, compact.df, number_format='#,##0;-#,##0')
+        lb_mainstream_cul.export(writer, all_b.LB_MAINSTEM_CUL_SHEET, compact.df, number_format='#,##0;-#,##0')
         lb_tributary_cul.export(writer, all_b.LB_TRIBUTARY_CUL_SHEET, compact.df, number_format='#,##0;-#,##0')
+        lb_reservoir_cul.export(writer, all_b.LB_RESERVOIRS_CUL_SHEET, compact.df, number_format='#,##0;-#,##0')
         reservoirs.export(writer, all_b.RESERVOIRS_SHEET, compact.df)
         imperial.export(writer, all_b.IMPERIAL_SHEET, compact.df)
 

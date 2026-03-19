@@ -49,8 +49,8 @@ class LBTributaryCUL(Sheet):
         super().__init__(headers, start_year=1971, end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
 
+        # lower_basin_cul_from_excel(self.path, self.years)
         # generate_cul_totals(self.path)
-        # lower_basin_cu_from_excel(self.path, self.years)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         divisor = 1
@@ -58,7 +58,7 @@ class LBTributaryCUL(Sheet):
 
         # AZ Gila
         sheet.usgs_annuals(self.df, '09520500', self.start_year, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1)
-        df = sheet.read_csv(path / 'az_gila_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_gila_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_GILA_CUL, divisor=divisor)
         # self.load_df_az_gila()
 
@@ -69,54 +69,54 @@ class LBTributaryCUL(Sheet):
 
         # Little Colorado River Near Cameron, AZ
         sheet.usgs_annuals(self.df, '09402000', 1981, self.end_year, title=lb.AZ_LITTLE_COLORADO_CAMERON_USGS, divisor=1)
-        df = sheet.read_csv(path / 'az_little_colorado_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_little_colorado_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_LITTLE_COLORADO_CUL, divisor=divisor)
         # self.load_df_az_little_colorado()
 
         # AZ Virgin
         #  USGS 09415000: Virgin River at Littlefield, AZ
         sheet.usgs_annuals(self.df, '09415000', self.start_year, self.end_year, title=lb.AZ_VIRGIN_LITTLEFIELD_USGS, divisor=1)
-        df = sheet.read_csv(path / 'az_virgin_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_virgin_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_VIRGIN_CUL, divisor=divisor)
         # self.load_df_az_virgin()
 
         # AZ Bill Williams
         # USGS 09426620: Bill Williams River Near Parker, AZ
         sheet.usgs_annuals(self.df, '09426620', 1988, self.end_year, title=lb.AZ_BILL_WILLIAMS_USGS, divisor=1)
-        df = sheet.read_csv(path / 'az_bill_williams_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_bill_williams_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_BILL_WILLIAMS_CUL, divisor=divisor)
 
         # AZ Trib
-        df = sheet.read_csv(path / 'az_trib_above_lake_mead_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'az_trib_above_lake_mead_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL, divisor=divisor)
 
         # NV Virgin
-        df = sheet.read_csv(path / 'nv_virgin_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nv_virgin_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_VIRGIN_CUL, divisor=divisor)
 
         # NV Muddy
         # USGS 09419515: Muddy River above Lake Mead near Overton, NV.
         # USGS 09416000 Muddy River near Moapa, NV.
         sheet.usgs_annuals(self.df, '09416000', self.start_year, self.end_year, title=lb.NV_MUDDY_MOAPA_USGS, divisor=1)
-        df = sheet.read_csv(path / 'nv_muddy_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nv_muddy_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_MUDDY_CUL, divisor=divisor)
 
         # NV Trib
-        df = sheet.read_csv(path / 'nv_trib_above_lake_mead_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nv_trib_above_lake_mead_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL, divisor=divisor)
 
         # NM Gila
-        df = sheet.read_csv(path / 'nm_gila_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nm_gila_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NM_GILA_CUL, divisor=divisor)
 
-        df = sheet.read_csv(path / 'nm_little_colorado_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'nm_little_colorado_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.NM_LITTLE_COLORADO_CUL, divisor=divisor)
 
         # UT Virgin
-        df = sheet.read_csv(path / 'ut_virgin_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'ut_virgin_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.UT_VIRGIN_CUL, divisor=divisor)
 
-        df = sheet.read_csv(path / 'ut_trib_above_lake_mead_total_cu.csv', sep='\s+')
+        df = sheet.read_csv(path / 'ut_trib_above_lake_mead_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL, divisor=divisor)
 
     def build_sheet(self) -> None:
@@ -372,7 +372,7 @@ def get_node(node_code: str, area_reference: Dict[str, Dict], calc_type:str, yea
 
     return df
 
-def lower_basin_cu_from_excel(out_path: Path, years):
+def lower_basin_cul_from_excel(out_path: Path, years):
     wb: Workbook = openpyxl.load_workbook('data/Colorado_River/1971-2024 Lower Colorado River System CUL Data.xlsx', data_only=True)
     area_reference = sheet.worksheet_to_dict_of_dicts(wb['Area_Reference'], 1, 2, 'HU8_CODE')
     ws: Worksheet = wb['Tributary']
@@ -560,13 +560,13 @@ def generate_cul_totals(path:Path):
     sheet.generate_cul_river_total(path, 'ut_trib_above_lake_mead')
     sheet.generate_cul_river_total(path, 'ut_virgin')
 
-    sheet.generate_cul_river_total(path, '*gila_total_cu', out_file='gila_total_cu.csv')
-    sheet.generate_cul_river_total(path, '*virgin_total_cu', out_file='virgin_total_cu.csv')
-    sheet.generate_cul_river_total(path, '*little_colorado_total_cu', out_file='little_colorado_total_cu.csv')
+    sheet.generate_cul_river_total(path, '*gila_total_cul', out_file='gila_total_cul.csv')
+    sheet.generate_cul_river_total(path, '*virgin_total_cul', out_file='virgin_total_cul.csv')
+    sheet.generate_cul_river_total(path, '*little_colorado_total_cul', out_file='little_colorado_total_cul.csv')
 
-    sheet.generate_cul_river_total(path, 'nv_*total_cu.csv', out_file='nv_tributary_total_cu.csv')
-    sheet.generate_cul_river_total(path, 'ut_*total_cu.csv', out_file='ut_tributary_total_cu.csv')
-    sheet.generate_cul_river_total(path, 'nm_*total_cu.csv', out_file='nm_tributary_total_cu.csv')
-    sheet.generate_cul_river_total(path, 'az_*total_cu.csv', out_file='az_tributary_total_cu.csv')
+    sheet.generate_cul_river_total(path, 'nv_*total_cul.csv', out_file='nv_tributary_total_cul.csv')
+    sheet.generate_cul_river_total(path, 'ut_*total_cul.csv', out_file='ut_tributary_total_cul.csv')
+    sheet.generate_cul_river_total(path, 'nm_*total_cul.csv', out_file='nm_tributary_total_cul.csv')
+    sheet.generate_cul_river_total(path, 'az_*total_cul.csv', out_file='az_tributary_total_cul.csv')
 
-    sheet.generate_cul_river_total(path, '*tributary_total_cu.csv', out_file='lb_tributary_total_cu.csv')
+    sheet.generate_cul_river_total(path, '*tributary_total_cul.csv', out_file='lb_tributary_total_cul.csv')
