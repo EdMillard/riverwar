@@ -35,8 +35,9 @@ class LBReservoirCUL(Sheet):
     def __init__(self):
         self.path:Path = Path('data/USBR_Lower_Colorado_CUL/Reservoir')
         headers = [
-            lb.LB_RESERVOIR_TOTAL_CUL,
-            lb.LAKE_MEAD_CUL, lb.LAKE_HAVASU_CUL, lb.LAKE_MOHAVE_CUL,
+            lb.LAKE_MEAD_CUL,
+            lb.LC_RESERVOIR_TOTAL_CUL,
+            lb.LAKE_MOHAVE_CUL, lb.LAKE_HAVASU_CUL,
             lb.SENATOR_WASH_CUL, lb.DIVERSION_DAMS_CUL
         ]
         super().__init__(headers, start_year=1971, end_year=2024)
@@ -73,14 +74,15 @@ class LBReservoirCUL(Sheet):
         sheet.formula_average(ws, self.df, self.years)
         sheet.add_borders_to_column(ws, 1, ws.max_row-1, ws.max_row-1, end_col=ws.max_column, which='outer')
 
-        sheet.formula_sum(ws, self.df, lb.LB_RESERVOIR_TOTAL_CUL, lb.LAKE_MEAD_CUL, lb.DIVERSION_DAMS_CUL)
-        self.set_bg(lb.LAKE_MEAD_CUL, to=lb.DIVERSION_DAMS_CUL, color=all_b.USBR_LB_CUL_BG)
+        lc_reservoir = [lb.LAKE_MOHAVE_CUL, lb.LAKE_HAVASU_CUL, lb.LAKE_MEAD_CUL, lb.DIVERSION_DAMS_CUL]
+        sheet.formula_add(ws, self.df, lb.LC_RESERVOIR_TOTAL_CUL, lc_reservoir)
+        self.set_bg(lb.LAKE_MEAD_CUL, to=lb.DIVERSION_DAMS_CUL, color=all_b.USBR_LB_CUL_RESERVOIR_BG)
 
         sheet.clear_range(ws, ws.max_row, ws.max_row, 1, ws.max_column)
 
         self.format_header()
 
-        self.set_column_width(lb.LB_RESERVOIR_TOTAL_CUL, 6, to=lb.DIVERSION_DAMS_CUL)
+        self.set_column_width(lb.LC_RESERVOIR_TOTAL_CUL, 6, to=lb.DIVERSION_DAMS_CUL)
 
 def get_reservoir_node(reservoir_name: str,  years: List[int], nodes: Dict) -> pd.DataFrame:
     node_name = f"{reservoir_name}"
@@ -149,6 +151,4 @@ def lower_basin_reservoir_cul_from_excel(out_path: Path, years):
             df.to_csv(out_csv_path, index=False, quoting=csv.QUOTE_NONE,  escapechar='\\', sep=' ')
 
 def generate_cul_totals(path:Path):
-    sheet.generate_cul_river_total(path, '', out_file='lc_reservor_cul.csv')
-    pass
-1
+    sheet.generate_cul_river_total(path, '', exclude='lake_mead', out_file='lc_reservor_cul.csv')

@@ -39,12 +39,12 @@ class Compact(Sheet):
         headers = [all_b.III_A, all_b.III_C, all_b.III_C_AZ,
                    lb.NIB_MORELOS_USGS, lb.AZ_GILA_DOME_USGS, lb.AZ_GILA_CUL, lb.NATURAL_IMPERIAL,
                    lb.MEXICO, lb.III_A_LB, lb.III_B,
-                   lb.LB_CU, lb.CA_CU, lb.AZ_CU, lb.NV_CU,
-                   lb.MEAD_EVAPORATION, lb.HOOVER_RELEASE,
+                   lb.LB_CU, lb.CA_CU, lb.AZ_CU, lb.NV_CU, lb.LC_RESERVOIR_TOTAL_CUL,
                    lb.H_M, lb.DIFF_7_5, lb.HOOVER_USGS,
-                   lb.MEAD, lb.DIAMOND_CREEK, lb.GC_INFLOW,
+                   lb.MEAD_DELTA, lb.MEAD, lb.LAKE_MEAD_CUL,
+                   lb.DIAMOND_CREEK, lb.GC_INFLOW,
                    all_b.III_D, ub.LEES_FERRY_USGS, ub.GLEN_CANYON,
-                   ub.POWELL,ub.POWELL_EVAPORATION,
+                   ub.POWELL_DELTA, ub.POWELL, ub.POWELL_EVAPORATION,
                    ub.NATURAL_LEES_FERRY,
                    ub.INFLOW, ub.INFLOW_UNREGULATED,
                    ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY,
@@ -68,16 +68,23 @@ class Compact(Sheet):
         df = sheet.read_csv(path / 'az_gila_total_cul.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df, lb.AZ_GILA_CUL, divisor=1000000)
 
-        df_mead_evap = sheet.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
-        sheet.merge_annual_column(self.df, df_mead_evap, lb.MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
+        reservoir_path = Path('data/USBR_Lower_Colorado_CUL/Reservoir')
+        df = sheet.read_csv(reservoir_path / 'lc_reservor_cul.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df, lb.LC_RESERVOIR_TOTAL_CUL, divisor=1000000)
 
-        df_hoover = sheet.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df_hoover, lb.HOOVER_RELEASE)
+        # df_hoover = sheet.read_csv('data/USBR_Reports/releases/usbr_releases_hoover_dam.csv', sep='\s+')
+        # sheet.merge_annual_column(self.df, df_hoover, lb.HOOVER_RELEASE)
 
         sheet.usgs_annuals(self.df, '09421500', self.start_year, self.end_year, title=lb.HOOVER_USGS)
 
         usbr_lake_mead_storage_af = 6124
         sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.start_year, self.end_year, title=lb.MEAD)
+
+        # df_mead_evap = sheet.read_csv('data/Colorado_River/mead_evap.csv', sep=',')
+        # sheet.merge_annual_column(self.df, df_mead_evap, lb.MEAD_EVAPORATION, inp_column_name='Evaporation_AcreFeet')
+
+        df_mead_evap = sheet.read_csv(reservoir_path / 'lake_mead.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df_mead_evap, lb.LAKE_MEAD_CUL, divisor=1000000)
 
         usbr_lake_powell_storage_af = 509
         sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.start_year, self.end_year,  title=ub.POWELL)
@@ -123,7 +130,7 @@ class Compact(Sheet):
         self.set_bg(lb.NATURAL_IMPERIAL, color=all_b.LIGHT_RED_BG, start_row=59)
 
         sheet.formula_subtract_constant(ws, self.df, lb.DIFF_7_5, lb.H_M, "7.5")
-        self.set_column_negative_red(lb.DIFF_7_5)
+        self.set_column_negative_red(lb.DIFF_7_5, negative_color='Color22', positive_color='Red')
 
         iii_a = [lb.III_A_LB, ub.III_A_UB]
         sheet.formula_add(ws, self.df, all_b.III_A, iii_a)
@@ -131,8 +138,11 @@ class Compact(Sheet):
         values = sheet.usgs_annuals(self.df, '09380000', 1955, self.end_year) # ub.LEES_FERRY_USGS
         ten_year = Compact.moving_average_10yr(values)
         Compact.write_column(ws, all_b.III_D, ten_year)
-        sheet.formula_sum(ws, self.df, lb.LB_CU, lb.CA_CU, lb.NV_CU)
-        sheet.formula_subtract(ws, self.df, lb.H_M, lb.HOOVER_RELEASE, lb.MEXICO)
+
+        lb_cu = [lb.CA_CU, lb.AZ_CU, lb.NV_CU, lb.LC_RESERVOIR_TOTAL_CUL, lb.LAKE_MEAD_CUL]
+        sheet.formula_add(ws, self.df, lb.LB_CU, lb_cu)
+
+        sheet.formula_subtract(ws, self.df, lb.H_M, lb.HOOVER_USGS, lb.MEXICO)
 
         sheet.formula(ws, self.df, all_b.III_C, f"='{lb.NATURAL_IMPERIAL}' - ('{lb.III_A_LB}' + '{lb.III_B}' + '{ub.III_A_UB}')")
         self.set_column_negative_red(all_b.III_C)
@@ -145,21 +155,27 @@ class Compact(Sheet):
 
         self.set_bg(lb.NIB_MORELOS_USGS, color=all_b.USGS_BG)
         self.set_bg(lb.AZ_GILA_DOME_USGS, color=all_b.USGS_BG)
-        self.set_bg(lb.AZ_GILA_CUL, color=all_b.USBR_LB_CUL_BG)
-        self.set_bg(lb.MEXICO, color=all_b.USBR_AR_FLOW)
-        self.set_bg(lb.HOOVER_RELEASE, color=all_b.USBR_AR_FLOW)
+        self.set_bg(lb.AZ_GILA_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
+        self.set_bg(lb.MEXICO, color=all_b.USBR_AR_FLOW_BG)
 
         self.set_bg(ub.NATURAL_LEES_FERRY, color=all_b.USBR_NATURAL_BG)
         self.set_bg(lb.LB_CU, to=lb.NV_CU, color=all_b.USBR_AR_CU_BG)
+        self.set_bg(lb.LC_RESERVOIR_TOTAL_CUL, color=all_b.USBR_LB_CUL_RESERVOIR_BG)
 
         self.set_bg(lb.HOOVER_USGS, color=all_b.USGS_BG)
-        self.set_bg(lb.MEAD_EVAPORATION, color=all_b.EVAPORATION_BG)
+        self.set_bg(lb.LAKE_MEAD_CUL, color=all_b.USBR_LB_CUL_RESERVOIR_BG)
+        sheet.formula_delta(ws, self.df, lb.MEAD_DELTA, lb.MEAD)
+        self.set_column_negative_red(lb.MEAD_DELTA, negative_color='Red', positive_color='Color22')
+        self.set_bg(lb.MEAD_DELTA, color=all_b.LIGHT_BLUE_BG)
         self.set_bg(lb.MEAD, color=all_b.LIGHT_BLUE_BG)
 
         self.set_bg(lb.DIAMOND_CREEK, to=lb.GC_INFLOW, color=all_b.USGS_BG)
         self.set_bg(ub.LEES_FERRY_USGS, to=ub.GLEN_CANYON, color=all_b.USGS_BG)
         self.set_bg(ub.NATURAL_LEES_FERRY, color=all_b.USBR_NATURAL_BG)
 
+        sheet.formula_delta(ws, self.df, ub.POWELL_DELTA, ub.POWELL)
+        self.set_column_negative_red(ub.POWELL_DELTA, negative_color='Red', positive_color='Color22')
+        self.set_bg(ub.POWELL_DELTA, color=all_b.LIGHT_BLUE_BG)
         self.set_bg(ub.POWELL, color=all_b.LIGHT_BLUE_BG)
         self.set_bg(ub.POWELL_EVAPORATION, color=all_b.EVAPORATION_BG)
 
@@ -169,6 +185,7 @@ class Compact(Sheet):
 
         self.set_bg(lb.MEAD_ELEVATION, to=ub.POWELL_ELEVATION, color=all_b.USBR_RISE_ELEVATION_BG)
 
+        sheet.clear_range(self.ws, self.ws.max_row, self.ws.max_row, 1, self.ws.max_column)
         self.format_header()
 
         current_str = datetime.now().strftime("%m/%d/%Y %I:%M%p")

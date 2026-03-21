@@ -56,6 +56,7 @@ def run():
         wb.calculation.fullCalcOnLoad = True
         wb.calculation.forceFullCalc = True
 
+    export_calc_to_png(file_path, 'img/CompactMath/compact_math.png')
     notes_path = Path(f'excel/Colorado_River_{all_b.NOTES_SHEET}.xlsx')
     sheet.copy_worksheet_to_new_workbook(
         source_wb_path=notes_path,
@@ -64,6 +65,16 @@ def run():
     )
     Report.open_docx_in_app(file_path)
 
+def export_calc_to_png(ods_path, output_dir):
+    cmd = [
+        "libreoffice",
+        "--headless",
+        "--convert-to", 'png:"Calc PNG"',
+        "--outdir", output_dir,
+        ods_path
+    ]
+    subprocess.run(cmd, check=True)
+    print("Exported PNG(s) to", output_dir)
 
 import pandas as pd
 from scipy.interpolate import interp1d

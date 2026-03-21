@@ -127,7 +127,7 @@ class LBTributaryCUL(Sheet):
         sheet.formula_average(ws, self.df, self.years)
         sheet.add_borders_to_column(ws, 1, ws.max_row-1, ws.max_row-1, end_col=ws.max_column, which='outer')
 
-        self.set_bg(lb.LB_TRIBUTARY_CUL, to=lb.NM_TRIBUTARY_CUL, color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.LB_TRIBUTARY_CUL, to=lb.NM_TRIBUTARY_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
 
         # Sum LB Rivers
         columns = [lb.AZ_TRIBUTARY_CUL, lb.NV_TRIBUTARY_CUL, lb.UT_TRIBUTARY_CUL, lb.NM_TRIBUTARY_CUL]
@@ -151,71 +151,71 @@ class LBTributaryCUL(Sheet):
 
         # AZ Gila
         self.set_bg(lb.AZ_GILA_DOME_USGS, color=all_b.USGS_BG)
-        self.set_bg(lb.GILA_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.GILA_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         columns = [lb.AZ_GILA_CUL, lb.NM_GILA_CUL]
         sheet.formula_add(ws, self.df, lb.GILA_CUL, columns)
-        self.set_bg(lb.AZ_GILA_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.AZ_GILA_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         # sheet.formula_sum(ws, self.df, lb.AZ_GILA_CUL, lb.AZ_GILA_IRRIGATION_CUL, lb.AZ_GILA_WITHIN_SYSTEM_CUL)
         # self.set_bg(lb.AZ_GILA_IRRIGATION_CUL, lb.AZ_GILA_WITHIN_SYSTEM_CUL, color=all_b.USBR_LB_CULL_BG, end_row=last_row)
 
         # AZ Little Colorado
         self.set_bg(lb.AZ_LITTLE_COLORADO_CAMERON_USGS, color=all_b.USGS_BG)
-        self.set_bg(lb.LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         columns = [lb.AZ_LITTLE_COLORADO_CUL, lb.NM_LITTLE_COLORADO_CUL]
         sheet.formula_add(ws, self.df, lb.LITTLE_COLORADO_CUL, columns)
-        self.set_bg(lb.AZ_LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.AZ_LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         # sheet.formula_sum(ws, self.df, lb.AZ_LITTLE_COLORADO_CUL, lb.AZ_LITTLE_COLORADO_IRRIGATION_CUL,
         #                  lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CUL)
         # self.set_bg(lb.AZ_LITTLE_COLORADO_IRRIGATION_CUL, lb.AZ_LITTLE_COLORADO_WITHIN_SYSTEM_CUL,
-        #             color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        #             color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # AZ Virgin
         self.set_bg(lb.AZ_VIRGIN_LITTLEFIELD_USGS, color=all_b.USGS_BG)
-        self.set_bg(lb.VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.VIRGIN_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         columns = [lb.AZ_VIRGIN_CUL, lb.NV_VIRGIN_CUL, lb.UT_VIRGIN_CUL]
         sheet.formula_add(ws, self.df, lb.VIRGIN_CUL, columns)
-        self.set_bg(lb.AZ_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.AZ_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         # sheet.formula_sum(ws, self.df, lb.AZ_VIRGIN_CUL, lb.AZ_VIRGIN_IRRIGATION_CUL, lb.AZ_VIRGIN_M_AND_I_CUL)
-        # self.set_bg(lb.AZ_VIRGIN_IRRIGATION_CUL, lb.AZ_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        # self.set_bg(lb.AZ_VIRGIN_IRRIGATION_CUL, lb.AZ_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # AZ Bill Williams
         self.set_bg(lb.AZ_BILL_WILLIAMS_USGS, color=all_b.USGS_BG)
-        self.set_bg(lb.AZ_BILL_WILLIAMS_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.AZ_BILL_WILLIAMS_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
 
         # AZ Trib Below
-        self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_BG)
-        # self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
+        # self.set_bg(lb.AZ_TRIB_BELOW_LAKE_MEAD_IRRIGATION_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # NV Trib Above
-        self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_BG)
-        # self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
+        # self.set_bg(lb.NV_TRIB_ABOVE_LAKE_MEAD_M_AND_I_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # NV Virgin
-        self.set_bg(lb.NV_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.NV_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         # sheet.formula_sum(ws, self.df, lb.NV_VIRGIN_CUL, lb.NV_VIRGIN_IRRIGATION_CUL, lb.NV_VIRGIN_M_AND_I_CUL)
-        # self.set_bg(lb.NV_VIRGIN_IRRIGATION_CUL, lb.NV_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        # self.set_bg(lb.NV_VIRGIN_IRRIGATION_CUL, lb.NV_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # NV Muddy
         self.set_bg(lb.NV_MUDDY_MOAPA_USGS, color=all_b.USGS_BG)
-        self.set_bg(lb.NV_MUDDY_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.NV_MUDDY_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         # sheet.formula_sum(ws, self.df, lb.NV_MUDDY_CUL, lb.NV_MUDDY_IRRIGATION_CUL, lb.NV_MUDDY_M_AND_I_CUL)
-        # self.set_bg(lb.NV_MUDDY_IRRIGATION_CUL, lb.NV_MUDDY_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        # self.set_bg(lb.NV_MUDDY_IRRIGATION_CUL, lb.NV_MUDDY_M_AND_I_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # NM Gila
-        self.set_bg(lb.NM_GILA_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.NM_GILA_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         # sheet.formula_sum(ws, self.df, lb.NM_GILA_CUL, lb.NM_GILA_IRRIGATION_CUL, lb.NM_GILA_M_AND_I_CUL)
-        # self.set_bg(lb.NM_GILA_IRRIGATION_CUL, lb.NM_GILA_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        # self.set_bg(lb.NM_GILA_IRRIGATION_CUL, lb.NM_GILA_M_AND_I_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # NM Gila
-        self.set_bg(lb.NM_LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.NM_LITTLE_COLORADO_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
 
         # UT Virgin
-        self.set_bg(lb.UT_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.UT_VIRGIN_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
         # sheet.formula_sum(ws, self.df, lb.UT_VIRGIN_IRRIGATION_CUL, lb.UT_VIRGIN_M_AND_I_CUL, lb.NM_GILA_M_AND_I_CUL)
-        # self.set_bg(lb.UT_VIRGIN_CUL, lb.UT_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_BG, end_row=last_row)
+        # self.set_bg(lb.UT_VIRGIN_CUL, lb.UT_VIRGIN_M_AND_I_CUL, color=all_b.USBR_LB_CUL_TRIBUTARY_BG, end_row=last_row)
 
         # UT Trib Above
-        self.set_bg(lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL,  color=all_b.USBR_LB_CUL_TRIBUTARY_BG)
 
         sheet.clear_range(ws, ws.max_row, ws.max_row, 1, ws.max_column)
 

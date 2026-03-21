@@ -74,11 +74,12 @@ class III_C(Sheet):
         self.set_column_alignment(PLUS, horizontal='center')
         self.set_column_alignment(CLOSE, horizontal='center')
 
-        self.set_bg(lb.MX_TREATY, ub.GLEN_CANYON_RELEASE, color=all_b.USBR_AR_FLOW)
+        self.set_bg(lb.MX_TREATY, ub.GLEN_CANYON_RELEASE, color=all_b.USBR_AR_FLOW_BG)
         self.set_bg(lb.NATURAL_IMPERIAL, color=all_b.USBR_NATURAL_BG)
         self.set_bg(LOWER_CU, color=all_b.USBR_AR_CU_BG)
         self.set_bg(UPPER_CU, color=all_b.USBR_UB_CUL_BG)
 
+        sheet.clear_range(self.ws, self.ws.max_row, self.ws.max_row, 1, self.ws.max_column)
         self.format_header()
 
         self.set_column_width(EQUALS, 2)

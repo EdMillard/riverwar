@@ -83,7 +83,7 @@ class LBMainstreamCUL(Sheet):
         sheet.formula_sum(ws, self.df, lb.CA_TOTAL, lb.CA_AGRICULTURE, lb.CA_OUTSIDE_SYSTEM)
         sheet.formula_sum(ws, self.df, lb.AZ_TOTAL, lb.AZ_AGRICULTURE, lb.AZ_WITHIN_SYSTEM)
         sheet.formula_sum(ws, self.df, lb.NV_TOTAL, lb.NV_AGRICULTURE, lb.NV_POWER)
-        self.set_bg(lb.CA_TOTAL, to=lb.NV_POWER, color=all_b.USBR_LB_CUL_BG)
+        self.set_bg(lb.CA_TOTAL, to=lb.NV_POWER, color=all_b.USBR_LB_CUL_MAINSTREAM_BG)
 
         sheet.clear_range(ws, ws.max_row, ws.max_row, 1, ws.max_column)
 

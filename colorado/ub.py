@@ -23,6 +23,7 @@ NATURAL_LEES_FERRY = 'Natural Lees Ferry'
 
 GLEN_CANYON_RELEASE = 'Glen Canyon Release'
 POWELL = 'Powell'
+POWELL_DELTA = 'Powell Δ'
 POWELL_EVAPORATION = 'Powell Evaporation'
 POWELL_ELEVATION = 'Powell Elevation'
 GLEN_CANYON = 'Glen Canyon'
@@ -31,6 +32,7 @@ INFLOW = 'Inflow'
 INFLOW_UNREGULATED = 'Inflow Unregulated'
 
 FLAMING_GORGE = 'Flaming Gorge'
+FLAMING_GORGE_DELTA = 'Flaming Gorge Δ'
 BLUE_MESA = 'Blue Mesa'
 
 III_A_UB = 'III(a) Upper'

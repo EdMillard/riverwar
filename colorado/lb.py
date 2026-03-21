@@ -32,7 +32,7 @@ III_B = 'III(b)'
 LB_CUL = 'LB CUL'
 
 HOOVER_USGS = 'Hoover USGS'
-NIB_MORELOS_USGS = 'NIB Morelos USGS'
+NIB_MORELOS_USGS = 'NIB USGS Morelos'
 
 HOOVER_RELEASE = 'Hoover Release'
 H_M = 'Hv-Mx'
@@ -47,6 +47,7 @@ HAVASU_ELEVATION = 'Havasu Elevation'
 HAVASU_EVAPORATION = 'Havasu Evaporation'
 
 MEAD = 'Mead'
+MEAD_DELTA = 'Mead Δ'
 MEAD_ELEVATION = 'Mead Elevation'
 MEAD_EVAPORATION = 'Mead Evaporation'
 
@@ -59,7 +60,9 @@ IMPERIAL = 'Imperial'
 SALTON_ELEVATION = 'Salton Elevation'
 SALTON_INFLOW = 'Salton Inflow'
 ALAMO_RIVER = 'Alamo River'
+MX_ALAMO_RIVER = 'MX Alamo River'
 NEW_RIVER = "New River"
+MX_NEW_RIVER = "MX New River"
 WHITEWATER = "Whitewater"
 
 DILA_CUL = 'Gila CUL'
@@ -84,7 +87,7 @@ NV_AGRICULTURE = 'NV Agriculture CUL'
 NV_M_I_OTHER = 'NV M I Other CUL'
 NV_POWER = 'NV Power CUL'
 
-LB_RESERVOIR_TOTAL_CUL = 'LB Reservoir Total CUL'
+LC_RESERVOIR_TOTAL_CUL = 'LC Reservoir Total CUL'
 LAKE_MEAD_CUL = 'Mead CUL'
 LAKE_HAVASU_CUL = 'Havasu CUL'
 LAKE_MOHAVE_CUL = 'Mohave CUL'

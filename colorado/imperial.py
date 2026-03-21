@@ -29,21 +29,25 @@ from sheet.sheet import cl, cn
 class Imperial(Sheet):
     def __init__(self):
         headers = [lb.SALTON_ELEVATION, lb.SALTON_INFLOW,
-                   lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER,
+                   lb.MX_ALAMO_RIVER, lb.ALAMO_RIVER,
+                   lb.MX_NEW_RIVER, lb.NEW_RIVER,
+                   lb.WHITEWATER,
                    lb.IMPERIAL_TOTAL_CU, lb.IMPERIAL_CU, lb.COACHELLA_CU]
         super().__init__(headers)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
-        sheet.usgs_annuals(self.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER)          # 10254580 Alamo at border
-        sheet.usgs_annuals(self.df, '10255550', self.start_year, self.end_year, title=lb.NEW_RIVER)    # 10254970 New at border
+        sheet.usgs_annuals(self.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER)
+        sheet.usgs_annuals(self.df, '10255550', self.start_year, self.end_year, title=lb.NEW_RIVER)
         sheet.usgs_annuals(self.df, '10259540', self.start_year, self.end_year, title=lb.WHITEWATER)
+        # Water quality/salinity
+        # sheet.usgs_annuals(self.df, '10254580', self.start_year, self.end_year, title=lb.MX_ALAMO_RIVER)
+        # sheet.usgs_annuals(self.df, '10254970', self.start_year, self.end_year, title=lb.MX_NEW_RIVER)
 
         self.df[lb.SALTON_INFLOW] = [f'=SUM(D{row}:F{row})' for row in range(2, len(self.df) + 2)]
 
         sheet.usgs_value(self.df, '10254005', 1989, self.end_year, title=lb.SALTON_ELEVATION, parameterCd='62614', statCd='00003')
 
         self.lower_basin_annual_reports(self.df)
-
 
     def build_sheet(self) -> None:
         ws = self.ws

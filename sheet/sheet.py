@@ -61,12 +61,12 @@ class Sheet(ABC):
         try:
             self.ws, self.df = export_to_excel(self.df, writer, sheet_name, number_format=number_format)
         except Exception as e:
-            print(f"export_to_excel load_df {sheet_name} error: {e}")
+            print(f"export load_df {sheet_name} error: {e}")
 
         try:
             self.build_sheet()
         except Exception as e:
-            print(f"export_to_excel load_df {sheet_name} error: {e}")
+            print(f"export build_sheet {sheet_name} error: {e}")
 
         return self.ws
 
@@ -105,8 +105,9 @@ class Sheet(ABC):
     def set_column_alignment(self, name:str, horizontal:str) -> None:
         set_column_alignment(self.ws, cn(self.ws, name), 2, len(self.df) + 2, horizontal=horizontal)
 
-    def set_column_negative_red(self, name: str) -> None:
-        set_column_negative_red(self.ws, cn(self.ws, name), 2, len(self.df) + 2)
+    def set_column_negative_red(self, name: str, negative_color: str='Red', positive_color: str='Color1') -> None:
+        set_column_negative_red(self.ws, cn(self.ws, name), 2, len(self.df) + 2,
+                                negative_color=negative_color, positive_color=positive_color)
 
     # Variable name ahd units Row centered
     #
@@ -823,6 +824,15 @@ def formula_subtract(ws: Worksheet, df: pd.DataFrame, target_column: str, minuen
     formula = f'={cl(ws, minuend)}[row]-{cl(ws, subtrahend)}[row]'
     set_col_formula(ws, df, formula, target_column, start_row)
 
+def formula_delta(ws: Worksheet, df: pd.DataFrame, column_name: str, delta_column: str, start_row:int=1):
+    formula = f'={cl(ws, delta_column)}[row]-{cl(ws, delta_column)}[row-1]'
+    col_idx = df.columns.get_loc(column_name) + 1  # 1-based
+    for i in range(start_row+1, len(df)+1):
+        excel_row = i + 1
+        f = formula.replace("[row]", str(excel_row))
+        f = f.replace("[row-1]", str(excel_row-1))
+        ws.cell(row=excel_row, column=col_idx, value=f)
+
 def formula_subtract_constant(ws: Worksheet, df: pd.DataFrame, target_column: str, minuend: str, subtrahend: str):
     formula = f'={cl(ws, minuend)}[row]-{subtrahend}'
     set_col_formula(ws, df, formula, target_column)
@@ -1042,7 +1052,10 @@ def color_column(
 def merge_annual_column(df:pd.DataFrame, annual_df:pd.DataFrame,
                         column_name:str, inp_column_name='Total', divisor=1_000_000):
     if divisor != 1:
-        annual_df[inp_column_name] = annual_df[inp_column_name] / divisor
+        try:
+            annual_df[inp_column_name] = annual_df[inp_column_name] / divisor
+        except Exception as e:
+            print(f"merge_annual_column {column_name} {inp_column_name} error: {e}")
     df1 = df.merge(
         annual_df[['Year', inp_column_name]],
         on='Year',
@@ -1261,7 +1274,8 @@ def set_column_negative_red(
         end_row: int,
         base_format: str = '#,##0.00',
         use_parentheses: bool = False,
-        negative_color: str = 'Red'
+        negative_color: str = 'Red',
+        positive_color: str = 'Color1'
 ) -> None:
     """
     Apply number format so negative values show in red **with a minus sign**.
@@ -1278,10 +1292,10 @@ def set_column_negative_red(
 
     if use_parentheses:
         # Accounting style: positives normal, negatives red + parentheses
-        fmt = f"{base_format};[{negative_color}]({base_format})"
+        fmt = f"[{positive_color}]({base_format});[{negative_color}]({base_format})"
     else:
         # Standard: explicit minus sign in red
-        fmt = f"{base_format};[{negative_color}]-{base_format}"
+        fmt = f"[{positive_color}]{base_format};[{negative_color}]-{base_format}"
 
     for row in range(start_row, end_row + 1):
         cell = ws[f"{col_letter}{row}"]
@@ -1553,7 +1567,7 @@ def generate_cul_river_total(path:Path, river:str, out_file:str | None=None,
     remove_file(out_path)
     files = find_files(path, f"{river}*")
     if exclude is not None:
-        files.remove(exclude)
+        files = [x for x in files if exclude not in x.lower()]
     sum_csv_files_by_year(files, out_path, year_column='Year')
 
 def remove_file(file_path: str | Path) -> bool:
