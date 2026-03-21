@@ -62,21 +62,21 @@ class StyledTextView(stc.StyledTextCtrl):
             end += 1
 
         clicked_text = self.GetTextRange(start, end)
-        text = clicked_text.strip()
         text = clicked_text.strip('\'"')
 
         # Find full line
-        line_num = self.LineFromPosition(pos)
-        line_start = self.PositionFromLine(line_num)
-        line_end = self.GetLineEndPosition(line_num)
-        line_text = self.GetTextRange(line_start, line_end)
+        line_num:int = self.LineFromPosition(pos)
+        line_start:int = self.PositionFromLine(line_num)
+        line_end:int = self.GetLineEndPosition(line_num)
+        line_text:str = self.GetTextRange(line_start, line_end)
 
         parent = self.GetParent()
-        self.on_styled_text_clicked(text, start, end, line_text, parent=parent)
+        self.on_styled_text_clicked(text, start, end, line_text, line_num, parent=parent)
 
         # event.Skip()
 
-    def on_styled_text_clicked(self, text:str, start_pos:int, end_pos:int, line_text:str, parent=None):
+    def on_styled_text_clicked(self, text:str, start_pos:int, end_pos:int, line_text:str,
+                               line_num:int, parent=None):
         """Override or bind to this"""
         print(f"Clicked on styled value: '{text}' at positions {start_pos}–{end_pos}")
         # wx.CallAfter(wx.MessageBox, f"You clicked: {text}", "Clickable Value")
@@ -228,9 +228,3 @@ class PythonTextView(wx.Panel):
         self.editor.MarkerDefine(stc.STC_MARKNUM_FOLDEREND, stc.STC_MARK_PLUS, faces['background'], "#007ACC")
         self.editor.MarkerDefine(stc.STC_MARKNUM_FOLDEROPENMID, stc.STC_MARK_MINUS, faces['background'], "#007ACC")
         self.editor.MarkerDefine(stc.STC_MARKNUM_FOLDERMIDTAIL, stc.STC_MARK_EMPTY, faces['background'], "#007ACC")
-
-
-if __name__ == "__main__":
-    app = wx.App(False)
-    demo = SyntaxHighlightDemo()
-    app.MainLoop()

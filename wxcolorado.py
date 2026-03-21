@@ -27,6 +27,7 @@ import wx.lib.agw.aui as aui
 from api.times_series import TimeSeries
 from wxui.graphic_panel import GraphicPanel
 import colorado.river
+from sheet.sheet import Sheet, sheets
 
 class WxAbstraction(object):
     def __init__(self, main_frame, ui_object):
@@ -112,11 +113,49 @@ class MainFrame(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.notebook, 1, wx.EXPAND)
         self.SetSizer(sizer)
+        self.Show()
 
         colorado.river.run()
 
-    def handle_click(self, clicked_str:str, start:int, end:int, line_text:str, parent=None):
-        pass
+
+    def handle_click(self, clicked_str:str, start:int, end:int, line_text:str, line_num:int,
+                     parent=None):
+        sheet:Sheet | None = None
+        for s in sheets:
+            if s.start_parameters <= line_num <= s.end_parameters:
+                sheet = s
+                break
+        if sheet:
+            df = sheet.df
+
+            # Create minimal wx app to demonstrate
+           # frame = wx.Frame(None, title="Grouped Bar Chart Example", size=wx.Size(900, 600))
+
+           # panel = wx.Panel(frame)
+           # sizer = wx.BoxSizer(wx.VERTICAL)
+
+            graphic_panel = GraphicPanel(self.notebook, None, None, text='')
+            # self.main_frame.verify_error_graphs.append(graphic_panel)
+            # graphic_panel.set_time_series(time_series)
+            # graphic_panel.variable_name = variable_name
+            graphic_panel.text = ''
+            self.notebook.AddPage(graphic_panel, clicked_str)
+            self.notebook.SetSelection(self.notebook.GetPageCount() - 1)
+            graphic_panel.Show()
+
+            # Create the plot
+            graphic_panel.plot_grouped_bar_chart(
+                df=df,
+                param_columns=[clicked_str],
+                title="Compact Math",
+                bar_width=0.25,
+                legend_loc="upper left"
+            )
+
+            # sizer.Add(canvas, 1, wx.EXPAND | wx.ALL, 10)
+
+            # panel.SetSizer(sizer)
+            # frame.Show()
 
     def Run(self, excel_paths, batch=False):
         w, h = wx.GetClientDisplayRect().GetSize()
@@ -128,25 +167,15 @@ class MainFrame(wx.Frame):
         self.ui_abstraction.set_progress_bar(self.progress)
         pb_frame.Show()
 
-        self.ui_abstraction.log_message(f"\'Lake Mead Release\'")
-        self.ui_abstraction.log_message(f"\'Lake Mead Elevation\'")
-        self.ui_abstraction.log_message(f"\'Lake Mead Active Capacity\'")
-        self.ui_abstraction.log_message(f"\'Lake Mead Evaporation\'")
-
-        self.ui_abstraction.log_message(f"\'Glen Canyon\'")
-        self.ui_abstraction.log_message(f"\'Glen Canyon Release PowerPlant CFS\'")
-        self.ui_abstraction.log_message(f"\'Lees Ferry Release\'")
-
-        self.ui_abstraction.log_message(f"\'Lake Powell Evaporation\'")
-        self.ui_abstraction.log_message(f"\'Lake Powell Unregulated Inflow\'")
-        self.ui_abstraction.log_message(f"\'Lake Powell Inflow\'")
-
-        self.ui_abstraction.log_message(f"")
-        self.ui_abstraction.log_message(f"\'Lake Powell Active Capacity\'")
-        self.ui_abstraction.log_message(f"\'Lake Powell Elevation\'")
-        self.ui_abstraction.log_message(f"\'Lake Powell Active Capacity\'")
-
-        self.ui_abstraction.log_message(f"\'Export\'")
+        line_num = 0
+        for sheet in sheets:
+            self.ui_abstraction.log_message(f"{sheet.name}")
+            line_num += 1
+            sheet.start_parameters = line_num
+            for parameter in sheet.headers:
+                self.ui_abstraction.log_message(f"\t\'{parameter}\'")
+                line_num += 1
+            sheet.end_parameters = line_num
 
 
 class ColoradoApp(wx.App):

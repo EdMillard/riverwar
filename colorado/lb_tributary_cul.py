@@ -23,7 +23,7 @@ from pathlib import Path
 import colorado.lb as lb
 import colorado.allb as all_b
 import pandas as pd
-from sheet.sheet import Sheet
+from sheet.sheet import Sheet, sheets
 import openpyxl
 from sheet import sheet
 from openpyxl.worksheet.worksheet import Worksheet
@@ -32,7 +32,7 @@ from typing import List, Dict
 import csv
 
 class LBTributaryCUL(Sheet):
-    def __init__(self):
+    def __init__(self, name:str):
         self.path:Path = Path('data/USBR_Lower_Colorado_CUL/Tributary')
         headers = [
             lb.LB_TRIBUTARY_CUL,
@@ -46,11 +46,13 @@ class LBTributaryCUL(Sheet):
             lb.NV_MUDDY_MOAPA_USGS, lb.NV_MUDDY_CUL,
             lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL, lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL, lb.UT_TRIB_ABOVE_LAKE_MEAD_CUL
         ]
-        super().__init__(headers, start_year=1971, end_year=2024)
+        super().__init__(name, headers, start_year=1971, end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
 
         # lower_basin_cul_from_excel(self.path, self.years)
         # generate_cul_totals(self.path)
+
+        sheets.append(self)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         divisor = 1

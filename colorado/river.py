@@ -31,32 +31,33 @@ from colorado.compact import Compact
 from colorado.lb_tributary_cul import LBTributaryCUL
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
+import subprocess
 
-def run():
-    iii_c = III_C()
-    imperial = Imperial()
-    reservoirs = Reservoirs()
-    compact = Compact()
-    lb_mainstream_cul = LBMainstreamCUL()
-    lb_tributary_cul = LBTributaryCUL()
-    lb_reservoir_cul = LBReservoirCUL()
+def run()->None:
+    compact = Compact(all_b.COMPACT_SHEET)
+    iii_c = III_C(all_b.III_C_SHEET)
+    lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
+    lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
+    lb_reservoir_cul = LBReservoirCUL(all_b.LB_RESERVOIRS_CUL_SHEET)
+    reservoirs = Reservoirs(all_b.RESERVOIRS_SHEET)
+    imperial = Imperial( all_b.IMPERIAL_SHEET)
 
     file_path = Path('excel/Colorado_River_Math.xlsx')
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        compact.export(writer, all_b.COMPACT_SHEET, compact.df)
-        iii_c.export(writer, all_b.III_C_SHEET, compact.df)
-        lb_mainstream_cul.export(writer, all_b.LB_MAINSTEM_CUL_SHEET, compact.df, number_format='#,##0;-#,##0')
-        lb_tributary_cul.export(writer, all_b.LB_TRIBUTARY_CUL_SHEET, compact.df, number_format='#,##0;-#,##0')
-        lb_reservoir_cul.export(writer, all_b.LB_RESERVOIRS_CUL_SHEET, compact.df, number_format='#,##0;-#,##0')
-        reservoirs.export(writer, all_b.RESERVOIRS_SHEET, compact.df)
-        imperial.export(writer, all_b.IMPERIAL_SHEET, compact.df)
+        compact.export(writer,  compact.df)
+        iii_c.export(writer, compact.df)
+        lb_mainstream_cul.export(writer, compact.df, number_format='#,##0;-#,##0')
+        lb_tributary_cul.export(writer, compact.df, number_format='#,##0;-#,##0')
+        lb_reservoir_cul.export(writer, compact.df, number_format='#,##0;-#,##0')
+        reservoirs.export(writer, compact.df)
+        imperial.export(writer, compact.df)
 
         wb: Workbook = writer.book
         wb.calcMode = "auto"  # ensure automatic calculation
         wb.calculation.fullCalcOnLoad = True
         wb.calculation.forceFullCalc = True
 
-    export_calc_to_png(file_path, 'img/CompactMath/compact_math.png')
+    # export_calc_to_png(file_path, 'img/CompactMath/compact_math.png')
     notes_path = Path(f'excel/Colorado_River_{all_b.NOTES_SHEET}.xlsx')
     sheet.copy_worksheet_to_new_workbook(
         source_wb_path=notes_path,
@@ -64,6 +65,9 @@ def run():
         target_wb_path=file_path
     )
     Report.open_docx_in_app(file_path)
+
+    compact.df = sheet.load_excel_sheet(file_path, "Compact")
+    pass
 
 def export_calc_to_png(ods_path, output_dir):
     cmd = [
@@ -93,7 +97,7 @@ def get_lake_powell_capacity(
 
     Example usage:
         capacity = get_lake_powell_capacity(3650.5)
-        print(f"At 3650.5 ft: {capacity:,.0f} af")
+        print(f'At 3650.5 ft: {capacity:,.0f} af')
     """
     if not navd88:
         warnings.warn("Elevations should be in NAVD 88 datum per 2018 USGS data.")

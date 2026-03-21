@@ -511,6 +511,93 @@ class GraphicPanel(wx.Panel):
         self.figure.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, wspace=0.1, hspace=0.1)
         self.canvas.draw()
 
+    def plot_grouped_bar_chart(self,
+            df: pd.DataFrame,
+            param_columns: list[str],
+            title: str = "Title",
+            xlabel: str = "Year",
+            ylabel: str = "Value",
+            figsize: tuple = (8, 5),
+            bar_width: float = 0.2,
+            colors: list[str] | None = None,
+            legend_loc: str = "best"
+    ):
+        """
+        Same signature as before, but with safe numeric conversion
+        """
+        if 'Year' not in df.columns:
+            raise ValueError("DataFrame must contain a 'Year' column")
+
+        missing_cols = [col for col in param_columns if col not in df.columns]
+        if missing_cols:
+            raise ValueError(f"Columns not found: {missing_cols}")
+
+        # ── Critical fix: convert value columns to numeric, coercing errors to NaN ──
+        df_plot = df.copy()  # avoid modifying original
+        for col in param_columns:
+            # Convert to numeric → <NA>/None/non-numbers become np.nan
+            df_plot[col] = pd.to_numeric(df_plot[col], errors='coerce')
+
+        # Optional: decide how to handle NaNs
+        # Option A: Skip rows with any NaN in plotting columns (cleanest for bars)
+        df_plot = df_plot.dropna(subset=param_columns)
+
+        # Option B: Fill with 0 (if 0 makes domain sense)
+        # df_plot[param_columns] = df_plot[param_columns].fillna(0)
+
+        # Option C: Leave as np.nan → matplotlib will skip those bars (gaps)
+        # (this is often fine)
+
+        # Now proceed with plotting using df_plot
+        years = df_plot['Year'].astype(str)
+        n_years = len(years)
+        n_params = len(param_columns)
+
+        if colors is None:
+            colors = plt.cm.tab10.colors[:n_params]
+
+        self.ax.clear()
+        # fig, ax = plt.subplots(figsize=figsize, dpi=100)
+
+        x = range(n_years)
+        total_width = bar_width * n_params
+        offset = total_width / 2 - bar_width / 2
+
+        for i, param in enumerate(param_columns):
+            pos = [xi + i * bar_width - offset for xi in x]
+            y = df_plot[param]
+            self.ax.bar(
+                pos,
+                y,
+                width=bar_width,
+                label=param,
+                color=colors[i % len(colors)],
+                edgecolor='black',
+                linewidth=0.8
+            )
+
+        self.ax.set_xlabel(xlabel)
+        self.ax.set_ylabel(ylabel)
+        self.ax.set_title(title)
+        self.ax.set_xticks(range(n_years))
+        self.ax.set_xticklabels(years, rotation=0, ha='center')
+        self.ax.xaxis.set_major_locator(plt.MaxNLocator(nbins=len(years) // 2))
+
+        self.ax.yaxis.grid(True, linestyle='--', alpha=0.7)
+        self.ax.set_axisbelow(True)
+
+        if n_params > 1:
+            self.ax.legend(loc=legend_loc, frameon=True, fontsize=10)
+
+        self.figure.tight_layout()
+
+        # canvas = FigureCanvas(parent, -1, fig)
+        # canvas.SetMinSize(wx.Size(400, 300))
+        # return canvas
+        self.ax.grid(True)
+        self.figure.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, wspace=0.1, hspace=0.1)
+        self.canvas.draw()
+
     def save_plot_to_image(self, report, file_name, variable_name, text):
         self.update_plot()
 

@@ -24,7 +24,7 @@ import colorado.ub as ub
 import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
-from sheet.sheet import Sheet
+from sheet.sheet import Sheet, sheets
 from typing import List
 
 EQUALS = "="
@@ -35,11 +35,12 @@ UPPER_CU = 'UPPER CU'
 LOWER_CU = 'LOWER CU'
 
 class III_C(Sheet):
-    def __init__(self):
+    def __init__(self, name:str):
         headers = [all_b.III_C, EQUALS, lb.NATURAL_IMPERIAL, MINUS, LOWER_CU, PLUS, UPPER_CU, CLOSE, lb.MX_TREATY,
                               lb.HOOVER_RELEASE, ub.GLEN_CANYON_RELEASE]
-        super().__init__(headers,  end_year=2024)
+        super().__init__(name, headers,  end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
+        sheets.append(self)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         df_len = len(self.df) + 2

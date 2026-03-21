@@ -160,6 +160,12 @@ class Report:
             try:
                 subprocess.run(["libreoffice", "--writer", str(file_path)], check=True)
                 print(f"Opened {file_path} in LibreOffice Writer.")
+                # subprocess.Popen(
+                #    ["libreoffice", "--writer", str(file_path)],
+                #    stdout=subprocess.DEVNULL,  # suppress console output (optional but cleaner)
+                #    stderr=subprocess.DEVNULL,  # suppress errors from cluttering your terminal
+                #    start_new_session=True  # helps detach properly on Unix-like systems
+                # )
             except subprocess.CalledProcessError as e:
                 raise OSError(f"Failed to launch LibreOffice: {e}")
             except FileNotFoundError:

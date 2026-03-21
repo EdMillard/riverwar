@@ -40,33 +40,40 @@ import colorado.lb as lb
 import colorado.ub as ub
 from abc import ABC, abstractmethod
 import re
+import numexpr as ne
+import pandas as pd
+from pycel import ExcelCompiler
+import string
 
 cn = lambda ws, name: get_column_number(ws, name)
 cl = lambda ws, name: get_column_letter_insensitive(ws, name)
 
 class Sheet(ABC):
-    def __init__(self, headers: List[str], start_year:int=1964, end_year:int=2026):
+    def __init__(self, name:str, headers: List[str], start_year:int=1964, end_year:int=2026):
+        self.name = name
+        self.start_parameters = 0
+        self.end_parameters = 0
         self.start_year: int = start_year
         self.end_year: int = end_year
         self.headers: List[str] = headers
         self.df: pd.DataFrame = create_df(self.start_year, self.end_year, headers)
         self.ws: Optional[Worksheet] = None
 
-    def export(self, writer: pd.ExcelWriter, sheet_name:str, df_main : pd.DataFrame | None, number_format:str='0.00') -> Worksheet:
+    def export(self, writer: pd.ExcelWriter, df_main:pd.DataFrame, number_format:str='0.00') -> Worksheet:
         try:
             self.load_df(df_main)
         except Exception as e:
-            print(f"export load_df {sheet_name} error: {e}")
+            print(f"export load_df {self.name} error: {e}")
 
         try:
-            self.ws, self.df = export_to_excel(self.df, writer, sheet_name, number_format=number_format)
+            self.ws, self.df = export_to_excel(self.df, writer, self.name, number_format=number_format)
         except Exception as e:
-            print(f"export load_df {sheet_name} error: {e}")
+            print(f"export load_df {self.name} error: {e}")
 
         try:
             self.build_sheet()
         except Exception as e:
-            print(f"export build_sheet {sheet_name} error: {e}")
+            print(f"export build_sheet {self.name} error: {e}")
 
         return self.ws
 
@@ -147,6 +154,8 @@ def read_csv(filename, sep='\s+', comment_char='#'):
         df = pd.DataFrame()
 
     return df
+
+sheets:List[Sheet] = []
 
 def export_to_excel(df:pd.DataFrame, writer: pd.ExcelWriter, sheet_name:str, number_format:str='0.00'):
     df_data = pd.DataFrame(df)
@@ -754,6 +763,12 @@ def set_number_format(ws: Worksheet, start_row:int, end_row:int, start_col:int, 
         for cell in row:
             cell.number_format = number_format
 
+def force_numeric(df:pd.DataFrame, numeric_cols_to_convert:List[str]):
+    for col in numeric_cols_to_convert:
+        if col in df.columns:
+            # Coerce invalid values → NaN
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
 def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str, start_row=1) -> None:
     col_idx = df.columns.get_loc(column_name) + 1  # 1-based
     for i in range(start_row, len(df)+1):
@@ -762,6 +777,7 @@ def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str,
         ws.cell(row=excel_row, column=col_idx, value=f)
 
 def formula_add(ws: Worksheet, df: pd.DataFrame, target_column: str, column_names: List[str]):
+    df[target_column] = df[column_names].sum(axis=1)
     formula = f'='
     for i, column_name in enumerate(column_names):
         letter = cl(ws, column_name)
@@ -821,6 +837,10 @@ def formula(ws: Worksheet, df: pd.DataFrame, target_column: str, formula: str, s
     set_col_formula(ws, df, modified, target_column, start_row)
 
 def formula_subtract(ws: Worksheet, df: pd.DataFrame, target_column: str, minuend: str, subtrahend: str, start_row:int=1):
+    numeric_cols_to_convert = [minuend, subtrahend]
+    force_numeric(df, numeric_cols_to_convert)
+    df[target_column] = df.eval(f'`{minuend}` - `{subtrahend}`')
+
     formula = f'={cl(ws, minuend)}[row]-{cl(ws, subtrahend)}[row]'
     set_col_formula(ws, df, formula, target_column, start_row)
 
@@ -834,10 +854,16 @@ def formula_delta(ws: Worksheet, df: pd.DataFrame, column_name: str, delta_colum
         ws.cell(row=excel_row, column=col_idx, value=f)
 
 def formula_subtract_constant(ws: Worksheet, df: pd.DataFrame, target_column: str, minuend: str, subtrahend: str):
+    numeric_cols_to_convert = [minuend]
+    force_numeric(df, numeric_cols_to_convert)
+    df[target_column] = df.eval(f'`{minuend}` - {subtrahend}')
+
     formula = f'={cl(ws, minuend)}[row]-{subtrahend}'
     set_col_formula(ws, df, formula, target_column)
 
 def formula_sum(ws: Worksheet, df: pd.DataFrame, target_column: str, first_column: str, last_column:str):
+    df[target_column] = df.loc[:, first_column:last_column].sum(axis=1)
+
     col1 = cl(ws, first_column)
     col2 = cl(ws, last_column)
     formula = f'=SUM({col1}[row]:{col2}[row])'
@@ -1609,3 +1635,317 @@ def find_files(directory: str | Path, pattern: str) -> list[str]:
         for path in base_dir.glob(pattern)
         if path.is_file()
     ])
+
+def evaluate_excel_formulas_on_dataframe(
+    df: pd.DataFrame,
+    formulas: dict[str, str],          # e.g. {'New Col': '=B2 * 1.1 + C2'}
+    output_columns: list[str] | None = None,  # which new/updated columns to keep
+    start_row: int = 2,                # data starts at Excel row 2 (row 1 = headers)
+    inplace: bool = False
+) -> pd.DataFrame:
+    """
+    Evaluate Excel formulas (A1 style) on a pandas DataFrame by mapping columns to letters.
+
+    Parameters:
+    - df: DataFrame with named columns (can have spaces, parentheses, etc.)
+    - formulas: dict of {target_column_name: 'excel_formula'}
+      Formula uses A1 notation where:
+        - Column A = df.columns[0]
+        - Column B = df.columns[1]
+        - etc.
+      Use relative row refs like B2, C2 (pycel will adjust per row)
+    - output_columns: optional list of columns to return (new or existing)
+    - start_row: Excel row where data starts (usually 2 if row 1 is headers)
+    - inplace: if True, modify df directly; else return new copy
+
+    Returns:
+    - DataFrame with evaluated columns added/updated
+    """
+    df = df.copy() if not inplace else df
+
+    # Map column names → Excel column letters (A, B, C, ..., AA, AB, ...)
+    col_to_letter = {}
+    for i, col_name in enumerate(df.columns):
+        letter = ''
+        n = i
+        while n >= 0:
+            letter = string.ascii_uppercase[n % 26] + letter
+            n = n // 26 - 1
+        col_to_letter[col_name] = letter
+
+    # Reverse map: letter → original column name
+    letter_to_col = {v: k for k, v in col_to_letter.items()}
+
+    print("Column mapping:")
+    for col, let in col_to_letter.items():
+        print(f"  {col:20} → {let}")
+
+    # Create a temporary in-memory Excel-like structure
+    # pycel needs a filename, so we use a dummy one (it can work without real file)
+    compiler = ExcelCompiler(filename=None)  # dummy
+
+    # We'll evaluate row by row
+    results = {target_col: [] for target_col in formulas}
+
+    for row_idx, row in df.iterrows():
+        excel_row = row_idx + start_row  # e.g. pandas row 0 → Excel row 2
+
+        # Set cell values for this row
+        for col_name, value in row.items():
+            letter = col_to_letter[col_name]
+            cell = f"{letter}{excel_row}"
+            compiler.set_value(cell, value)
+
+        # Evaluate each formula for this row
+        for target_col, formula in formulas.items():
+            # pycel expects formula like '=B2+C2'
+            # We keep it as-is — it uses the current row context
+            try:
+                value = compiler.evaluate(formula)
+            except Exception as e:
+                print(f"Error evaluating {formula} at row {excel_row}: {e}")
+                value = None  # or pd.NA, 0, etc.
+
+            results[target_col].append(value)
+
+    # Add results to DataFrame
+    for target_col, values in results.items():
+        df[target_col] = values
+
+    if output_columns:
+        keep_cols = [c for c in df.columns if c in output_columns]
+        df = df[keep_cols]
+
+    return df
+
+def is_simple_numeric_expression(expr: str) -> bool:
+    """Heuristic: true if expression looks safe & fast for numexpr"""
+    # Very basic check — can be improved
+    dangerous = r'\b(import|exec|eval|open|__|\.|\[|\]|\(|\))'
+    if re.search(dangerous, expr):
+        return False
+    return True
+
+def import_numpy():
+    import numpy as np
+    return np
+
+formulas = {
+    'Delta Sales': '`Sales Amount`.diff()',
+    'Delta Profit': '`Gross Profit`.diff().fillna(0)',
+    '2-period change': '`Revenue`.diff(periods=2)',
+    'YoY Growth %': '(`Revenue`.diff() / `Revenue`.shift(1)).fillna(0) * 100',
+    'Cumulative Sum': '`Sales Amount`.cumsum()',
+}
+
+def evaluate_formulas_with_column_names(
+        df: pd.DataFrame,
+        formulas: Dict[str, str],
+        inplace: bool = False,
+        engine: str = "numexpr",  # or "python" for more complex expressions
+        allowed_names: Optional[Dict] = None
+) -> pd.DataFrame:
+    """
+    Evaluate formulas that use column names directly (like Excel named ranges).
+
+    Examples of supported formula styles:
+        '= Sales * 1.1'
+        '= Profit / Revenue * 100'
+        '= IF(Region == "West", Amount * 0.9, Amount)'
+        '= Sales + Cost.shift(1).fillna(0)'
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Input data
+    formulas : dict
+        {new_or_existing_column: formula_string}
+        Formula should start with '=' (optional) and use column names directly
+    inplace : bool
+        Modify df in place or return new copy
+    engine : str
+        'numexpr' → faster for numeric/vectorized operations
+        'python'  → slower but supports more complex expressions
+    allowed_names : dict, optional
+        Extra variables/functions allowed in eval (e.g. {'today': pd.Timestamp.now()})
+
+    Returns:
+    --------
+    DataFrame with new/updated columns
+    """
+    df = df.copy() if not inplace else df
+
+    # Clean formulas: remove leading '=' if present
+    cleaned_formulas = {}
+    for target_col, formula in formulas.items():
+        formula = formula.strip()
+        if formula.startswith('='):
+            formula = formula[1:].strip()
+        cleaned_formulas[target_col] = formula
+
+    # Prepare evaluation context
+    ctx = df.copy()  # columns become variables
+    if allowed_names:
+        ctx.update(allowed_names)
+
+    # Add common pandas functions / aliases if needed
+    ctx['pd'] = pd
+    ctx['np'] = pd.np if hasattr(pd, 'np') else import_numpy()  # fallback
+    ctx['diff'] = lambda x, periods=1: x.diff(periods=periods)
+    ctx['cumsum'] = lambda x: x.cumsum()
+
+    for target_col, expr in cleaned_formulas.items():
+        try:
+            if engine == "numexpr" and is_simple_numeric_expression(expr):
+                # Fast path for numeric vectorized ops
+                result = ne.evaluate(expr, local_dict=ctx)
+            else:
+                # General safe eval (more capable but slower)
+                result = eval(expr, {"__builtins__": {}}, ctx)
+
+            # Ensure result is Series with correct index
+            if not isinstance(result, pd.Series):
+                result = pd.Series(result, index=df.index)
+
+            df[target_col] = result
+
+        except Exception as e:
+            raise ValueError(
+                f"Error evaluating formula for '{target_col}':\n"
+                f"  Formula: {expr}\n"
+                f"  Error: {str(e)}"
+            ) from e
+
+    return df
+
+
+import pandas as pd
+from pathlib import Path
+from typing import Union, Optional
+
+
+def load_excel_sheet(
+        file_path: Union[str, Path],
+        sheet_name: Optional[Union[str, int]] = 0,
+        header: Union[int, list[int], None] = 0,
+        skiprows: Optional[Union[int, list[int]]] = None,
+        usecols: Optional[Union[str, list, None]] = None,
+        dtype: Optional[dict] = None,
+        engine: str = "openpyxl",
+        **kwargs
+) -> pd.DataFrame:
+    """
+    Load a specific sheet from an Excel (.xlsx) file into a pandas DataFrame.
+
+    Parameters:
+    -----------
+    file_path : str or Path
+        Path to the .xlsx file
+
+    sheet_name : str, int, or None, default 0
+        Sheet to load:
+        - str: sheet name (case-sensitive)
+        - int: sheet index (0-based)
+        - None: load all sheets (returns OrderedDict of DataFrames)
+
+    header : int, list of int, or None, default 0
+        Row(s) to use as column names
+
+    skiprows : int or list-like, optional
+        Number of rows to skip or rows to skip at the start
+
+    usecols : str, list, or None, optional
+        Columns to parse (e.g. "A:C", ["Name", "Value"], [0, 2, 3])
+
+    dtype : dict, optional
+        Data type for columns (e.g. {"ID": str, "Amount": float})
+
+    engine : str, default "openpyxl"
+        Engine to use ("openpyxl" recommended for .xlsx, "xlrd" for .xls)
+
+    **kwargs : dict
+        Additional arguments passed to pd.read_excel()
+
+    Returns:
+    --------
+    pd.DataFrame (or OrderedDict if sheet_name=None)
+
+    Raises:
+    -------
+    FileNotFoundError
+    ValueError (if sheet not found, etc.)
+    """
+    # Convert to Path object for better handling
+    file_path = Path(file_path)
+
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    if not file_path.suffix.lower() in ['.xlsx', '.xls', '.xlsm']:
+        raise ValueError(f"Unsupported file extension: {file_path.suffix}. Expected .xlsx, .xls or .xlsm")
+
+    try:
+        df = pd.read_excel(
+            io=str(file_path),
+            sheet_name=sheet_name,
+            header=header,
+            skiprows=skiprows,
+            usecols=usecols,
+            dtype=dtype,
+            engine=engine,
+            **kwargs
+        )
+
+        # If sheet_name is None, pd.read_excel returns OrderedDict
+        if sheet_name is None:
+            print(f"Loaded {len(df)} sheets: {list(df.keys())}")
+
+        return df
+
+    except ValueError as e:
+        if "No sheet named" in str(e) or "Worksheet" in str(e):
+            # Try to give helpful info
+            xl = pd.ExcelFile(file_path)
+            available = xl.sheet_names
+            raise ValueError(
+                f"Sheet '{sheet_name}' not found.\n"
+                f"Available sheets: {available}"
+            ) from e
+        raise
+
+
+# ────────────────────────────────────────────────
+# Example usage
+# ────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    # Basic usage - load by sheet name
+    df = load_excel_sheet(
+        "data/financials_2025.xlsx",
+        sheet_name="Q4 Summary"
+    )
+    print(df.head())
+
+    # Load by sheet index (third sheet)
+    df_index = load_excel_sheet(
+        "data/financials_2025.xlsx",
+        sheet_name=2,  # 0-based index
+        header=1,  # headers start on row 2
+        skiprows=3  # skip first 3 rows
+    )
+
+    # Load specific columns and force types
+    df_clean = load_excel_sheet(
+        "data/water_levels.xlsx",
+        sheet_name="Lake Mead",
+        usecols="A:D",  # columns A to D
+        dtype={"Date": str, "Elevation_ft": float, "Volume": float}
+    )
+
+    # Load ALL sheets at once
+    all_sheets = load_excel_sheet(
+        "data/report.xlsx",
+        sheet_name=None
+    )
+    print(all_sheets.keys())  # dict_keys(['Sheet1', 'Summary', 'Raw Data'])
+    summary_df = all_sheets["Summary"]

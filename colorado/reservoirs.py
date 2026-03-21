@@ -24,8 +24,7 @@ import colorado.ub as ub
 import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
-from sheet.sheet import Sheet
-from sheet.sheet import cl, cn
+from sheet.sheet import Sheet, sheets
 
 '''
     usbr_flaming_gorge_storage_af = 337
@@ -64,11 +63,12 @@ from sheet.sheet import cl, cn
 '''
 
 class Reservoirs(Sheet):
-    def __init__(self):
+    def __init__(self, name:str):
         headers = [lb.HAVASU, lb.MEAD, ub.POWELL, ub.FLAMING_GORGE, ub.BLUE_MESA,
                    lb.MEAD_EVAPORATION, ub.POWELL_EVAPORATION,
                    lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
-        super().__init__(headers)
+        super().__init__(name, headers)
+        sheets.append(self)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         # Active Capacity

@@ -23,17 +23,18 @@ import colorado.lb as lb
 import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
-from sheet.sheet import Sheet
+from sheet.sheet import Sheet, sheets
 from sheet.sheet import cl, cn
 
 class Imperial(Sheet):
-    def __init__(self):
+    def __init__(self, name:str):
         headers = [lb.SALTON_ELEVATION, lb.SALTON_INFLOW,
                    lb.MX_ALAMO_RIVER, lb.ALAMO_RIVER,
                    lb.MX_NEW_RIVER, lb.NEW_RIVER,
                    lb.WHITEWATER,
                    lb.IMPERIAL_TOTAL_CU, lb.IMPERIAL_CU, lb.COACHELLA_CU]
-        super().__init__(headers)
+        super().__init__(name, headers)
+        sheets.append(self)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
         sheet.usgs_annuals(self.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER)

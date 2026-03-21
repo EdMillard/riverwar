@@ -31,11 +31,11 @@ import colorado.ub as ub
 import colorado.allb as all_b
 import pandas as pd
 from sheet import sheet
-from sheet.sheet import Sheet
+from sheet.sheet import Sheet, sheets
 from typing import List
 
 class Compact(Sheet):
-    def __init__(self):
+    def __init__(self, name:str):
         headers = [all_b.III_A, all_b.III_C, all_b.III_C_AZ,
                    lb.NIB_MORELOS_USGS, lb.AZ_GILA_DOME_USGS, lb.AZ_GILA_CUL, lb.NATURAL_IMPERIAL,
                    lb.MEXICO, lb.III_A_LB, lb.III_B,
@@ -50,8 +50,9 @@ class Compact(Sheet):
                    ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY,
                    ub.CU_NM, ub.AZ_CU, ub.FLAMING_GORGE,
                    lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
-        super().__init__(headers,  end_year=2024)
+        super().__init__(name, headers,  end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
+        sheets.append(self)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
 
@@ -129,6 +130,8 @@ class Compact(Sheet):
         sheet.formula(ws, self.df, lb.NATURAL_IMPERIAL, f"='{ub.NATURAL_LEES_FERRY}' + 0.8", start_row=58)
         self.set_bg(lb.NATURAL_IMPERIAL, color=all_b.LIGHT_RED_BG, start_row=59)
 
+        sheet.formula_subtract(ws, self.df, lb.H_M, lb.HOOVER_USGS, lb.MEXICO)
+
         sheet.formula_subtract_constant(ws, self.df, lb.DIFF_7_5, lb.H_M, "7.5")
         self.set_column_negative_red(lb.DIFF_7_5, negative_color='Color22', positive_color='Red')
 
@@ -141,8 +144,6 @@ class Compact(Sheet):
 
         lb_cu = [lb.CA_CU, lb.AZ_CU, lb.NV_CU, lb.LC_RESERVOIR_TOTAL_CUL, lb.LAKE_MEAD_CUL]
         sheet.formula_add(ws, self.df, lb.LB_CU, lb_cu)
-
-        sheet.formula_subtract(ws, self.df, lb.H_M, lb.HOOVER_USGS, lb.MEXICO)
 
         sheet.formula(ws, self.df, all_b.III_C, f"='{lb.NATURAL_IMPERIAL}' - ('{lb.III_A_LB}' + '{lb.III_B}' + '{ub.III_A_UB}')")
         self.set_column_negative_red(all_b.III_C)
