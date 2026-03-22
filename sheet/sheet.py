@@ -408,12 +408,12 @@ def fill_df_from_structured_array(
 
     return df
 
-def lf_natural_flow_from_excel(df: pd.DataFrame):
+def lf_natural_flow_from_excel(df: pd.DataFrame, start_row=62):
     wb = openpyxl.load_workbook('data/Colorado_River/LFnatFlow1906-2024.2024.9.12.xlsx', data_only=True)
     ws = wb['Calendar Year']
     # ws = wb['AnnualCYTotalNaturalFlow']
     # ws = wb['TotalNaturalFlow']   # Monthly
-    data_start_row = 62 # 1964
+    data_start_row = start_row # 1964
     data_end_row = 122  # 2020
     year_column_index = 1
     for column_index in range(ws.min_column, max_used_column(ws) + 1):
@@ -830,11 +830,54 @@ def force_numeric(df:pd.DataFrame, numeric_cols_to_convert:List[str]):
             # Coerce invalid values → NaN
             df[col] = pd.to_numeric(df[col], errors='coerce')
 
+
+def update_excel_formula(formula: str, current_row: int) -> str:
+    """
+    Replaces placeholders like [row-10], [row+3], [row], row-5, row+2, etc.
+    with the actual row number (brackets are removed).
+
+    Examples:
+      "C[row-10]" @ row 29    → "C19"
+      "SUM(A[row-5]:A[row-1])" @ row 20 → "SUM(A15:A19)"
+      "B[row]*2 + [row-1]" @ row 7     → "B7*2 + 6"
+    """
+
+    def replace_match(match):
+        # Groups: sign (+/- or empty), number
+        sign = match.group(1)
+        num_str = match.group(2)
+
+        offset = int(num_str)
+        if sign == '-':
+            new_row = current_row - offset
+        else:
+            # Treat missing sign or '+' as positive offset
+            new_row = current_row + offset
+
+        # Prevent invalid Excel rows (optional)
+        if new_row < 1:
+            new_row = 1
+
+        return str(new_row)
+
+    # Pattern matches:
+    #   [row-10]   [row+3]   [row]   row-5   row+2   etc.
+    # Captures sign and digits, ignores 'row' and brackets
+    pattern = r'\[?row?([+-]?)(\d+)\]?'
+
+    updated_formula = re.sub(pattern, replace_match, formula)
+
+    return updated_formula
+
 def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str, start_row=1) -> None:
     col_idx = df.columns.get_loc(column_name) + 1  # 1-based
     for i in range(start_row, len(df)+1):
         excel_row = i + 1
         f = formula.replace("[row]", str(excel_row))
+        # f = f.replace("[row-1]", str(excel_row-1))
+        if "[row-" in f:
+            f = update_excel_formula(f, excel_row)
+            print(f'set_col_formula {excel_row}  {f} {formula}')
         ws.cell(row=excel_row, column=col_idx, value=f)
 
 def formula_add(ws: Worksheet, df: pd.DataFrame, target_column: str, column_names: List[str]):
@@ -853,7 +896,8 @@ def formula_add(ws: Worksheet, df: pd.DataFrame, target_column: str, column_name
 def replace_header_names_with_column_letters(
         ws: openpyxl.worksheet.worksheet.Worksheet,
         formula: str,
-        header_row: int = 1
+        header_row: int = 1,
+        insert_row_index = True
 ) -> str:
     """
     Replaces header names in single quotes (e.g. 'III(a) Lower') with column letters (A, B, ...)
@@ -884,7 +928,10 @@ def replace_header_names_with_column_letters(
             print(f"Warning: Header '{name}' not found in row {header_row}")
             return match.group(0)  # keep original if not found
         # Replace with just the column letter (Excel will understand C2, E2, etc. implicitly)
-        new_string = col_letter + '[row]'
+        if insert_row_index:
+            new_string = col_letter + '[row]'
+        else:
+            new_string = col_letter
         return new_string
 
     # Replace 'Header Name' → C  (or whatever letter)
@@ -893,8 +940,9 @@ def replace_header_names_with_column_letters(
 
     return modified
 
-def formula(ws: Worksheet, df: pd.DataFrame, target_column: str, formula: str, start_row:int=1):
-    modified = replace_header_names_with_column_letters(ws, formula)
+def formula(ws: Worksheet, df: pd.DataFrame, target_column: str, formula: str,
+            start_row:int=1, insert_row_index:bool=True):
+    modified = replace_header_names_with_column_letters(ws, formula, insert_row_index=insert_row_index)
     set_col_formula(ws, df, modified, target_column, start_row)
 
 def formula_subtract(ws: Worksheet, df: pd.DataFrame, target_column: str, minuend: str, subtrahend: str, start_row:int=1):

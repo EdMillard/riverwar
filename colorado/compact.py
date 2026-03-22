@@ -87,20 +87,21 @@ class Compact(Sheet):
         df_mead_evap = sheet.read_csv(reservoir_path / 'lake_mead.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df_mead_evap, lb.LAKE_MEAD_CUL, divisor=1000000)
 
-        usbr_lake_powell_storage_af = 509
-        sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.start_year, self.end_year,  title=ub.POWELL)
-
         usbr_lake_mead_elevation_ft = 6123
         sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.start_year, self.end_year, title=lb.MEAD_ELEVATION, divisor=1)
 
         sheet.usgs_annuals(self.df, '09404200', 2007, self.end_year,  title=lb.DIAMOND_CREEK)
         sheet.usgs_annuals(self.df, '09380000', self.start_year, self.end_year, title=ub.LEES_FERRY_USGS)
 
-        usbr_lake_powell_evap_af = 510
-        sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, 1965, self.end_year,  title=ub.POWELL_EVAPORATION)
 
         usbr_lake_powell_release_total_af = 4354
         sheet.usbr_annuals(self.df, usbr_lake_powell_release_total_af, self.start_year, self.end_year, title=ub.GLEN_CANYON)
+
+        usbr_lake_powell_storage_af = 509
+        sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.start_year, self.end_year,  title=ub.POWELL)
+
+        usbr_lake_powell_evap_af = 510
+        sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, 1965, self.end_year,  title=ub.POWELL_EVAPORATION)
 
         usbr_lake_powell_regulated_inflow_af = 4288
         sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, self.start_year, self.end_year, title=ub.INFLOW)

@@ -26,6 +26,8 @@ POWELL = 'Powell'
 POWELL_DELTA = 'Powell Δ'
 POWELL_EVAPORATION = 'Powell Evaporation'
 POWELL_ELEVATION = 'Powell Elevation'
+POWELL_ELEVATION_DELTA = 'Powell Δ Elevation'
+
 GLEN_CANYON = 'Glen Canyon'
 LEES_FERRY_USGS = 'Lees Ferry USGS'
 INFLOW = 'Inflow'
