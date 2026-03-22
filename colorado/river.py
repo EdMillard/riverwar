@@ -25,6 +25,7 @@ import colorado.allb as all_b
 from report.doc import Report
 from sheet import sheet
 from colorado.iii_c import III_C
+from colorado.iii_d import III_D
 from colorado.imperial import Imperial
 from colorado.reservoirs import Reservoirs
 from colorado.compact import Compact
@@ -36,6 +37,7 @@ import subprocess
 def run()->None:
     compact = Compact(all_b.COMPACT_SHEET)
     iii_c = III_C(all_b.III_C_SHEET)
+    iii_d = III_D(all_b.III_D_SHEET)
     lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
     lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
     lb_reservoir_cul = LBReservoirCUL(all_b.LB_RESERVOIRS_CUL_SHEET)
@@ -46,6 +48,7 @@ def run()->None:
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
         compact.export(writer,  compact.df)
         iii_c.export(writer, compact.df)
+        iii_d.export(writer, compact.df)
         lb_mainstream_cul.export(writer, compact.df, number_format='#,##0;-#,##0')
         lb_tributary_cul.export(writer, compact.df, number_format='#,##0;-#,##0')
         lb_reservoir_cul.export(writer, compact.df, number_format='#,##0;-#,##0')

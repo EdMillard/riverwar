@@ -139,8 +139,8 @@ class Compact(Sheet):
         sheet.formula_add(ws, self.df, all_b.III_A, iii_a)
 
         values = sheet.usgs_annuals(self.df, '09380000', 1955, self.end_year) # ub.LEES_FERRY_USGS
-        ten_year = Compact.moving_average_10yr(values)
-        Compact.write_column(ws, all_b.III_D, ten_year)
+        ten_year = sheet.moving_average_10yr(values)
+        sheet.write_column(ws, all_b.III_D, ten_year)
 
         lb_cu = [lb.CA_CU, lb.AZ_CU, lb.NV_CU, lb.LC_RESERVOIR_TOTAL_CUL, lb.LAKE_MEAD_CUL]
         sheet.formula_add(ws, self.df, lb.LB_CU, lb_cu)
@@ -193,69 +193,6 @@ class Compact(Sheet):
         ws.cell(row=1, column=len(self.headers)+2).value = current_str
 
         ws.sheet_properties.fullCalcOnLoad = True
-
-    @staticmethod
-    def moving_average_10yr(data):
-        """
-        Compute 10-year simple moving average.
-        Returns only the averages (starting from index 9 / 10th element).
-        If fewer than 10 values, returns empty list.
-        """
-        if len(data) < 10:
-            return []
-
-        result = []
-        for i in range(9, len(data)):
-            window = data[i - 9: i + 1]  # 10 elements
-            result.append(sum(window) / 10)
-
-        return result
-
-    @staticmethod
-    def write_column(
-            ws,
-            header_name: str,
-            values: list,
-            header_row: int = 1,  # row where headers live (usually 1)
-            data_start_row: int = 2,  # where to begin writing the values
-            case_sensitive: bool = False,  # set to True if header match must be exact case
-            overwrite: bool = True  # whether to overwrite existing cells in the column
-    ):
-        """
-        Finds the column with the given header_name in the specified header_row,
-        then writes the list of values downward starting from data_start_row.
-
-        Returns the column letter where data was written, or None if header not found.
-        """
-        # Find the column letter by searching the header row
-        col_letter = None
-        for col_idx in range(1, ws.max_column + 1):
-            cell = ws.cell(row=header_row, column=col_idx)
-            if cell.value is not None:
-                val_str = str(cell.value).strip()
-                match = (val_str == header_name) if case_sensitive else (val_str.lower() == header_name.lower())
-                if match:
-                    col_letter = get_column_letter(col_idx)
-                    break
-
-        if col_letter is None:
-            raise ValueError(f"Header '{header_name}' not found in row {header_row}")
-
-        # Get column index for writing
-        col_idx = openpyxl.utils.column_index_from_string(col_letter)
-
-        # Write the values
-        for i, value in enumerate(values):
-            row_num = data_start_row + i
-            cell = ws.cell(row=row_num, column=col_idx)
-            if overwrite or cell.value is None:
-                cell.value = value
-
-        # Optional: auto-fit column width
-        max_len = max(len(str(header_name)), max((len(str(v)) for v in values), default=0))
-        ws.column_dimensions[col_letter].width = max_len + 2
-
-        return col_letter
 
     @staticmethod
     def lower_basin_annual_reports(df: pd.DataFrame):

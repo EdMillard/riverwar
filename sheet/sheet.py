@@ -529,6 +529,67 @@ def worksheet_to_dict_of_dicts(
 
     return result
 
+def moving_average_10yr(data):
+    """
+    Compute 10-year simple moving average.
+    Returns only the averages (starting from index 9 / 10th element).
+    If fewer than 10 values, returns empty list.
+    """
+    if len(data) < 10:
+        return []
+
+    result = []
+    for i in range(9, len(data)):
+        window = data[i - 9: i + 1]  # 10 elements
+        result.append(sum(window) / 10)
+
+    return result
+
+def write_column(
+        ws,
+        header_name: str,
+        values: list,
+        header_row: int = 1,  # row where headers live (usually 1)
+        data_start_row: int = 2,  # where to begin writing the values
+        case_sensitive: bool = False,  # set to True if header match must be exact case
+        overwrite: bool = True  # whether to overwrite existing cells in the column
+):
+    """
+    Finds the column with the given header_name in the specified header_row,
+    then writes the list of values downward starting from data_start_row.
+
+    Returns the column letter where data was written, or None if header not found.
+    """
+    # Find the column letter by searching the header row
+    col_letter = None
+    for col_idx in range(1, ws.max_column + 1):
+        cell = ws.cell(row=header_row, column=col_idx)
+        if cell.value is not None:
+            val_str = str(cell.value).strip()
+            match = (val_str == header_name) if case_sensitive else (val_str.lower() == header_name.lower())
+            if match:
+                col_letter = get_column_letter(col_idx)
+                break
+
+    if col_letter is None:
+        raise ValueError(f"Header '{header_name}' not found in row {header_row}")
+
+    # Get column index for writing
+    col_idx = openpyxl.utils.column_index_from_string(col_letter)
+
+    # Write the values
+    for i, value in enumerate(values):
+        row_num = data_start_row + i
+        cell = ws.cell(row=row_num, column=col_idx)
+        if overwrite or cell.value is None:
+            cell.value = value
+
+    # Optional: auto-fit column width
+    max_len = max(len(str(header_name)), max((len(str(v)) for v in values), default=0))
+    ws.column_dimensions[col_letter].width = max_len + 2
+
+    return col_letter
+
 def ensure_directory(path: str | Path) -> Path:
     """Create directory (and parents) if it doesn't exist"""
     directory = Path(path)
