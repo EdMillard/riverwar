@@ -21,8 +21,6 @@ SOFTWARE.
 """
 from pathlib import Path
 from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.utils import get_column_letter
-import openpyxl
 from source import usbr_rise
 from source.water_year_info import WaterYearInfo
 from datetime import datetime

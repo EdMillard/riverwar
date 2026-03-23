@@ -49,6 +49,7 @@ HAVASU_EVAPORATION = 'Havasu Evaporation'
 MEAD = 'Mead'
 MEAD_DELTA = 'Mead Δ'
 MEAD_ELEVATION = 'Mead Elevation'
+MEAD_ELEVATION_DELTA = 'Mead Δ Elevation'
 MEAD_EVAPORATION = 'Mead Evaporation'
 
 GILA_NATURAL = "Natural Gila"

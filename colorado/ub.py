@@ -28,14 +28,31 @@ POWELL_EVAPORATION = 'Powell Evaporation'
 POWELL_ELEVATION = 'Powell Elevation'
 POWELL_ELEVATION_DELTA = 'Powell Δ Elevation'
 
-GLEN_CANYON = 'Glen Canyon'
+GLEN_CANYON_RELEASE_WY = 'Glen Canyon WY Release'
+POWELL_WY = 'Powell WY Active'
+POWELL_DELTA_WY = 'Powell WY Δ'
+POWELL_EVAPORATION_WY = 'Powell WY Evaporation'
+POWELL_ELEVATION_WY = 'Powell WY Elevation'
+POWELL_ELEVATION_DELTA_WY = 'Powell WY Δ Elevation'
+
+GLEN_CANYON = 'Glen Canyon '
 LEES_FERRY_USGS = 'Lees Ferry USGS'
 INFLOW = 'Inflow'
 INFLOW_UNREGULATED = 'Inflow Unregulated'
 
+GLEN_CANYON_WY = 'Glen Canyon WY'
+LEES_FERRY_USGS_WY = 'Lees Ferry USGS WY'
+INFLOW_WY = 'Inflow WY'
+INFLOW_UNREGULATED_WY = 'Inflow Unregulated WY'
+
 FLAMING_GORGE = 'Flaming Gorge'
 FLAMING_GORGE_DELTA = 'Flaming Gorge Δ'
 BLUE_MESA = 'Blue Mesa'
+
+FLAMING_GORGE_WY = 'Flaming Gorge WY'
+FLAMING_GORGE_DELTA_WY = 'Flaming Gorge WY Δ'
+BLUE_MESA_WY = 'Blue Mesa WY'
+BLUE_MESA_DELTA_WY = 'Blue Mesa WY Δ'
 
 III_A_UB = 'III(a) Upper'
 CU_CO = 'CO'

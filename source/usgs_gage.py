@@ -128,7 +128,11 @@ class USGSGage(object):
 
         previous_data = None
         new_data = None
-        file_path = Path('data/USGS_Gages/')
+        if water_year_info.is_water_year:
+            file_path = Path('data/USGS_Gages/WY')
+        else:
+            file_path = Path('data/USGS_Gages/')
+
         file_path = file_path.joinpath(self.site + water_year_string +'.csv')
         if file_path.exists():
             previous_data = self.load_daily_discharge(file_path, water_year_info, update, parameterCd=parameterCd, statCd=statCd)
@@ -255,7 +259,7 @@ class USGSGage(object):
                 print("USGS gage request got HTML response, site number is probably wrong", self.site)
             else:
                 try:
-                    data_path = Path('data/USGS_Gages/')
+                    data_path = file_path.parent
                     data_path.mkdir(parents=True, exist_ok=True)
 
                     if append:

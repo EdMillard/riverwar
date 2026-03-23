@@ -46,9 +46,9 @@ def run()->None:
 
     file_path = Path('excel/Colorado_River_Math.xlsx')
     with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
+        iii_d.export(writer, compact.df)
         compact.export(writer,  compact.df)
         iii_c.export(writer, compact.df)
-        iii_d.export(writer, compact.df)
         lb_mainstream_cul.export(writer, compact.df, number_format='#,##0;-#,##0')
         lb_tributary_cul.export(writer, compact.df, number_format='#,##0;-#,##0')
         lb_reservoir_cul.export(writer, compact.df, number_format='#,##0;-#,##0')

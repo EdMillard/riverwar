@@ -134,7 +134,10 @@ def print_last_value(abbrev, a, alias=''):
 def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, update=False, alias=''):
     info = None
     item_id_str = str(item_id)
-    data_path = Path('data/USBR_RISE')
+    if water_year_info.is_water_year:
+        data_path = Path('data/USBR_RISE/WY')
+    else:
+        data_path = Path('data/USBR_RISE')
     data_path.mkdir(parents=True, exist_ok=True)
 
     if water_year_info is not None:

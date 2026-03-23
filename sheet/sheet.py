@@ -653,16 +653,18 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
                  month=1, offset=0, divisor=1_000_000):
     annuals = []
     values = []
-    if month != 1:
-        start_year -= 1
+
     for year in range(start_year, end_year+1):
-        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        if month != 1:
+            ts = pd.Timestamp(f'{year-1}-{month}-01 00:00:00')
+        else:
+            ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         gage = USGSGage(gage_id, water_year_info)
         try:
             daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
                                         statCd=stat_cd)
-            annual_af = daily_to_water_year(daily_af)
+            annual_af = daily_to_water_year(daily_af, water_year_month=month)
             # result = (annual_af[0]['dt'], annual_af[0]['val'])
             # annuals.append(result)
             if len(annual_af) == 1:
@@ -695,10 +697,11 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
     years = []
     annuals = []
     values = []
-    if month != 1:
-        start_year -= 1
     for year in range(start_year, end_year+1):
-        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        if month != 1:
+            ts = pd.Timestamp(f'{year-1}-{month}-01 00:00:00')
+        else:
+            ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         gage = USGSGage(gage_id, water_year_info)
         daily_feet = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameterCd,
@@ -721,8 +724,10 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
 
 def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=1)-> float:
     if month != 1:
-        year -= 1
-    ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        ts = pd.Timestamp(f'{year-1}-{month}-01 00:00:00')
+    else:
+        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+
     water_year_info = WaterYearInfo.get_water_year(ts, month=month)
     if cfs_to_af:
         info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
@@ -737,8 +742,6 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
     years = []
     annuals = []
     values = []
-    if month != 1:
-        start_year -= 1
     for year in range(start_year, end_year+1):
         af:float = usbr_get_last_value(gage_id, year, cfs_to_af=cfs_to_af, month=month)
         years.append(year + 1)
@@ -765,11 +768,11 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
 def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=1, divisor=1_000_000, offset=0):
     annuals = []
     values = []
-    start_year = start_year
-    if month != 1:
-        start_year -= 1
     for year in range(start_year, end_year+1):
-        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+        if month != 1:
+            ts = pd.Timestamp(f'{year-1}-{month}-01 00:00:00')
+        else:
+            ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         if cfs_to_af:
             info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
@@ -874,10 +877,9 @@ def set_col_formula(ws:Worksheet, df:pd.DataFrame, formula:str, column_name:str,
     for i in range(start_row, len(df)+1):
         excel_row = i + 1
         f = formula.replace("[row]", str(excel_row))
-        # f = f.replace("[row-1]", str(excel_row-1))
         if "[row-" in f:
             f = update_excel_formula(f, excel_row)
-            print(f'set_col_formula {excel_row}  {f} {formula}')
+            # print(f'set_col_formula {excel_row}  {f} {formula}')
         ws.cell(row=excel_row, column=col_idx, value=f)
 
 def formula_add(ws: Worksheet, df: pd.DataFrame, target_column: str, column_names: List[str]):

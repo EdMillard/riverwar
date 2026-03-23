@@ -28,6 +28,7 @@ import pytz
 from typing import List, Tuple, Union, Any
 
 
+
 class WaterYearInfo:
     format_float = '12.6f'
     verify_tolerance = 1e-9
@@ -36,7 +37,84 @@ class WaterYearInfo:
         self.year = year
         self.start_date = start_date
         self.end_date = end_date
-        self.is_current_water_year = False
+        self.is_current_water_year = WaterYearInfo.is_date_within_range(start_date, end_date)
+        self.is_water_year = self.start_date.month != 1
+        if self.is_current_water_year:
+            pass
+
+    @staticmethod
+    def is_date_within_range(
+            start_date: date | str,
+            end_date: date | str,
+            current_date: date | str | None = None,
+            inclusive: bool = True
+    ) -> bool:
+        """
+        Check if the current date is within the specified date range.
+
+        Parameters:
+        -----------
+        start_date : date, datetime, or str (YYYY-MM-DD)
+            The start of the range
+        end_date : date, datetime, or str (YYYY-MM-DD)
+            The end of the range
+        current_date : date, datetime, str, or None, optional
+            The date to check. If None, uses today's date.
+        inclusive : bool, default True
+            If True, includes both start_date and end_date in the range.
+            If False, excludes them (open interval).
+
+        Returns:
+        --------
+        bool
+            True if current_date is within the range, False otherwise.
+
+        Examples:
+        --------
+        >>> is_date_within_range("2025-10-01", "2026-09-30")  # today = 2026-03-22
+        True
+
+        >>> is_date_within_range(date(2026, 1, 1), date(2026, 6, 30), inclusive=False)
+        False  # March 22 is after Jan 1 but before July 1 → excluded if not inclusive
+
+        >>> is_date_within_range("2027-01-01", "2027-12-31")
+        False
+        """
+        # Normalize current_date
+        if current_date is None:
+            today = date.today()
+        else:
+            today = WaterYearInfo._to_date(current_date)
+
+        # Normalize start and end
+        start = WaterYearInfo._to_date(start_date)
+        end = WaterYearInfo._to_date(end_date)
+
+        # Basic validation
+        if start > end:
+            raise ValueError("start_date must be before or equal to end_date")
+
+        if inclusive:
+            return start <= today <= end
+        else:
+            return start < today < end
+
+    @staticmethod
+    def _to_date(value: date | datetime | str) -> date:
+        """Helper to convert various inputs to date object."""
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            # Try common formats
+            for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%d-%m-%Y"):
+                try:
+                    return datetime.strptime(value, fmt).date()
+                except ValueError:
+                    continue
+            raise ValueError(f"Cannot parse date string: {value!r}. Use YYYY-MM-DD format.")
+        raise TypeError(f"Unsupported type for date: {type(value)}")
 
     @staticmethod
     def get_water_year(input_date:date | datetime, month:int=1):
@@ -68,7 +146,8 @@ class WaterYearInfo:
             else:
                 water_year = input_date.year
             start_date = date(water_year - 1, month, 1)
-            end_date = date(water_year, month-1, WaterYearInfo.last_day_of_month(month-1))
+            last_day_of_month  = WaterYearInfo.last_day_of_month(water_year, month-1)
+            end_date = date(water_year, month-1, last_day_of_month)
 
         water_year_info = WaterYearInfo(water_year, start_date, end_date)
         return water_year_info
