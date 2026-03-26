@@ -131,6 +131,18 @@ def print_last_value(abbrev, a, alias=''):
     # print(f'\tUSBR - {abbrev:>8s} {last_date} {last_val} {alias}')
     pass
 
+def daily_year_valid(daily_discharge_cfs, water_year_info:WaterYearInfo, file_path:Path|str)-> bool:
+    valid:bool = False
+    start_dt = daily_discharge_cfs[0]['dt']
+    start_dt_pd = pd.Timestamp(start_dt)
+    end_dt = daily_discharge_cfs[-1]['dt']
+    end_dt_pd = pd.Timestamp(end_dt)
+    if start_dt_pd.date() == water_year_info.start_date or end_dt_pd.date() == water_year_info.end_date:
+        valid = True
+    else:
+        print(f'Misaligned water year, reloading: {file_path} {start_dt_pd.date()} {water_year_info.start_date} {end_dt_pd.date()} {water_year_info.end_date}')
+    return valid
+
 def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, update=False, alias=''):
     info = None
     item_id_str = str(item_id)
@@ -157,9 +169,7 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
         if file_path.exists():
             info, previous_data = load_json(file_path)
             if previous_data is not None and len(previous_data):
-                dt = previous_data[0]['dt']  # numpy.datetime64
-                dt_pd = pd.Timestamp(dt)
-                if dt_pd.date() != water_year_info.start_date:
+                if not daily_year_valid(previous_data, water_year_info, file_path):
                     print(f'Misaligned water year, reloading: {file_path}')
                     update = True
                 if water_year_info is not None and water_year_info.is_current_water_year:
