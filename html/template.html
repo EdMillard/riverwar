@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorado River Research - Varuna</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <header>
+        <button class="hamburger" id="hamburgerBtn">☰</button>
+        <div class="avatar"></div>
+        <div class="title">Colorado River Research — Varuna</div>
+    </header>
+
+    <!-- Shared Nav Menu -->
+    <nav class="nav-menu" id="navMenu">
+        <ul>
+            <li><a href="/index.html">Home</a></li>
+            <li><a href="/cr/test.php">Test Page</a></li>
+            <li><a href="/LOTR/diplomacy.html">Diplomacy</a></li>
+            <li><a href="/LOTR/chron.html">Chronology</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <!-- Your page content goes here -->
+    </main>
+
+    <script>
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const navMenu = document.getElementById('navMenu');
+
+        // Toggle menu
+        hamburgerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            navMenu.classList.toggle('open');
+        });
+
+        // Close menu when clicking a link
+        const menuLinks = navMenu.querySelectorAll('a');
+        menuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navMenu.classList.remove('open');
+            });
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!navMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+                navMenu.classList.remove('open');
+            }
+        });
+
+        // Close with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                navMenu.classList.remove('open');
+            }
+        });
+    </script>
+
+</body>
+</html>

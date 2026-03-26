@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorado River Research - Varuna</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+    <header>
+        <button class="hamburger" aria-label="Toggle menu">☰</button>
+        <div class="avatar"></div>
+        <div class="title">Colorado River Research — Varuna</div>
+    </header>
+
+    <main>
+        <h1>Colorado River Documents</h1>
+
+        <h2>Compact Compliance Infrastructure Protection Pool (CCIP)</h2>
+        <p><strong>March 14, 2026</strong></p>
+        <p>Policy proposal for establishing a Compact Compliance Infrastructure Protection Pool in Lake Powell to protect Upper Basin water rights, ensure Colorado River Compact compliance (Article III(d)/(e)), and safeguard infrastructure at elevation 3510'. Focuses on exclusive Upper Basin use of tribal and stranded power water, retiming releases, sideboards against Lower Basin sales/speculation, and monetization options via controlled forbearance or USBR purchases.</p>
+
+        <p><a href="https://www.varuna.io/Colorado/pdf/CR_CCIP.pdf">Read the full document (PDF)</a></p>
+    </main>
+
+</body>
+</html>

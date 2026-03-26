@@ -1,0 +1,6 @@
+<IfModule LiteSpeed>
+Options -MultiViews
+ForceType text/html
+</IfModule>
+AddHandler default-handler .html
+RemoveHandler .html

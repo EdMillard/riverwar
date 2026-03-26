@@ -1,0 +1,122 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  color: #e0e0e0;
+  background: #1a1a1a;
+}
+
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: #c8d9f0;
+  border-bottom: 3px solid #1a3c5e;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  z-index: 1000;
+}
+
+.hamburger {
+  font-size: 30px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1a3c5e;
+  margin-right: 10px;
+  padding: 5px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1a3c5e url('/images/varuna_medium.png') center/cover no-repeat;
+  border: 3px solid #f0f4f8;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+  margin-right: 15px;
+}
+
+.title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #0f2a4f;
+  flex: 1;
+  text-align: center;
+}
+
+/* Nav Menu - Drops under hamburger, clean close state */
+.nav-menu {
+  position: fixed;
+  top: 60px;
+  left: 15px;                    /* aligned under hamburger */
+  width: auto;
+  min-width: 240px;
+  max-width: 320px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  z-index: 999;
+  padding: 0;                    /* important for clean close */
+  opacity: 0;
+  visibility: hidden;
+}
+
+.nav-menu.open {
+  max-height: 520px;
+  opacity: 1;
+  visibility: visible;
+  padding: 10px 0;
+}
+
+.nav-menu ul {
+  list-style: none;
+}
+
+.nav-menu a {
+  display: block;
+  padding: 14px 28px;
+  color: #a0d0ff;
+  text-decoration: none;
+  font-size: 1.08rem;
+  white-space: nowrap;
+}
+
+.nav-menu a:hover {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+main {
+  padding-top: 100px;
+  padding: 40px 20px;
+  max-width: 960px;
+  margin: 0 auto;
+  background: #1f1f1f;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  color: #e0e0e0;
+}
+
+h1, h2, h3 {
+  color: #c8d9f0;
+}
+
+@media (max-width: 768px) {
+  .nav-menu {
+    min-width: 260px;
+    max-width: 90%;
+  }
+  header { height: 56px; }
+  .title { font-size: 1.3rem; }
+}
