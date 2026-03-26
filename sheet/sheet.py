@@ -1199,7 +1199,7 @@ def merge_annual_column(df:pd.DataFrame, annual_df:pd.DataFrame,
         how='left'  # keeps all rows from df1, fills NaN where no match
     )
     try:
-        df[column_name] = df1[inp_column_name].combine_first(df1[column_name])
+        df[column_name] = df1[inp_column_name].fillna(df[column_name])
     except Exception as e:
         print(f"merge_annual_column {inp_column_name} {column_name} error: {e}")
 
