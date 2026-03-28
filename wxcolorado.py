@@ -104,16 +104,17 @@ class MainFrame(wx.Frame):
 
         self.column_num = 1
 
-        self.notebook = aui.AuiNotebook(self)
-        custom_art = CustomTabArt()
-        self.notebook.SetArtProvider(custom_art)
+        if False:
+            self.notebook = aui.AuiNotebook(self)
+            custom_art = CustomTabArt()
+            self.notebook.SetArtProvider(custom_art)
 
-        self.ui_abstraction = WxAbstraction(self, self.notebook)
+            self.ui_abstraction = WxAbstraction(self, self.notebook)
 
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.notebook, 1, wx.EXPAND)
-        self.SetSizer(sizer)
-        self.Show()
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(self.notebook, 1, wx.EXPAND)
+            self.SetSizer(sizer)
+            self.Show()
 
         colorado.river.run()
 

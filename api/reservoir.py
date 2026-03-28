@@ -20,16 +20,47 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
-from enum import Enum
+import colorado.allb as all_b
 import numpy as np
-from typing import List, Tuple, Any
+import pandas as pd
 from source.water_year_info import WaterYearInfo
-from api.event_log import EventLog
-from api.ui_abstraction import UIAbstraction
+from datetime import date
+from typing import List
+from sheet import sheet
 
 class Reservoir:
-    def __init__(self, name:str):
+    high_power_pool_color = "lightblue"
+    low_power_pool_color = "cornflowerblue"
+    non_power_pool_color = 'red'
+    # facecolor="skyblue"
+    # facecolor="dodgerblue"
+    # facecolor="steelblue"
+    # facecolor="deepskyblue"
+
+    def __init__(self, name:str, headers:List[str]):
         self.name:str = name
+        self.water_year = 2026
+        self.water_year_info = self.get_water_year_info(self.water_year-1)
+        self.headers = headers
+        self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
+        self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
+
+        self.elevation:float = 0
+
+        self.full_feet:float = 0
+        self.power_head_target_feet:float = 0
+        self.power_head_lowest_feet:float = 0
+        self.turbine_intake_feet:float = 0
+        self.dead_pool_feet:float = 0
+
+        self.active_capacity:float = 0
+
+        self.critical_elevations:List[float] = []
+        self.reserved_parts:List[tuple] = []
+        self.inflow_parts:List[tuple] =  []
+        self.outflow_parts:List[tuple] =  []
+
+
 
     def copy(self):
         return copy.copy(self)
@@ -38,6 +69,48 @@ class Reservoir:
         string = f" '\'{self.name}\'"
 
         return string
+
+    def get_value_by_year(self, year: int, column_name: str):
+        """
+        Returns the value from a DataFrame for a given year and column.
+
+        Parameters:
+            df (pd.DataFrame): DataFrame where the first column contains years
+            year (int): The year to look up
+            column_name (str): Name of the column to retrieve the value from
+
+        Returns:
+            The value at the specified year and column, or None if not found
+        """
+        if self.df.empty:
+            return None
+
+        # Assuming first column is the year column (index 0)
+        year_col = self.df.columns[0]
+
+        # Find the row where the year matches
+        mask = self.df[year_col] == year
+
+        if not mask.any():
+            print(f"Warning: Year {year} not found in data.")
+            return None
+
+        # Return the value from the requested column
+        try:
+            value = self.df.loc[mask, column_name].iloc[0]
+            return value
+        except KeyError:
+            print(f"Error: Column '{column_name}' not found in DataFrame.")
+            return None
+        except Exception as e:
+            print(f"Error retrieving value: {e}")
+            return None
+
+    @staticmethod
+    def get_water_year_info(year:int):
+        start_date = date(year, all_b.WY, 1)
+        water_year_info = WaterYearInfo.get_water_year(start_date, month=all_b.WY)
+        return water_year_info
 
     @staticmethod
     def clip_array_by_dates(arr, start_date, end_date):

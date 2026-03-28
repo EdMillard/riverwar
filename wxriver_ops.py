@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import datetime
 import os
+from colorado.lake_powell import LakePowell
 
 
 def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
@@ -15,8 +16,8 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
         raise ValueError("Reservoir list cannot be empty")
 
     names = [r.name for r in reservoirs]
-    capacities = [r.active_capacity for r in reservoirs]
-    elevations = [r.elevation for r in reservoirs]
+    capacities = [r.active_capacity_af for r in reservoirs]
+    elevations_feet = [r.elevation_feet for r in reservoirs]
 
     fig = Figure(figsize=(14.5, 5.0), dpi=100)
     ax = fig.add_subplot(111)
@@ -25,7 +26,7 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
     reserved_width = 0.26
     main_width = 0.55
 
-    # RESERVED BARS (unchanged)
+    # RESERVED BARS
     for i, r in enumerate(reservoirs):
         reserved_parts = getattr(r, 'reserved_parts', [])
         if reserved_parts:
@@ -44,30 +45,44 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
                                     fontsize=8.2, fontweight='bold', color='black')
                     current_bottom += amount
 
-    # MAIN STACKED CAPACITY BARS + ANNOTATIONS
+    # MAIN STACKED BARS + CORRECT SEGMENT CAPACITY ANNOTATIONS
     for i, r in enumerate(reservoirs):
-        crit_points = getattr(r, 'critical_points', [])
+        crit_points = getattr(r, 'critical_elevations_feet', [])
         segments = []
-        prev = 0
-        for name, elev_ft, cap_af, color in crit_points:
-            if cap_af > prev:
-                segments.append((cap_af - prev, color, name, cap_af))
-                prev = cap_af
-        if capacities[i] > prev:
-            segments.append((capacities[i] - prev, 'royalblue', 'Above Highest Critical', capacities[i]))
+        prev_cap = 0
+        for item in crit_points:
+            if isinstance(item, (list, tuple)) and len(item) >= 4:
+                name, elev_ft, cap_af, color = item[:4]
+                if cap_af > prev_cap:
+                    segment_height = cap_af - prev_cap
+                    segments.append((segment_height, color, name, cap_af, elev_ft))
+                    prev_cap = cap_af
+
+        # Top segment (Above Highest Critical)
+        if capacities[i] > prev_cap:
+            segment_height = capacities[i] - prev_cap
+            segments.append((segment_height, 'lightblue', 'Above Highest Critical', capacities[i], elevations_feet[i]))
 
         current_bottom = 0
-        for height, color, label, total_cap in segments:
+        for height, color, label, total_cap, elev_ft in segments:
             bar = ax.bar(x_pos[i], height, width=main_width,
                          bottom=current_bottom, color=color, alpha=0.85, edgecolor='navy')[0]
 
-            # Annotation: capacity value centered in the segment
-            if height >= 300_000:   # only show if segment is tall enough
+            # CORRECT: Show the height of THIS segment only (top - bottom)
+            if height >= 300_000:
                 mid_y = current_bottom + height / 2
-                ax.annotate(f'{total_cap:,.0f}',
+                ax.annotate(f'{height:,.0f}',
                             xy=(bar.get_x() + bar.get_width() / 2, mid_y),
                             ha='center', va='center',
                             fontsize=9.5, fontweight='bold', color='black')
+
+            # Critical elevation label - right next to the bar, top-aligned
+            if "Above Highest Critical" not in label:
+                ax.annotate(f'{elev_ft:,.0f} ft',
+                            xy=(x_pos[i] + main_width * 0.52, current_bottom + height),
+                            ha='left', va='center',
+                            fontsize=9.0, fontweight='bold', color='darkblue',
+                            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", alpha=0.9))
 
             current_bottom += height
 
@@ -78,9 +93,9 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
                     textcoords="offset points", ha='center', va='bottom',
                     fontsize=10.5, fontweight='bold', color='black')
 
-    # Elevation labels
+    # Overall elevation label
     for i in range(len(names)):
-        ax.annotate(f'{elevations[i]:,.1f} ft',
+        ax.annotate(f'{elevations_feet[i]:,.1f} ft',
                     xy=(x_pos[i] + main_width * 0.52, capacities[i] * 0.96),
                     ha='left', va='center', fontsize=9.8, color='darkgreen', fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.35", facecolor="lightyellow", alpha=0.92))
@@ -94,7 +109,7 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
     ax.legend(loc='upper right', fontsize=9)
 
     fig.tight_layout(pad=5.0)
-    fig.subplots_adjust(bottom=0.28, top=0.90)
+    fig.subplots_adjust(bottom=0.29, top=0.90)
     return fig
 
 
@@ -220,7 +235,7 @@ class ReservoirChartFrame(wx.Frame):
 
         self.CreateStatusBar()
         self.SetStatusText(f"Displaying {len(reservoirs)} reservoirs")
-        self.SetMinSize((1220, 820))
+        self.SetMinSize(wx.Size(1220, 820))
         self.Centre()
 
         self.panel.Bind(wx.EVT_SIZE, self.on_panel_resize)
@@ -240,7 +255,7 @@ class ReservoirChartFrame(wx.Frame):
                 if size[0] > 200 and size[1] > 150:
                     canvas.SetClientSize(size)
                     try:
-                        canvas.resize(size[0], size[1])
+                        canvas.SetSize(wx.Size(size[0], size[1]))
                     except Exception:
                         pass
                     canvas.draw()
@@ -275,34 +290,33 @@ class ReservoirChartFrame(wx.Frame):
 
 if __name__ == "__main__":
     class Reservoir:
-        def __init__(self, name, elevation, active_capacity,
-                     reserved_parts=None, critical_points=None,
+        def __init__(self, name, elevation_feet, active_capacity_af
+,
+                     reserved_parts=None, critical_elevations_feet=None,
                      inflow_parts=None, outflow_parts=None):
             self.name = name
-            self.elevation = elevation
-            self.active_capacity = active_capacity
+            self.elevation_feet = elevation_feet
+            self.intake_elevation_feet = 0
+            self.active_capacity_af = active_capacity_af
             self.reserved_parts = reserved_parts or []
-            self.critical_points = critical_points or []
+            self.critical_elevations_feet = critical_elevations_feet or []
             self.inflow_parts = inflow_parts or []
             self.outflow_parts = outflow_parts or []
+
+    lake_powell = LakePowell()
 
     reservoirs = [
         Reservoir("Lake Mead", 1075.5, 9500000,
                   reserved_parts=[("SNWA", 1200000, '#1f77b4'),
                                  ("Metropolitan", 1100000, '#ff7f0e'),
                                  ("IID", 1000000, '#2ca02c')],
-                  critical_points=[("Lower Turbine", 950, 2005585, 'red'),
+                  critical_elevations_feet=[("Lower Turbine", 950, 2005585, 'red'),
                                  ("Upper Turbine", 1035, 6637508, 'darkred')],
                   inflow_parts=[("Actual so far", 8500, '#2ca02c'),
                               ("Projected Apr", 4500, '#98fb98')],
                   outflow_parts=[("Actual so far", 7200, '#d62728'),
                                ("Projected Apr", 3800, '#ff9896')]),
-
-        Reservoir("Lake Powell", 1120.3, 7200000,
-                  reserved_parts=[("Upper Basin", 800000, '#1f77b4')],
-                  critical_points=[("Dead Pool", 895, 1500000, 'red')],
-                  inflow_parts=[("Actual", 6200, '#2ca02c')],
-                  outflow_parts=[("Actual", 9400, '#d62728')])
+            lake_powell
     ]
 
     app = wx.App(False)

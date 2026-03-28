@@ -30,13 +30,13 @@ from pathlib import Path
 from scipy.interpolate import interp1d
 import warnings
 
-
 class III_D(Sheet):
     def __init__(self, name:str):
         headers = [lb.MEXICO, lb.HOOVER_USGS, lb.MEAD, lb.MEAD_DELTA, lb.LAKE_MEAD_CUL,
                    ub.NATURAL_LEES_FERRY, all_b.III_D, ub.LEES_FERRY_USGS_WY,
                    ub.GLEN_CANYON_WY, ub.POWELL_WY, ub.POWELL_DELTA_WY, ub.POWELL_EVAPORATION_WY,
                    ub.INFLOW_WY, ub.INFLOW_UNREGULATED_WY,
+                   ub.FLAMING_GORGE_WY, ub.FLAMING_GORGE_DELTA_WY, ub.BLUE_MESA_WY,
                    lb.MEAD_ELEVATION, lb.MEAD_ELEVATION_DELTA,
                    ub.POWELL_ELEVATION_WY, ub.POWELL_ELEVATION_DELTA_WY,
                    ]
@@ -45,8 +45,6 @@ class III_D(Sheet):
         sheets.append(self)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
-        WY = 10
-
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
         sheet.merge_annual_column(self.df, df_mx, lb.MEXICO)
 
@@ -65,26 +63,31 @@ class III_D(Sheet):
         sheet.lf_natural_flow_from_excel(self.df, start_row=19)
 
         sheet.usgs_annuals(self.df, '09380000', self.start_year, self.end_year, title=ub.LEES_FERRY_USGS_WY,
-                           month=WY)
+                           month=all_b.WY)
 
         usbr_lake_powell_storage_af = 509
-        sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, 1964, self.end_year,  title=ub.POWELL_WY, month=WY)
+        sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, 1964, self.end_year,  title=ub.POWELL_WY, month=all_b.WY)
 
         usbr_lake_powell_evap_af = 510
-        sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, 1964, self.end_year,  title=ub.POWELL_EVAPORATION_WY, month=WY)
+        sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, 1964, self.end_year,  title=ub.POWELL_EVAPORATION_WY, month=all_b.WY)
 
         usbr_lake_powell_release_total_af = 4354
-        sheet.usbr_annuals(self.df, usbr_lake_powell_release_total_af, 1964, self.end_year, title=ub.GLEN_CANYON_WY, month=WY)
+        sheet.usbr_annuals(self.df, usbr_lake_powell_release_total_af, 1964, self.end_year, title=ub.GLEN_CANYON_WY, month=all_b.WY)
 
         usbr_lake_powell_regulated_inflow_af = 4288
-        sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, 1964, self.end_year, title=ub.INFLOW_WY, month=WY)
+        sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, 1964, self.end_year, title=ub.INFLOW_WY, month=all_b.WY)
 
         usbr_lake_powell_unregulated_inflow_af = 4301
-        sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, 1964, self.end_year, title=ub.INFLOW_UNREGULATED_WY, month=WY)
+        sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, 1964, self.end_year, title=ub.INFLOW_UNREGULATED_WY, month=all_b.WY)
+
+        usbr_flaming_gorge_storage_af = 337
+        sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, 1963, self.end_year, title=ub.FLAMING_GORGE_WY, month=all_b.WY)
+
+        usbr_blue_mesa_storage_af = 76
+        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, 1967, self.end_year,  title=ub.BLUE_MESA_WY, month=all_b.WY)
 
         usbr_lake_powell_elevation_af = 508
-        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION_WY, divisor=1, month=WY)
-
+        sheet.usbr_last_value(self.df, usbr_lake_powell_elevation_af, 1965, self.end_year, title=ub.POWELL_ELEVATION_WY, divisor=1, month=all_b.WY)
 
     def build_sheet(self)-> None:
         ws = self.ws
@@ -117,6 +120,14 @@ class III_D(Sheet):
         self.set_bg(ub.INFLOW_WY, color=all_b.USGS_BG)
         self.set_bg(ub.INFLOW_UNREGULATED_WY, color=all_b.USGS_BG)
 
+        self.set_bg(ub.FLAMING_GORGE_WY, color=all_b.LIGHT_BLUE_BG)
+        sheet.formula_delta(ws, df, ub.FLAMING_GORGE_DELTA_WY, ub.FLAMING_GORGE_WY, start_row=41)
+        self.set_column_negative_red(ub.FLAMING_GORGE_DELTA_WY, negative_color='Red',positive_color='Color22')
+
+        self.set_bg(ub.FLAMING_GORGE_DELTA_WY, color=all_b.LIGHT_BLUE_BG)
+
+        self.set_bg(ub.BLUE_MESA_WY, color=all_b.LIGHT_BLUE_BG)
+
         sheet.formula_delta(ws, df, ub.POWELL_ELEVATION_DELTA_WY, ub.POWELL_ELEVATION_WY, start_row=45)
         self.set_column_negative_red(ub.POWELL_ELEVATION_DELTA_WY, negative_color='Red',positive_color='Color22')
 
@@ -128,13 +139,30 @@ class III_D(Sheet):
                       f"=AVERAGE('{ub.LEES_FERRY_USGS_WY}'[row-9]:'{ub.LEES_FERRY_USGS_WY}'[row])",
                       start_row=10, insert_row_index=False)
 
+        # Lake Powell elevations
         powell_3510_af = III_D.af_for_elevation(3510.00)
         powell_3500_af = III_D.af_for_elevation(3500.00)
-        powell_current_ft = ws['R106'].value
+        col_name = sheet.cl(ws, ub.POWELL_ELEVATION_WY)
+        powell_current_ft = ws[f'{col_name}106'].value
         powell_current_af = III_D.af_for_elevation(powell_current_ft)
         above_3510_af = powell_current_af - powell_3510_af
         above_3500_af = powell_current_af - powell_3500_af
         power_heads_delta =  above_3500_af - above_3510_af
+
+        # Lake Mead
+        #  690
+        #  950 2,005,585
+        # 1035 6,637,508
+        # 1229 6,637,508
+        # ICS eoy 2024 3,326,434
+
+        # Flaming Gorge elevations
+        # Full pool 6,046
+        # Bottom 5586.00
+        fg_5908_ft = 5908    # Safe power head, 40 feet above intakes
+        fg_5908_af = 573219.6880
+        fg_5868_ft = 5868    # Turbine intake
+        fg_5868_af = 260726.9980
 
         ws['B105'] = 1.45
         ws['B106'] = 1.45
@@ -158,8 +186,15 @@ class III_D(Sheet):
         ws['C114'] = 'CAP Gaming Sweet Spot, Crashing Powell, Tripping Wire and 603'
         self.set_bg(ub.GLEN_CANYON_WY, color='ff80ff', start_row=95, end_row=99)
 
+        cn = sheet.cn(ws, ub.GLEN_CANYON_WY)
+        sheet.add_borders_to_column(ws, cn, 97, 106, end_col=cn, which='outer')
+        sheet.add_borders_to_column(ws, 2, 115, 115, end_col=2, which='outer')
+        ws['C115'] = 'III(d) 10 year'
+
         ws['C116'] = 'X'
 
+        # III(d) to Oct 1
+        #
         ws['H107'] = 'To Reach Oct 1, 2026 w/o AZ tripwire & above 3510\''
         sheet.add_borders_to_column(ws, 8, 107, 107, end_col=11, which='bottom')
 
@@ -183,14 +218,16 @@ class III_D(Sheet):
         ws['I115'] = '=I113-I108'
         ws['J115'] = ' Remaining release to Mead thru Oct 1, 2026'
 
+        # Run of the River to April 1, 2027
+        #
         ws['N107'] = 'To Reach Apr 1, 2027 on ROTR'
         sheet.add_borders_to_column(ws, 14, 107, 107, end_col=16, which='bottom')
         ws['N108'] = '=N106'
         ws['O108'] = ' Inflow Oct 1 to April 1, 2027 (same as 2026)'
         ws['N109'] = '=-M106'
-        ws['O109'] = ' Powell Evaporation Oct 1 to April 1, 2027 (same as 2026)'
+        ws['O109'] = ' Powell Evap Oct 1 to April 1, 2027 (same as 2026)'
         ws['M110'] = ' Editable-->'
-        ws['N110'] = 0.5
+        ws['N110'] = (powell_3510_af - powell_3500_af) / 1000000
         ws['O110'] = ' Drop Power Head 3510\' to 3500\''
         ws['M111'] = ' Editable-->'
         ws['N111'] = '=3-I111'
@@ -204,6 +241,23 @@ class III_D(Sheet):
         ws['N114'] = '=3-I111-N111'
         ws['O114'] = ' Flaming Gorge Left Apr 1, 2027'
 
+        # Reserves Column
+        #
+        ws['T107'] = 'Reserves'
+        sheet.add_borders_to_column(ws, 20, 107, 107, end_col=21, which='bottom')
+        #  (powell_3510_af - powell_3500_af) / 1000000
+        ws['T108'].value = ws['N110'].value
+        ws['U108'] = ' Powell 3510\' to 3500\''
+        ws['T109'] = powell_3500_af / 1000000
+        ws['U109'] = ' Powell Dead Pool'
+        col_name = sheet.cl(ws, ub.FLAMING_GORGE_WY)
+        fg_current = f'={col_name}106-N111-I111'
+        ws['T110'].value = fg_current
+        ws['U110'] = ' Flaming Gorge'
+        col_name = sheet.cl(ws, ub.BLUE_MESA_WY)
+        ws['T111'].value = ws[f'{col_name}106'].value
+        ws['U111'] = ' Blue Mesa'
+
         ws.row_dimensions[116].height = 15
 
         self.set_bg(lb.MEXICO, to=ub.POWELL_ELEVATION_DELTA_WY, color='ffffff', start_row=107, end_row=107)
@@ -212,6 +266,7 @@ class III_D(Sheet):
         sheet.set_number_format(ws, 107, 115, 2, 2, number_format='0.000')
         sheet.set_number_format(ws, 107, 115, 9, 9, number_format='0.000')
         sheet.set_number_format(ws, 107, 115, 14, 14, number_format='0.000')
+        sheet.set_number_format(ws, 107, 115, 20, 20, number_format='0.000')
 
         sheet.clear_range(ws, ws.max_row, ws.max_row, 1, ws.max_column)
         self.format_header()
