@@ -11,46 +11,104 @@ from reservoirs.lake_mead import LakeMead
 from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
 from reservoirs.navajo import Navajo
+from reservoirs.reservoir import Reservoir
 
 import numpy as np
 from matplotlib.figure import Figure
+import matplotlib.patches as mpatches
 
-def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
+def create_capacity_chart(
+    reservoirs,
+    title="Reservoir Active Capacity",
+    power_head_zones=None,
+    show_reserved_connector=True
+):
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
+
+    if power_head_zones is None:
+        power_head_zones = [
+            ('lightblue', 'Power Head'),
+            ('#FF746C', 'Lower Power Head'),
+            ('#FFEE8C', 'Non Power Head')
+        ]
 
     names = [r.name for r in reservoirs]
     capacities_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
     elevations_feet = [r.elevation_feet for r in reservoirs]
 
-    fig = Figure(figsize=(14.8, 6.0), dpi=100)
+    fig = Figure(figsize=(14.8, 6.5), dpi=100)
     ax = fig.add_subplot(111)
 
     x_pos = np.arange(len(names))
     reserved_width = 0.26
     main_width = 0.55
 
-    # RESERVED BARS
+    # RESERVED BARS + IMPROVED SPLIT VERTICAL LINE
     for i, r in enumerate(reservoirs):
         reserved_parts = getattr(r, 'reserved_parts', [])
         if reserved_parts:
-            total_reserved = sum(amount for _, amount, _ in reserved_parts)
-            current_bottom = capacities_maf[i] - (total_reserved / 1_000_000)
+            total_reserved_af = sum(amount for _, amount, _ in reserved_parts)
+            total_reserved_maf = total_reserved_af / 1_000_000
+            main_bar_maf = capacities_maf[i]
+            usable_main_maf = main_bar_maf - total_reserved_maf
+
+            current_bottom = main_bar_maf - total_reserved_maf   # bottom of reserved bar
+
+            # Draw individual reserved segments
             for owner, amount, color in reserved_parts:
                 if amount > 0:
                     amount_maf = amount / 1_000_000
                     reserved_x = x_pos[i] - (main_width / 2) - (reserved_width / 2)
+
                     bar = ax.bar(reserved_x, amount_maf, width=reserved_width,
                                  bottom=current_bottom, color=color, alpha=0.92,
                                  edgecolor='darkgoldenrod')[0]
-                    if amount >= 450_000:
+
+                    if amount_maf >= 0.45:
                         ax.annotate(owner[:8],
-                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2),
+                                    xy=(bar.get_x() + bar.get_width() / 2,
+                                        current_bottom + amount_maf / 2 + 0.13),
                                     ha='center', va='center',
                                     fontsize=8, fontweight='bold', color='black')
+
+                    ax.annotate(f'{amount_maf:.3f}',
+                                xy=(bar.get_x() + bar.get_width() / 2,
+                                    current_bottom + amount_maf / 2 - 0.11),
+                                ha='center', va='center',
+                                fontsize=8.5, fontweight='bold', color='black')
+
                     current_bottom += amount_maf
 
-    # MAIN STACKED BARS
+            reserved_x_center = x_pos[i] - (main_width / 2) - (reserved_width / 2)
+            gap_center_y = (main_bar_maf - total_reserved_maf) / 2
+
+            # Larger gap to ensure top line stays well above the text
+            gap_offset = 0.18   # increased from previous value
+
+            # Upper line: stops well above the annotation
+            ax.plot([reserved_x_center, reserved_x_center],
+                    [main_bar_maf - total_reserved_maf, gap_center_y + gap_offset],
+                    color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+
+            # Lower line: starts well below the annotation and goes to y=0
+            ax.plot([reserved_x_center, reserved_x_center],
+                    [gap_center_y - gap_offset, 0],
+                    color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+
+            # Plain black annotation (no box)
+            ax.annotate(f'{usable_main_maf:.3f}',
+                        xy=(reserved_x_center, gap_center_y),
+                        ha='center', va='center',
+                        fontsize=9.5, fontweight='bold', color='black')
+
+            # Optional thin connector
+            if show_reserved_connector:
+                ax.bar(x_pos[i] - main_width/2 + 0.02, total_reserved_maf, width=0.04,
+                       bottom=main_bar_maf - total_reserved_maf,
+                       color='gray', alpha=0.18, edgecolor=None)
+
+    # MAIN STACKED BARS (unchanged from previous)
     for i, r in enumerate(reservoirs):
         crit_points = getattr(r, 'critical_elevations_feet', [])
         segments = []
@@ -89,7 +147,7 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
 
             current_bottom += height_maf
 
-    # Top MAF number (no "MAF", close to top)
+    # Top total MAF
     for i in range(len(names)):
         ax.annotate(f'{capacities_maf[i]:.3f}',
                     xy=(x_pos[i], capacities_maf[i]),
@@ -98,27 +156,35 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
                     ha='center', va='bottom',
                     fontsize=10.5, fontweight='bold', color='black')
 
-    # FIXED: Elevation annotations — vertically centered on the top of the bar
-    # Half the text above the bar, half below
+    # Elevation annotations centered at top
     for i in range(len(names)):
         ax.annotate(f'{elevations_feet[i]:,.1f} ft',
-                    xy=(x_pos[i] + main_width * 0.52, capacities_maf[i]),   # exactly at the top of the bar
-                    ha='left', va='center',                                 # vertical center
+                    xy=(x_pos[i] + main_width * 0.52, capacities_maf[i]),
+                    ha='left', va='center',
                     fontsize=9.5, color='darkgreen', fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
 
+    # Legend
+    legend_patches = [mpatches.Patch(color=color, label=label)
+                      for color, label in power_head_zones]
+
+    ax.legend(handles=legend_patches,
+              title="Power Head Zones",
+              loc='upper right',
+              fontsize=9,
+              title_fontsize=10,
+              framealpha=0.95)
+
     ax.set_xlabel('Reservoirs', fontsize=11, fontweight='bold')
     ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11, fontweight='bold')
-    ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
 
     ax.set_xticks(x_pos)
     ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
     ax.grid(axis='y', linestyle='--', alpha=0.6)
 
-    ax.legend(loc='upper right', fontsize=9, framealpha=0.95)
-
-    fig.tight_layout(pad=1.0)
-    fig.subplots_adjust(left=0.06, right=0.94, bottom=0.14, top=0.92)
+    fig.tight_layout(pad=1.2)
+    fig.subplots_adjust(left=0.06, right=0.94, bottom=0.18, top=0.89)
 
     return fig
 
@@ -208,9 +274,14 @@ class ReservoirChartFrame(wx.Frame):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # Capacity
+        power_zones = [
+            (Reservoir.high_power_pool_color, 'Full Power Head'),
+            (Reservoir.low_power_pool_color, 'Low Power Head'),
+            (Reservoir.non_power_pool_color, 'Non Power Head')
+        ]
         self.cap_panel = wx.Panel(self.panel)
         cap_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.capacity_fig = create_capacity_chart(reservoirs)
+        self.capacity_fig = create_capacity_chart(reservoirs, power_head_zones=power_zones)
         self.capacity_canvas = FigureCanvas(self.cap_panel, -1, self.capacity_fig)
         cap_sizer.Add(self.capacity_canvas, 1, wx.EXPAND | wx.ALL, border=8)
         self.cap_panel.SetSizer(cap_sizer)
