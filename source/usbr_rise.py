@@ -199,6 +199,39 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
     # print_last_value(str(item_id), a, alias=alias)
     return info, a
 
+def request_accum():
+    url = 'https://www.usbr.gov/lc/region/g4000/riverops/webreports/hourlyweb.json'
+    # url =  'https://www.usbr.gov/lc/region/g4000/riverops/webreports/accumweb.json'
+    # https://www.usbr.gov/lc/region/g4000/hourly/levels.html
+    r = requests.get(url, timeout=(30, 60))
+    if r.status_code == 200:
+        pass
+
+def request_hdb(sdi:int, start_date:str, end_date:str)->float:
+    total:float = 0
+
+    j = 'json'
+    url = f'https://www.usbr.gov/pn-bin/hdb/hdb.pl?svr=lchdb&sdi={sdi}&tstp=DY&t1={start_date}&t2={end_date}&table=R&mrid=0&format={j}'
+    r = requests.get(url, timeout=(30, 60))
+    if r.status_code == 200:
+        content = json.loads(r.content.decode('utf-8'))
+        series = content.get('Series', None)
+        if series is not None:
+            if len(series):
+                data = series[0].get('Data', None)
+                if data is not None:
+                    days = len(data)
+                    for day in data:
+                        t = day.get('t', None)
+                        v = day.get('v', None)
+                        try:
+                            total += float(v)
+                        except ValueError as e:
+                            print(f'request_hdb {v} {e}')
+        return total
+
+
+
 def request(item_id, file_name, start_date='', end_date='', csv=False):
     item_id_str = str(item_id)
     url = 'https://data.usbr.gov/rise/api/result/download'
