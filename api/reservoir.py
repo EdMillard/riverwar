@@ -37,10 +37,10 @@ class Reservoir:
     # facecolor="steelblue"
     # facecolor="deepskyblue"
 
-    def __init__(self, name:str, headers:List[str]):
+    def __init__(self, name:str, headers:List[str], month=10):
         self.name:str = name
-        self.water_year = 2026
-        self.water_year_info = self.get_water_year_info(self.water_year-1)
+        start_year = self.water_year = 2026
+        self.water_year_info = self.get_water_year_info(start_year, month=month)
         self.headers = headers
         self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
@@ -107,9 +107,12 @@ class Reservoir:
             return None
 
     @staticmethod
-    def get_water_year_info(year:int):
-        start_date = date(year, all_b.WY, 1)
-        water_year_info = WaterYearInfo.get_water_year(start_date, month=all_b.WY)
+    def get_water_year_info(year:int, month:int=10):
+        if month == 1:
+            start_date = date(year, month, 1)
+        else:
+            start_date = date(year-1, month, 1)
+        water_year_info = WaterYearInfo.get_water_year(start_date, month=month)
         return water_year_info
 
     @staticmethod

@@ -50,7 +50,12 @@ FLAMING_GORGE_DELTA = 'Flaming Gorge Δ'
 BLUE_MESA = 'Blue Mesa'
 
 FLAMING_GORGE_WY = 'Flaming Gorge WY'
+FLAMING_GORGE_RELEASE_WY = 'Flaming Gorge Release WY'
+FLAMING_GORGE_INFLOW_WY = 'Flaming Gorge Inflow WY'
+FLAMING_GORGE_ELEVATION_WY = 'Flaming Gorge Elevation WY'
 FLAMING_GORGE_DELTA_WY = 'Flaming Gorge WY Δ'
+FLAMING_GORGE_EVAPORATION_WY = 'Flaming Gorge Evap WY'
+
 BLUE_MESA_WY = 'Blue Mesa WY'
 BLUE_MESA_DELTA_WY = 'Blue Mesa WY Δ'
 

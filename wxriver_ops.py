@@ -10,7 +10,7 @@ import datetime
 import os
 from colorado.lake_powell import LakePowell
 from colorado.lake_mead import LakeMead
-from source import usbr_rise
+from colorado.flaming_gorge import FlamingGorge
 
 
 def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
@@ -320,7 +320,8 @@ if __name__ == "__main__":
         '''
     reservoirs = [
         LakeMead(),
-        LakePowell()
+        LakePowell(),
+        FlamingGorge()
     ]
 
     app = wx.App(False)
