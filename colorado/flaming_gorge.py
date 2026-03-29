@@ -82,13 +82,15 @@ class FlamingGorge(Reservoir):
         sheet.usbr_annuals(self.df, usbr_flaming_gorge_inflow_cfs, self.water_year, self.water_year,  title=ub.FLAMING_GORGE_INFLOW_WY, month=all_b.WY, divisor=1)
 
         self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.FLAMING_GORGE_INFLOW_WY)
-        self.inflow_parts = [("Actual", self.inflow_actual_af, '#2ca02c'),  ("Projected", 0, '#98fb98')]
+        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
+                             ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
         self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.FLAMING_GORGE_RELEASE_WY)
         self.release_af = 500000
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, '#2ca02c'), ("Projected", self.outflow_projected_af, '#98fb98')]
+        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
+                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
 
         # self.reserved_parts = reserved_parts or []
 

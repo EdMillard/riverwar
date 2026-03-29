@@ -93,7 +93,8 @@ class LakeMead(Reservoir):
         # FIXME, need Virgin and Muddy
         sheet.usgs_annuals(self.df, '09404200', self.water_year, self.water_year, title=lb.DIAMOND_CREEK, divisor=1)
         self.inflow_actual_af = self.get_value_by_year(self.water_year, lb.DIAMOND_CREEK)
-        self.inflow_parts = [("Actual", self.inflow_actual_af, '#2ca02c'),  ("Projected", 0, '#98fb98')]
+        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
+                             ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
         # 1936
@@ -103,7 +104,8 @@ class LakeMead(Reservoir):
         self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.HOOVER_RELEASE)
         self.release_af = 8300000
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, '#2ca02c'), ("Projected", self.outflow_projected_af, '#98fb98')]
+        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
+                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
 
         self.reserved_parts = [("CA", 1661832, '#1f77b4'),
                                ("NV", 954013, '#ff7f0e'),

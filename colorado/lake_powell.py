@@ -79,7 +79,8 @@ class LakePowell(Reservoir):
         usbr_lake_powell_unregulated_inflow_af = 4301 # 1964
         sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_UNREGULATED_WY, month=all_b.WY, divisor=1)
         self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.INFLOW_UNREGULATED_WY)
-        self.inflow_parts = [("Actual", self.inflow_actual_af, '#2ca02c'),  ("Projected", 0, '#98fb98')]
+        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
+                             ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
         usbr_lake_powell_release_total_af = 4354 # 1964
@@ -88,7 +89,8 @@ class LakePowell(Reservoir):
         self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.GLEN_CANYON_WY)
         self.release_af = 7200000
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, '#2ca02c'), ("Projected", self.outflow_projected_af, '#98fb98')]
+        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
+                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
 
         # self.reserved_parts = reserved_parts or []
 

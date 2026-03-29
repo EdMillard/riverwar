@@ -4,24 +4,26 @@ Reservoir Dashboard - Stacked bar annotations restored + compact heights
 
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-from matplotlib.figure import Figure
-import numpy as np
 import datetime
 import os
 from colorado.lake_powell import LakePowell
 from colorado.lake_mead import LakeMead
 from colorado.flaming_gorge import FlamingGorge
+from colorado.blue_mesa import BlueMesa
+from colorado.navajo import Navajo
 
+import numpy as np
+from matplotlib.figure import Figure
 
 def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
 
     names = [r.name for r in reservoirs]
-    capacities = [r.active_capacity_af for r in reservoirs]
+    capacities_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
     elevations_feet = [r.elevation_feet for r in reservoirs]
 
-    fig = Figure(figsize=(14.5, 5.0), dpi=100)
+    fig = Figure(figsize=(14.8, 6.0), dpi=100)
     ax = fig.add_subplot(111)
 
     x_pos = np.arange(len(names))
@@ -33,87 +35,92 @@ def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
         reserved_parts = getattr(r, 'reserved_parts', [])
         if reserved_parts:
             total_reserved = sum(amount for _, amount, _ in reserved_parts)
-            current_bottom = capacities[i] - total_reserved
+            current_bottom = capacities_maf[i] - (total_reserved / 1_000_000)
             for owner, amount, color in reserved_parts:
                 if amount > 0:
+                    amount_maf = amount / 1_000_000
                     reserved_x = x_pos[i] - (main_width / 2) - (reserved_width / 2)
-                    bar = ax.bar(reserved_x, amount, width=reserved_width,
+                    bar = ax.bar(reserved_x, amount_maf, width=reserved_width,
                                  bottom=current_bottom, color=color, alpha=0.92,
                                  edgecolor='darkgoldenrod')[0]
                     if amount >= 450_000:
                         ax.annotate(owner[:8],
-                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount / 2),
+                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2),
                                     ha='center', va='center',
-                                    fontsize=8.2, fontweight='bold', color='black')
-                    current_bottom += amount
+                                    fontsize=8, fontweight='bold', color='black')
+                    current_bottom += amount_maf
 
-    # MAIN STACKED BARS + CORRECT SEGMENT CAPACITY ANNOTATIONS
+    # MAIN STACKED BARS
     for i, r in enumerate(reservoirs):
         crit_points = getattr(r, 'critical_elevations_feet', [])
         segments = []
-        prev_cap = 0
+        prev_cap_maf = 0.0
         for item in crit_points:
             if isinstance(item, (list, tuple)) and len(item) >= 4:
                 name, elev_ft, cap_af, color = item[:4]
-                if cap_af > prev_cap:
-                    segment_height = cap_af - prev_cap
-                    segments.append((segment_height, color, name, cap_af, elev_ft))
-                    prev_cap = cap_af
+                cap_maf = cap_af / 1_000_000
+                if cap_maf > prev_cap_maf:
+                    segment_height_maf = cap_maf - prev_cap_maf
+                    segments.append((segment_height_maf, color, name, cap_maf, elev_ft))
+                    prev_cap_maf = cap_maf
 
-        # Top segment (Above Highest Critical)
-        if capacities[i] > prev_cap:
-            segment_height = capacities[i] - prev_cap
-            segments.append((segment_height, 'lightblue', 'Above Highest Critical', capacities[i], elevations_feet[i]))
+        if capacities_maf[i] > prev_cap_maf:
+            segment_height_maf = capacities_maf[i] - prev_cap_maf
+            segments.append((segment_height_maf, 'lightblue', 'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
 
-        current_bottom = 0
-        for height, color, label, total_cap, elev_ft in segments:
-            bar = ax.bar(x_pos[i], height, width=main_width,
+        current_bottom = 0.0
+        for height_maf, color, label, total_cap_maf, elev_ft in segments:
+            bar = ax.bar(x_pos[i], height_maf, width=main_width,
                          bottom=current_bottom, color=color, alpha=0.85, edgecolor='navy')[0]
 
-            # CORRECT: Show the height of THIS segment only (top - bottom)
-            if height >= 300_000:
-                mid_y = current_bottom + height / 2
-                ax.annotate(f'{height:,.0f}',
+            if height_maf >= 0.3:
+                mid_y = current_bottom + height_maf / 2
+                ax.annotate(f'{height_maf:.3f}',
                             xy=(bar.get_x() + bar.get_width() / 2, mid_y),
                             ha='center', va='center',
-                            fontsize=9.5, fontweight='bold', color='black')
+                            fontsize=9, fontweight='bold', color='black')
 
-            # Critical elevation label - right next to the bar, top-aligned
             if "Above Highest Critical" not in label:
                 ax.annotate(f'{elev_ft:,.0f} ft',
-                            xy=(x_pos[i] + main_width * 0.52, current_bottom + height),
+                            xy=(x_pos[i] + main_width * 0.52, current_bottom + height_maf),
                             ha='left', va='center',
-                            fontsize=9.0, fontweight='bold', color='darkblue',
-                            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", alpha=0.9))
+                            fontsize=9, fontweight='bold', color='darkblue',
+                            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9))
 
-            current_bottom += height
+            current_bottom += height_maf
 
-    # MAF labels on top of entire bar
+    # Top MAF number (no "MAF", close to top)
     for i in range(len(names)):
-        maf = capacities[i] / 1_000_000
-        ax.annotate(f'{maf:.2f} MAF', xy=(x_pos[i], capacities[i]), xytext=(0, 8),
-                    textcoords="offset points", ha='center', va='bottom',
+        ax.annotate(f'{capacities_maf[i]:.3f}',
+                    xy=(x_pos[i], capacities_maf[i]),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha='center', va='bottom',
                     fontsize=10.5, fontweight='bold', color='black')
 
-    # Overall elevation label
+    # FIXED: Elevation annotations — vertically centered on the top of the bar
+    # Half the text above the bar, half below
     for i in range(len(names)):
         ax.annotate(f'{elevations_feet[i]:,.1f} ft',
-                    xy=(x_pos[i] + main_width * 0.52, capacities[i] * 0.96),
-                    ha='left', va='center', fontsize=9.8, color='darkgreen', fontweight='bold',
-                    bbox=dict(boxstyle="round,pad=0.35", facecolor="lightyellow", alpha=0.92))
+                    xy=(x_pos[i] + main_width * 0.52, capacities_maf[i]),   # exactly at the top of the bar
+                    ha='left', va='center',                                 # vertical center
+                    fontsize=9.5, color='darkgreen', fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
 
     ax.set_xlabel('Reservoirs', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Volume (Acre-Feet)', fontsize=11, fontweight='bold')
-    ax.set_title(title, fontsize=13, fontweight='bold', pad=22)
+    ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11, fontweight='bold')
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
+
     ax.set_xticks(x_pos)
-    ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10)
-    ax.grid(axis='y', linestyle='--', alpha=0.7)
-    ax.legend(loc='upper right', fontsize=9)
+    ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
+    ax.grid(axis='y', linestyle='--', alpha=0.6)
 
-    fig.tight_layout(pad=5.0)
-    fig.subplots_adjust(bottom=0.29, top=0.90)
+    ax.legend(loc='upper right', fontsize=9, framealpha=0.95)
+
+    fig.tight_layout(pad=1.0)
+    fig.subplots_adjust(left=0.06, right=0.94, bottom=0.14, top=0.92)
+
     return fig
-
 
 def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow"):
     if not reservoirs:
@@ -321,7 +328,9 @@ if __name__ == "__main__":
     reservoirs = [
         LakeMead(),
         LakePowell(),
-        FlamingGorge()
+        FlamingGorge(),
+        Navajo(),
+        BlueMesa()
     ]
 
     app = wx.App(False)
