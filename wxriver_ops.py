@@ -6,11 +6,11 @@ import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import datetime
 import os
-from colorado.lake_powell import LakePowell
-from colorado.lake_mead import LakeMead
-from colorado.flaming_gorge import FlamingGorge
-from colorado.blue_mesa import BlueMesa
-from colorado.navajo import Navajo
+from reservoirs.lake_powell import LakePowell
+from reservoirs.lake_mead import LakeMead
+from reservoirs.flaming_gorge import FlamingGorge
+from reservoirs.blue_mesa import BlueMesa
+from reservoirs.navajo import Navajo
 
 import numpy as np
 from matplotlib.figure import Figure

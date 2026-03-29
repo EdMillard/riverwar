@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
-from api.reservoir import Reservoir
+from reservoirs.reservoir import Reservoir
 from source.usgs_gage import USGSGage
 from source import usbr_rise
 import colorado.ub as ub

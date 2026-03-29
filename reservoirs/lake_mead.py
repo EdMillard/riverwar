@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
-from api.reservoir import Reservoir
+from reservoirs.reservoir import Reservoir
 from source import usbr_rise
 import colorado.lb as lb
 from sheet import sheet
