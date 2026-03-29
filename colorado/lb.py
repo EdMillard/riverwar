@@ -51,6 +51,7 @@ MEAD_DELTA = 'Mead Δ'
 MEAD_ELEVATION = 'Mead Elevation'
 MEAD_ELEVATION_DELTA = 'Mead Δ Elevation'
 MEAD_EVAPORATION = 'Mead Evaporation'
+MEAD_INFLOW = 'Mead Inflow'
 
 GILA_NATURAL = "Natural Gila"
 GILA_CUL = "Gila CUL"

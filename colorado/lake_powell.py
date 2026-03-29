@@ -67,6 +67,12 @@ class LakePowell(Reservoir):
         self.elevation_feet = self.get_elevation(self.water_year)[1]
         self.active_capacity_af = self.af_for_elevation(self.elevation_feet)
 
+        usbr_lake_powell_storage_af = 509
+        sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.water_year, self.water_year,  title=ub.POWELL_WY, month=all_b.WY, divisor=1)
+
+        usbr_lake_powell_evap_af = 510
+        sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, self.water_year, self.water_year,  title=ub.POWELL_EVAPORATION_WY, month=all_b.WY, divisor=1)
+
         # Inflow
         usbr_lake_powell_regulated_inflow_af = 4288 # 1964
         sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_WY, month=all_b.WY, divisor=1)

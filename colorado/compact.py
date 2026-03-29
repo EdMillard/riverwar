@@ -48,7 +48,7 @@ class Compact(Sheet):
                    ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY,
                    ub.CU_NM, ub.AZ_CU, ub.FLAMING_GORGE,
                    lb.MEAD_ELEVATION, ub.POWELL_ELEVATION]
-        super().__init__(name, headers,  end_year=2024)
+        super().__init__(name, headers,  end_year=2026)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
         sheets.append(self)
 
