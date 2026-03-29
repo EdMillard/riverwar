@@ -46,6 +46,10 @@ HAVASU = 'Havasu'
 HAVASU_ELEVATION = 'Havasu Elevation'
 HAVASU_EVAPORATION = 'Havasu Evaporation'
 
+CA_COLOR = '#ff99ff'
+NV_COLOR = '#ffbbff'
+AZ_COLOR = '#ffeeff'
+
 MEAD = 'Mead'
 MEAD_DELTA = 'Mead Δ'
 MEAD_ELEVATION = 'Mead Elevation'

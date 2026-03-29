@@ -107,9 +107,9 @@ class LakeMead(Reservoir):
         self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
                               ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
 
-        self.reserved_parts = [("CA", 1661832, '#1f77b4'),
-                               ("NV", 954013, '#ff7f0e'),
-                               ("AZ", 710589, '#2ca02c')]
+        self.reserved_parts = [("CA", 1661832, lb.CA_COLOR),
+                               ("NV", 954013, lb.NV_COLOR),
+                               ("AZ", 710589, lb.AZ_COLOR)]
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_lake_mead_elevation_ft = 6123 # 1936

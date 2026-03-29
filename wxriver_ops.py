@@ -12,6 +12,7 @@ from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
 from reservoirs.navajo import Navajo
 from reservoirs.reservoir import Reservoir
+import colorado.lb as lb
 
 import numpy as np
 from matplotlib.figure import Figure
@@ -21,6 +22,7 @@ def create_capacity_chart(
     reservoirs,
     title="Reservoir Active Capacity",
     power_head_zones=None,
+    reserved_zones=None,
     show_reserved_connector=True
 ):
     if not reservoirs:
@@ -33,9 +35,14 @@ def create_capacity_chart(
             ('#FFEE8C', 'Non Power Head')
         ]
 
+    if reserved_zones is None:
+        reserved_zones = [('darkgoldenrod', 'Reserved')]
+
     names = [r.name for r in reservoirs]
     capacities_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
     elevations_feet = [r.elevation_feet for r in reservoirs]
+
+    max_maf = max(capacities_maf) if capacities_maf else 10
 
     fig = Figure(figsize=(14.8, 6.5), dpi=100)
     ax = fig.add_subplot(111)
@@ -44,18 +51,17 @@ def create_capacity_chart(
     reserved_width = 0.26
     main_width = 0.55
 
-    # RESERVED BARS + IMPROVED SPLIT VERTICAL LINE
+    # RESERVED BARS
     for i, r in enumerate(reservoirs):
         reserved_parts = getattr(r, 'reserved_parts', [])
         if reserved_parts:
             total_reserved_af = sum(amount for _, amount, _ in reserved_parts)
             total_reserved_maf = total_reserved_af / 1_000_000
             main_bar_maf = capacities_maf[i]
-            usable_main_maf = main_bar_maf - total_reserved_maf
 
-            current_bottom = main_bar_maf - total_reserved_maf   # bottom of reserved bar
+            reserved_bottom = main_bar_maf - total_reserved_maf
 
-            # Draw individual reserved segments
+            current_bottom = reserved_bottom
             for owner, amount, color in reserved_parts:
                 if amount > 0:
                     amount_maf = amount / 1_000_000
@@ -81,34 +87,38 @@ def create_capacity_chart(
                     current_bottom += amount_maf
 
             reserved_x_center = x_pos[i] - (main_width / 2) - (reserved_width / 2)
+
+            # Total reserved MAF just above the top of the reserved bar (restored)
+            ax.annotate(f'{total_reserved_maf:.3f}',
+                        xy=(reserved_x_center, main_bar_maf),
+                        xytext=(0, 3),
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        fontsize=10.5, fontweight='bold', color='black')
+
+            # Gap below reserved bar
             gap_center_y = (main_bar_maf - total_reserved_maf) / 2
+            gap_offset = 0.18
 
-            # Larger gap to ensure top line stays well above the text
-            gap_offset = 0.18   # increased from previous value
-
-            # Upper line: stops well above the annotation
             ax.plot([reserved_x_center, reserved_x_center],
                     [main_bar_maf - total_reserved_maf, gap_center_y + gap_offset],
                     color='black', linewidth=1.0, alpha=0.75, linestyle='--')
 
-            # Lower line: starts well below the annotation and goes to y=0
             ax.plot([reserved_x_center, reserved_x_center],
                     [gap_center_y - gap_offset, 0],
                     color='black', linewidth=1.0, alpha=0.75, linestyle='--')
 
-            # Plain black annotation (no box)
-            ax.annotate(f'{usable_main_maf:.3f}',
+            ax.annotate(f'{main_bar_maf - total_reserved_maf:.3f}',
                         xy=(reserved_x_center, gap_center_y),
                         ha='center', va='center',
                         fontsize=9.5, fontweight='bold', color='black')
 
-            # Optional thin connector
             if show_reserved_connector:
                 ax.bar(x_pos[i] - main_width/2 + 0.02, total_reserved_maf, width=0.04,
                        bottom=main_bar_maf - total_reserved_maf,
                        color='gray', alpha=0.18, edgecolor=None)
 
-    # MAIN STACKED BARS (unchanged from previous)
+    # MAIN STACKED BARS
     for i, r in enumerate(reservoirs):
         crit_points = getattr(r, 'critical_elevations_feet', [])
         segments = []
@@ -147,7 +157,7 @@ def create_capacity_chart(
 
             current_bottom += height_maf
 
-    # Top total MAF
+    # Top total MAF for main bar
     for i in range(len(names)):
         ax.annotate(f'{capacities_maf[i]:.3f}',
                     xy=(x_pos[i], capacities_maf[i]),
@@ -164,18 +174,31 @@ def create_capacity_chart(
                     fontsize=9.5, color='darkgreen', fontweight='bold',
                     bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
 
-    # Legend
-    legend_patches = [mpatches.Patch(color=color, label=label)
-                      for color, label in power_head_zones]
+    # ==================== TWO LEGENDS IN UPPER RIGHT ====================
+    # Power Head Zones Legend (slightly left so it doesn't go off edge)
+    power_patches = [mpatches.Patch(color=color, label=label) for color, label in power_head_zones]
+    leg1 = ax.legend(handles=power_patches,
+                     title="Power Head Zones",
+                     loc='upper right',
+                     bbox_to_anchor=(0.98, 1.0),   # moved slightly left
+                     fontsize=9,
+                     title_fontsize=10,
+                     framealpha=0.95)
 
-    ax.legend(handles=legend_patches,
-              title="Power Head Zones",
+    # Reserved Legend - placed further right, closer to the Power Head legend
+    reserved_patches = [mpatches.Patch(color=color, label=label) for color, label in reserved_zones]
+    ax.legend(handles=reserved_patches,
+              title="ICS 2024 EoY",
               loc='upper right',
+              bbox_to_anchor=(0.79, 1.0),   # moved further right, next to first legend
               fontsize=9,
               title_fontsize=10,
               framealpha=0.95)
 
-    ax.set_xlabel('Reservoirs', fontsize=11, fontweight='bold')
+    ax.add_artist(leg1)
+
+    # Labels
+    ax.set_xlabel('')
     ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11, fontweight='bold')
     ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
 
@@ -184,7 +207,7 @@ def create_capacity_chart(
     ax.grid(axis='y', linestyle='--', alpha=0.6)
 
     fig.tight_layout(pad=1.2)
-    fig.subplots_adjust(left=0.06, right=0.94, bottom=0.18, top=0.89)
+    fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.89)
 
     return fig
 
@@ -267,7 +290,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
 
 class ReservoirChartFrame(wx.Frame):
     def __init__(self, reservoirs, title="Reservoir Analysis Dashboard"):
-        super().__init__(None, title=title, size=(1580, 1020))
+        super().__init__(None, title=title, size=wx.Size(1580, 1020))
 
         self.reservoirs = reservoirs
         self.panel = wx.Panel(self)
@@ -277,11 +300,16 @@ class ReservoirChartFrame(wx.Frame):
         power_zones = [
             (Reservoir.high_power_pool_color, 'Full Power Head'),
             (Reservoir.low_power_pool_color, 'Low Power Head'),
-            (Reservoir.non_power_pool_color, 'Non Power Head')
+            (Reservoir.non_power_pool_color, 'No Power')
+        ]
+        reserved_zones = [
+            (lb.AZ_COLOR, 'AZ'),
+            (lb.NV_COLOR, 'NV'),
+            (lb.CA_COLOR, 'CA')
         ]
         self.cap_panel = wx.Panel(self.panel)
         cap_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.capacity_fig = create_capacity_chart(reservoirs, power_head_zones=power_zones)
+        self.capacity_fig = create_capacity_chart(reservoirs, power_head_zones=power_zones, reserved_zones=reserved_zones)
         self.capacity_canvas = FigureCanvas(self.cap_panel, -1, self.capacity_fig)
         cap_sizer.Add(self.capacity_canvas, 1, wx.EXPAND | wx.ALL, border=8)
         self.cap_panel.SetSizer(cap_sizer)
