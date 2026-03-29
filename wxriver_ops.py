@@ -9,6 +9,8 @@ import numpy as np
 import datetime
 import os
 from colorado.lake_powell import LakePowell
+from colorado.lake_mead import LakeMead
+from source import usbr_rise
 
 
 def create_capacity_chart(reservoirs, title="Reservoir Active Capacity"):
@@ -289,6 +291,7 @@ class ReservoirChartFrame(wx.Frame):
 
 
 if __name__ == "__main__":
+    '''
     class Reservoir:
         def __init__(self, name, elevation_feet, active_capacity_af
 ,
@@ -303,10 +306,8 @@ if __name__ == "__main__":
             self.inflow_parts = inflow_parts or []
             self.outflow_parts = outflow_parts or []
 
-    lake_powell = LakePowell()
-
-    reservoirs = [
-        Reservoir("Lake Mead", 1075.5, 9500000,
+        
+        Reservoir("Lake Test", 1075.5, 9500000,
                   reserved_parts=[("SNWA", 1200000, '#1f77b4'),
                                  ("Metropolitan", 1100000, '#ff7f0e'),
                                  ("IID", 1000000, '#2ca02c')],
@@ -316,7 +317,10 @@ if __name__ == "__main__":
                               ("Projected Apr", 4500, '#98fb98')],
                   outflow_parts=[("Actual so far", 7200, '#d62728'),
                                ("Projected Apr", 3800, '#ff9896')]),
-            lake_powell
+        '''
+    reservoirs = [
+        LakeMead(),
+        LakePowell()
     ]
 
     app = wx.App(False)
