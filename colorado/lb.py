@@ -45,6 +45,18 @@ GC_INFLOW = "GC Inflow"
 HAVASU = 'Havasu'
 HAVASU_ELEVATION = 'Havasu Elevation'
 HAVASU_EVAPORATION = 'Havasu Evaporation'
+HAVASU_RELEASE = 'Havasu Release'
+HAVASU_INFLOW = 'Havasu Inflow'
+
+MOHAVE = 'Mohave'
+MOHAVE_ELEVATION = 'Mohave Elevation'
+MOHAVE_EVAPORATION = 'Mohave Evaporation'
+MOHAVE_RELEASE = 'Mohave Release'
+MOHAVE_INFLOW = 'Mohave Inflow'
+
+AQUIFER = 'Aquifer'
+AQUIFER_RELEASE = 'Aquifer Release'
+AQUIFER_INFLOW = 'Aquifer Inflow'
 
 CA_COLOR = '#ff99ff'
 NV_COLOR = '#ffbbff'

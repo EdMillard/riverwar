@@ -45,7 +45,7 @@ class LakePowell(Reservoir):
         self.dead_pool_feet = 3370
         self.dead_pool_af = LakePowell.get_capacity(self.dead_pool_feet)
         # Old commonly used number
-        # self.dead_pool_af = 1_578_783
+        self.dead_pool_af = 1_578_783
 
         self.full_feet = 3702.91
         self.full_af = self.af_for_elevation(self.full_feet)
@@ -65,10 +65,11 @@ class LakePowell(Reservoir):
         # Current
         #
         self.elevation_feet = self.get_elevation(self.water_year)[1]
-        self.active_capacity_af = self.af_for_elevation(self.elevation_feet)
+        self.active_capacity_af_chart = self.af_for_elevation(self.elevation_feet)
 
         usbr_lake_powell_storage_af = 509
         sheet.usbr_last_value(self.df, usbr_lake_powell_storage_af, self.water_year, self.water_year,  title=ub.POWELL_WY, month=all_b.WY, divisor=1)
+        self.active_capacity_af = self.get_value_by_year(self.water_year, ub.POWELL_WY)
 
         usbr_lake_powell_evap_af = 510
         sheet.usbr_annuals(self.df, usbr_lake_powell_evap_af, self.water_year, self.water_year,  title=ub.POWELL_EVAPORATION_WY, month=all_b.WY, divisor=1)

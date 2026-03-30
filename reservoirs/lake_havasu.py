@@ -21,16 +21,16 @@ SOFTWARE.
 """
 from reservoirs.reservoir import Reservoir
 from source import usbr_rise
-import colorado.ub as ub
+import colorado.lb as lb
 import colorado.allb as all_b
 from sheet import sheet
 from typing import List
 
-class Navajo(Reservoir):
+class LakeHavasu(Reservoir):
     def __init__(self):
-        headers:List[str] = [ub.NAVAJO_WY,  ub.NAVAJO_ELEVATION_WY, ub.NAVAJO_INFLOW_WY,
-                             ub.NAVAJO_RELEASE_WY, ub.NAVAJO_EVAPORATION_WY]
-        super().__init__('Navajo', headers)
+        headers:List[str] = [lb.HAVASU, lb.HAVASU_ELEVATION, lb.HAVASU_INFLOW,
+                             lb.HAVASU_RELEASE, lb.HAVASU_EVAPORATION]
+        super().__init__('Lake Havasu', headers)
 
         # Elevations
         #
@@ -39,7 +39,7 @@ class Navajo(Reservoir):
         self.dead_pool_af = 0
         # Bottom 5586.00
 
-        self.full_feet = 0
+        self.full_feet =  0
         self.full_af = 0
 
         # Critical
@@ -59,36 +59,30 @@ class Navajo(Reservoir):
         self.elevation_feet = self.get_elevation(self.water_year)[1]
         self.active_capacity_af = 0
 
-        usbr_navajo_release_total_cfs = 4316
-        sheet.usbr_annuals(self.df, usbr_navajo_release_total_cfs, self.water_year, self.water_year, title=ub.NAVAJO_RELEASE_WY, month=all_b.WY, divisor=1)
+        usbr_lake_havasu_release_total_af = 6126
+        sheet.usbr_annuals(self.df, usbr_lake_havasu_release_total_af, self.water_year, self.water_year, title=lb.HAVASU_RELEASE, month=all_b.CY, divisor=1)
 
-        usbr_navajo_storage_af = 613
-        sheet.usbr_last_value(self.df, usbr_navajo_storage_af, self.water_year, self.water_year, title=ub.NAVAJO_WY, month=all_b.WY, divisor=1)
-        self.active_capacity_af = self.get_value_by_year(self.water_year, ub.NAVAJO_WY)
+        usbr_lake_havasu_storage_af = 6129
+        sheet.usbr_last_value(self.df, usbr_lake_havasu_storage_af, self.water_year, self.water_year, title=lb.HAVASU, month=all_b.CY, divisor=1)
+        self.active_capacity_af = self.get_value_by_year(self.water_year, lb.HAVASU)
 
-        usbr_navajo_evaporation_af = 617
-        sheet.usbr_annuals(self.df, usbr_navajo_evaporation_af, self.water_year, self.water_year,  title=ub.NAVAJO_EVAPORATION_WY, month=all_b.WY, divisor=1)
+        # usbr_blue_mesa_evaporation_af = 79
+        # sheet.usbr_annuals(self.df, usbr_blue_mesa_evaporation_af, self.water_year, self.water_year,  title=lb.HAVASU_EVAPORATION, month=all_b.CY, divisor=1)
 
-        # usbr_navajo_inflow_unregulated_cfs = 615
-
-        # usbr_navajo_inflow_af = 4289
-        # usbr_navajo_release_total_af = 4355
-        # usbr_navajo_inflow_volume_unregulated_af = 4358
-        # usbr_navajo_modified_unregulated_inflow_cfs = 4369
-        # usbr_navajo_modified_unregulated_inflow_volume_af = 4370
-        # usbr_navajo_change_in_storage_af = 4405
-        # usbr_navajo_area_acres = 4785
+        # usbr_lake_havasu_water_temperature_degf = 6127
+        # usbr_lake_havasu_release_total_cfs = 6130
 
         # Inflow
-        usbr_navajo_inflow_cfs = 616
-        sheet.usbr_annuals(self.df, usbr_navajo_inflow_cfs, self.water_year, self.water_year,  title=ub.NAVAJO_INFLOW_WY, month=all_b.WY, divisor=1)
+        # usbr_blue_mesa_inflow_cfs = 4279
+        # sheet.usbr_annuals(self.df, usbr_blue_mesa_inflow_cfs, self.water_year, self.water_year,  title=lb.HAVASU_INFLOW, month=all_b.CY, divisor=1)
 
-        self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.NAVAJO_INFLOW_WY)
+        self.inflow_actual_af = self.get_value_by_year(self.water_year, lb.HAVASU_INFLOW)
+        self.inflow_actual_af = 0
         self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
                              ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.NAVAJO_RELEASE_WY)
+        self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.HAVASU_RELEASE)
         self.release_af = 0
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af
         self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
@@ -97,8 +91,8 @@ class Navajo(Reservoir):
         # self.reserved_parts = reserved_parts or []
 
     def get_elevation(self, year, end_year:int|None =None)->float:
-        usbr_navajo_elevation_ft = 612
-        info, daily_elevation_ft = usbr_rise.load(usbr_navajo_elevation_ft, water_year_info=self.water_year_info,
-                                                  alias=ub.NAVAJO_ELEVATION_WY)
-        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=ub.NAVAJO_ELEVATION_WY)
+        usbr_lake_havasu_elevation_ft = 6128
+        info, daily_elevation_ft = usbr_rise.load(usbr_lake_havasu_elevation_ft, water_year_info=self.water_year_info,
+                                                  alias=lb.HAVASU_ELEVATION)
+        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.HAVASU_ELEVATION)
         return daily_elevation_ft[-1]

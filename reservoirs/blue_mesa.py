@@ -29,7 +29,7 @@ from typing import List
 class BlueMesa(Reservoir):
     def __init__(self):
         headers:List[str] = [ub.BLUE_MESA_WY,  ub.BLUE_MESA_ELEVATION_WY, ub.BLUE_MESA_INFLOW_WY,
-                             ub.BLUE_MESA_RELEASE_WY, ub.BLUE_MESA_ELEVATION_WY, ub.BLUE_MESA_EVAPORATION_WY]
+                             ub.BLUE_MESA_RELEASE_WY, ub.BLUE_MESA_EVAPORATION_WY]
         super().__init__('Blue Mesa', headers)
 
         # Elevations

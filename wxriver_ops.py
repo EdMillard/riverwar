@@ -6,8 +6,11 @@ import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import datetime
 import os
-from reservoirs.lake_powell import LakePowell
+from reservoirs.lake_havasu import LakeHavasu
+from reservoirs.lake_mohave import LakeMohave
+from reservoirs.aquifers import Aquifers
 from reservoirs.lake_mead import LakeMead
+from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
 from reservoirs.navajo import Navajo
@@ -134,7 +137,10 @@ def create_capacity_chart(
 
         if capacities_maf[i] > prev_cap_maf:
             segment_height_maf = capacities_maf[i] - prev_cap_maf
-            segments.append((segment_height_maf, 'lightblue', 'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
+            if elevations_feet[i] > 0:
+                segments.append((segment_height_maf, Reservoir.high_power_pool_color, 'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
+            else:
+                segments.append((segment_height_maf, Reservoir.non_power_pool_color, 'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
 
         current_bottom = 0.0
         for height_maf, color, label, total_cap_maf, elev_ft in segments:
@@ -168,11 +174,12 @@ def create_capacity_chart(
 
     # Elevation annotations centered at top
     for i in range(len(names)):
-        ax.annotate(f'{elevations_feet[i]:,.1f} ft',
-                    xy=(x_pos[i] + main_width * 0.52, capacities_maf[i]),
-                    ha='left', va='center',
-                    fontsize=9.5, color='darkgreen', fontweight='bold',
-                    bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
+        if elevations_feet[i]:
+            ax.annotate(f'{elevations_feet[i]:,.2f}',
+                        xy=(x_pos[i] + main_width * 0.52, capacities_maf[i]),
+                        ha='left', va='center',
+                        fontsize=9.5, color='darkgreen', fontweight='bold',
+                        bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
 
     # ==================== TWO LEGENDS IN UPPER RIGHT ====================
     # Power Head Zones Legend (slightly left so it doesn't go off edge)
@@ -309,7 +316,9 @@ class ReservoirChartFrame(wx.Frame):
         ]
         self.cap_panel = wx.Panel(self.panel)
         cap_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.capacity_fig = create_capacity_chart(reservoirs, power_head_zones=power_zones, reserved_zones=reserved_zones)
+        title = 'Reservoir Capacities - Mar 28, 2026 AM - USBR RISE'
+        self.capacity_fig = create_capacity_chart(reservoirs, title=title,
+                                                  power_head_zones=power_zones, reserved_zones=reserved_zones)
         self.capacity_canvas = FigureCanvas(self.cap_panel, -1, self.capacity_fig)
         cap_sizer.Add(self.capacity_canvas, 1, wx.EXPAND | wx.ALL, border=8)
         self.cap_panel.SetSizer(cap_sizer)
@@ -425,6 +434,9 @@ if __name__ == "__main__":
                                ("Projected Apr", 3800, '#ff9896')]),
         '''
     reservoirs = [
+        LakeHavasu(),
+        LakeMohave(),
+        Aquifers(),
         LakeMead(),
         LakePowell(),
         FlamingGorge(),

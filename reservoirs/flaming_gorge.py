@@ -29,7 +29,7 @@ from typing import List
 class FlamingGorge(Reservoir):
     def __init__(self):
         headers:List[str] = [ub.FLAMING_GORGE_WY,  ub.FLAMING_GORGE_ELEVATION_WY, ub.FLAMING_GORGE_INFLOW_WY,
-                             ub.FLAMING_GORGE_RELEASE_WY, ub.FLAMING_GORGE_ELEVATION_WY, ub.FLAMING_GORGE_EVAPORATION_WY]
+                             ub.FLAMING_GORGE_RELEASE_WY, ub.FLAMING_GORGE_EVAPORATION_WY]
         super().__init__('Flaming Gorge', headers)
 
         # Elevations
