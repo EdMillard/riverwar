@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
+from datetime import datetime
 from reservoirs.reservoir import Reservoir
 from source.usgs_gage import USGSGage
 from source import usbr_rise
@@ -64,7 +65,9 @@ class LakePowell(Reservoir):
 
         # Current
         #
-        self.elevation_feet = self.get_elevation(self.water_year)[1]
+        last_value = self.get_elevation(self.water_year)
+        self.date_time = last_value[0]
+        self.elevation_feet = last_value[1]
         self.active_capacity_af_chart = self.af_for_elevation(self.elevation_feet)
 
         usbr_lake_powell_storage_af = 509
@@ -134,12 +137,14 @@ class LakePowell(Reservoir):
     def capacity(self, year, end_year:int|None =None):
         pass
 
-    def get_elevation(self, year, end_year:int|None =None)->float:
+    def get_elevation(self, year, end_year:int|None =None)->tuple[datetime, float]:
         usbr_lake_powell_elevation_ft = 508
         info, daily_elevation_ft = usbr_rise.load(usbr_lake_powell_elevation_ft, water_year_info=self.water_year_info,
                                                   alias=ub.POWELL_ELEVATION_WY)
         sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=ub.POWELL_ELEVATION_WY)
-        return daily_elevation_ft[-1]
+        # last_date = a['dt'][-1]
+        # last_val = a['val'][-1]
+        return daily_elevation_ft['dt'][-1], daily_elevation_ft['val'][-1]
 
     def evaporation(self, year, end_year:int|None =None):
         pass

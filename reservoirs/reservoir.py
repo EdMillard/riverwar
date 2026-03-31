@@ -49,7 +49,8 @@ class Reservoir:
         self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
 
-        self.elevation:float = 0
+        self.elevation_feet:float = 0
+        self.active_capacity_af:float = 0
 
         self.full_feet:float = 0
         self.power_head_target_feet:float = 0
@@ -57,20 +58,18 @@ class Reservoir:
         self.turbine_intake_feet:float = 0
         self.dead_pool_feet:float = 0
 
-        self.active_capacity:float = 0
-
         self.critical_elevations:List[float] = []
         self.reserved_parts:List[tuple] = []
         self.inflow_parts:List[tuple] =  []
         self.outflow_parts:List[tuple] =  []
-
-
 
     def copy(self):
         return copy.copy(self)
 
     def __str__(self)->str:
         string = f" '\'{self.name}\'"
+        string += f" '\'{self.elevation_feet} ft\'"
+        string += f" '\'{self.active_capacity_af} af\'"
 
         return string
 
@@ -110,6 +109,35 @@ class Reservoir:
             print(f"Error retrieving value: {e}")
             return None
 
+    @staticmethod
+    def get_float_value(df: pd.DataFrame,
+                        row_key: str,
+                        column_name: str) -> float:
+        """
+        Safely gets a float value even when column names have spaces.
+        """
+        df = df.copy()
+
+        # Convert first column to string for matching
+        first_col = df.columns[0]
+        df[first_col] = df[first_col].astype(str).str.strip()
+
+        # Handle column name safely (in case of spaces or special chars)
+        if column_name not in df.columns:
+            # Try to find column with partial match (helpful with weird names)1
+            matches = [col for col in df.columns if column_name.strip().lower() in col.strip().lower()]
+            if matches:
+                column_name = matches[0]
+                print(f"Found matching column: '{column_name}'")
+            else:
+                raise KeyError(f"Column '{column_name}' not found. Available columns: {list(df.columns)}")
+
+        # Get the value
+        try:
+            value = df.loc[df[first_col] == row_key, column_name].iloc[0]
+            return float(pd.to_numeric(value, errors='coerce'))
+        except (IndexError, KeyError, ValueError) as e:
+            raise ValueError(f"Could not find value for row '{row_key}' in column '{column_name}'") from e
     @staticmethod
     def get_water_year_info(year:int, month:int=10):
         if month == 1:

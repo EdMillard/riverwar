@@ -264,12 +264,15 @@ def read_year_value_pairs(
 
     return pairs, values
 
-def create_df(min_year: int, max_year: int, headers: List[str]):
+def create_df(min_year: int, max_year: int, headers: List[str], zero=False):
     years = list(range(min_year, max_year + 1))
 
     df = pd.DataFrame(index=range(len(years)), columns=['Year'] + headers)
     df['Year'] = years
-    df.iloc[:, 1:] = pd.NA
+    if zero:
+        df.iloc[:, 1:] = 0
+    else:
+        df.iloc[:, 1:] = pd.NA
 
     return df
 

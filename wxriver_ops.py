@@ -6,7 +6,9 @@ import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import datetime
 import colorado.lb as lb
+from datetime import datetime
 import os
+import pandas as pd
 from reservoirs.reservoir import Reservoir
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
@@ -297,8 +299,17 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     return fig
 
 
+def datetime64_to_str(dt64) -> str:
+    """Convert pandas datetime64 to 'Mar 28, 2026' format"""
+    if pd.isna(dt64):
+        return ""
+
+    # Convert to datetime and format
+    dt = pd.to_datetime(dt64)
+    return dt.strftime("%b %d, %Y")
+
 class ReservoirChartFrame(wx.Frame):
-    def __init__(self, reservoirs, title="Reservoir Analysis Dashboard"):
+    def __init__(self, reservoirs, date_time, title="Reservoir Analysis Dashboard"):
         super().__init__(None, title=title, size=wx.Size(1580, 1020))
 
         self.reservoirs = reservoirs
@@ -318,7 +329,8 @@ class ReservoirChartFrame(wx.Frame):
         ]
         self.cap_panel = wx.Panel(self.panel)
         cap_sizer = wx.BoxSizer(wx.VERTICAL)
-        title = 'Reservoir Capacities - Mar 28, 2026 AM - USBR RISE'
+        date_str = datetime64_to_str(date_time)
+        title = f'Reservoir Capacities - {date_str} AM - USBR RISE'
         self.capacity_fig = create_capacity_chart(reservoirs, title=title,
                                                   power_head_zones=power_zones, reserved_zones=reserved_zones)
         self.capacity_canvas = FigureCanvas(self.cap_panel, -1, self.capacity_fig)
@@ -435,20 +447,21 @@ if __name__ == "__main__":
                   outflow_parts=[("Actual so far", 7200, '#d62728'),
                                ("Projected Apr", 3800, '#ff9896')]),
         '''
-    # lake_pleasant = LakePleasant()
+    lake_pleasant = LakePleasant()
+    lake_powell = LakePowell()
     reservoirs = [
-        Aquifers(),
-        # lake_pleasant,
+        lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
+        Aquifers(),
         LakeMead(),
-        LakePowell(),
+        lake_powell,
         FlamingGorge(),
         Navajo(),
         BlueMesa()
     ]
 
     app = wx.App(False)
-    frame = ReservoirChartFrame(reservoirs)
+    frame = ReservoirChartFrame(reservoirs, lake_powell.date_time)
     frame.Show()
     app.MainLoop()

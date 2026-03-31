@@ -28,6 +28,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl import Workbook
 from typing import List, Dict, Union
 import pandas as pd
+import csv
 
 class Aquifers(Reservoir):
     def __init__(self):
@@ -36,7 +37,23 @@ class Aquifers(Reservoir):
         self.start_year = 1989
         self.end_year = 2022
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
-        self.recharge_summary_data_from_excel(self.years)
+        self.out_headers = ['Water_Delivered', 'Annual_Recovery', 'Evaporation_Transpiration_Losses', 'Cut_to_Aquifer',
+                       'Other_Losses', 'LTS_Credits_Recovered', 'LTS_Credits_Extinguished', 'Other_Adjustment']
+
+        self.path: Path = Path('data/ADWR/AMA')
+        # self.recharge_summary_data_from_excel(self.path, self.years)
+
+        df = sheet.read_csv(self.path / 'total.csv', sep='\s+')
+        totals = {}
+        for col in self.out_headers:
+            totals[col] = Reservoir.get_float_value(df, 'Total', col)
+
+        stored = totals['Water_Delivered'] - totals['Annual_Recovery'] - totals['LTS_Credits_Recovered']
+        stored_adjusted = stored - totals['Cut_to_Aquifer']  # Unclear if we can count this as stored water, no accounting
+        stored_adjusted = stored_adjusted - totals['Evaporation_Transpiration_Losses'] \
+                          - totals['Other_Losses'] - totals['LTS_Credits_Extinguished']
+        self.active_capacity_af = stored_adjusted
+
         # Elevations
         #
         # Must be called first
@@ -61,7 +78,7 @@ class Aquifers(Reservoir):
         # Current
         #
         self.elevation_feet = 0
-        self.active_capacity_af = 9000000
+        # self.active_capacity_af = 9000000
 
         # Inflow
 
@@ -78,9 +95,67 @@ class Aquifers(Reservoir):
 
         # self.reserved_parts = reserved_parts or []
 
-    def recharge_summary_data_from_excel(self, years: List[int]):
+    @staticmethod
+    def add_total_row(df: pd.DataFrame, decimals: int = 2) -> pd.DataFrame:
+        """
+        Adds a 'Total' row with clean rounded totals.
+        """
+        df = df.copy()
+
+        # Convert columns after Year to numeric
+        for col in df.columns[1:]:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+        # Sum and round to avoid floating point noise
+        totals = df.iloc[:, 1:].sum().round(decimals)
+
+        # Create Total row
+        total_row = pd.Series(
+            ['Total'] + totals.tolist(),
+            index=df.columns,
+            name='Total'
+        )
+
+        # Append
+        df = pd.concat([df, total_row.to_frame().T], ignore_index=True)
+
+        return df
+
+    def get_ama_node(self, ama_name: str, headers: List[str], nodes: Dict) -> pd.DataFrame:
+        node_name = f"{ama_name}"
+        df: Union[pd.DataFrame, None] = nodes.get(node_name, None)
+        if df is None:
+            df: pd.DataFrame = sheet.create_df(self.start_year, self.end_year, headers, zero=True)
+            nodes[node_name] = df
+        else:
+            pass
+
+        return df
+
+    @staticmethod
+    def save_clean_csv(df: pd.DataFrame, out_csv_path, decimals: int = 2):
+        df = df.copy()
+
+        # === CRITICAL: Force numeric + round BEFORE writing ===
+        for col in df.columns[1:]:  # skip Year column
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            df[col] = df[col].round(decimals)  # round in memory
+
+        # Now write with float_format
+        df.to_csv(
+            str(out_csv_path),
+            index=False,
+            quoting=csv.QUOTE_NONE,
+            escapechar='\\',
+            sep=' ',  # space separated
+            float_format=f'%.{decimals}f'
+        )
+
+    def recharge_summary_data_from_excel(self, out_path: Path, years: List[int]):
         wb: Workbook = openpyxl.load_workbook('excel/ADWR_Data_Warehouse_Recharge_Summary_Data.xlsx', data_only=True)
         ws: Worksheet = wb['Sheet1']
+
+        sheet.ensure_directory(out_path)
 
         header_row: int = 2
 
@@ -89,8 +164,8 @@ class Aquifers(Reservoir):
             header: str = ws.cell(row=header_row, column=column_index).value
             headers.append(header)
 
-        out_headers = ['Water Delivered', 'Annual Recovery', 'Evaporation Transpiration Losses', 'Cut to Aquifer']
-        self.df: pd.DataFrame = sheet.create_df(self.start_year, self.end_year, out_headers)
+        self.df: pd.DataFrame = sheet.create_df(self.start_year, self.end_year, self.out_headers, zero=True)
+
         nodes: dict[str, pd.DataFrame] = {}
         df: Union[pd.DataFrame, None] = None
         year: int = 0
@@ -104,6 +179,10 @@ class Aquifers(Reservoir):
         annual_recovery_total:float = 0
         et_total:float = 0
         cut_total:float = 0
+        other_losses_total:float = 0
+        lts_credits_recovered_total:float = 0
+        lts_credits_extinguished_total:float = 0
+        other_adjustment_total:float = 0
         finished:bool = False
         max_row = ws.max_row
         for row in ws.iter_rows(min_row=header_row+2):
@@ -120,7 +199,8 @@ class Aquifers(Reservoir):
                             finished = True
                             break
                     elif header == 'AMA':
-                        ama_name = cell.value
+                        ama_name = cell.value.lower()
+                        df = self.get_ama_node(ama_name, out_headers, nodes)
                     elif header == 'Category':
                         category = cell.value
                     elif header == 'Parent Water Type or Element':
@@ -134,20 +214,58 @@ class Aquifers(Reservoir):
                     elif header == 'Quantity':
                         quantity:float = float(cell.value)
                         if parent_water_type == 'CAP':
+                            column_name = recharge_element.replace(" ", "_")
                             if recharge_element == 'Water Delivered':
-                                self.df.loc[self.df['Year'] == year, recharge_element] = quantity
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
                                 water_delivered_total += quantity
                             elif recharge_element == 'Annual Recovery':
-                                self.df.loc[self.df['Year'] == year, recharge_element] = quantity
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
                                 annual_recovery_total += quantity
                             elif recharge_element == 'Evaporation Transpiration Losses':
-                                self.df.loc[self.df['Year'] == year, recharge_element] = quantity
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
                                 et_total += quantity
                             elif recharge_element == 'Cut to Aquifer':
-                                self.df.loc[self.df['Year'] == year, recharge_element] = quantity
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
                                 cut_total += quantity
+                            elif recharge_element == 'LTS Credits Recovered':
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
+                                lts_credits_recovered_total += quantity
+                            elif recharge_element == 'LTS Credits Extinguished':
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
+                                lts_credits_extinguished_total += quantity
+                            elif recharge_element == 'Other Losses':
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
+                                other_losses_total += quantity
+                            elif recharge_element == 'Other Adjustment':
+                                df.loc[df['Year'] == year, column_name] += quantity
+                                self.df.loc[self.df['Year'] == year, column_name] += quantity
+                                other_adjustment_total += quantity
+                            else:
+                                pass
                 column_index += 1
             if finished:
                 break
+
         stored = water_delivered_total - annual_recovery_total
-        pass
+        stored_adjusted = stored - et_total - cut_total - other_losses_total - lts_credits_extinguished_total - lts_credits_recovered_total
+        self.active_capacity_af = stored_adjusted + cut_total
+
+        decimals = 2
+        for key, df in nodes.items():
+            all_rows_are_zero = df.drop(columns='Year', errors='ignore').eq(0).all(axis=1).all()
+            if not all_rows_are_zero:
+                df_total = Aquifers.add_total_row(df)
+                out_csv_path = out_path / f'{key}.csv'
+                Aquifers.save_clean_csv(df_total, out_csv_path, decimals=decimals)
+
+        df_total = Aquifers.add_total_row(self.df)
+        out_csv_path = out_path / f'total.csv'
+        Aquifers.save_clean_csv(df_total, out_csv_path, decimals=decimals)
+
