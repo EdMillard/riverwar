@@ -62,6 +62,10 @@ CA_COLOR = '#ff99ff'
 NV_COLOR = '#ffbbff'
 AZ_COLOR = '#ffeeff'
 
+PHX_COLOR   = '#ff9966'
+PINAL_COLOR = '#ffbb77'
+TUCSON_COLOR = '#ffdd99'
+
 MEAD = 'Mead'
 MEAD_DELTA = 'Mead Δ'
 MEAD_ELEVATION = 'Mead Elevation'

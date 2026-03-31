@@ -30,10 +30,31 @@ from typing import List, Dict, Union
 import pandas as pd
 import csv
 
+class LTSC:
+    def __init__(self, path:Path, name:str, headers:List[str]):
+        self.name = name
+        self.df = sheet.read_csv(path / f'{name}.csv', sep='\s+')
+        totals = {}
+        for col in headers:
+            totals[col] = Reservoir.get_float_value(self.df, 'Total', col)
+
+        self.cut_to_aquifer = totals['Cut_to_Aquifer']
+        self.water_delivered = totals['Water_Delivered']
+        self.annual_recovery = totals['Annual_Recovery']
+        self.credits_recovered = totals['LTS_Credits_Recovered']
+        self.credits_extinguished = totals['LTS_Credits_Extinguished']
+        self.et_losses = totals['Evaporation_Transpiration_Losses']
+        self.other_losses = totals['Other_Losses']
+
+        stored = self.water_delivered - self.annual_recovery - self.credits_recovered
+        stored_adjusted = stored - self.cut_to_aquifer  # Unclear if we can count this as stored water, no accounting
+        stored_adjusted = stored_adjusted - self.et_losses - self.other_losses - self.credits_extinguished
+        self.stored = stored_adjusted
+
 class Aquifers(Reservoir):
     def __init__(self):
         headers:List[str] = [lb.AQUIFER, lb.AQUIFER_INFLOW, lb.AQUIFER_RELEASE]
-        super().__init__('Aquifers', headers)
+        super().__init__('AZ Aquifers', headers)
         self.start_year = 1989
         self.end_year = 2022
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
@@ -43,16 +64,25 @@ class Aquifers(Reservoir):
         self.path: Path = Path('data/ADWR/AMA')
         # self.recharge_summary_data_from_excel(self.path, self.years)
 
-        df = sheet.read_csv(self.path / 'total.csv', sep='\s+')
-        totals = {}
-        for col in self.out_headers:
-            totals[col] = Reservoir.get_float_value(df, 'Total', col)
+        ltsc_total = LTSC(self.path, 'total', self.out_headers)
+        self.active_capacity_af = ltsc_total.stored + ltsc_total.cut_to_aquifer
 
-        stored = totals['Water_Delivered'] - totals['Annual_Recovery'] - totals['LTS_Credits_Recovered']
-        stored_adjusted = stored - totals['Cut_to_Aquifer']  # Unclear if we can count this as stored water, no accounting
-        stored_adjusted = stored_adjusted - totals['Evaporation_Transpiration_Losses'] \
-                          - totals['Other_Losses'] - totals['LTS_Credits_Extinguished']
-        self.active_capacity_af = stored_adjusted
+        ltscs:List[LTSC] = [LTSC(self.path, 'phx', self.out_headers),
+                            LTSC(self.path, 'pin', self.out_headers),
+                            LTSC(self.path, 'tuc', self.out_headers)]
+
+        ama_stored = 0
+        for ltsc in ltscs:
+            ama_stored += ltsc.stored
+            if ltsc.name == 'phx':
+                color = lb.PHX_COLOR
+            elif ltsc.name == 'pin':
+                color = lb.PINAL_COLOR
+            elif ltsc.name == 'tuc':
+                color = lb.TUCSON_COLOR
+            else:
+                color = '#0'
+            self.reserved_parts.append((ltsc.name, ltsc.stored, color))
 
         # Elevations
         #
@@ -92,8 +122,6 @@ class Aquifers(Reservoir):
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af
         self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
                               ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
-
-        # self.reserved_parts = reserved_parts or []
 
     @staticmethod
     def add_total_row(df: pd.DataFrame, decimals: int = 2) -> pd.DataFrame:
@@ -200,7 +228,7 @@ class Aquifers(Reservoir):
                             break
                     elif header == 'AMA':
                         ama_name = cell.value.lower()
-                        df = self.get_ama_node(ama_name, out_headers, nodes)
+                        df = self.get_ama_node(ama_name, self.out_headers, nodes)
                     elif header == 'Category':
                         category = cell.value
                     elif header == 'Parent Water Type or Element':
