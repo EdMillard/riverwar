@@ -435,12 +435,12 @@ if __name__ == "__main__":
                   outflow_parts=[("Actual so far", 7200, '#d62728'),
                                ("Projected Apr", 3800, '#ff9896')]),
         '''
-    lake_pleasant = LakePleasant()
+    # lake_pleasant = LakePleasant()
     reservoirs = [
-        lake_pleasant,
+        Aquifers(),
+        # lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
-        Aquifers(),
         LakeMead(),
         LakePowell(),
         FlamingGorge(),
