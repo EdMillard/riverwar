@@ -1,0 +1,474 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+	<div id="ctl00_ContentPlaceHolder1_rgQueryX_GridData" class="rgDataDiv" style="overflow:auto;width:100%;height:300px;">
+
+<table cellspacing="0" class=" rgClipCells" border="0" id="ctl00_ContentPlaceHolder1_rgQueryX_ctl00" style="font-size:8pt;width:100%;table-layout:fixed;overflow:hidden;empty-cells:show;">
+			<caption class="rgCaption"><p style='color: blue; font-weight: bold;'>Data from: <strong style='color: black;'>3/30/2026</strong></p></caption>
+<thead>
+		<tr>
+			<th scope="col">&nbsp;</th><th scope="col">AMA</th><th scope="col">LTSA Number</th><th scope="col">NON_RECOVERABLE</th><th scope="col">LTSA Holder</th><th scope="col">Total LTSA Balance (ac_ft)</th><th scope="col">Balance Certified Through Year</th>
+		</tr><tr>
+			<td>&nbsp;</td><td style="white-space:nowrap;"></td><td style="white-space:nowrap;"></td><td style="white-space:nowrap;"></td><td style="white-space:nowrap;"></td><td style="white-space:nowrap;"></td><td style="white-space:nowrap;"></td>
+		</tr>
+	</thead><tbody>
+	<tr>
+		<td>&nbsp;</td><td>HARQUAHALA VALLEY INA</td><td>70-461000.0000</td><td>&nbsp;</td><td>VIDLER WATER CO - HARQUAHALA INA LTSA</td><td>188,672.70</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>HARQUAHALA VALLEY INA</td><td>70-461005.0000</td><td>&nbsp;</td><td>HARQUAHALA FLATS SOLAR LLC LTSA</td><td>55,000.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>HARQUAHALA VALLEY INA</td><td>70-461010.0000</td><td>&nbsp;</td><td>FBQ, LLC LTSA</td><td>7,000.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>NOT WITHIN ANY AMA OR INA</td><td>70-491000.0000</td><td>&nbsp;</td><td>CITY OF SEDONA LONG TERM STORAGE ACCOUNT</td><td>1,713.70</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>NOT WITHIN ANY AMA OR INA</td><td>70-491005.0000</td><td>&nbsp;</td><td>CITY OF COTTONWOOD LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>NOT WITHIN ANY AMA OR INA</td><td>70-491010.0000</td><td>&nbsp;</td><td>TOWN OF PAYSON LTSA</td><td>1,220.14</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>NOT WITHIN ANY AMA OR INA</td><td>70-491015.0000</td><td>Y</td><td>TOWN OF PAYSON NON-RECOVERABLE STORAGE ACCOUNT</td><td>1,903.92</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>NOT WITHIN ANY AMA OR INA</td><td>70-491025.0000</td><td>&nbsp;</td><td>CITY OF SIERRA VISTA LONG TERM STORAGE ACCOUNT</td><td>27,383.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>NOT WITHIN ANY AMA OR INA</td><td>70-491030.0000</td><td>&nbsp;</td><td>ARIZONA PUBLIC SERVICE (OUTSIDE AMA) LTSA</td><td>1,933.29</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441120.0000</td><td>&nbsp;</td><td>CAWCD (PHOENIX)LONG TERM STORAGE ACCOUNT</td><td>178,471.78</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441120.0001</td><td>&nbsp;</td><td>CAGRD SUBACCOUNT (PHOENIX AMA)</td><td>524,883.66</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441120.0002</td><td>&nbsp;</td><td>CAGRD-RRA (PHOENIX AMA)</td><td>284,690.51</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441123.0000</td><td>&nbsp;</td><td>CITY OF TEMPE LONG TERM STORAGE ACCOUNT</td><td>73,782.10</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441125.0000</td><td>&nbsp;</td><td>SALT RIVER PROJECT LONG TERM STORAGE ACCOUNT</td><td>79,076.10</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441127.0000</td><td>&nbsp;</td><td>CITY OF MESA LONG TERM STORAGE ACCOUNT</td><td>563,703.27</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441129.0000</td><td>&nbsp;</td><td>CITY OF CHANDLER LONG TERM STORAGE ACCOUNT</td><td>469,318.44</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441131.0000</td><td>&nbsp;</td><td>CITY OF SCOTTSDALE LONG TERM STORAGE ACCOUNT</td><td>277,690.78</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441133.0000</td><td>&nbsp;</td><td>CITY OF PHOENIX LONG TERM STORAGE ACCOUNT</td><td>430,029.63</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441135.0000</td><td>&nbsp;</td><td>CITY OF AVONDALE LONG TERM STORAGE ACCOUNT</td><td>138,260.97</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441137.0000</td><td>&nbsp;</td><td>PIMA UTILITY COMPANY LONG TERM STORAGE ACCOUNT</td><td>6,305.99</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441139.0000</td><td>&nbsp;</td><td>LIBERTY UTILITIES (LITCHFIELD PARK WATER & SEWER) CORP LTSA</td><td>7,618.35</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441143.0000</td><td>&nbsp;</td><td>TOWN OF GILBERT LONG TERM STORAGE ACCOUNT</td><td>558,693.89</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441144.0000</td><td>&nbsp;</td><td>CITY OF GOODYEAR LTSA</td><td>95,130.62</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441146.0000</td><td>&nbsp;</td><td>CITY OF PEORIA - LONG TERM STORAGE ACCOUNT</td><td>228,468.79</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441147.0000</td><td>&nbsp;</td><td>OCOTILLO MANAGEMENT GROUP LONG TERM STORAGE ACCOUNT</td><td>11,461.62</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441148.0000</td><td>&nbsp;</td><td>DEL WEBB HOME CONSTRUCTION</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441149.0000</td><td>&nbsp;</td><td>CITY OF GLENDALE LONG TERM STORAGE ACCOUNT</td><td>209,121.03</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441150.0000</td><td>&nbsp;</td><td>AWBA-MAIN (PHOENIX AMA) LONG TERM STORAGE ACCOUNT</td><td>1,877,857.78</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441150.0001</td><td>&nbsp;</td><td>AWBA-SNWA (PHOENIX AMA) LTSA</td><td>60,021.16</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441150.0002</td><td>&nbsp;</td><td>AWBA-INDIAN FIRMING (PHOENIX AMA) LTSA</td><td>88,312.95</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441150.0003</td><td>&nbsp;</td><td>AWBA-MCWA (PHOENIX AMA) LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441151.0000</td><td>&nbsp;</td><td>MARICOPA WATER DISTRICT LONG TERM STORAGE ACCOUNT</td><td>162.50</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441152.0000</td><td>&nbsp;</td><td>APACHE JUNCTION WATER DISTRICT</td><td>34,960.64</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441155.0000</td><td>&nbsp;</td><td>CITY OF SURPRISE LONG TERM STORAGE ACCOUNT</td><td>161,749.12</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441156.0000</td><td>&nbsp;</td><td>TEMPE FAMILY GOLF CENTERS LONG TERM STORAGE ACCOUNT</td><td>33.46</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441157.0000</td><td>&nbsp;</td><td>VIDLER WATER COMPANY LONG TERM STORAGE ACCOUNT</td><td>11,850.40</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441158.0000</td><td>&nbsp;</td><td>GLOBAL WATER - BELMONT WATER CO., INC. (TONOPAH) LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441159.0000</td><td>&nbsp;</td><td>GLOBAL WATER - SANTA CRUZ WATER CO LTSA-PHOENIX AMA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441160.0000</td><td>&nbsp;</td><td>ARIZONA PUBLIC SERVICE CO (PHX) LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441161.0000</td><td>&nbsp;</td><td>FREEPORT MINERALS CORPORATION LONG TERM STORAGE ACCOUNT</td><td>243,368.35</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441164.0000</td><td>&nbsp;</td><td>PEBBLECREEK PROPERTIES LP  LONG TERM STORAGE ACCOUNT</td><td>535.55</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441167.0000</td><td>&nbsp;</td><td>RECREATION CENTERS OF SUN CITY WEST LTSA</td><td>796.98</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441168.0000</td><td>&nbsp;</td><td>GLOBAL WATER - BELMONT (NORTHERN SCOTTSDALE) LTSA</td><td>5.64</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441169.0000</td><td>&nbsp;</td><td>HILLCREST GOLF COURSE LONG TERM STORAGE ACCOUNT</td><td>2.75</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441174.0000</td><td>&nbsp;</td><td>SAN TAN LAKESIDE ESTATES LTSA (MCCORMICK LAND & DEVELOPMENT)</td><td>49.72</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441175.0000</td><td>&nbsp;</td><td>FOUNTAIN HILLS SANITATION DISTRICT LTSA</td><td>1,566.32</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441176.0000</td><td>&nbsp;</td><td>CITY OF EL MIRAGE</td><td>50,551.53</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441178.0000</td><td>&nbsp;</td><td>DEL WEBB CORPORATION LTSA</td><td>18,071.23</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441180.0000</td><td>&nbsp;</td><td>TOWN OF QUEEN CREEK</td><td>9,824.12</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441181.0000</td><td>&nbsp;</td><td>SHEA HOMES L.P.</td><td>658.56</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441186.0000</td><td>&nbsp;</td><td>ALL GOLF @ RIO SALADO</td><td>39.88</td><td style="mso-number-format:0\.00;">2019</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441187.0000</td><td>&nbsp;</td><td>LIBERTY UTILITIES (GOLD CANYON SEWER) CORP</td><td>3,800.57</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441188.0000</td><td>&nbsp;</td><td>ACTIVE RESOURCE MANAGEMENT, L.L.C.</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441189.0000</td><td>&nbsp;</td><td>DMB WHITE TANK LLC</td><td>10.50</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441190.0000</td><td>&nbsp;</td><td>BASHA'S INC.</td><td>218.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441192.0000</td><td>&nbsp;</td><td>SUN CITY GRAND COMMUNITY ASSOCIATION, INC LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441193.0000</td><td>&nbsp;</td><td>MARBELLA VINEYARDS HOA LONG TERM STORAGE ACCOUNT</td><td>26.00</td><td style="mso-number-format:0\.00;">2017</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441194.0000</td><td>&nbsp;</td><td>WILLIAM LYON HOMES. INC LONG TERM STORAGE ACCOUNT</td><td>3,421.41</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441195.0000</td><td>&nbsp;</td><td>VANDERBILT FARMS LLC</td><td>1,072.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441196.0000</td><td>&nbsp;</td><td>APACHE JUNCTION SEWER DISTRICT LTSA</td><td>6,532.98</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441199.0000</td><td>&nbsp;</td><td>CITY OF BUCKEYE LONG TERM STORAGE ACCOUNT</td><td>14,898.57</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441200.0000</td><td>&nbsp;</td><td>RESOLUTION COPPER MINING LLC LONG TERM STORAGE ACCOUNT</td><td>263,671.90</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441201.0000</td><td>&nbsp;</td><td>MOHAVE COUNTY WATER AUTHORITY LONG TERM STORAGE ACCOUNT</td><td>950.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441202.0000</td><td>&nbsp;</td><td>CSW SUN VALLEY SOUTH HOLDING, LLC</td><td>12.00</td><td style="mso-number-format:0\.00;">2019</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441203.0000</td><td>&nbsp;</td><td>ROADHAVEN RESORT HOA</td><td>28.98</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441204.0000</td><td>&nbsp;</td><td>POWER RANCH COMMUNITY ASSOCATION </td><td>621.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441208.0000</td><td>&nbsp;</td><td>ROOSEVELT WATER CONSERVATION DISTRICT LTSA</td><td>1,902.48</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441209.0000</td><td>&nbsp;</td><td>ASANTE LH, LLC </td><td>1.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441210.0000</td><td>&nbsp;</td><td>BM3 HOLDINGS, LLC LTSA</td><td>5.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441213.0000</td><td>&nbsp;</td><td>US HOME OF ARIZONA CONSTRUCTION COMPANY LTSA</td><td>1.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441214.0000</td><td>&nbsp;</td><td>GREYSTONE CONSTRUCTION, INC LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441215.0000</td><td>&nbsp;</td><td>LENNAR ARIZONA , INC LONG TERM STORAGE ACCOUNT</td><td>49.59</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441216.0000</td><td>&nbsp;</td><td>WINFIELD WATER PARTNERS, LLC LONG TERM STORAGE ACCOUNT</td><td>9,500.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441218.0000</td><td>&nbsp;</td><td>TOHONO O'ODHAM NATION LTSA</td><td>235,471.31</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441219.0000</td><td>&nbsp;</td><td>EPCOR WATER ARIZONA INC. (SAN TAN-PHOENIX) LTSA</td><td>42.35</td><td style="mso-number-format:0\.00;">2021</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441220.0000</td><td>&nbsp;</td><td>THE HOPI TRIBE LONG TERM STORGE ACCOUNT</td><td>3,575.24</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441223.0000</td><td>&nbsp;</td><td>US BUREAU OF RECLAMATION LTSA (PHX AMA)</td><td>49,524.90</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441224.0000</td><td>&nbsp;</td><td>RECREATION CENTERS OF SUN CITY, INC. LTSA</td><td>1,080.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441225.0000</td><td>&nbsp;</td><td>GILA RIVER INDIAN COMMUNITY (PHX) LONG TERM STORAGE ACCOUNT</td><td>130,253.73</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441226.0000</td><td>&nbsp;</td><td>CHAPARRAL CITY WC LONG TERM STORAGE ACCOUNT - PHOENIX AMA</td><td>16,519.76</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441227.0000</td><td>&nbsp;</td><td>SFI GRAND VISTA LLC LONG TERM STORAGE ACCOUNT</td><td>50.00</td><td style="mso-number-format:0\.00;">2020</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441228.0000</td><td>&nbsp;</td><td>TONTO HILLS DWID LTSA</td><td>334.40</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441229.0000</td><td>&nbsp;</td><td>EPCOR WATER ARIZONA INC. (SUN CITY)</td><td>6,779.01</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441230.0000</td><td>&nbsp;</td><td>EPCOR WATER ARIZONA INC. (SUN CITY WEST)</td><td>7,041.24</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441231.0000</td><td>&nbsp;</td><td>EPCOR WATER ARIZONA INC. (AGUA FRIA)</td><td>5,722.66</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441232.0000</td><td>&nbsp;</td><td>EPCOR WATER ARIZONA INC. (ANTHEM) PHOENIX</td><td>15,701.26</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441233.0000</td><td>&nbsp;</td><td>EPCOR WATER ARIZONA INC. (PARADISE VALLEY) LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441234.0000</td><td>&nbsp;</td><td>TONTO APACHE TRIBE LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441236.0000</td><td>&nbsp;</td><td>GILA RIVER WATER STORAGE, LLC PHOENIX LONG TERM STORAGE ACCT</td><td>314,622.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441237.0000</td><td>&nbsp;</td><td>ARIZONA WATER COMPANY WHITE TANKS</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441238.0000</td><td>&nbsp;</td><td>APACHE SUN GOLF COURSE LTSA</td><td>165.63</td><td style="mso-number-format:0\.00;">2020</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441239.0000</td><td>&nbsp;</td><td>AV HOMES OF ARIZONA, LLC LTSA</td><td>1,488.07</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441240.0000</td><td>&nbsp;</td><td>PECAN CREEK SOUTH HOA LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441241.0000</td><td>&nbsp;</td><td>THE CLUB AT ENCANTERRA, LLC LTSA</td><td>308.83</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441242.0000</td><td>&nbsp;</td><td>ARIZONA WATER COMPANY - SUPERSTITION</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441243.0000</td><td>&nbsp;</td><td>RECREATIONAL CENTER, INC DBA SCOTTSDALE SHADOWS LTSA</td><td>620.56</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441244.0000</td><td>&nbsp;</td><td>AK-CHIN INDIAN COMMUNITY LTSA - PHOENIX AMA</td><td>25,933.80</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441245.0000</td><td>&nbsp;</td><td>VULCAN MATERIALS COMPANY LONG TERM STORAGE ACCOUNT</td><td>23.28</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441246.0000</td><td>&nbsp;</td><td>OB SPORTS GOLF MANAGEMENT (ASU), LLC LONG TERM STORAGE ACCT</td><td>0.00</td><td style="mso-number-format:0\.00;">2019</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441247.0000</td><td>&nbsp;</td><td>ASARCO LLC LONG TERM STORAGE ACCOUNT (PHX AMA)</td><td>137,716.46</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441248.0000</td><td>&nbsp;</td><td>CEV HOLDINGS LLC LONG TERM STORAGE ACCOUNT</td><td>3.00</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441250.0000</td><td>&nbsp;</td><td>TOWN OF FLORENCE LONG TERM STORAGE ACCOUNT (PHOENIX AMA)</td><td>5,811.01</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441251.0000</td><td>&nbsp;</td><td>IRONWOOD CROSSING HOA LTSA</td><td>111.21</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441252.0000</td><td>&nbsp;</td><td>QUEEN CREEK STATION HOA LTSA</td><td>45.23</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441255.0000</td><td>&nbsp;</td><td>CITY OF ELOY LTSA (PHOENIX AMA)</td><td>3,933.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441256.0000</td><td>&nbsp;</td><td>RED MOUNTAIN MINING LTSA</td><td>35.12</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441257.0000</td><td>&nbsp;</td><td>RIO VERDE UTILITIES</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441258.0000</td><td>&nbsp;</td><td>STONE APPLICATIONS LLC</td><td>6,969.79</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441259.0000</td><td>&nbsp;</td><td>THE LONNIEC.MCCLEVE&DEBBIER.MCCLEVE RVCBL LIVING TRUST LTSA</td><td>20.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441260.0000</td><td>&nbsp;</td><td>VIHREA DEVELOPMENT LLC LTSA</td><td>63,225.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441261.0000</td><td>&nbsp;</td><td>ACTION ZONE BUSINESS 17, LLC LTSA</td><td>481.24</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441262.0000</td><td>&nbsp;</td><td>CAMPBELL REVOCABLE TRUST LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441263.0000</td><td>&nbsp;</td><td>TOWN OF CAVE CREEK LTSA</td><td>2,310.34</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441264.0000</td><td>&nbsp;</td><td>MUELLER SUPPLY COMPANY, INC. LTSA</td><td>33.56</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441265.0000</td><td>&nbsp;</td><td>NESTLE USA, INC. LTSA</td><td>2,000.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441266.0000</td><td>&nbsp;</td><td>MICROSOFT CORPORATION LTSA</td><td>14,587.85</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441268.0000</td><td>&nbsp;</td><td>RIO VERDE FOOTHILLS STANDPIPE DISTRICT LTSA</td><td>50.10</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441269.0000</td><td>&nbsp;</td><td>HASTINGS FARM HOA LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441270.0000</td><td>&nbsp;</td><td>DIVOT PARTNERS LLC LTSA</td><td>1,320.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441271.0000</td><td>&nbsp;</td><td>PULTE HOME COMPANY, LLC LTSA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441272.0000</td><td>&nbsp;</td><td>JEWEL INVESTMENT COMPANY, LP LTSA</td><td>443.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441273.0000</td><td>&nbsp;</td><td>OCEAN FRONT PROPERTY IN ARIZONA LLC LTSA</td><td>1.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441274.0000</td><td>&nbsp;</td><td>NIAGARA BOTTLING LTSA</td><td>6,759.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441275.0000</td><td>&nbsp;</td><td>WATER WISE CERTIFICATES HOLDINGS LTSA (PHOENIX AMA)</td><td>6,305.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441276.0000</td><td>&nbsp;</td><td>SURPRISE HOTEL HOLDINGS LLC LTSA</td><td>47.29</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441277.0000</td><td>&nbsp;</td><td>SARIVAL & BELL LLC LTSA</td><td>168.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441278.0000</td><td>&nbsp;</td><td>ASSURED WATER BUILDERS I LLC LTSA</td><td>&nbsp;</td><td style="mso-number-format:0\.00;">&nbsp;</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441279.0000</td><td>&nbsp;</td><td>BASHA BOTTLING CO LTSA</td><td>&nbsp;</td><td style="mso-number-format:0\.00;">&nbsp;</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441280.0000</td><td>&nbsp;</td><td>VAI RESORTS, LLC </td><td>&nbsp;</td><td style="mso-number-format:0\.00;">&nbsp;</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>70-441281.0000</td><td>&nbsp;</td><td>TRILLIUM LAND COMPANY LLC LTSA</td><td>&nbsp;</td><td style="mso-number-format:0\.00;">&nbsp;</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PHOENIX AMA</td><td>75-441120.0000</td><td>&nbsp;</td><td>CAGRD-CDA (PHOENIX AMA)</td><td>605,773.55</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431120.0000</td><td>&nbsp;</td><td>CAWCD (PINAL) LONG TERM STORAGE ACCOUNT</td><td>311,058.49</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431120.0001</td><td>&nbsp;</td><td>CAGRD SUBACCOUNT (PINAL AMA)</td><td>301,579.31</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431120.0002</td><td>&nbsp;</td><td>CAGRD-RRA (PINAL AMA)</td><td>6,192.35</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431125.0000</td><td>&nbsp;</td><td>TOWN OF FLORENCE LONG TERM STORAGE ACCOUNT</td><td>34,937.92</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431130.0000</td><td>&nbsp;</td><td>CITY OF ELOY LONG TERM STORAGE ACCOUNT</td><td>56,682.74</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431135.0000</td><td>&nbsp;</td><td>AWBA-MAIN (PINAL AMA) LONG TERM STORAGE ACCOUNT</td><td>808,317.06</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431135.0001</td><td>&nbsp;</td><td>AWBA-SNWA (PINAL AMA) LTSA</td><td>440,241.03</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431135.0002</td><td>&nbsp;</td><td>AWBA-INDIAN FIRMING (PINAL AMA) LTSA</td><td>17,077.20</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431135.0003</td><td>&nbsp;</td><td>AWBA-MCWA (PINAL AMA) LTSA</td><td>256,174.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431140.0000</td><td>&nbsp;</td><td>PINAL COUNTY WATER AUGMENTATION AUTHORITY LTSA</td><td>7,223.08</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431145.0000</td><td>&nbsp;</td><td>PICACHO SEWER COMPANY LONG TERM STORAGE ACCOUNT</td><td>89.99</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431150.0000</td><td>&nbsp;</td><td>ARIZONA CITY SANITARY DISTRICT LONG TERM STORAGE ACCOUNT</td><td>1,464.16</td><td style="mso-number-format:0\.00;">2021</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431155.0000</td><td>&nbsp;</td><td>GLOBAL WATER- PALO VERDE UTILITIES LONG TERM STORAGE ACCOUNT</td><td>30.24</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431160.0000</td><td>&nbsp;</td><td>GLOBAL WATER-SANTA CRUZ WATER CO LTSA - PINAL</td><td>1,387.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431165.0000</td><td>&nbsp;</td><td>RESOLUTION COPPER MINING LLC (PINAL) LTSA</td><td>16,780.14</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431170.0000</td><td>&nbsp;</td><td>SRP AIPD LONG TERM STORAGE ACCOUNT</td><td>34,726.42</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431170.0001</td><td>&nbsp;</td><td>SRP AIPD - NONRECOVERABLE LTSA</td><td>130.49</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431180.0000</td><td>&nbsp;</td><td>GILA RIVER INDIAN COMMUNITY(PINAL) LONG TERM STORAGE ACCOUNT</td><td>244,406.25</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431190.0000</td><td>&nbsp;</td><td>EPCOR WATER ARIZONA INC. (SAN TAN-ANTHEM) PINAL LTSA</td><td>2,752.22</td><td style="mso-number-format:0\.00;">2022</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431195.0000</td><td>&nbsp;</td><td>RECHARGE TECHNOLOGIES LLC (PINAL) LONG TERM STORAGE ACCOUNT</td><td>214.77</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431200.0000</td><td>&nbsp;</td><td>CORECIVIC, INC. LONG TERM STORAGE ACCOUNT</td><td>7,992.66</td><td style="mso-number-format:0\.00;">2022</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431205.0000</td><td>&nbsp;</td><td>GILA RIVER WATER STORAGE LLC PINAL LONG TERM STORAGE ACCOUNT</td><td>420,447.51</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431210.0000</td><td>&nbsp;</td><td>SANTA ROSA UTILITY COMPANY LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431215.0000</td><td>&nbsp;</td><td>CITY OF CASA GRANDE LONG TERM STORAGE ACCOUNT</td><td>8,763.90</td><td style="mso-number-format:0\.00;">2021</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431220.0000</td><td>&nbsp;</td><td>ARIZONA PUBLIC SERVICE CO (PINAL) LONG TERM STORAGE ACCOUNT</td><td>12,955.49</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431225.0000</td><td>&nbsp;</td><td>CITY OF MARICOPA LTSA</td><td>3,028.42</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431230.0000</td><td>&nbsp;</td><td>ARIZONA WATER COMPANY LTSA - PINAL AMA</td><td>0.00</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431235.0000</td><td>&nbsp;</td><td>SOUTHWEST ENVIRONMENTAL UTILITIES, LLC LTSA</td><td>84.29</td><td style="mso-number-format:0\.00;">2021</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431240.0000</td><td>&nbsp;</td><td>FREEPORT MINERALS CORPORATION LTSA (PINAL AMA)</td><td>71,229.85</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431245.0000</td><td>&nbsp;</td><td>BUREAU OF RECLAMATION LTSA</td><td>72,813.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431250.0000</td><td>&nbsp;</td><td>CITY OF PEORIA LTSA (PINAL AMA)</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431255.0000</td><td>&nbsp;</td><td>CITY OF COOLIDGE LTSA</td><td>1,795.56</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431260.0000</td><td>&nbsp;</td><td>CHAPARRAL CITY WATER COMPANY LTSA (PINAL AMA)</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431265.0000</td><td>&nbsp;</td><td>CITY OF GOODYEAR LTSA (PINAL AMA)</td><td>1,886.89</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431270.0000</td><td>&nbsp;</td><td>CITY OF SCOTTSDALE LTSA (PINAL AMA)</td><td>3,749.08</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431275.0000</td><td>&nbsp;</td><td>CITY OF CHANDLER LTSA (PINAL AMA)</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431280.0000</td><td>&nbsp;</td><td>CITY OF PHOENIX LTSA (PINAL AMA)</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431285.0000</td><td>&nbsp;</td><td>CITY OF AVONDALE LTSA (PINAL AMA)</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431290.0000</td><td>&nbsp;</td><td>CITY OF TUCSON, TUCSON WATER (PINAL LTSA)</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431300.0000</td><td>&nbsp;</td><td>VIDLER WATER COMPANY</td><td>25,500.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>70-431305.0000</td><td>&nbsp;</td><td>WATER WISE CERTIFICATES HOLDINGS LTSA (PINAL AMA)</td><td>347.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PINAL AMA</td><td>75-431120.0000</td><td>&nbsp;</td><td>CAGRD-CDA (PINAL AMA)</td><td>7,008.26</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421123.0000</td><td>Y</td><td>CITY OF PRESCOTT LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421123.0000</td><td>&nbsp;</td><td>CITY OF PRESCOTT LONG TERM STORAGE ACCOUNT</td><td>42,226.89</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421123.0001</td><td>Y</td><td>CITY OF PRESCOTT NON-RECOVERABLE STORAGE ACCOUNT</td><td>503.50</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421124.0000</td><td>&nbsp;</td><td>TOWN OF PRESCOTT VALLEY LONG TERM STORAGE ACCOUNT</td><td>29,298.32</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421125.0000</td><td>&nbsp;</td><td>CHINO VALLEY IRRIGATION DISTRICT LONG TERM STORAGE ACCOUNT</td><td>56.33</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421126.0000</td><td>&nbsp;</td><td>NORTH NUGGET DEVELOPMENT LLC LONG TERM STORAGE ACCOUNT</td><td>527.62</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421127.0000</td><td>&nbsp;</td><td>TOWN OF CHINO VALLEY LONG TERM STORAGE ACCOUNT</td><td>4,048.21</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421128.0000</td><td>&nbsp;</td><td>BRADSHAW WATER COMPANY LONG TERM STORAGE ACCOUNT</td><td>&nbsp;</td><td style="mso-number-format:0\.00;">&nbsp;</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>PRESCOTT AMA</td><td>70-421129.0000</td><td>&nbsp;</td><td>FAIN LAND AND CATTLE COMPANY LONG TERM STORAGE ACCOUNT</td><td>1,330.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-084101.0000</td><td>&nbsp;</td><td>TOHONO O'ODHAM NATION LONG TERM STORAGE ACCOUNT</td><td>130,493.52</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411111.0000</td><td>&nbsp;</td><td>CITY OF TUCSON,TUCSON WATER (TUCSON LTSA)</td><td>575,386.99</td><td style="mso-number-format:0\.00;">2022</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411120.0000</td><td>&nbsp;</td><td>CAWCD (TUCSON) LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411120.0001</td><td>&nbsp;</td><td>CAGRD-SUBACCOUNT (TUCSON AMA)</td><td>166,443.46</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411120.0002</td><td>&nbsp;</td><td>CAGRD-RRA (TUCSON AMA)</td><td>43,911.87</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411130.0000</td><td>&nbsp;</td><td>METROPOLITAN DWID LONG TERM STORAGE ACCOUNT</td><td>53,210.03</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411140.0000</td><td>&nbsp;</td><td>COMMUNITY WATER CO. OF GREEN VALLEY LTSA</td><td>1,429.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411150.0000</td><td>&nbsp;</td><td>AWBA-MAIN (TUCSON AMA) LONG TERM STORAGE ACCOUNT</td><td>720,910.24</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411150.0001</td><td>&nbsp;</td><td>AWBA-SNWA (TUCSON AMA) LTSA</td><td>113,583.99</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411150.0002</td><td>&nbsp;</td><td>AWBA-INDIAN FIRMING (TUCSON AMA) LTSA</td><td>34,101.86</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411160.0000</td><td>&nbsp;</td><td>TOWN OF ORO VALLEY LONG TERM STORAGE ACCOUNT</td><td>37,735.78</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411170.0000</td><td>&nbsp;</td><td>SPANISH TRAIL WATER COMPANY LONG TERM STORAGE ACCOUNT</td><td>3,923.15</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411200.0000</td><td>&nbsp;</td><td>US BUREAU OF RECLAMATION LTSA (TUC AMA)</td><td>157,734.05</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411210.0000</td><td>&nbsp;</td><td>VAIL WATER COMPANY LONG TERM STORAGE ACCOUNT</td><td>8,334.15</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411220.0000</td><td>&nbsp;</td><td>TOWN OF MARANA LONG TERM STORAGE ACCOUNT</td><td>19,776.95</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411230.0000</td><td>&nbsp;</td><td>CORTARO-MARANA IRRIGATION DISTRICT LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411240.0000</td><td>&nbsp;</td><td>ARIZONA STATE LAND DEPARTMENT LONG TERM STORAGE ACCOUNT</td><td>2,033.40</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411250.0000</td><td>&nbsp;</td><td>ROBSON RANCH QUAIL CREEK LLC LONG TERM STORAGE ACCOUNT</td><td>25,430.74</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411270.0000</td><td>&nbsp;</td><td>RIDGEVIEW UTILITY COMPANY LONG TERM STORAGE ACCOUNT</td><td>50.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411280.0000</td><td>&nbsp;</td><td>ROBSON COMMUNITIES INC LONG TERM STORAGE ACCOUNT</td><td>0.04</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411300.0000</td><td>&nbsp;</td><td>SLF-AGUA, LLC LONG TERM STORAGE ACCOUNT</td><td>1,750.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411310.0000</td><td>&nbsp;</td><td>DEL LAGO GOLF COURSE LLC LONG TERM STORAGE ACCOUNT</td><td>5.39</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411320.0000</td><td>&nbsp;</td><td>FLOWING WELLS IRRIGATION DISTRICT LONG TERM STORAGE ACCOUNT</td><td>14,955.59</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411330.0000</td><td>&nbsp;</td><td>ROBSON RANCH MOUNTAINS LLC LONG TERM STORAGE ACCOUNT</td><td>1,833.80</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411340.0000</td><td>&nbsp;</td><td>GREEN VALLEY DWID LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2023</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411350.0000</td><td>&nbsp;</td><td>GLOBAL WATER - SANTA CRUZ (RED ROCK) LTSA</td><td>0.75</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411370.0000</td><td>&nbsp;</td><td>PIMA COUNTY REGIONAL WRD LONG TERM STORAGE ACCOUNT</td><td>38,979.66</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411380.0000</td><td>&nbsp;</td><td>TOWN OF SAHUARITA LONG TERM STORAGE ACCOUNT</td><td>12,091.97</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411390.0000</td><td>&nbsp;</td><td>COPPER WORLD, INC. LONG TERM STORAGE ACCOUNT</td><td>44,448.61</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411430.0000</td><td>&nbsp;</td><td>PASCUA YAQUI TRIBE LONG TERM STORAGE ACCOUNT</td><td>26,817.44</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411440.0000</td><td>&nbsp;</td><td>VIDLER WATER COMPANY LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411450.0000</td><td>&nbsp;</td><td>AVRA WATER CO-OP LONG TERM STORAGE ACCOUNT</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411460.0000</td><td>&nbsp;</td><td>SADDLEBROOKE UTILITY COMPANY</td><td>90.09</td><td style="mso-number-format:0\.00;">2021</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411470.0000</td><td>&nbsp;</td><td>FREEPORT MINERALS CORPORATION LTSA-TUCSON AMA</td><td>34,540.03</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411480.0000</td><td>&nbsp;</td><td>CITY OF PHOENIX LTSA - TUCSON AMA</td><td>243,432.05</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411490.0000</td><td>&nbsp;</td><td>MDWID - SW DIABLO VILLAGE</td><td>-8.82</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411500.0000</td><td>&nbsp;</td><td>BKW FARMS, INC.</td><td>518.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411510.0000</td><td>&nbsp;</td><td>METRO DWID - LAZY B</td><td>7.56</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411520.0000</td><td>&nbsp;</td><td>AK-CHIN INDIAN COMMUNITY LTSA - TUCSON AMA</td><td>0.00</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411540.0000</td><td>&nbsp;</td><td>CITY OF PEORIA (TUCSON AMA)</td><td>3,735.29</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411550.0000</td><td>&nbsp;</td><td>TOWN OF GILBERT (TUCSON AMA)</td><td>2,797.80</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411560.0000</td><td>&nbsp;</td><td>CITY OF SCOTTSDALE (TUCSON AMA)</td><td>8,075.48</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>70-411570.0000</td><td>&nbsp;</td><td>GLOBAL WATER - OCTOTILLO WATER COMPANY, INC. LTSA</td><td>&nbsp;</td><td style="mso-number-format:0\.00;">&nbsp;</td>
+	</tr><tr>
+		<td>&nbsp;</td><td>TUCSON AMA</td><td>75-411120.0000</td><td>&nbsp;</td><td>CAGRD-CDA (TUCSON AMA)</td><td>106,065.72</td><td style="mso-number-format:0\.00;">2024</td>
+	</tr>
+	</tbody>
+
+</table>	</div>
+</body></html>
