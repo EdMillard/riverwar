@@ -5,7 +5,9 @@ Reservoir Dashboard - Stacked bar annotations restored + compact heights
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import datetime
+import colorado.lb as lb
 import os
+from reservoirs.reservoir import Reservoir
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
 from reservoirs.aquifers import Aquifers
@@ -14,8 +16,8 @@ from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
 from reservoirs.navajo import Navajo
-from reservoirs.reservoir import Reservoir
-import colorado.lb as lb
+from reservoirs.lake_pleasant import LakePleasant
+
 
 import numpy as np
 from matplotlib.figure import Figure
@@ -433,7 +435,9 @@ if __name__ == "__main__":
                   outflow_parts=[("Actual so far", 7200, '#d62728'),
                                ("Projected Apr", 3800, '#ff9896')]),
         '''
+    lake_pleasant = LakePleasant()
     reservoirs = [
+        lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
         Aquifers(),
