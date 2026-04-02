@@ -39,15 +39,15 @@ class Navajo(Reservoir):
         self.dead_pool_af = 0
         # Bottom 5586.00
 
-        self.full_feet = 0
-        self.full_af = 0
+        self.full_feet = 6085
+        self.full_af = 1701300
 
         # Critical
         self.power_head_target_feet = 0
         self.power_head_target_af = 0
 
-        self.power_head_min_feet = 0
-        self.power_head_min_af = 0
+        self.power_head_min_feet = 5990 # Elevation where pumps to NAIP/Domestic stop working
+        self.power_head_min_af = 661800
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0

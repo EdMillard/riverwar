@@ -58,9 +58,13 @@ AQUIFER = 'Aquifer'
 AQUIFER_RELEASE = 'Aquifer Release'
 AQUIFER_INFLOW = 'Aquifer Inflow'
 
-CA_COLOR = '#ff99ff'
-NV_COLOR = '#ffbbff'
-AZ_COLOR = '#ffeeff'
+# CA_COLOR = '#ff99ff'
+# NV_COLOR = '#ffbbff'
+# AZ_COLOR = '#ffeeff'
+
+CA_COLOR = '#99ffcc'    # Soft mint green (California)
+NV_COLOR = '#88ffbb'    # Light seafoam green (Nevada)
+AZ_COLOR = '#bbffdd'    # Pale pastel green (Arizona)
 
 PHX_COLOR   = '#ff9966'
 PINAL_COLOR = '#ffbb77'

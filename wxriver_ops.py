@@ -37,9 +37,7 @@ def create_capacity_chart(
 
     if power_head_zones is None:
         power_head_zones = [
-            ('lightblue', 'Power Head'),
-            ('#FF746C', 'Lower Power Head'),
-            ('#FFEE8C', 'Non Power Head')
+            (Reservoir.high_power_pool_color, 'FIXME'),
         ]
 
     if reserved_zones is None:
@@ -49,8 +47,6 @@ def create_capacity_chart(
     capacities_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
     elevations_feet = [r.elevation_feet for r in reservoirs]
 
-    max_maf = max(capacities_maf) if capacities_maf else 10
-
     fig = Figure(figsize=(14.8, 6.5), dpi=100)
     ax = fig.add_subplot(111)
 
@@ -58,7 +54,7 @@ def create_capacity_chart(
     reserved_width = 0.26
     main_width = 0.55
 
-    # RESERVED BARS
+    # ==================== RESERVED BARS (Aquifers) ====================
     for i, r in enumerate(reservoirs):
         reserved_parts = getattr(r, 'reserved_parts', [])
         if reserved_parts:
@@ -95,7 +91,7 @@ def create_capacity_chart(
 
             reserved_x_center = x_pos[i] - (main_width / 2) - (reserved_width / 2)
 
-            # Total reserved MAF just above the top of the reserved bar (restored)
+            # Total reserved MAF just above the top of the reserved bar
             ax.annotate(f'{total_reserved_maf:.3f}',
                         xy=(reserved_x_center, main_bar_maf),
                         xytext=(0, 3),
@@ -103,7 +99,7 @@ def create_capacity_chart(
                         ha='center', va='bottom',
                         fontsize=10.5, fontweight='bold', color='black')
 
-            # Gap below reserved bar
+            # Gap annotations
             gap_center_y = (main_bar_maf - total_reserved_maf) / 2
             gap_offset = 0.18
 
@@ -125,7 +121,7 @@ def create_capacity_chart(
                        bottom=main_bar_maf - total_reserved_maf,
                        color='gray', alpha=0.18, edgecolor=None)
 
-    # MAIN STACKED BARS
+    # ==================== MAIN STACKED BARS ====================
     for i, r in enumerate(reservoirs):
         crit_points = getattr(r, 'critical_elevations_feet', [])
         segments = []
@@ -142,9 +138,11 @@ def create_capacity_chart(
         if capacities_maf[i] > prev_cap_maf:
             segment_height_maf = capacities_maf[i] - prev_cap_maf
             if elevations_feet[i] > 0:
-                segments.append((segment_height_maf, Reservoir.high_power_pool_color, 'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
+                segments.append((segment_height_maf, Reservoir.high_power_pool_color,
+                               'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
             else:
-                segments.append((segment_height_maf, Reservoir.non_power_pool_color, 'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
+                segments.append((segment_height_maf, Reservoir.non_power_pool_color,
+                               'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
 
         current_bottom = 0.0
         for height_maf, color, label, total_cap_maf, elev_ft in segments:
@@ -185,30 +183,47 @@ def create_capacity_chart(
                         fontsize=9.5, color='darkgreen', fontweight='bold',
                         bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
 
-    # ==================== TWO LEGENDS IN UPPER RIGHT ====================
-    # Power Head Zones Legend (slightly left so it doesn't go off edge)
+    # ==================== LEGENDS ====================
+
+    # 1. Power Head Zones Legend (upper right)
     power_patches = [mpatches.Patch(color=color, label=label) for color, label in power_head_zones]
-    leg1 = ax.legend(handles=power_patches,
-                     title="Power Head Zones",
-                     loc='upper right',
-                     bbox_to_anchor=(0.98, 1.0),   # moved slightly left
-                     fontsize=9,
-                     title_fontsize=10,
-                     framealpha=0.95)
+    leg_power = ax.legend(handles=power_patches,
+                          title="Power Head Zones",
+                          loc='upper right',
+                          bbox_to_anchor=(0.98, 1.0),
+                          fontsize=9,
+                          title_fontsize=10,
+                          framealpha=0.95)
 
-    # Reserved Legend - placed further right, closer to the Power Head legend
-    reserved_patches = [mpatches.Patch(color=color, label=label) for color, label in reserved_zones]
-    ax.legend(handles=reserved_patches,
-              title="ICS 2024 EoY",
-              loc='upper right',
-              bbox_to_anchor=(0.79, 1.0),   # moved further right, next to first legend
-              fontsize=9,
-              title_fontsize=10,
-              framealpha=0.95)
+    # 2. ICS / State Legend
+    state_patches = [mpatches.Patch(color=color, label=label) for color, label in reserved_zones]
+    leg_ics = ax.legend(handles=state_patches,
+                        title="ICS 2024 EoY",
+                        loc='upper right',
+                        bbox_to_anchor=(0.79, 1.0),
+                        fontsize=9,
+                        title_fontsize=10,
+                        framealpha=0.95)
 
-    ax.add_artist(leg1)
+    # 3. Aquifer Storage Legend (Upper LEFT) - using pastel orange colors
+    aquifer_patches = [
+        mpatches.Patch(color=lb.TUCSON_COLOR, label='Tucson AMA'),
+        mpatches.Patch(color=lb.PINAL_COLOR, label='Pinal AMA'),
+        mpatches.Patch(color=lb.PHX_COLOR, label='Phoenix AMA')
+    ]
+    leg_aquifer = ax.legend(handles=aquifer_patches,
+                            title="Aquifer Storage (LTSC)",
+                            loc='upper left',
+                            bbox_to_anchor=(0.02, 1.0),
+                            fontsize=9,
+                            title_fontsize=10,
+                            framealpha=0.95)
 
-    # Labels
+    # Restore the first two legends (critical step!)
+    ax.add_artist(leg_power)
+    ax.add_artist(leg_ics)
+
+    # Labels and layout
     ax.set_xlabel('')
     ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11, fontweight='bold')
     ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
@@ -298,57 +313,75 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     fig.subplots_adjust(bottom=0.32)
     return fig
 
-
 def datetime64_to_str(dt64) -> str:
     """Convert pandas datetime64 to 'Mar 28, 2026' format"""
     if pd.isna(dt64):
         return ""
-
-    # Convert to datetime and format
     dt = pd.to_datetime(dt64)
     return dt.strftime("%b %d, %Y")
+
 
 class ReservoirChartFrame(wx.Frame):
     def __init__(self, reservoirs, date_time, title="Reservoir Analysis Dashboard"):
         super().__init__(None, title=title, size=wx.Size(1580, 1020))
 
         self.reservoirs = reservoirs
+
+        # Main panel and notebook
         self.panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Capacity
+        self.notebook = wx.Notebook(self.panel)
+
+        # ==================== CAPACITY TAB ====================
+        self.cap_panel = wx.Panel(self.notebook)
+        cap_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        date_str = datetime64_to_str(date_time)
+        cap_title = f'Reservoir Storage - {date_str} AM - USBR RISE'
+
         power_zones = [
             (Reservoir.high_power_pool_color, 'Full Power Head'),
             (Reservoir.low_power_pool_color, 'Low Power Head'),
-            (Reservoir.non_power_pool_color, 'No Power')
+            (Reservoir.non_power_pool_color, 'Limited Access')
         ]
+
         reserved_zones = [
             (lb.AZ_COLOR, 'AZ'),
             (lb.NV_COLOR, 'NV'),
             (lb.CA_COLOR, 'CA')
         ]
-        self.cap_panel = wx.Panel(self.panel)
-        cap_sizer = wx.BoxSizer(wx.VERTICAL)
-        date_str = datetime64_to_str(date_time)
-        title = f'Reservoir Capacities - {date_str} AM - USBR RISE'
-        self.capacity_fig = create_capacity_chart(reservoirs, title=title,
-                                                  power_head_zones=power_zones, reserved_zones=reserved_zones)
+
+        self.capacity_fig = create_capacity_chart(
+            reservoirs,
+            title=cap_title,
+            power_head_zones=power_zones,
+            reserved_zones=reserved_zones
+        )
+
         self.capacity_canvas = FigureCanvas(self.cap_panel, -1, self.capacity_fig)
         cap_sizer.Add(self.capacity_canvas, 1, wx.EXPAND | wx.ALL, border=8)
         self.cap_panel.SetSizer(cap_sizer)
 
-        # Inflow/Outflow
-        self.in_panel = wx.Panel(self.panel)
+        self.notebook.AddPage(self.cap_panel, "Capacity")
+
+        # ==================== INFLOW / OUTFLOW TAB ====================
+        self.in_panel = wx.Panel(self.notebook)
         in_sizer = wx.BoxSizer(wx.VERTICAL)
+
         self.inflow_fig = create_inflow_outflow_chart(reservoirs)
+
         self.inflow_canvas = FigureCanvas(self.in_panel, -1, self.inflow_fig)
         in_sizer.Add(self.inflow_canvas, 1, wx.EXPAND | wx.ALL, border=8)
         self.in_panel.SetSizer(in_sizer)
+
+        self.notebook.AddPage(self.in_panel, "Inflow / Outflow")
 
         # Buttons
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         save_cap_btn = wx.Button(self.panel, label="Save Capacity Chart as PNG")
         save_in_btn = wx.Button(self.panel, label="Save Inflow/Outflow Chart as PNG")
+
         save_cap_btn.Bind(wx.EVT_BUTTON, self.on_save_capacity)
         save_in_btn.Bind(wx.EVT_BUTTON, self.on_save_inflow)
 
@@ -357,9 +390,8 @@ class ReservoirChartFrame(wx.Frame):
         btn_sizer.Add(save_in_btn, 0, wx.ALL, 10)
         btn_sizer.AddStretchSpacer(1)
 
-        main_sizer.Add(self.cap_panel, 1, wx.EXPAND | wx.ALL, border=10)
-        main_sizer.Add(wx.StaticLine(self.panel), 0, wx.EXPAND | wx.LEFT | wx.RIGHT, border=15)
-        main_sizer.Add(self.in_panel, 1, wx.EXPAND | wx.ALL, border=10)
+        # Main layout
+        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=10)
         main_sizer.Add(btn_sizer, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, border=12)
 
         self.panel.SetSizer(main_sizer)
@@ -369,31 +401,21 @@ class ReservoirChartFrame(wx.Frame):
         self.SetMinSize(wx.Size(1220, 820))
         self.Centre()
 
+        # Resize handling
         self.panel.Bind(wx.EVT_SIZE, self.on_panel_resize)
-
-        self.Layout()
         wx.CallAfter(self.force_resize)
         wx.CallLater(100, self.force_resize)
-        wx.CallLater(300, self.force_resize)
-
-        self.Bind(wx.EVT_SIZE, lambda e: e.Skip())
 
     def force_resize(self):
-        for canvas, p in [(self.capacity_canvas, self.cap_panel),
-                          (self.inflow_canvas, self.in_panel)]:
-            if canvas and p:
-                size = p.GetClientSize()
+        """Force canvases to resize properly inside notebook tabs"""
+        for canvas, panel in [(self.capacity_canvas, self.cap_panel),
+                              (self.inflow_canvas, self.in_panel)]:
+            if canvas and panel:
+                size = panel.GetClientSize()
                 if size[0] > 200 and size[1] > 150:
                     canvas.SetClientSize(size)
-                    try:
-                        canvas.SetSize(wx.Size(size[0], size[1]))
-                    except Exception:
-                        pass
                     canvas.draw()
                     canvas.Refresh()
-
-        self.panel.Layout()
-        self.SendSizeEvent()
 
     def on_panel_resize(self, event):
         wx.CallAfter(self.force_resize)
@@ -419,36 +441,13 @@ class ReservoirChartFrame(wx.Frame):
                     wx.MessageBox(str(e), "Save Error", wx.OK | wx.ICON_ERROR)
 
 
-if __name__ == "__main__":
-    '''
-    class Reservoir:
-        def __init__(self, name, elevation_feet, active_capacity_af
-,
-                     reserved_parts=None, critical_elevations_feet=None,
-                     inflow_parts=None, outflow_parts=None):
-            self.name = name
-            self.elevation_feet = elevation_feet
-            self.intake_elevation_feet = 0
-            self.active_capacity_af = active_capacity_af
-            self.reserved_parts = reserved_parts or []
-            self.critical_elevations_feet = critical_elevations_feet or []
-            self.inflow_parts = inflow_parts or []
-            self.outflow_parts = outflow_parts or []
+# Keep your existing create_capacity_chart and create_inflow_outflow_chart functions unchanged
+# (They are already defined above in your original code)
 
-        
-        Reservoir("Lake Test", 1075.5, 9500000,
-                  reserved_parts=[("SNWA", 1200000, '#1f77b4'),
-                                 ("Metropolitan", 1100000, '#ff7f0e'),
-                                 ("IID", 1000000, '#2ca02c')],
-                  critical_elevations_feet=[("Lower Turbine", 950, 2005585, 'red'),
-                                 ("Upper Turbine", 1035, 6637508, 'darkred')],
-                  inflow_parts=[("Actual so far", 8500, '#2ca02c'),
-                              ("Projected Apr", 4500, '#98fb98')],
-                  outflow_parts=[("Actual so far", 7200, '#d62728'),
-                               ("Projected Apr", 3800, '#ff9896')]),
-        '''
+if __name__ == "__main__":
     lake_pleasant = LakePleasant()
     lake_powell = LakePowell()
+
     reservoirs = [
         lake_pleasant,
         LakeHavasu(),

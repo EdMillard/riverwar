@@ -31,7 +31,7 @@ from sheet import sheet
 class Reservoir:
     high_power_pool_color = "lightblue"
     low_power_pool_color = "cornflowerblue"
-    non_power_pool_color = '#FFEE8C'
+    non_power_pool_color = '#ffbbff'
     outflow_actual_color = 'red'
     outflow_projected_color = '#FF746C'
     inflow_actual_color = '#2ca02c'
