@@ -1,8 +1,7 @@
 import camelot
+import csv
 import matplotlib
 from pathlib import Path
-matplotlib.use('TkAgg')
-import csv
 
 def ensure_directory(path: str | Path) -> Path:
     """Create directory (and parents) if it doesn't exist"""
@@ -10,21 +9,12 @@ def ensure_directory(path: str | Path) -> Path:
     directory.mkdir(parents=True, exist_ok=True)
     return directory
 
-def read_pdf(report_path:Path):
+def read_pdf(report_path:Path, output_path:Path) -> None:
     tables = camelot.read_pdf(str(report_path), flavor='stream', pages='all')
-    out_path = Path('data/report_harvest/' + report_path.stem)
     ensure_directory(out_path)
     # Tune: tables = camelot.read_pdf(..., table_areas=['x1,y1,x2,y2'], columns=[...])
+    num_tables = len(tables)
     for table in tables:
-        # print(table.parsing_report)
-        # Plot lines + joints → for column x-coords
-        # camelot.plot(table, kind='contour', filename='debug_contour.png')  # Hover mouse → see x1,y1,x2,y2
-        # camelot.plot(table, kind='joint', filename='debug_joint.png')  # Intersections show where columns split
-        # camelot.plot(table, kind='line', filename='debug_line.png')
-        # order_on_page = table.parsing_report['order']
-        # print(df.shape)
-        # print(df.head(20).to_string(index=False))
-
         page_num = table.parsing_report['page']
         df = table.df
         for col in df.columns:
@@ -32,17 +22,23 @@ def read_pdf(report_path:Path):
             if df[col].dtype == 'object':
                 df[col] = df[col].astype(str).str.replace(',', '', regex=False)
 
-        out_csv_path = out_path / f'table_{page_num}.csv'
+        if num_tables >= 1000:
+            out_csv_path = out_path / f'table_{page_num:04d}.csv'
+        elif num_tables >= 100:
+            out_csv_path = out_path / f'table_{page_num:03d}.csv'
+        elif num_tables >= 10:
+            out_csv_path = out_path / f'table_{page_num:02d}.csv'
+        else:
+            out_csv_path = out_path / f'table_{page_num:d}.csv'
         df.to_csv(out_csv_path, index=False,
           quoting=csv.QUOTE_NONE,     # ← most important for no quotes
           escapechar='\\')
 
 if __name__ == "__main__":
-    # fig, ax = plt.subplots()
-    # ax.plot([1, 2, 3], [4, 5, 6])
-    # ax.set_title("TEST WINDOW – Do you see this?")
-    # plt.show(block=True)
-    # matplotlib.get_backend()
-
-    read_pdf(Path('/opt/dev/USBR_Reports/Lower_Basin_Annual_Reports/2024.pdf'))
-
+    report_path = Path('/opt/dev/riverwar/data/USBR_24_Month/March_2026/24mo.pdf')
+    out_path = Path(f'../data/reports/24_Month/{report_path.parent.name}/{report_path.stem}')
+    read_pdf(report_path, out_path)
+    for year in range(2022, 2025):
+        report_path = Path(f'/opt/dev/USBR_Reports/Lower_Basin_Annual_Reports/{year}.pdf')
+        out_path = Path(f'../data/reports/{report_path.parent.name}/{report_path.stem}')
+        read_pdf(report_path, out_path)

@@ -445,11 +445,11 @@ class ReservoirChartFrame(wx.Frame):
 # (They are already defined above in your original code)
 
 if __name__ == "__main__":
-    lake_pleasant = LakePleasant()
+    # lake_pleasant = LakePleasant()
     lake_powell = LakePowell()
 
     reservoirs = [
-        lake_pleasant,
+        # lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
         Aquifers(),

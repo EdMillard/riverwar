@@ -40,6 +40,19 @@ class LakePowell(Reservoir):
 
         self.usgs_release_gage_id:str = '09380000'
 
+        self.df_24_month, self.df_24_wy, units = Reservoir.read_usbr_24month_table('data/reports/24_Month/March_2026/24mo/table_11.csv')
+        actual_inflow = Reservoir.sum_column_between_dates(
+            self.df_24_month,
+            column_name="Unregulated (Inflow)",
+            start_month_year="Oct 2025",
+            end_month_year="Mar 2026"
+        )
+        proj_inflow = Reservoir.sum_column_between_dates(
+            self.df_24_month,
+            column_name="Unregulated (Inflow)",
+            start_month_year="Mar 2026",
+            end_month_year="July 2026"
+        )
         # Elevations
         #
         # Must be called first
@@ -80,7 +93,9 @@ class LakePowell(Reservoir):
         # Inflow
         usbr_lake_powell_regulated_inflow_af = 4288 # 1964
         sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_WY, month=all_b.WY, divisor=1)
+
         usbr_lake_powell_unregulated_inflow_af = 4301 # 1964
+        inflow_monthly_af = sheet.usbr_monthly(usbr_lake_powell_unregulated_inflow_af, self.water_year, month=all_b.WY)
         sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_UNREGULATED_WY, month=all_b.WY, divisor=1)
         self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.INFLOW_UNREGULATED_WY)
         self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
@@ -223,5 +238,3 @@ class LakePowell(Reservoir):
         capacity = interpolator(elevation_ft)
 
         return float(capacity)
-
-

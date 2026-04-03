@@ -20,14 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import datetime
-from datetime import datetime
+from datetime import datetime, date
 import json
 import numpy as np
 import pandas as pd
 import requests
 from pathlib import Path
 from source.water_year_info import WaterYearInfo
-from typing import Dict, Any, Union
+from typing import Dict, Any, List, Union
 
 debug = True
 
@@ -77,10 +77,55 @@ def daily_to_water_year(a, water_year_month=1):
 
     return a
 
+def daily_to_monthly_sum(a: np.ndarray) -> List[Dict[str, Any]]:
+    """
+    Convert daily structured numpy array ('dt' and 'val' fields)
+    into monthly sums.
+
+    Input:  Structured numpy array with fields 'dt' and 'val'
+    Output: List of dicts with 'dt' (first of month) and 'val' (monthly sum)
+    """
+
+    if not isinstance(a, np.ndarray):
+        raise TypeError(f"Expected numpy structured array, got {type(a)}")
+
+    # Convert structured array to pandas DataFrame
+    df = pd.DataFrame(a)
+
+    # Convert 'dt' to proper datetime
+    df['dt'] = pd.to_datetime(df['dt'], errors='coerce')
+
+    # Group by year and month
+    df['year'] = df['dt'].dt.year
+    df['month'] = df['dt'].dt.month
+
+    monthly = df.groupby(['year', 'month'])['val'].sum().reset_index()
+
+    # Create first day of the month as the representative date
+    monthly['dt'] = pd.to_datetime(
+        monthly[['year', 'month']].assign(day=1)
+    )
+
+    # Convert back to list of dicts (clean and simple format)
+    result = monthly[['dt', 'val']].to_dict('records')
+
+    return result
 
 def daily_af_to_monthly_af(a, start_year=0, end_year=0):
-    obj = a[0]['dt'].astype(object)
-    dt = datetime.date(obj.year, obj.month, obj.day)
+    # Get the first datetime safely
+    dt_raw = a[0]['dt']
+    dt_series = pd.to_datetime(dt_raw, errors='coerce')
+
+    if isinstance(dt_series, pd.Timestamp):
+        obj = dt_series
+    else:
+        obj = dt_series.iloc[0] if not dt_series.empty else None
+
+    if obj is None:
+        raise ValueError("No valid date found")
+
+    dt = date(obj.year, obj.month, obj.day)
+
     month = obj.month
     year = obj.year
 
@@ -101,7 +146,7 @@ def daily_af_to_monthly_af(a, start_year=0, end_year=0):
         af = o['val']
         if not np.isnan(af):
             total += af
-        dt = datetime.date(obj.year, obj.month, obj.day)
+        dt = date(obj.year, obj.month, obj.day)
 
     if total > 0:
         if start_year == 0 and end_year == 0:

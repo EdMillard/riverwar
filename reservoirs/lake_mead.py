@@ -44,6 +44,8 @@ class LakeMead(Reservoir):
         headers:List[str] = [lb.DIAMOND_CREEK, lb.MEAD_INFLOW, lb.MEAD, lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION, lb.HOOVER_RELEASE]
         super().__init__('Lake Mead', headers, month=month)
 
+        self.df_24_month, self.df_24_wy, units = Reservoir.read_usbr_24month_table('data/reports/24_Month/March_2026/24mo/table_12.csv')
+
         # Elevations
         #
         # Must be called first

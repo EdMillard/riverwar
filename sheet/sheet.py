@@ -783,6 +783,7 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
         else:
             info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
 
+        monthly_af = usbr_rise.daily_to_monthly_sum(daily_af)
         # total = daily_release_ft['val'].sum()
         try:
             annual_af = WaterGraph.daily_to_water_year(daily_af, water_year_month=month)
@@ -811,6 +812,23 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
             df[title] = values
 
     return values
+
+def usbr_monthly(gage_id, year, cfs_to_af=False, month=1) -> List[Dict[str, Any]]:
+    if month != 1:
+        ts = pd.Timestamp(f'{year-1}-{month}-01 00:00:00')
+    else:
+        ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+    water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+    if cfs_to_af:
+        info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
+        daily_af = WaterGraph.convert_cfs_to_af_per_day(daily_cfs)
+    else:
+        info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
+
+    monthly_af = usbr_rise.daily_to_monthly_sum(daily_af)
+    return monthly_af
+
+
 
 def format_sheet(ws: Worksheet, number_format:str='0.00'):
     # Set font for everything

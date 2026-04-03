@@ -20,8 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
-import colorado.allb as all_b
-import numpy as np
+import csv
+from pathlib import Path
+import re
+from collections import Counter
 import pandas as pd
 from source.water_year_info import WaterYearInfo
 from datetime import date
@@ -147,16 +149,148 @@ class Reservoir:
         water_year_info = WaterYearInfo.get_water_year(start_date, month=month)
         return water_year_info
 
+    def sum_column_between_dates(
+            df_monthly: pd.DataFrame,
+            column_name: str,
+            start_month_year: str,  # e.g. "Mar 2025" or "2025-03"
+            end_month_year: str,  # e.g. "Sep 2026" or "2026-09"
+            date_col: str = None
+    ) -> float:
+        """
+        Sum a column in the monthly dataframe between two dates (inclusive).
+
+        Parameters:
+            df_monthly: The monthly DataFrame returned from read_usbr_24month_table
+            column_name: Name of the column you want to sum (e.g. "Glen Release (1000 Ac-Ft)")
+            start_month_year: Start date (e.g. "Mar 2025", "2025-03", "March 2025")
+            end_month_year: End date
+            date_col: Name of the date column (usually auto-detected)
+
+        Returns:
+            Sum of the column between the dates (float)
+        """
+        if df_monthly.empty:
+            return 0.0
+
+        # Auto-detect date column if not provided
+        if date_col is None:
+            for col in df_monthly.columns:
+                if 'date' in col.lower() or pd.api.types.is_datetime64_any_dtype(df_monthly[col]):
+                    date_col = col
+                    break
+            else:
+                date_col = df_monthly.columns[0]  # fallback to first column
+
+        # Make a copy to avoid modifying original
+        df = df_monthly.copy()
+
+        # Ensure date column is datetime
+        if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
+            df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+
+        # Convert start/end strings to datetime
+        start_date = pd.to_datetime(start_month_year, errors='coerce')
+        end_date = pd.to_datetime(end_month_year, errors='coerce')
+
+        # Filter the dataframe
+        mask = (df[date_col] >= start_date) & (df[date_col] <= end_date)
+        filtered = df[mask]
+
+        if filtered.empty:
+            print(f"Warning: No data found between {start_month_year} and {end_month_year}")
+            return 0.0
+
+        # Sum the requested column
+        if column_name not in filtered.columns:
+            raise KeyError(f"Column '{column_name}' not found. Available columns: {list(filtered.columns)}")
+
+        total = pd.to_numeric(filtered[column_name], errors='coerce').sum()
+
+        return float(total)
+
     @staticmethod
-    def clip_array_by_dates(arr, start_date, end_date):
-        # Ensure start_date and end_date are datetime64
-        start_date = np.datetime64(start_date)
-        end_date = np.datetime64(end_date)
+    def read_usbr_24month_table(file_path, first_header_row: int = 4, parent_name: str = None):
+        file_path = Path(file_path)
 
-        dates = arr['dt'].astype('datetime64[D]')
-        # Create mask for dates within the range (inclusive)
-        mask = (dates >= start_date) & (dates <= end_date)
+        # 1. Read headers
+        raw = pd.read_csv(file_path, header=None, dtype=str, quoting=3, escapechar='\\', engine='python')
 
-        # Return clipped array
-        return arr[mask]
+        h1_idx = first_header_row - 1
+        h2_idx = h1_idx + 1
+        units_idx = h1_idx + 2
+        data_start_idx = h1_idx + 3
 
+        # Merge headers
+        header1 = raw.iloc[h1_idx].fillna('').astype(str).str.strip()
+        header2 = raw.iloc[h2_idx].fillna('').astype(str).str.strip()
+
+        merged_headers = [(h1 or h2).strip() if not (h2 and h2 not in h1) else f"{h1} ({h2})".strip()
+                          for h1, h2 in zip(header1, header2)]
+
+        # 2. Read data rows line by line
+        data_rows = []
+        with open(file_path, 'r', encoding='utf-8', newline='') as f:
+            reader = csv.reader(f, quoting=csv.QUOTE_NONE, escapechar='\\')
+            for _ in range(data_start_idx):
+                next(reader, None)
+            for row in reader:
+                if row and not all(x.strip() == '' for x in row):
+                    data_rows.append(row)
+
+        if not data_rows:
+            raise ValueError(f"No data rows found in {file_path}")
+
+        # Determine correct column count from data
+        max_cols = Counter(len(row) for row in data_rows).most_common(1)[0][0]
+        merged_headers = merged_headers[:max_cols]
+
+        # Align all rows
+        cleaned_data = []
+        for row in data_rows:
+            row = row[:max_cols] + [''] * (max_cols - len(row))
+            cleaned_data.append(row)
+
+        df = pd.DataFrame(cleaned_data, columns=merged_headers)
+
+        # Clean column names
+        df.columns = [str(col).strip().replace('\n', ' ').replace('  ', ' ') for col in df.columns]
+
+        date_col = df.columns[0]
+
+        # Split WY vs Monthly
+        def is_wy_row(val):
+            return bool(re.search(r'WY\s*\d{4}', str(val), re.IGNORECASE))
+
+        wy_mask = df[date_col].apply(is_wy_row)
+
+        df_wy = df[wy_mask].copy().reset_index(drop=True)
+        df_monthly = df[~wy_mask].copy().reset_index(drop=True)
+
+        # === SAFE CONVERSION ===
+        if not df_monthly.empty:
+            df_monthly[date_col] = pd.to_datetime(df_monthly[date_col], errors='coerce')
+
+            numeric_cols = [col for col in df_monthly.columns if col != date_col]
+            for col in numeric_cols:
+                try:
+                    df_monthly[col] = pd.to_numeric(df_monthly[col], errors='coerce')
+                except Exception as e:
+                    print(f"Warning: Could not convert column '{col}' to numeric: {e}")
+
+        if not df_wy.empty:
+            numeric_cols = [col for col in df_wy.columns if col != date_col]
+            for col in numeric_cols:
+                try:
+                    df_wy[col] = pd.to_numeric(df_wy[col], errors='coerce')
+                except Exception as e:
+                    print(f"Warning: Could not convert column '{col}' to numeric: {e}")
+
+        if parent_name:
+            if not df_monthly.empty:
+                df_monthly.insert(0, 'Source', parent_name)
+            if not df_wy.empty:
+                df_wy.insert(0, 'Source', parent_name)
+
+        units_dict = dict(zip(merged_headers, raw.iloc[units_idx].fillna('').astype(str).str.strip()[:max_cols]))
+
+        return df_monthly, df_wy, units_dict
