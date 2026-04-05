@@ -30,6 +30,13 @@ from typing import List, Dict, Union
 import pandas as pd
 import csv
 
+# Bar graph
+# https://www.azwater.gov/recharge/accounting
+# By year query, Colorado River only
+# https://app.azwater.gov/querycenter/query.aspx?qrysessionid=DED85701C874F812E053A564850A4538
+# By user query
+# https://app.azwater.gov/querycenter/query.aspx?qrysessionid=DF64BF23ECA02B33E053A564850A6170
+
 class LTSC:
     def __init__(self, path:Path, name:str, headers:List[str]):
         self.name = name
@@ -48,7 +55,7 @@ class LTSC:
 
         stored = self.water_delivered - self.annual_recovery - self.credits_recovered
         stored_adjusted = stored - self.cut_to_aquifer  # Unclear if we can count this as stored water, no accounting
-        stored_adjusted = stored_adjusted - self.et_losses - self.other_losses - self.credits_extinguished
+        stored_adjusted = stored_adjusted - self.et_losses - self.other_losses # - self.credits_extinguished
         self.stored = stored_adjusted
 
 class Aquifers(Reservoir):
@@ -56,7 +63,7 @@ class Aquifers(Reservoir):
         headers:List[str] = [lb.AQUIFER, lb.AQUIFER_INFLOW, lb.AQUIFER_RELEASE]
         super().__init__('AZ Aquifers', headers)
         self.start_year = 1989
-        self.end_year = 2022
+        self.end_year = 2023
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
         self.out_headers = ['Water_Delivered', 'Annual_Recovery', 'Evaporation_Transpiration_Losses', 'Cut_to_Aquifer',
                        'Other_Losses', 'LTS_Credits_Recovered', 'LTS_Credits_Extinguished', 'Other_Adjustment']
@@ -180,7 +187,7 @@ class Aquifers(Reservoir):
         )
 
     def recharge_summary_data_from_excel(self, out_path: Path, years: List[int]):
-        wb: Workbook = openpyxl.load_workbook('excel/ADWR_Data_Warehouse_Recharge_Summary_Data.xlsx', data_only=True)
+        wb: Workbook = openpyxl.load_workbook('excel/ADWR_Data_Warehouse_Recharge_Summary_Data_2023.xlsx', data_only=True)
         ws: Worksheet = wb['Sheet1']
 
         sheet.ensure_directory(out_path)
@@ -221,6 +228,8 @@ class Aquifers(Reservoir):
                     if header is None:
                         pass
                     elif header == 'Year':
+                        if cell.value == 2023:
+                            pass
                         if cell.value is not None:
                             year = int(cell.value)
                         else:
