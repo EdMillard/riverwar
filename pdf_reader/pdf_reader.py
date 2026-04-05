@@ -10,6 +10,9 @@ import pandas as pd
 import re
 from typing import List, Tuple
 import warnings
+from typing import List, Optional
+import time
+import requests
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'      # Most important for Qt errors
 os.environ['MPLBACKEND'] = 'Agg'                 # Non-interactive matplotlib backend
@@ -170,16 +173,16 @@ def usbr_24_month_to_csv(tables: List[Tuple[int, pd.DataFrame]], path: str | Pat
     path = Path(path)
     ensure_directory(path)
     # Tune: tables = camelot.read_pdf(..., table_areas=['x1,y1,x2,y2'], columns=[...])
-    num_tables = len(tables)
+
     table_num = 0
     for page_num, df in tables:
         table_num += 1
         df_clean, name = preprocess_usbr_camelot_table(df)
         if 'Reservoir' in name or 'Lake' in name:
             name = clean_reservoir_name(name)
-            out_csv_path = out_path / f'{name}.csv'
+            out_csv_path = path / f'{name}.csv'
         else:
-            out_csv_path = out_path / f'page_{page_num:d}.csv'
+            out_csv_path = path / f'page_{page_num:d}.csv'
         df_clean.to_csv(out_csv_path, index=False,
                   quoting=csv.QUOTE_NONE,  # ← most important for no quotes
                   escapechar='\\')
@@ -232,7 +235,97 @@ def safe_bbox_intersection_area(ba, bb):
         return 0.0
     return utils.bbox_intersection_area(ba, bb) / area_a
 
+
+from pathlib import Path
+import requests
+from bs4 import BeautifulSoup
+from typing import List, Optional
+import time
+
+
+def download_usbr_24mo_reports(
+        base_url: str = "https://www.usbr.gov/lc/region/g4000/24mo/",
+        download_dir: Path | str = "../data/USBR_24Month_Reports",
+        years: Optional[List[int]] = None,
+        months: Optional[List[str]] = None,
+        delay: float = 0.5
+) -> None:
+    """
+    Download USBR Lower Colorado 24-Month Study reports.
+    Uses full month name for Chart files (e.g., March-Chart.pdf).
+    """
+
+    if isinstance(download_dir, str):
+        download_dir = Path(download_dir)
+    download_dir.mkdir(parents=True, exist_ok=True)
+
+    if years is None:
+        current_year = 2026
+        years = list(range(2010, current_year + 1))
+
+    # Month mapping: 3-letter -> Full name
+    month_map = {
+        "JAN": "January", "FEB": "February", "MAR": "March", "APR": "April",
+        "MAY": "May", "JUN": "June", "JUL": "July", "AUG": "August",
+        "SEP": "September", "OCT": "October", "NOV": "November", "DEC": "December"
+    }
+
+    if months is None:
+        months = list(month_map.keys())
+
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Mozilla/5.0 (compatible; USBR-Downloader)"})
+
+    print(f"Starting download to: {download_dir}\n")
+
+    for year in years:
+        year_dir = download_dir / str(year)
+        year_dir.mkdir(exist_ok=True)
+
+        for month in months:
+            base_name = f"{month}{str(year)[-2:]}"  # e.g., MAR26
+
+            files_to_try = [
+                f"{base_name}.pdf",  # Most Probable
+                f"{base_name}_MIN.pdf",  # Minimum Probable
+                f"{month_map[month]}-Chart.pdf"  # ← Full month name for Chart
+            ]
+
+            year_url = f"{base_url}{year}/"
+
+            for filename in files_to_try:
+                file_url = year_url + filename
+                local_path = year_dir / filename
+
+                if local_path.exists():
+                    print(f"✓ Already exists: {year}/{filename}")
+                    if not 'Chart' in filename:
+                        out_path = Path(local_path.with_suffix(''))
+                        if not out_path.exists():
+                            tables = read_pdf_camelot(local_path)
+                            usbr_24_month_to_csv(tables, out_path)
+                    continue
+
+                try:
+                    print(f"Downloading: {year}/{filename} ... ", end="")
+                    r = session.get(file_url, timeout=30)
+
+                    if r.status_code == 200 and len(r.content) > 5000:
+                        local_path.write_bytes(r.content)
+                        print("✅ Done")
+                    else:
+                        print("Not found")
+                except Exception as e:
+                    print(f"Failed: {e}")
+
+                time.sleep(delay)
+
+    print("\n✅ Download process complete!")
+
+
 if __name__ == "__main__":
+    years = [2026]
+    download_usbr_24mo_reports(years=years)
     # https://www.usbr.gov/lc/region/g4000/24mo/index.html
     # report_path = Path('/opt/dev/riverwar/data/USBR_24_Month/March_2026/24mo.pdf')
     # tables = read_pdf_camelot(report_path)
