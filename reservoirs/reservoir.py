@@ -21,14 +21,19 @@ SOFTWARE.
 """
 import copy
 import csv
+from datetime import datetime
 from pathlib import Path
 import re
 from collections import Counter
 import pandas as pd
+from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
 from datetime import date
-from typing import List
+from typing import List, Tuple
 from sheet import sheet
+from source import usbr_rise
+import colorado.allb as all_b
+
 
 class Reservoir:
     high_power_pool_color = "lightblue"
@@ -50,6 +55,7 @@ class Reservoir:
         self.headers = headers
         self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
+        self.date_time:TimeStamp = 0
 
         self.elevation_feet:float = 0
         self.active_capacity_af:float = 0
@@ -74,6 +80,34 @@ class Reservoir:
         string += f" '\'{self.active_capacity_af} af\'"
 
         return string
+
+    def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:
+        info, daily_elevation_ft = usbr_rise.load(usbr_rise_id,
+                                                  water_year_info=self.water_year_info,
+                                                  alias=column_name)
+        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date',
+                                            value_column_name=column_name)
+
+        date_time = daily_elevation_ft['dt'][-1]
+        elevation_feet = daily_elevation_ft['val'][-1]
+        return date_time, elevation_feet
+
+    def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->float:
+        if usbr_rise_id:
+            sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
+                                  title=column_name, month=month, divisor=divisor)
+            active_capacity_af = self.get_value_by_year(self.water_year, column_name)
+        else:
+            active_capacity_af = 0
+        return active_capacity_af
+
+    def get_evaporation(self, usbr_rise_id: int, column_name: str, month=all_b.WY, divisor: int = 1)->float:
+        if usbr_rise_id:
+            evaporation_af = sheet.usbr_annuals(self.df, usbr_rise_id, self.water_year, self.water_year,
+                                                     title=column_name, month=month, divisor=divisor)
+        else:
+            evaporation_af = 0
+        return evaporation_af
 
     def get_value_by_year(self, year: int, column_name: str):
         """
@@ -209,7 +243,21 @@ class Reservoir:
         return float(total)
 
     @staticmethod
-    def read_usbr_24month_table(file_path, first_header_row: int = 4, parent_name: str = None):
+    def load_24_month(name:str, year:int, month:str)->Tuple[pd.DataFrame, pd.DataFrame|None]:
+        res_peth = name.replace(' ', '_') + '.csv'
+        path = f'data/USBR_24Month_Reports/{year}/{month.upper()}{year%100:02d}/'
+        df_24_month, df_24_wy, units = Reservoir.read_usbr_24month_table(path + res_peth)
+        return df_24_month, df_24_wy
+
+    @staticmethod
+    def load_24_month_min(name:str, year:int, month:str)->Tuple[pd.DataFrame, pd.DataFrame|None]:
+        res_peth = name.replace(' ', '_') + '.csv'
+        path = f'data/USBR_24Month_Reports/{year}/{month.upper()}{year%100:02d}_MIN/'
+        df_24_month, df_24_wy, units = Reservoir.read_usbr_24month_table(path + res_peth)
+        return df_24_month, df_24_wy
+
+    @staticmethod
+    def read_usbr_24month_table(file_path, first_header_row: int = 2, parent_name: str = None):
         file_path = Path(file_path)
 
         # 1. Read headers

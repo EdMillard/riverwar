@@ -4,6 +4,7 @@ Reservoir Dashboard - Stacked bar annotations restored + compact heights
 
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
+import matplotlib
 import datetime
 import colorado.lb as lb
 from datetime import datetime
@@ -20,10 +21,14 @@ from reservoirs.blue_mesa import BlueMesa
 from reservoirs.navajo import Navajo
 from reservoirs.lake_pleasant import LakePleasant
 
-
 import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
+
+os.environ['QT_QPA_PLATFORM'] = 'offscreen'      # Most important for Qt errors
+os.environ['MPLBACKEND'] = 'Agg'                 # Non-interactive matplotlib backend
+matplotlib.use('Agg')
+os.environ['QT_SILENT'] = '1'
 
 def create_capacity_chart(
     reservoirs,
@@ -36,9 +41,7 @@ def create_capacity_chart(
         raise ValueError("Reservoir list cannot be empty")
 
     if power_head_zones is None:
-        power_head_zones = [
-            (Reservoir.high_power_pool_color, 'FIXME'),
-        ]
+        power_head_zones = [(Reservoir.high_power_pool_color, 'FIXME')]
 
     if reserved_zones is None:
         reserved_zones = [('darkgoldenrod', 'Reserved')]
@@ -61,7 +64,6 @@ def create_capacity_chart(
             total_reserved_af = sum(amount for _, amount, _ in reserved_parts)
             total_reserved_maf = total_reserved_af / 1_000_000
             main_bar_maf = capacities_maf[i]
-
             reserved_bottom = main_bar_maf - total_reserved_maf
 
             current_bottom = reserved_bottom
@@ -91,7 +93,6 @@ def create_capacity_chart(
 
             reserved_x_center = x_pos[i] - (main_width / 2) - (reserved_width / 2)
 
-            # Total reserved MAF just above the top of the reserved bar
             ax.annotate(f'{total_reserved_maf:.3f}',
                         xy=(reserved_x_center, main_bar_maf),
                         xytext=(0, 3),
@@ -99,22 +100,39 @@ def create_capacity_chart(
                         ha='center', va='bottom',
                         fontsize=10.5, fontweight='bold', color='black')
 
-            # Gap annotations
-            gap_center_y = (main_bar_maf - total_reserved_maf) / 2
-            gap_offset = 0.18
+            # Gap logic...
+            crit_points = getattr(r, 'critical_elevations_feet', [])
+            lower_critical_maf = 0.0
+            for item in crit_points:
+                if isinstance(item, (list, tuple)) and len(item) >= 4:
+                    cap_maf = item[2] / 1_000_000
+                    if cap_maf <= reserved_bottom:
+                        lower_critical_maf = cap_maf
+                    else:
+                        break
 
-            ax.plot([reserved_x_center, reserved_x_center],
-                    [main_bar_maf - total_reserved_maf, gap_center_y + gap_offset],
-                    color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+            gap_delta = reserved_bottom - lower_critical_maf
+            if gap_delta > 0:
+                gap_center_y = (reserved_bottom + lower_critical_maf) / 2
+                gap_offset = 0.18
 
-            ax.plot([reserved_x_center, reserved_x_center],
-                    [gap_center_y - gap_offset, 0],
-                    color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+                ax.plot([reserved_x_center, reserved_x_center],
+                        [reserved_bottom, gap_center_y + gap_offset],
+                        color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+                ax.plot([reserved_x_center, reserved_x_center],
+                        [gap_center_y - gap_offset, lower_critical_maf],
+                        color='black', linewidth=1.0, alpha=0.75, linestyle='--')
 
-            ax.annotate(f'{main_bar_maf - total_reserved_maf:.3f}',
-                        xy=(reserved_x_center, gap_center_y),
-                        ha='center', va='center',
-                        fontsize=9.5, fontweight='bold', color='black')
+                ax.annotate(f'{gap_delta:.3f}',
+                            xy=(reserved_x_center, gap_center_y),
+                            ha='center', va='center',
+                            fontsize=9.5, fontweight='bold', color='black')
+
+                horiz_left = reserved_x_center - reserved_width / 2
+                horiz_right = reserved_x_center + reserved_width / 2
+                ax.plot([horiz_left, horiz_right],
+                        [lower_critical_maf, lower_critical_maf],
+                        color='black', linewidth=1.0, alpha=0.75, linestyle='--')
 
             if show_reserved_connector:
                 ax.bar(x_pos[i] - main_width/2 + 0.02, total_reserved_maf, width=0.04,
@@ -137,12 +155,9 @@ def create_capacity_chart(
 
         if capacities_maf[i] > prev_cap_maf:
             segment_height_maf = capacities_maf[i] - prev_cap_maf
-            if elevations_feet[i] > 0:
-                segments.append((segment_height_maf, Reservoir.high_power_pool_color,
-                               'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
-            else:
-                segments.append((segment_height_maf, Reservoir.non_power_pool_color,
-                               'Above Highest Critical', capacities_maf[i], elevations_feet[i]))
+            color = Reservoir.high_power_pool_color if elevations_feet[i] > 0 else Reservoir.non_power_pool_color
+            segments.append((segment_height_maf, color, 'Above Highest Critical',
+                           capacities_maf[i], elevations_feet[i]))
 
         current_bottom = 0.0
         for height_maf, color, label, total_cap_maf, elev_ft in segments:
@@ -157,7 +172,7 @@ def create_capacity_chart(
                             fontsize=9, fontweight='bold', color='black')
 
             if "Above Highest Critical" not in label:
-                ax.annotate(f'{elev_ft:,.0f} ft',
+                ax.annotate(f'{elev_ft:,.0f}\'',
                             xy=(x_pos[i] + main_width * 0.52, current_bottom + height_maf),
                             ha='left', va='center',
                             fontsize=9, fontweight='bold', color='darkblue',
@@ -165,7 +180,31 @@ def create_capacity_chart(
 
             current_bottom += height_maf
 
-    # Top total MAF for main bar
+    # ==================== SPECIAL LEVELS (Improved Triangle) ====================
+    for i, r in enumerate(reservoirs):
+        special_levels = getattr(r, 'special_levels', [])
+        if not special_levels:
+            continue
+
+        x = x_pos[i]
+        right_x = x + main_width * 0.52 + 0.04   # slight extra spacing for text
+
+        for elev_ft, cap_af, label in special_levels:
+            cap_maf = cap_af / 1_000_000
+
+            # Triangle moved slightly inside the bar and made smaller
+            ax.plot(x + main_width/2 - 0.035, cap_maf, marker='<', markersize=8.5,
+                    color='black', markeredgecolor='black', markerfacecolor='white')
+
+            # Clean two-line annotation (no bubble)
+            annot_text = f'{elev_ft:,.0f}\'\n{label}'
+
+            ax.annotate(annot_text,
+                        xy=(right_x, cap_maf),
+                        ha='left', va='center',
+                        fontsize=9.5, fontweight='bold', color='black')
+
+    # Top total MAF and top elevation
     for i in range(len(names)):
         ax.annotate(f'{capacities_maf[i]:.3f}',
                     xy=(x_pos[i], capacities_maf[i]),
@@ -174,52 +213,33 @@ def create_capacity_chart(
                     ha='center', va='bottom',
                     fontsize=10.5, fontweight='bold', color='black')
 
-    # Elevation annotations centered at top
-    for i in range(len(names)):
         if elevations_feet[i]:
-            ax.annotate(f'{elevations_feet[i]:,.2f}',
+            ax.annotate(f'{elevations_feet[i]:,.2f}\'',
                         xy=(x_pos[i] + main_width * 0.52, capacities_maf[i]),
                         ha='left', va='center',
                         fontsize=9.5, color='darkgreen', fontweight='bold',
                         bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
 
     # ==================== LEGENDS ====================
-
-    # 1. Power Head Zones Legend (upper right)
     power_patches = [mpatches.Patch(color=color, label=label) for color, label in power_head_zones]
-    leg_power = ax.legend(handles=power_patches,
-                          title="Power Head Zones",
-                          loc='upper right',
-                          bbox_to_anchor=(0.98, 1.0),
-                          fontsize=9,
-                          title_fontsize=10,
-                          framealpha=0.95)
+    leg_power = ax.legend(handles=power_patches, title="Power Head Zones",
+                          loc='upper right', bbox_to_anchor=(0.98, 1.0),
+                          fontsize=9, title_fontsize=10, framealpha=0.95)
 
-    # 2. ICS / State Legend
     state_patches = [mpatches.Patch(color=color, label=label) for color, label in reserved_zones]
-    leg_ics = ax.legend(handles=state_patches,
-                        title="ICS 2024 EoY",
-                        loc='upper right',
-                        bbox_to_anchor=(0.79, 1.0),
-                        fontsize=9,
-                        title_fontsize=10,
-                        framealpha=0.95)
+    leg_ics = ax.legend(handles=state_patches, title="ICS 2024 EoY",
+                        loc='upper right', bbox_to_anchor=(0.79, 1.0),
+                        fontsize=9, title_fontsize=10, framealpha=0.95)
 
-    # 3. Aquifer Storage Legend (Upper LEFT) - using pastel orange colors
     aquifer_patches = [
         mpatches.Patch(color=lb.TUCSON_COLOR, label='Tucson AMA'),
         mpatches.Patch(color=lb.PINAL_COLOR, label='Pinal AMA'),
         mpatches.Patch(color=lb.PHX_COLOR, label='Phoenix AMA')
     ]
-    leg_aquifer = ax.legend(handles=aquifer_patches,
-                            title="Aquifer Storage (LTSC)",
-                            loc='upper left',
-                            bbox_to_anchor=(0.02, 1.0),
-                            fontsize=9,
-                            title_fontsize=10,
-                            framealpha=0.95)
+    leg_aquifer = ax.legend(handles=aquifer_patches, title="Aquifer Storage 2023 EOY (LTSC)",
+                            loc='upper left', bbox_to_anchor=(0.02, 1.0),
+                            fontsize=9, title_fontsize=10, framealpha=0.95)
 
-    # Restore the first two legends (critical step!)
     ax.add_artist(leg_power)
     ax.add_artist(leg_ics)
 
@@ -356,7 +376,7 @@ class ReservoirChartFrame(wx.Frame):
             reservoirs,
             title=cap_title,
             power_head_zones=power_zones,
-            reserved_zones=reserved_zones
+            reserved_zones=reserved_zones,
         )
 
         self.capacity_canvas = FigureCanvas(self.cap_panel, -1, self.capacity_fig)
@@ -445,11 +465,11 @@ class ReservoirChartFrame(wx.Frame):
 # (They are already defined above in your original code)
 
 if __name__ == "__main__":
-    # lake_pleasant = LakePleasant()
+    lake_pleasant = LakePleasant()
     lake_powell = LakePowell()
 
     reservoirs = [
-        # lake_pleasant,
+        lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
         Aquifers(),

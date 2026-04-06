@@ -44,13 +44,20 @@ class LakeMead(Reservoir):
         headers:List[str] = [lb.DIAMOND_CREEK, lb.MEAD_INFLOW, lb.MEAD, lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION, lb.HOOVER_RELEASE]
         super().__init__('Lake Mead', headers, month=month)
 
-        self.df_24_month, self.df_24_wy, units = Reservoir.read_usbr_24month_table('data/reports/24_Month/March_2026/24mo/table_12.csv')
+        # Current
+        #
+        self.date_time, self.elevation_feet = self.get_elevation(6123, lb.MEAD_ELEVATION)
+        self.active_capacity_af = self.get_storage(6124, lb.MEAD) # 1937
+
+        # 24 Month
+        #
+        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
 
         # Elevations
         #
         # Must be called first
         self.dead_pool_feet = 895
-        self.dead_pool_af = 2546532
+        self.dead_pool_af = 0
 
         self.full_feet = 1229
         self.full_af = 27620294
@@ -59,8 +66,20 @@ class LakeMead(Reservoir):
         self.power_head_target_feet = 1035
         self.power_head_target_af = 6637508
 
-        self.power_head_min_feet = 950
-        self.power_head_min_af = 2005585
+        # self.power_head_min_feet = 1000
+        # self.power_head_min_af = 4_475_301
+
+        self.special_levels = [
+            (1050, 7_682_878, "Level 2"),
+            (1025, 5_981_122, "Level 3"),
+            # (1000, 4_475_301, "'24 ROD")]
+            (950, 2005585, "No power")]
+
+        self.power_head_min_feet = 1000
+        self.power_head_min_af = 4_475_301
+
+        # self.power_head_min_feet = 950
+        # self.power_head_min_af = 2005585
 
         self.turbine_intake_feet = 950
         self.turbine_intake_af = 2005585
@@ -77,7 +96,7 @@ class LakeMead(Reservoir):
 
         # Current
         #
-        self.elevation_feet = self.get_elevation(self.water_year)
+        self.elevation_feet = self.get_elevationX(self.water_year)
 
         usbr_lake_mead_release_total_af = 6122
         sheet.usbr_annuals(self.df, usbr_lake_mead_release_total_af, self.water_year, self.water_year, title=lb.HOOVER_RELEASE, month=1, divisor=1)
@@ -113,7 +132,7 @@ class LakeMead(Reservoir):
                                ("NV", 954013, lb.NV_COLOR),
                                ("AZ", 710589, lb.AZ_COLOR)]
 
-    def get_elevation(self, year, end_year:int|None =None)->float:
+    def get_elevationX(self, year, end_year:int|None =None)->float:
         usbr_lake_mead_elevation_ft = 6123 # 1936
         sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.water_year, self.water_year, title=lb.MEAD_ELEVATION, divisor=1)
         return self.get_value_by_year(self.water_year, lb.MEAD_ELEVATION)
