@@ -71,6 +71,11 @@ class Reservoir:
         self.inflow_parts:List[tuple] =  []
         self.outflow_parts:List[tuple] =  []
 
+        self.start_month_year_actual = "Oct 2025"
+        self.end_month_year_actual = "Mar 2026"
+        self.start_month_year_projected = "Apr 2026"
+        self.emd_month_year_projected = "Sep 2026"
+
     def copy(self):
         return copy.copy(self)
 
@@ -107,7 +112,33 @@ class Reservoir:
                                                      title=column_name, month=month, divisor=divisor)
         else:
             evaporation_af = 0
-        return evaporation_af
+        return evaporation_af[0]
+
+    def get_sum_end_of_month(self, usbr_rise_id: int)->float:
+        monthly = sheet.usbr_monthly(usbr_rise_id, self.water_year, month=all_b.WY)
+        monthly.pop()
+        total:float = 0
+        for month in monthly:
+            total += month['val']
+        return total
+
+    def get_24_month_projected(self, df, column_name:str)->float:
+        total = Reservoir.sum_column_between_dates(
+            df,
+            column_name=column_name,
+            start_month_year=self.start_month_year_projected,
+            end_month_year=self.emd_month_year_projected
+        ) * 1000
+        return total
+
+    def get_24_month_actual(self, df, column_name:str)->float:
+        total = Reservoir.sum_column_between_dates(
+            df,
+            column_name=column_name,
+            start_month_year=self.start_month_year_actual,
+            end_month_year=self.end_month_year_actual
+        ) * 1000
+        return total
 
     def get_value_by_year(self, year: int, column_name: str):
         """

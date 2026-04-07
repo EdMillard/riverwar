@@ -257,81 +257,124 @@ def create_capacity_chart(
 
     return fig
 
+
 def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow"):
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
 
     names = [r.name for r in reservoirs]
     x_pos = np.arange(len(names))
-    bar_width = 0.30
+    bar_width = 0.33
 
-    fig = Figure(figsize=(13.8, 4.3), dpi=100)
+    fig = Figure(figsize=(14.2, 5.4), dpi=100)
     ax = fig.add_subplot(111)
 
-    # === INFLOW BARS WITH ANNOTATIONS ===
+    # ==================== OUTFLOW + EVAP STACKED (Left) ====================
     for i, r in enumerate(reservoirs):
-        current_bottom = 0
-        for label, amount, color in getattr(r, 'inflow_parts', []):
-            if amount > 0:
-                bar = ax.bar(x_pos[i] - bar_width, amount, width=bar_width,
-                             bottom=current_bottom, color=color, alpha=0.90, edgecolor='darkgreen')[0]
+        bottom = 0.0
+        outflow_only_total = 0.0
 
-                # Annotation centered in each inflow segment
-                if amount >= 800:
-                    mid_y = current_bottom + amount / 2
-                    ax.annotate(f'{amount:,.0f}',
-                                xy=(bar.get_x() + bar.get_width() / 2, mid_y),
-                                ha='center', va='center',
-                                fontsize=9.5, fontweight='bold', color='black')
-
-                current_bottom += amount
-
-    # === OUTFLOW BARS WITH ANNOTATIONS ===
-    for i, r in enumerate(reservoirs):
-        current_bottom = 0
+        # Outflow bottom
         for label, amount, color in getattr(r, 'outflow_parts', []):
             if amount > 0:
-                bar = ax.bar(x_pos[i], amount, width=bar_width,
-                             bottom=current_bottom, color=color, alpha=0.90, edgecolor='darkred')[0]
+                maf = amount / 1_000_000
+                bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
+                             bottom=bottom, color=color, alpha=0.92, edgecolor='darkred')[0]
 
-                # Annotation centered in each outflow segment
-                if amount >= 800:
-                    mid_y = current_bottom + amount / 2
-                    ax.annotate(f'{amount:,.0f}',
-                                xy=(bar.get_x() + bar.get_width() / 2, mid_y),
+                if maf >= 0.4:
+                    ax.annotate(f'{maf:.2f}',
+                                xy=(bar.get_x() + bar.get_width() / 2, bottom + amount / 2),
                                 ha='center', va='center',
-                                fontsize=9.5, fontweight='bold', color='black')
+                                fontsize=10, fontweight='bold', color='black')
+                bottom += amount
+                outflow_only_total += amount
 
-                current_bottom += amount
+        # Evaporation stacked on top
+        evap_total = 0.0
+        for label, amount, color in getattr(r, 'evap_parts', []):
+            if amount > 0:
+                maf = amount / 1_000_000
+                bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
+                             bottom=bottom, color=color, alpha=0.88,
+                             edgecolor='orange', hatch='///')[0]
 
-    # Total In:/Out: labels on top (kept for clarity)
+                if maf >= 0.4:
+                    ax.annotate(f'{maf:.2f}',
+                                xy=(bar.get_x() + bar.get_width() / 2, bottom + amount / 2),
+                                ha='center', va='center',
+                                fontsize=10, fontweight='bold', color='black')
+                bottom += amount
+                evap_total += amount
+
+        # Total for full left bar
+        total_left = outflow_only_total + evap_total
+        if total_left > 0:
+            ax.annotate(f'{total_left / 1_000_000:.2f}',
+                        xy=(x_pos[i] - 0.18, total_left),
+                        xytext=(0, 3),
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        fontsize=11.5, fontweight='bold', color='black')
+
+        # Outflow only annotation
+        if evap_total > 0 and outflow_only_total > 0:
+            outflow_maf = outflow_only_total / 1_000_000
+            ax.annotate(f'Out: {outflow_maf:.2f}',
+                        xy=(x_pos[i] - 0.18 + bar_width/2 + 0.05, outflow_only_total),
+                        ha='left', va='center',
+                        fontsize=9.8, fontweight='bold', color='black')
+
+    # ==================== INFLOW (Right) ====================
     for i, r in enumerate(reservoirs):
-        inflow_total = sum(a for _, a, _ in getattr(r, 'inflow_parts', []))
-        outflow_total = sum(a for _, a, _ in getattr(r, 'outflow_parts', []))
+        bottom = 0.0
+        for label, amount, color in getattr(r, 'inflow_parts', []):
+            if amount > 0:
+                maf = amount / 1_000_000
+                bar = ax.bar(x_pos[i] + 0.18, amount, width=bar_width,
+                             bottom=bottom, color=color, alpha=0.92, edgecolor='darkgreen')[0]
 
-        if inflow_total > 0:
-            ax.annotate(f'In: {inflow_total:,.0f}',
-                        xy=(x_pos[i] - bar_width, inflow_total), xytext=(0, 8),
-                        textcoords="offset points", ha='center', va='bottom',
-                        fontsize=10, fontweight='bold', color='darkgreen')
+                if maf >= 0.4:
+                    ax.annotate(f'{maf:.2f}',
+                                xy=(bar.get_x() + bar.get_width() / 2, bottom + amount / 2),
+                                ha='center', va='center',
+                                fontsize=10, fontweight='bold', color='black')
+                bottom += amount
 
-        if outflow_total > 0:
-            ax.annotate(f'Out: {outflow_total:,.0f}',
-                        xy=(x_pos[i], outflow_total), xytext=(0, 8),
-                        textcoords="offset points", ha='center', va='bottom',
-                        fontsize=10, fontweight='bold', color='darkred')
+        # Total Inflow on top
+        total_in = sum(a for _, a, _ in getattr(r, 'inflow_parts', []))
+        if total_in > 0:
+            ax.annotate(f'{total_in / 1_000_000:.2f}',
+                        xy=(x_pos[i] + 0.18, total_in),
+                        xytext=(0, 3),
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        fontsize=11.5, fontweight='bold', color='black')
 
-    ax.set_xlabel('Reservoirs', fontsize=11, fontweight='bold')
-    ax.set_ylabel('Flow Volume', fontsize=11, fontweight='bold')
-    ax.set_title(title, fontsize=13, fontweight='bold', pad=20)
+    # ==================== LEGEND ====================
+    handles = [
+        mpatches.Patch(color='darkred', label='Outflow'),
+        mpatches.Patch(color='orange', label='Evaporation', hatch='///'),
+        mpatches.Patch(color=Reservoir.inflow_actual_color, label='Actual Inflow'),
+        mpatches.Patch(color=Reservoir.inflow_projected_color, label='Projected Inflow', hatch='///')
+    ]
+    ax.legend(handles=handles, loc='upper right', fontsize=10,
+              title_fontsize=10.5, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
+
+    # ==================== STYLING - Smaller top margin ====================
+    ax.set_xlabel('')
+    ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
+    ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
+
     ax.set_xticks(x_pos)
-    ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10)
-    ax.legend(loc='upper right', fontsize=9)
-    ax.grid(axis='y', linestyle='--', alpha=0.7)
+    ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
+    ax.grid(axis='y', linestyle='--', alpha=0.65)
+    ax.set_axisbelow(True)
 
-    fig.tight_layout(pad=5.0)
-    fig.subplots_adjust(bottom=0.32)
+    fig.tight_layout(pad=1.0)
+    fig.subplots_adjust(left=0.07, right=0.96, bottom=0.15, top=0.89)   # Increased top value = smaller margin
+
     return fig
+
 
 def datetime64_to_str(dt64) -> str:
     """Convert pandas datetime64 to 'Mar 28, 2026' format"""
@@ -465,11 +508,11 @@ class ReservoirChartFrame(wx.Frame):
 # (They are already defined above in your original code)
 
 if __name__ == "__main__":
-    lake_pleasant = LakePleasant()
+    # lake_pleasant = LakePleasant()
     lake_powell = LakePowell()
 
     reservoirs = [
-        lake_pleasant,
+        # lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
         Aquifers(),
