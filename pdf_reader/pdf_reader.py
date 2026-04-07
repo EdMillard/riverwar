@@ -114,35 +114,105 @@ def read_pdf_plumber(pdf_path: str | Path, pages: str = "all") -> List[pd.DataFr
 
     return dataframes
 
-def preprocess_usbr_camelot_table(df: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
-    """
-    Preprocess USBR 24-Month Study table from Camelot.
 
-    - Extracts reservoir name ONLY from row 3 (0-based index 2)
-    - Removes the first 3 rows (indices 0, 1, 2)
+def merge_header_units(df: pd.DataFrame, replacements: Optional[List[tuple]] = None) -> pd.DataFrame:
     """
-    if df.empty or len(df) < 3:
-        return df, "Unknown"
+    - If row 1 contains units → standard case (January style)
+    - If row 1 has NO units but row 2 does → 3-row case (February style)
+    """
+    if replacements is None:
+        replacements = []
+
+    if len(df) < 2:
+        return df
+
+    df = df.copy()
+    h0 = df.iloc[0].astype(str).str.strip()   # Top row
+    h1 = df.iloc[1].astype(str).str.strip()   # Middle row
+
+    # Check if this is 3-header-row case (Feb)
+    is_three_row = len(df) > 2 and any('(' in str(x) for x in df.iloc[2]) and not any('(' in str(x) for x in h1)
+
+    if is_three_row:
+        # February style: merge row 0 + row 1, units are in row 2
+        text_row = h1
+        units_row_idx = 2
+    else:
+        # January style: merge row 0 + row 1 (which has units)
+        text_row = h1
+        units_row_idx = 1
+
+    new_h0 = []
+
+    for col0, col_text in zip(h0, text_row):
+        col0 = str(col0).strip()
+        col_text = str(col_text).strip()
+
+        if col_text and col_text.lower() not in ['nan', '']:
+            merged = f"{col0} {col_text}".strip() if col0 and col0.lower() not in ['nan', ''] else col_text
+        else:
+            merged = col0
+
+        # Apply your replacements
+        for old, new in replacements:
+            merged = merged.replace(old, new)
+
+        # Basic camelCase fix
+        merged = re.sub('([a-z0-9])([A-Z])', r'\1 \2', merged)
+        merged = " ".join(merged.split())
+
+        new_h0.append(merged)
+
+    df.iloc[0] = new_h0
+
+    # Drop the middle text row if it was 3-row case
+    if is_three_row:
+        df = pd.concat([df.iloc[[0]], df.iloc[2:]], ignore_index=True)
+
+    return df
+
+def preprocess_usbr_camelot_table(df: pd.DataFrame,
+                                  replacements: Optional[List[tuple]] = None) -> Tuple[pd.DataFrame, str]:
+    if df.empty or len(df) < 4:
+        return pd.DataFrame(), "Rejected"
 
     df = df.copy()
 
-    # === Extract reservoir name from row 2 only (index 1) ===
-    reservoir_name = "Unknown"
+    # Detect table type
+    table_type = None
+    if len(df) > 1:
+        cell = str(df.iloc[1, 0]).strip().upper()
+        if cell == "DATE" or cell.startswith("DATE"):
+            table_type = "shifted"
 
-    if len(df) > 2:
+    if table_type is None and len(df) > 3:
+        cell = str(df.iloc[3, 0]).strip().upper()
+        if cell == "DATE" or cell.startswith("DATE"):
+            table_type = "good"
+
+    if table_type is None:
+        return pd.DataFrame(), "Rejected"
+
+    # Reservoir name
+    reservoir_name = "Unknown"
+    if table_type == "good" and len(df) > 1:
         row1 = df.iloc[1].astype(str).str.strip()
         for cell in row1:
             cell_str = str(cell).strip()
-            if cell_str and cell_str not in ["", "nan", "None"]:
-                # Avoid generic titles like "Minimum Probable Inflow"
-                if "Probable Inflow" not in cell_str and "Inflow" not in cell_str:
-                    reservoir_name = cell_str
-                    break
+            if cell_str and cell_str not in ["", "nan", "None", "Date"] and "Inflow" not in cell_str:
+                reservoir_name = cell_str
+                break
 
-    # === Remove first 3 rows ===
-    cleaned_df = df.iloc[2:].reset_index(drop=True)
+    # Keep two header rows
+    if table_type == "good":
+        cleaned_df = df.iloc[2:].reset_index(drop=True)
+    else:
+        cleaned_df = df.reset_index(drop=True)
 
-    return cleaned_df, reservoir_name
+    # Simple merge with your replacements
+    final_df = merge_header_units(cleaned_df, replacements)
+
+    return final_df, reservoir_name
 
 def clean_reservoir_name(text: str) -> str:
     """
@@ -169,23 +239,78 @@ def clean_reservoir_name(text: str) -> str:
 
     return name
 
+def check_row_col_exists(df, row_idx=0, col_idx=1):
+    if df is None or not isinstance(df, pd.DataFrame):
+        print("Error: Input is not a DataFrame")
+        return False
+
+    # Check if DataFrame is empty
+    if df.empty:
+        print("DataFrame is empty")
+        return False
+
+    # Check if row 0 exists
+    if row_idx >= len(df):
+        print(f"Row {row_idx} does not exist (only {len(df)} rows)")
+        return False
+
+    # Check if column 1 exists (by integer position)
+    if col_idx >= df.shape[1]:
+        print(f"Column {col_idx} does not exist (only {df.shape[1]} columns)")
+        return False
+
+    # Optional: also check by column name if you know it
+    # if col_name not in df.columns: ...
+
+    return True
+
+
 def usbr_24_month_to_csv(tables: List[Tuple[int, pd.DataFrame]], path: str | Path):
     path = Path(path)
     ensure_directory(path)
     # Tune: tables = camelot.read_pdf(..., table_areas=['x1,y1,x2,y2'], columns=[...])
-
+    replacements = [
+        ("Glento", "Glen to"),
+        ("Endof", "End of"),
+    ]
     table_num = 0
+    previous_name = ''
     for page_num, df in tables:
         table_num += 1
-        df_clean, name = preprocess_usbr_camelot_table(df)
-        if 'Reservoir' in name or 'Lake' in name:
-            name = clean_reservoir_name(name)
-            out_csv_path = path / f'{name}.csv'
-        else:
-            out_csv_path = path / f'page_{page_num:d}.csv'
-        df_clean.to_csv(out_csv_path, index=False,
-                  quoting=csv.QUOTE_NONE,  # ← most important for no quotes
-                  escapechar='\\')
+        df_clean, name = preprocess_usbr_camelot_table(df, replacements=replacements)
+        if name == 'Rejected':
+            continue
+        elif check_row_col_exists(df_clean, 0, 1):
+            if name == 'Unknown':
+                if previous_name == 'FlamingGorgeReservoir':
+                    name = 'TaylorParkReservoir'
+            previous_name = name
+            if 'Reservoir' in name or 'Lake' in name or 'Power' in name or 'Flood' in name:
+                if 'Mead' in name:
+                    print("=== RAW FIRST 5 ROWS ===")
+                    print(','.join([str(x).strip() for x in df.iloc[0]]))
+                    print(','.join([str(x).strip() for x in df.iloc[1]]))
+                    print(','.join([str(x).strip() for x in df.iloc[2]]))
+                    print(','.join([str(x).strip() for x in df.iloc[3]]))
+                    print(','.join([str(x).strip() for x in df.iloc[4]]))
+                    print("=== CLEAN FIRST 4 ROWS ===")
+                    print(','.join([str(x).strip() for x in df_clean.iloc[0]]))
+                    print(','.join([str(x).strip() for x in df_clean.iloc[1]]))
+                    print(','.join([str(x).strip() for x in df_clean.iloc[2]]))
+                    print(','.join([str(x).strip() for x in df_clean.iloc[3]]))
+                    print("\n=== COLUMN COUNT ===")
+                    print(len(df.columns))
+                name = clean_reservoir_name(name)
+                value = df_clean.iloc[0, 1]  # row 0, column 1 (0-based indexing)
+                if "Power" in value:
+                    name += '_Power'
+                out_csv_path = path / f'{name}.csv'
+            else:
+                out_csv_path = path / f'page_{page_num:d}.csv'
+            print(f'table to csv: {out_csv_path}')
+            df_clean.to_csv(str(out_csv_path), index=False,
+                quoting=csv.QUOTE_NONE,  # ← most important for no quotes
+                escapechar='\\')
 
 def tables_to_csv(tables: List[Tuple[int, pd.DataFrame]], path: str | Path):
     path = Path(path)
@@ -301,9 +426,10 @@ def download_usbr_24mo_reports(
                     print(f"✓ Already exists: {year}/{filename}")
                     if not 'Chart' in filename:
                         out_path = Path(local_path.with_suffix(''))
-                        if not out_path.exists():
-                            tables = read_pdf_camelot(local_path)
-                            usbr_24_month_to_csv(tables, out_path)
+                        # FIXME - RESTORE THIS
+                        # if not out_path.exists():
+                        tables = read_pdf_camelot(local_path)
+                        usbr_24_month_to_csv(tables, out_path)
                     continue
 
                 try:
