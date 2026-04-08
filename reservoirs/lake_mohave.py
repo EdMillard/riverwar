@@ -57,38 +57,32 @@ class LakeMohave(Reservoir):
         # Current
         #
         self.elevation_feet = self.get_elevation(self.water_year)[1]
-        self.active_capacity_af = 0
-
-        usbr_lake_mohave_release_total_af = 6131
-        sheet.usbr_annuals(self.df, usbr_lake_mohave_release_total_af, self.water_year, self.water_year, title=lb.MOHAVE_RELEASE, month=all_b.WY, divisor=1)
 
         usbr_lake_mohave_storage_af = 6134
         sheet.usbr_last_value(self.df, usbr_lake_mohave_storage_af, self.water_year, self.water_year, title=lb.MOHAVE, month=all_b.CY, divisor=1)
         self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MOHAVE)
 
-        usbr_blue_mesa_evaporation_af = 79
-        sheet.usbr_annuals(self.df, usbr_blue_mesa_evaporation_af, self.water_year, self.water_year,  title=lb.MOHAVE_EVAPORATION, month=all_b.CY, divisor=1)
+        # 24 Month
+        #
+        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Hoover Release", side="Side Inflow")
+        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
+        self.evap_parts = self.get_24_month_evap(self.df_24_month)
+
+        # usbr_lake_mohave_release_total_af = 6131
+        # sheet.usbr_annuals(self.df, usbr_lake_mohave_release_total_af, self.water_year, self.water_year, title=lb.MOHAVE_RELEASE, month=all_b.WY, divisor=1)
+
+        # usbr_blue_mesa_evaporation_af = 79
+        # sheet.usbr_annuals(self.df, usbr_blue_mesa_evaporation_af, self.water_year, self.water_year,  title=lb.MOHAVE_EVAPORATION, month=all_b.CY, divisor=1)
 
         # usbr_lake_mohave_water_temperature_degf = 6132
         # usbr_lake_mohave_release_total_cfs = 6135
 
         # Inflow
-        # usbr_blue_mesa_inflow_cfs = 4279
-        # sheet.usbr_annuals(self.df, usbr_blue_mesa_inflow_cfs, self.water_year, self.water_year,  title=ub.BLUE_MESA_INFLOW_WY, month=all_b.WY, divisor=1)
-
         # self.inflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_INFLOW)
-        self.inflow_actual_af = 0
-        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_RELEASE)
-        self.release_af = 0
-        self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
-                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
-
-        # self.reserved_parts = reserved_parts or []
+        # self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_RELEASE)
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_lake_mohave_elevation_ft = 6133

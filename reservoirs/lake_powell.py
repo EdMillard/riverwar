@@ -45,25 +45,26 @@ class LakePowell(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(508, ub.POWELL_ELEVATION_WY)
         self.active_capacity_af = self.get_storage(509, ub.POWELL_WY) # 1964
-        # self.evap_actual_af = self.get_evaporation(510, ub.POWELL_EVAPORATION_WY)
-
-        usbr_lake_powell_unregulated_inflow_af = 4301 # 1964
-        self.inflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_unregulated_inflow_af)
-        usbr_lake_powell_release_total_af = 4354 # 1964
-        self.outflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_release_total_af)
-        self.evap_actual_af = self.get_sum_end_of_month(510)
 
         # 24 Month
         #
         self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
-        self.inflow_projected_af = self.get_24_month_projected(self.df_24_month, "Unregulated Inflow")
-        self.outflow_projected_af = self.get_24_month_projected(self.df_24_month, "Total Release")
-        self.evap_projected_af = self.get_24_month_projected(self.df_24_month, "Evaporation Losses")
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")
+        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
+        self.evap_parts = self.get_24_month_evap(self.df_24_month)
 
-        self.df_24_month_min, self.df_24_wy_min =  self.load_24_month_min(self.name, 2026, 'MAR')
-        self.inflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Unregulated Inflow")
-        self.outflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Total Release")
-        self.evap_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Evaporation Losses")
+        # self.df_24_month_min, self.df_24_wy_min =  self.load_24_month_min(self.name, 2026, 'MAR')
+        # self.inflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Unregulated Inflow")
+        # self.outflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Total Release")
+        # self.evap_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Evaporation Losses")
+        # usbr_lake_powell_unregulated_inflow_af = 4301 # 1964
+        # self.inflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_unregulated_inflow_af)
+
+        # usbr_lake_powell_release_total_af = 4354 # 1964
+        # self.outflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_release_total_af)
+
+        # self.evap_actual_af = self.get_evaporation(510, ub.POWELL_EVAPORATION_WY)
+        # self.evap_actual_af = self.get_sum_end_of_month(510)
 
         # Elevations
         #
@@ -90,29 +91,15 @@ class LakePowell(Reservoir):
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
         # Inflow
-        usbr_lake_powell_regulated_inflow_af = 4288 # 1964
-        sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_WY, month=all_b.WY, divisor=1)
+        # usbr_lake_powell_regulated_inflow_af = 4288 # 1964
+        # sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_WY, month=all_b.WY, divisor=1)
 
         # sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_UNREGULATED_WY, month=all_b.WY, divisor=1)
         # self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.INFLOW_UNREGULATED_WY)
 
-        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", self.inflow_projected_af, Reservoir.inflow_projected_color)]
-
-        # Evap
-        self.evap_parts = [("Actual", self.evap_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", self.evap_projected_af, Reservoir.inflow_projected_color)]
-
         # Outflow
         # sheet.usbr_annuals(self.df, usbr_lake_powell_release_total_af, self.water_year, self.water_year, title=ub.GLEN_CANYON_WY, month=all_b.WY, divisor=1)
         # self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.GLEN_CANYON_WY)
-
-        self.release_af = 7200000
-        # self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
-                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
-
-        # self.reserved_parts = reserved_parts or []
 
 
     def af_for_elevation(self, feet:float|int):

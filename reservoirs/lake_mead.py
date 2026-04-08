@@ -50,21 +50,20 @@ class LakeMead(Reservoir):
         self.date_time, self.elevation_feet = self.get_elevation(6123, lb.MEAD_ELEVATION)
         self.active_capacity_af = self.get_storage(6124, lb.MEAD) # 1937
 
+        usbr_lake_mead_storage_af = 6124  # 1937
+        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
+        self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MEAD)
+
         # 24 Month
         #
         self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
 
-        self.glen_release_af = self.get_24_month_projected(self.df_24_month, "Glen Release")
-        self.side_inflow_af = self.get_24_month_projected(self.df_24_month, "Side Inflow Glen to Hoover")
-        self.inflow_projected_af = self.glen_release_af + self.side_inflow_af
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Glen Release", side="Side Inflow Glen to Hoover")
+        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
+        self.evap_parts = self.get_24_month_evap(self.df_24_month)
 
-        self.glen_release_actual_af = self.get_24_month_actual(self.df_24_month, "Glen Release")
-        self.side_inflow_actual_af = self.get_24_month_actual(self.df_24_month, "Side Inflow Glen to Hoover")
-        inflow_actual_af = self.glen_release_actual_af + self.side_inflow_actual_af
-
-        self.outflow_projected_af = self.get_24_month_projected(self.df_24_month, "Total Release")
-        self.evap_actual_af = self.get_24_month_actual(self.df_24_month, "Evaporation Losses")
-        self.evap_projected_af = self.get_24_month_projected(self.df_24_month, "Evaporation Losses")
+        self.snwa_diversion_projected_af = self.get_24_month_projected(self.df_24_month, "SNWP Use")
+        self.snwa_diversion_actual_af = self.get_24_month_actual(self.df_24_month, "SNWP Use")
 
         # Elevations
         #
@@ -102,49 +101,35 @@ class LakeMead(Reservoir):
         t1 = '2026-01-01T00:00'
         t2 = '2026-03-27T23:59'
         # FIXME compare to CUL in 2024
-        evap = usbr_rise.request_hdb(1776, t1, t2)  # Mead evao
-        release = usbr_rise.request_hdb(2114, t1, t2)  # Mead release
+        # evap = usbr_rise.request_hdb(1776, t1, t2)  # Mead evao
+        # release = usbr_rise.request_hdb(2114, t1, t2)  # Mead release
 
         # usbr_rise.request_accum()
 
         # Current
         #
-        self.elevation_feet = self.get_elevationX(self.water_year)
+        # self.elevation_feet = self.get_elevationX(self.water_year)
 
-        usbr_lake_mead_release_total_af = 6122
-        sheet.usbr_annuals(self.df, usbr_lake_mead_release_total_af, self.water_year, self.water_year, title=lb.HOOVER_RELEASE, month=1, divisor=1)
-
-        usbr_lake_mead_storage_af = 6124  # 1937
-        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
-        self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MEAD)
+        # usbr_lake_mead_release_total_af = 6122
+        # sheet.usbr_annuals(self.df, usbr_lake_mead_release_total_af, self.water_year, self.water_year, title=lb.HOOVER_RELEASE, month=1, divisor=1)
+        # self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.HOOVER_RELEASE)
 
         # Evap
-        reservoir_path = Path('data/USBR_Lower_Colorado_CUL/Reservoir')
-        df_mead_evap = sheet.read_csv(reservoir_path / 'lake_mead.csv', sep='\s+')
-        sheet.merge_annual_column(self.df, df_mead_evap, lb.LAKE_MEAD_CUL, divisor=1)
+        # reservoir_path = Path('data/USBR_Lower_Colorado_CUL/Reservoir')
+        # df_mead_evap = sheet.read_csv(reservoir_path / 'lake_mead.csv', sep='\s+')
+        # sheet.merge_annual_column(self.df, df_mead_evap, lb.LAKE_MEAD_CUL, divisor=1)
 
         # Inflow
         # FIXME, need Virgin and Muddy
-        sheet.usgs_annuals(self.df, '09404200', self.water_year, self.water_year, title=lb.DIAMOND_CREEK_WY, month=all_b.WY, divisor=1)
-        self.inflow_actual_af = self.get_value_by_year(self.water_year, lb.DIAMOND_CREEK_WY)
-        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected",  self.inflow_projected_af, Reservoir.inflow_projected_color)]
+        # sheet.usgs_annuals(self.df, '09404200', self.water_year, self.water_year, title=lb.DIAMOND_CREEK_WY, month=all_b.WY, divisor=1)
+        # self.inflow_actual_af = self.get_value_by_year(self.water_year, lb.DIAMOND_CREEK_WY)
 
         # Outflow
         # 1936
         # Broken since Feb 2026, gage only since
         # sheet.usgs_annuals(self.df, '09421500', self.water_year, self.water_year, title=lb.HOOVER_USGS, divisor=1)
 
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.HOOVER_RELEASE)
-        self.release_af = 8300000
-        self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
-                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
-
-        # Evap
-        self.evap_parts = [("Actual", self.evap_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", self.evap_projected_af, Reservoir.inflow_projected_color)]
-
+        # ICS
         self.reserved_parts = [("CA", 1661832, lb.CA_COLOR),
                                ("NV", 954013, lb.NV_COLOR),
                                ("AZ", 710589, lb.AZ_COLOR)]

@@ -45,6 +45,9 @@ class Reservoir:
     inflow_projected_color = '#98fb98'
     side_inflow_actual_color = '#3cb03c'
     side_inflow_projected_color = '#a8ffa8'
+    evap_actual_color = '#ffbb77'
+    evap_projected_color = '#ffdd99'
+
     # facecolor="skyblue"
     # facecolor="dodgerblue"
     # facecolor="steelblue"
@@ -69,9 +72,20 @@ class Reservoir:
         self.dead_pool_feet:float = 0
 
         self.critical_elevations:List[float] = []
+
         self.reserved_parts:List[tuple] = []
+
+        self.inflow_actual_af = 0
+        self.inflow_projected_af= 0
         self.inflow_parts:List[tuple] =  []
+
+        self.outflow_actual_af = 0
+        self.outflow_projected_af= 0
         self.outflow_parts:List[tuple] =  []
+
+        self.evap_actual_af = 0
+        self.evap_projected_af= 0
+        self.evap_parts:List[tuple] =  []
 
         self.start_month_year_actual = "Oct 2025"
         self.end_month_year_actual = "Mar 2026"
@@ -281,6 +295,45 @@ class Reservoir:
         path = f'data/USBR_24Month_Reports/{year}/{month.upper()}{year%100:02d}/'
         df_24_month, df_24_wy, units = Reservoir.read_usbr_24month_table(path + res_peth)
         return df_24_month, df_24_wy
+
+    def get_24_month_inflow(self, df:pd.DataFrame, inflow_name:str, side:str|None=None)\
+            -> List[Tuple[str, float, str]]:
+        inflow_actual_af = self.get_24_month_actual(df, inflow_name)
+        if side is not None:
+            side_inflow_actual_af = self.get_24_month_actual(df, side)
+        else:
+            side_inflow_actual_af = 0
+        self.inflow_actual_af = inflow_actual_af + side_inflow_actual_af
+
+
+        inflow_project_af = self.get_24_month_projected(df, inflow_name)
+        if side is not None:
+            side_inflow_projected_af = self.get_24_month_projected(df, side)
+        else:
+            side_inflow_projected_af = 0
+        self.inflow_projected_af = inflow_project_af + side_inflow_projected_af
+
+        parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
+                 ("Projected", self.inflow_projected_af, Reservoir.inflow_projected_color)]
+        return parts
+
+    "Total Release"
+
+    def get_24_month_outflow(self, df:pd.DataFrame, name:str="Total Release")\
+            -> List[Tuple[str, float, str]]:
+        self.outflow_actual_af = self.get_24_month_actual(df, name)
+        self.outflow_projected_af = self.get_24_month_projected(df, name)
+        parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
+                 ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
+        return parts
+
+    def get_24_month_evap(self, df:pd.DataFrame, name:str='Evaporation Losses')\
+            -> List[Tuple[str, float, str]]:
+        self.evap_actual_af = self.get_24_month_actual(df, name)
+        self.evap_projected_af = self.get_24_month_projected(df, name)
+        parts = [("Actual", self.evap_actual_af, Reservoir.evap_actual_color),
+                 ("Projected", self.evap_projected_af, Reservoir.evap_projected_color)]
+        return parts
 
     @staticmethod
     def load_24_month_min(name:str, year:int, month:str)->Tuple[pd.DataFrame, pd.DataFrame|None]:

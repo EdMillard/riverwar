@@ -57,17 +57,25 @@ class FlamingGorge(Reservoir):
         # Current
         #
         self.elevation_feet = self.get_elevation(self.water_year)[1]
-        self.active_capacity_af = 0
-
-        usbr_flaming_gorge_release_total_cfs = 4314
-        sheet.usbr_annuals(self.df, usbr_flaming_gorge_release_total_cfs, self.water_year, self.water_year, title=ub.FLAMING_GORGE_RELEASE_WY, month=all_b.WY, divisor=1)
 
         usbr_flaming_gorge_storage_af = 337
-        sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, self.water_year, self.water_year, title=ub.FLAMING_GORGE_WY, month=all_b.WY, divisor=1)
+        sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, self.water_year, self.water_year,
+                              title=ub.FLAMING_GORGE_WY, month=all_b.WY, divisor=1)
         self.active_capacity_af = self.get_value_by_year(self.water_year, ub.FLAMING_GORGE_WY)
 
-        usbr_flaming_gorge_evaporation_af = 342
-        sheet.usbr_annuals(self.df, usbr_flaming_gorge_evaporation_af, self.water_year, self.water_year,  title=ub.FLAMING_GORGE_EVAPORATION_WY, month=all_b.WY, divisor=1)
+        # 24 Month
+        #
+        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")
+        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
+        self.evap_parts = self.get_24_month_evap(self.df_24_month)
+
+        # usbr_flaming_gorge_release_total_cfs = 4314
+        # sheet.usbr_annuals(self.df, usbr_flaming_gorge_release_total_cfs, self.water_year, self.water_year, title=ub.FLAMING_GORGE_RELEASE_WY, month=all_b.WY, divisor=1)
+        # self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.FLAMING_GORGE_RELEASE_WY)
+
+        # usbr_flaming_gorge_evaporation_af = 342
+        # sheet.usbr_annuals(self.df, usbr_flaming_gorge_evaporation_af, self.water_year, self.water_year,  title=ub.FLAMING_GORGE_EVAPORATION_WY, month=all_b.WY, divisor=1)
 
         # usbr_flaming_gorge_inflow_unregulated_cfs = 338
 
@@ -78,21 +86,9 @@ class FlamingGorge(Reservoir):
         # usbr_flaming_gorge_release_powerplant_cfs = 4306
 
         # Inflow
-        usbr_flaming_gorge_inflow_cfs = 339
-        sheet.usbr_annuals(self.df, usbr_flaming_gorge_inflow_cfs, self.water_year, self.water_year,  title=ub.FLAMING_GORGE_INFLOW_WY, month=all_b.WY, divisor=1)
-
-        self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.FLAMING_GORGE_INFLOW_WY)
-        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", 0, Reservoir.inflow_projected_color)]
-
-        # Outflow
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.FLAMING_GORGE_RELEASE_WY)
-        self.release_af = 500000
-        self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
-                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
-
-        # self.reserved_parts = reserved_parts or []
+        # usbr_flaming_gorge_inflow_cfs = 339
+        # sheet.usbr_annuals(self.df, usbr_flaming_gorge_inflow_cfs, self.water_year, self.water_year,  title=ub.FLAMING_GORGE_INFLOW_WY, month=all_b.WY, divisor=1)
+        # self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.FLAMING_GORGE_INFLOW_WY)
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_lake_powell_elevation_ft = 341

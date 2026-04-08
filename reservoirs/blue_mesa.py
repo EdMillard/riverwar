@@ -37,7 +37,6 @@ class BlueMesa(Reservoir):
         # Must be called first
         self.dead_pool_feet = 7358.0
         self.dead_pool_af = 0
-        # Bottom 5586.00
 
         self.full_feet =  7519.4
         self.full_af = 748430
@@ -57,17 +56,24 @@ class BlueMesa(Reservoir):
         # Current
         #
         self.elevation_feet = self.get_elevation(self.water_year)[1]
-        self.active_capacity_af = 0
-
-        usbr_blue_mesa_release_total_cfs = 4310
-        sheet.usbr_annuals(self.df, usbr_blue_mesa_release_total_cfs, self.water_year, self.water_year, title=ub.BLUE_MESA_RELEASE_WY, month=all_b.WY, divisor=1)
-
         usbr_blue_mesa_storage_af = 76
-        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.water_year, self.water_year, title=ub.BLUE_MESA_WY, month=all_b.WY, divisor=1)
+        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.water_year, self.water_year,
+                              title=ub.BLUE_MESA_WY, month=all_b.WY, divisor=1)
         self.active_capacity_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_WY)
 
-        usbr_blue_mesa_evaporation_af = 79
-        sheet.usbr_annuals(self.df, usbr_blue_mesa_evaporation_af, self.water_year, self.water_year,  title=ub.BLUE_MESA_EVAPORATION_WY, month=all_b.WY, divisor=1)
+        # 24 Month
+        #
+        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")
+        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
+        self.evap_parts = self.get_24_month_evap(self.df_24_month)
+
+        # usbr_blue_mesa_release_total_cfs = 4310
+        # sheet.usbr_annuals(self.df, usbr_blue_mesa_release_total_cfs, self.water_year, self.water_year, title=ub.BLUE_MESA_RELEASE_WY, month=all_b.WY, divisor=1)
+        # self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_RELEASE_WY)
+
+        # usbr_blue_mesa_evaporation_af = 79
+        # sheet.usbr_annuals(self.df, usbr_blue_mesa_evaporation_af, self.water_year, self.water_year,  title=ub.BLUE_MESA_EVAPORATION_WY, month=all_b.WY, divisor=1)
 
         # usbr_blue_mesa_inflow_af = 4283
         # usbr_blue_mesa_inflow_unregulated_cfs = 4295
@@ -82,21 +88,9 @@ class BlueMesa(Reservoir):
         # usbr_blue_mesa_change_in_storage_af = 4398
         # usbr_blue_mesa_area_acres = 4773
         # Inflow
-        usbr_blue_mesa_inflow_cfs = 4279
-        sheet.usbr_annuals(self.df, usbr_blue_mesa_inflow_cfs, self.water_year, self.water_year,  title=ub.BLUE_MESA_INFLOW_WY, month=all_b.WY, divisor=1)
-
-        self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_INFLOW_WY)
-        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", 0, Reservoir.inflow_projected_color)]
-
-        # Outflow
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_RELEASE_WY)
-        self.release_af = 500000
-        self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
-                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
-
-        # self.reserved_parts = reserved_parts or []
+        # usbr_blue_mesa_inflow_cfs = 4279
+        # sheet.usbr_annuals(self.df, usbr_blue_mesa_inflow_cfs, self.water_year, self.water_year,  title=ub.BLUE_MESA_INFLOW_WY, month=all_b.WY, divisor=1)
+        # self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_INFLOW_WY)
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_blue_mesa_elevation_ft = 78

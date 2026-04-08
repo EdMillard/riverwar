@@ -57,17 +57,22 @@ class Navajo(Reservoir):
         # Current
         #
         self.elevation_feet = self.get_elevation(self.water_year)[1]
-        self.active_capacity_af = 0
-
-        usbr_navajo_release_total_cfs = 4316
-        sheet.usbr_annuals(self.df, usbr_navajo_release_total_cfs, self.water_year, self.water_year, title=ub.NAVAJO_RELEASE_WY, month=all_b.WY, divisor=1)
 
         usbr_navajo_storage_af = 613
         sheet.usbr_last_value(self.df, usbr_navajo_storage_af, self.water_year, self.water_year, title=ub.NAVAJO_WY, month=all_b.WY, divisor=1)
         self.active_capacity_af = self.get_value_by_year(self.water_year, ub.NAVAJO_WY)
 
-        usbr_navajo_evaporation_af = 617
-        sheet.usbr_annuals(self.df, usbr_navajo_evaporation_af, self.water_year, self.water_year,  title=ub.NAVAJO_EVAPORATION_WY, month=all_b.WY, divisor=1)
+        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Modified Unregulated Inflow")
+        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
+        self.evap_parts = self.get_24_month_evap(self.df_24_month)
+
+        # usbr_navajo_release_total_cfs = 4316
+        # sheet.usbr_annuals(self.df, usbr_navajo_release_total_cfs, self.water_year, self.water_year, title=ub.NAVAJO_RELEASE_WY, month=all_b.WY, divisor=1)
+        # self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.NAVAJO_RELEASE_WY)
+
+        # usbr_navajo_evaporation_af = 617
+        # sheet.usbr_annuals(self.df, usbr_navajo_evaporation_af, self.water_year, self.water_year,  title=ub.NAVAJO_EVAPORATION_WY, month=all_b.WY, divisor=1)
 
         # usbr_navajo_inflow_unregulated_cfs = 615
 
@@ -80,21 +85,10 @@ class Navajo(Reservoir):
         # usbr_navajo_area_acres = 4785
 
         # Inflow
-        usbr_navajo_inflow_cfs = 616
-        sheet.usbr_annuals(self.df, usbr_navajo_inflow_cfs, self.water_year, self.water_year,  title=ub.NAVAJO_INFLOW_WY, month=all_b.WY, divisor=1)
+        # usbr_navajo_inflow_cfs = 616
+        # sheet.usbr_annuals(self.df, usbr_navajo_inflow_cfs, self.water_year, self.water_year,  title=ub.NAVAJO_INFLOW_WY, month=all_b.WY, divisor=1)
+        # self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.NAVAJO_INFLOW_WY)
 
-        self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.NAVAJO_INFLOW_WY)
-        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", 0, Reservoir.inflow_projected_color)]
-
-        # Outflow
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.NAVAJO_RELEASE_WY)
-        self.release_af = 0
-        self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
-                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
-
-        # self.reserved_parts = reserved_parts or []
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_navajo_elevation_ft = 612
