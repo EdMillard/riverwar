@@ -13,6 +13,7 @@ import warnings
 from typing import List, Optional
 import time
 import requests
+import math
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'      # Most important for Qt errors
 os.environ['MPLBACKEND'] = 'Agg'                 # Non-interactive matplotlib backend
@@ -26,7 +27,95 @@ def ensure_directory(path: str | Path) -> Path:
     return directory
 
 
-def read_pdf_camelot(report_path: Path, max_pages: int = 200) -> List[Tuple[int, pd.DataFrame]]:
+import pdfplumber
+from pathlib import Path
+from typing import List, Tuple
+
+
+def get_reservoir_names_with_bounds(pdf_path: str | Path) -> List[Tuple[int, str, str | None]]:
+    pdf_path = Path(pdf_path)
+    results = []
+
+    with pdfplumber.open(pdf_path) as pdf:
+        for page_num, page in enumerate(pdf.pages, start=1):
+            words = page.extract_words(keep_blank_chars=True, x_tolerance=3, y_tolerance=3)
+
+            title_candidates = [
+                word['text'].strip()
+                for word in words
+                if word['top'] < 280 and word['text'].strip()
+            ]
+
+            if len(title_candidates) < 4:
+                continue
+
+            reservoir = title_candidates[3]
+
+            if not ('Lake' in reservoir or 'Reservoir' in reservoir):
+                continue
+
+            tables = page.find_tables(
+                table_settings={
+                    "vertical_strategy": "lines",
+                    "horizontal_strategy": "lines",
+                    "snap_tolerance": 5,
+                    "intersection_x_tolerance": 10,
+                }
+            )
+
+            if tables:
+                # Sort by size and take the largest one
+                table = max(tables, key=lambda t: (t.bbox[2] - t.bbox[0]) * (t.bbox[3] - t.bbox[1]))
+                bbox = table.bbox
+                area_str = f"{bbox[0] - 10:.2f},{bbox[1] - 20:.2f},{bbox[2] + 10:.2f},{bbox[3] + 30:.2f}"  # expand a bit
+            else:
+                # Fallback: Use a large area covering most of the page (minus top title)
+                width = page.width
+                height = page.height
+                area_str = f"30,100,{width - 30},{height - 150}"  # <-- Adjust these numbers
+            results.append((page_num, reservoir, area_str))
+
+    return results
+
+
+def get_reservoir_names(pdf_path: str | Path) -> List[Tuple[int, str]]:
+    """
+    Returns list of (page_number, reservoir_name) for pages that have a reservoir.
+    """
+    pdf_path = Path(pdf_path)
+    results = []
+
+    with pdfplumber.open(pdf_path) as pdf:
+        for page_num, page in enumerate(pdf.pages, start=1):
+            words = page.extract_words(
+                keep_blank_chars=True,
+                x_tolerance=3,
+                y_tolerance=3
+            )
+
+            title_candidates = [
+                word['text'].strip()
+                for word in words
+                if word['top'] < 280 and word['text'].strip()  # adjust 280 if needed
+            ]
+
+            if len(title_candidates) < 4:
+                continue
+
+            report = title_candidates[2]
+            reservoir = title_candidates[3]
+
+            if 'Lake' in reservoir or 'Reservoir' in reservoir:
+                print(f"Page {page_num:2d} → {reservoir}")
+                results.append((page_num, reservoir))
+            else:
+                print(f"Page {page_num:2d} → Skipped (not reservoir)")
+
+    print(f"\nFound {len(results)} reservoir pages.")
+    return results
+
+
+def read_pdf_camelot(report_path: Path, max_pages: int = 200, lattice=False) -> List[Tuple[int, pd.DataFrame]]:
     """
     Reads PDF one page at a time using camelot.
     Returns: List of tuples -> (page_number, dataframe)
@@ -44,15 +133,22 @@ def read_pdf_camelot(report_path: Path, max_pages: int = 200) -> List[Tuple[int,
         try:
             print(f"Processing page {page}... ", end="")
 
-            tables = camelot.read_pdf(
-                str(report_path),
-                flavor='stream',
-                pages=str(page),
-                row_tol=8,
-                column_tol=8,
-                strip_text=' .\n',
-                edge_tol=50
-            )
+            if lattice:
+                tables = camelot.read_pdf(
+                    str(report_path),
+                    flavor='lattice',
+                    pages=str(page),
+                )
+            else:
+                tables = camelot.read_pdf(
+                    str(report_path),
+                    flavor='stream',
+                    pages=str(page),
+                    row_tol=8,
+                    column_tol=8,
+                    strip_text=' .\n',
+                    edge_tol=50
+                )
 
             if len(tables) == 0:
                 print("No tables found")
@@ -80,6 +176,196 @@ def read_pdf_camelot(report_path: Path, max_pages: int = 200) -> List[Tuple[int,
     print(f"\nFinished! Extracted {len(results)} tables total.")
     return results
 
+
+def extract_reservoir_tables(pdf_path: str | Path, output_dir: str = "extracted_tables"):
+    pdf_path = Path(pdf_path)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(exist_ok=True)
+
+    with pdfplumber.open(pdf_path) as pdf:
+        for page_num, page in enumerate(pdf.pages, start=1):
+            print(f"\n--- Page {page_num} ---")
+
+            words = page.extract_words(keep_blank_chars=True, x_tolerance=2, y_tolerance=2)
+            title_candidates = [w['text'].strip() for w in words if w['top'] < 280 and w['text'].strip()]
+
+            if len(title_candidates) < 4:
+                continue
+            reservoir = title_candidates[3]
+            if not ('Lake' in reservoir or 'Reservoir' in reservoir):
+                continue
+
+            print(f"Reservoir: {reservoir}")
+
+            # === Much stronger table settings for horizontal-line-only PDFs ===
+            table_settings = {
+                "vertical_strategy": "text",  # Critical when no vertical lines
+                "horizontal_strategy": "lines",
+                "snap_tolerance": 3,
+                "snap_x_tolerance": 5,
+                "snap_y_tolerance": 3,
+                "intersection_x_tolerance": 5,
+                "intersection_y_tolerance": 5,
+                "edge_min_length": 5,
+                "min_words_vertical": 2,
+                "min_words_horizontal": 1,
+                "text_keep_blank_chars": True,
+                "keep_blank_chars": True,
+            }
+
+            tables = page.find_tables(table_settings=table_settings)
+
+            if not tables:
+                print("  No table detected")
+                continue
+
+            # Take the largest table
+            table = max(tables, key=lambda t: t.bbox[2] * t.bbox[3])
+            extracted_table = table.extract()
+
+            if not extracted_table or len(extracted_table) < 2:
+                print("  Table found but empty")
+                continue
+
+            df = pd.DataFrame(extracted_table[1:], columns=extracted_table[0])
+
+            # Heavy cleaning
+            df.columns = [str(c).replace('\n', ' ').replace('  ', ' ').strip()
+                          for c in df.columns]
+            df = df.dropna(axis=1, how='all')
+            df = df.map(lambda x: str(x).strip() if pd.notna(x) else x)
+
+            df.insert(0, 'Reservoir_Name', reservoir)
+
+            safe_name = reservoir.replace(" ", "_").replace("-", "_")
+            out_path = output_dir / f"{safe_name}_page{page_num}.csv"
+            df.to_csv(out_path, index=False, quoting=csv.QUOTE_NONE, escapechar='\\')
+
+            print(f"  Saved → {len(df.columns)} columns, {len(df)} rows")
+
+            # Optional: save debug image
+            # page.to_image(resolution=150).save(f"debug_page{page_num}.png")
+
+    print("\nExtraction finished.")
+
+def read_reservoir_camelot(
+    report_path: Path,
+    out_path: Path,
+    reservoir_page_names,
+    max_pages: int = 200,
+    lattice: bool = False
+) -> List[Tuple[int, str, pd.DataFrame]]:
+    """
+    Reads PDF one page at a time using camelot.
+    Returns: List of tuples -> (page_number, reservoir_name, dataframe)
+    """
+    results: List[Tuple[int, str, pd.DataFrame]] = []
+    ensure_directory(out_path)
+
+    # Suppress noisy camelot warning
+    warnings.filterwarnings("ignore",
+                            message="No tables found in table area",
+                            category=UserWarning)
+
+    for page, name in reservoir_page_names:
+        try:
+            # print(f"Processing page {page} — {name}... ", end="")
+            tables = camelot.read_pdf(
+                str(report_path),
+                flavor='lattice',
+                pages=str(page),
+                line_scale=40
+            )
+
+            '''
+                if len(tables) == 0:
+                    tables = camelot.read_pdf(str(report_path), flavor='stream', pages=str(page),
+                                              table_areas=['35,665,535,25'])
+                    camelot.plot(tables[0], kind='text').savefig(f'debug_page{page}.png')
+
+                    tables = camelot.read_pdf(
+                        str(report_path),
+                        flavor='stream',
+                        pages=str(page),
+                        table_areas=['65,665,535,25'],
+                        columns=['100'],
+                        row_tol=8,
+                        column_tol=8,
+                        strip_text=' .\n',
+                        edge_tol=50,
+                        split_text = True
+                    )
+                    if len(tables):
+                        bbox = tables[0]._bbox
+                        area_str = f"{max(0, bbox[0] - 5):.2f},{max(0, bbox[1] - 10):.2f},{bbox[2] + 10:.2f},{bbox[3] + 15:.2f}"
+                        print(f'area_str {area_str}')
+                        df, reservoir_name = preprocess_usbr_camelot_table(tables[0].df)
+                        pass
+            '''
+            if len(tables) == 0:
+                continue
+
+            print(f"Found {len(tables)} table(s)")
+
+            for table in tables:
+                if table.df is None or table.df.empty:
+                    continue
+
+                df = table.df.copy()
+
+                # ====================== FIXES ======================
+
+                # 1. Clean headers (remove newlines)
+                if not df.empty:
+                    df.columns = [
+                        str(col).replace('\n', ' ').replace('\r', ' ')
+                                 .replace('  ', ' ').strip()
+                        for col in df.iloc[0]
+                    ]
+                    df = df.iloc[1:].reset_index(drop=True)   # drop original header row
+
+                # 2. Prevent the unwanted "0,1,2,3..." row (MultiIndex fix)
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = ['_'.join(str(i) for i in col if str(i) != '').strip()
+                                  for col in df.columns]
+                else:
+                    df.columns = [str(col).strip() for col in df.columns]
+
+                # Extra safety
+                df.columns = list(df.columns)
+                df = df.dropna(axis=1, how='all')   # drop empty columns
+
+                # ====================== SAVING ======================
+                if 'Reservoir' in name or 'Lake' in name or 'Power' in name or 'Flood' in name:
+                    clean_name = clean_reservoir_name(name)
+                    if not df.empty and len(df.columns) > 1:
+                        if not "Date" in df.columns[0]:
+                            continue
+                        if "Power" in df.columns[1]:
+                            clean_name += '_Power'
+                    else:
+                        continue
+                    out_csv_path = out_path / f'{clean_name}.csv'
+                else:
+                    out_csv_path = out_path / f'page_{page:d}.csv'
+
+                print(f'Saving → {out_csv_path}')
+
+                df.to_csv(
+                    str(out_csv_path),
+                    index=False,
+                    quoting=csv.QUOTE_NONE,
+                    escapechar='\\',
+                    encoding='utf-8'
+                )
+
+                results.append((page, name, df))
+
+        except Exception as e:
+            print(f"Error on page {page}: {type(e).__name__} - {e}")
+
+    print(f"\nFinished processing {len(results)} tables.")
+    return results
 
 def read_pdf_plumber(pdf_path: str | Path, pages: str = "all") -> List[pd.DataFrame]:
     """
@@ -136,11 +422,9 @@ def merge_header_units(df: pd.DataFrame, replacements: Optional[List[tuple]] = N
     if is_three_row:
         # February style: merge row 0 + row 1, units are in row 2
         text_row = h1
-        units_row_idx = 2
     else:
         # January style: merge row 0 + row 1 (which has units)
         text_row = h1
-        units_row_idx = 1
 
     new_h0 = []
 
@@ -216,7 +500,8 @@ def preprocess_usbr_camelot_table(df: pd.DataFrame,
 
 def clean_reservoir_name(text: str) -> str:
     """
-    Extract name after dash and remove 'Reservoir' if present.
+    Clean reservoir name: extract after dash, remove 'Reservoir',
+    replace spaces with underscores, and handle camelCase.
     """
     if not text or text.strip() == "":
         return "Unknown"
@@ -229,16 +514,21 @@ def clean_reservoir_name(text: str) -> str:
     else:
         name = text.strip()
 
-    # Remove "Reservoir" (case insensitive)
+    # Remove "Reservoir" / "Lake" if desired (optional)
     name = name.replace("Reservoir", "").replace("reservoir", "").strip()
 
-    # Clean up extra spaces
+    # Clean extra spaces
     name = " ".join(name.split())
 
+    # Convert camelCase to snake_case (e.g. GlenCanyon → Glen_Canyon)
     name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', name)
 
-    return name
+    # Replace spaces with underscores and clean up
+    name = name.replace(" ", "_")
+    name = re.sub(r'_+', '_', name)          # multiple underscores → single
+    name = name.strip('_')
 
+    return name
 def check_row_col_exists(df, row_idx=0, col_idx=1):
     if df is None or not isinstance(df, pd.DataFrame):
         print("Error: Input is not a DataFrame")
@@ -264,53 +554,60 @@ def check_row_col_exists(df, row_idx=0, col_idx=1):
 
     return True
 
+from camelot.utils import get_page_layout, get_text_objects
 
-def usbr_24_month_to_csv(tables: List[Tuple[int, pd.DataFrame]], path: str | Path):
+
+def get_table_title(table, pdf_path, y_tolerance=15):
+    """Find the closest text above the table (reservoir name)."""
+    # Call get_page_layout with direct parameters (no layout_kwargs)
+    layout, _ = get_page_layout(
+        pdf_path,
+        char_margin=2.0,  # higher = more tolerant grouping
+        line_margin=0.5
+    )
+
+    htext_objs = get_text_objects(layout, ltype="horizontal_text")
+
+    table_top = table._bbox[3]  # top y of table
+    table_left = table._bbox[0]
+
+    candidates = []
+    for obj in htext_objs:
+        text_top = obj.bbox[3]
+        if text_top > table_top + y_tolerance:
+            dist = math.hypot((obj.bbox[0] - table_left), (text_top - table_top))
+            text = obj.get_text().strip()
+            if text:
+                candidates.append((dist, text))
+
+    if candidates:
+        candidates.sort(key=lambda x: x[0])  # closest first
+        return candidates[0][1]
+
+    return None
+
+def usbr_24_month_to_csv(reservoirs: List[Tuple[int, str, pd.DataFrame]], path: str | Path):
     path = Path(path)
     ensure_directory(path)
-    # Tune: tables = camelot.read_pdf(..., table_areas=['x1,y1,x2,y2'], columns=[...])
-    replacements = [
-        ("Glento", "Glen to"),
-        ("Endof", "End of"),
-    ]
+
     table_num = 0
-    previous_name = ''
-    for page_num, df in tables:
+
+    for page_num, reservoir_name, df in reservoirs:
         table_num += 1
-        df_clean, name = preprocess_usbr_camelot_table(df, replacements=replacements)
-        if name == 'Rejected':
-            continue
-        elif check_row_col_exists(df_clean, 0, 1):
-            if name == 'Unknown':
-                if previous_name == 'FlamingGorgeReservoir':
-                    name = 'TaylorParkReservoir'
-            previous_name = name
-            if 'Reservoir' in name or 'Lake' in name or 'Power' in name or 'Flood' in name:
-                if 'Mead' in name:
-                    print("=== RAW FIRST 5 ROWS ===")
-                    print(','.join([str(x).strip() for x in df.iloc[0]]))
-                    print(','.join([str(x).strip() for x in df.iloc[1]]))
-                    print(','.join([str(x).strip() for x in df.iloc[2]]))
-                    print(','.join([str(x).strip() for x in df.iloc[3]]))
-                    print(','.join([str(x).strip() for x in df.iloc[4]]))
-                    print("=== CLEAN FIRST 4 ROWS ===")
-                    print(','.join([str(x).strip() for x in df_clean.iloc[0]]))
-                    print(','.join([str(x).strip() for x in df_clean.iloc[1]]))
-                    print(','.join([str(x).strip() for x in df_clean.iloc[2]]))
-                    print(','.join([str(x).strip() for x in df_clean.iloc[3]]))
-                    print("\n=== COLUMN COUNT ===")
-                    print(len(df.columns))
-                name = clean_reservoir_name(name)
-                value = df_clean.iloc[0, 1]  # row 0, column 1 (0-based indexing)
-                if "Power" in value:
-                    name += '_Power'
-                out_csv_path = path / f'{name}.csv'
-            else:
-                out_csv_path = path / f'page_{page_num:d}.csv'
-            print(f'table to csv: {out_csv_path}')
-            df_clean.to_csv(str(out_csv_path), index=False,
-                quoting=csv.QUOTE_NONE,  # ← most important for no quotes
-                escapechar='\\')
+        if 'Reservoir' in name or 'Lake' in name or 'Power' in name or 'Flood' in name:
+            if 'Powell' in name:
+                pass
+            name = clean_reservoir_name(name)
+            value = df.iloc[0, 1]  # row 0, column 1 (0-based indexing)
+            if "Power" in value:
+                name += '_Power'
+            out_csv_path = path / f'{name}.csv'
+        else:
+            out_csv_path = path / f'page_{page_num:d}.csv'
+        print(f'table to csv: {out_csv_path}')
+        df.to_csv(str(out_csv_path), index=False,
+            quoting=csv.QUOTE_NONE,  # ← most important for no quotes
+            escapechar='\\')
 
 def tables_to_csv(tables: List[Tuple[int, pd.DataFrame]], path: str | Path):
     path = Path(path)
@@ -326,13 +623,13 @@ def tables_to_csv(tables: List[Tuple[int, pd.DataFrame]], path: str | Path):
     for page_num, df in tables:
         df, reservoir_name = preprocess_usbr_camelot_table(df)
         if num_pages >= 1000:
-            out_csv_path = out_path / f'page_{page_num:04d}'
+            out_csv_path = path / f'page_{page_num:04d}'
         elif num_pages >= 100:
-            out_csv_path = out_path / f'page_{page_num:03d}'
+            out_csv_path = path / f'page_{page_num:03d}'
         elif num_pages >= 10:
-            out_csv_path = out_path / f'page_{page_num:02d}'
+            out_csv_path = path / f'page_{page_num:02d}'
         else:
-            out_csv_path = out_path / f'page_{page_num:d}'
+            out_csv_path = path / f'page_{page_num:d}'
         if page_num == last_page:
             table_num += 1
             out_csv_path = out_csv_path.parent / f"{out_csv_path.stem}_{table_num:d}.csv"
@@ -359,13 +656,6 @@ def safe_bbox_intersection_area(ba, bb):
     if area_a == 0:
         return 0.0
     return utils.bbox_intersection_area(ba, bb) / area_a
-
-
-from pathlib import Path
-import requests
-from bs4 import BeautifulSoup
-from typing import List, Optional
-import time
 
 
 def download_usbr_24mo_reports(
@@ -428,8 +718,11 @@ def download_usbr_24mo_reports(
                         out_path = Path(local_path.with_suffix(''))
                         # FIXME - RESTORE THIS
                         # if not out_path.exists():
-                        tables = read_pdf_camelot(local_path)
-                        usbr_24_month_to_csv(tables, out_path)
+                        # extract_reservoir_tables(local_path, Path('tmp/'))
+                        reservoir_page_names = get_reservoir_names(local_path)
+                        # extract_reservoir_tables(local_path, str(out_path))
+                        reservoirs = read_reservoir_camelot(local_path, out_path, reservoir_page_names, lattice=True)
+                        # usbr_24_month_to_csv(reservoirs, out_path)
                     continue
 
                 try:
@@ -450,23 +743,13 @@ def download_usbr_24mo_reports(
 
 
 if __name__ == "__main__":
-    years = [2026]
+    years = [2026, 2027]
     download_usbr_24mo_reports(years=years)
     # https://www.usbr.gov/lc/region/g4000/24mo/index.html
     # report_path = Path('/opt/dev/riverwar/data/USBR_24_Month/March_2026/24mo.pdf')
     # tables = read_pdf_camelot(report_path)
     # out_path = Path(f'../data/reports/24_Month/{report_path.parent.name}/{report_path.stem}')
     # usbr_24_month_to_csv(tables, out_path)
-
-    # report_path = Path('/opt/dev/riverwar/data/USBR_24_Month/March_2026/24mo_MIN.pdf')
-    # tables = read_pdf_camelot(report_path)
-    # out_path = Path(f'../data/reports/24_Month/{report_path.parent.name}/{report_path.stem}')
-    # usbr_24_month_to_csv(tables, out_path)
-
-    report_path = Path('/opt/dev/riverwar/data/USBR_24_Month/April_2025/24Month_04.pdf')
-    tables = read_pdf_camelot(report_path)
-    out_path = Path(f'../data/reports/24_Month/{report_path.parent.name}/{report_path.stem}')
-    usbr_24_month_to_csv(tables, out_path)
 
     # for year in range(2022, 2025):
     #     report_path = Path(f'/opt/dev/USBR_Reports/Lower_Basin_Annual_Reports/{year}.pdf')
