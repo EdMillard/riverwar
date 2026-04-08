@@ -32,6 +32,7 @@ import pandas as pd
 from scipy.interpolate import interp1d
 import warnings
 
+# https://www.cbrfc.noaa.gov/dbdata/station/espgraph/espgraph_hc.html?id=GLDA3&year=2026
 class LakePowell(Reservoir):
     def __init__(self):
         headers:List[str] = [ub.POWELL_WY, ub.POWELL_EVAPORATION_WY, ub.POWELL_ELEVATION_WY,
@@ -55,14 +56,14 @@ class LakePowell(Reservoir):
         # 24 Month
         #
         self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
-        self.inflow_projected_af = self.get_24_month_projected(self.df_24_month, "Unregulated (Inflow)")
-        self.outflow_projected_af = self.get_24_month_projected(self.df_24_month, "Total (Release)")
-        self.evap_projected_af = self.get_24_month_projected(self.df_24_month, "Evaporation (Losses)")
+        self.inflow_projected_af = self.get_24_month_projected(self.df_24_month, "Unregulated Inflow")
+        self.outflow_projected_af = self.get_24_month_projected(self.df_24_month, "Total Release")
+        self.evap_projected_af = self.get_24_month_projected(self.df_24_month, "Evaporation Losses")
 
         self.df_24_month_min, self.df_24_wy_min =  self.load_24_month_min(self.name, 2026, 'MAR')
-        self.inflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Unregulated (Inflow)")
-        self.outflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Total (Release)")
-        self.evap_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Evaporation (Losses)")
+        self.inflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Unregulated Inflow")
+        self.outflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Total Release")
+        self.evap_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Evaporation Losses")
 
         # Elevations
         #

@@ -40,7 +40,11 @@ DIFF_7_5 = 'Diff 7.5'
 MX_TREATY = 'MX TREATY'
 
 DIAMOND_CREEK = 'Diamond Creek'
+DIAMOND_CREEK_WY = 'Diamond Creek WY'
+
 GC_INFLOW = "GC Inflow"
+GC_INFLOW_WY = "GC Inflow WY"
+
 
 HAVASU = 'Havasu'
 HAVASU_ELEVATION = 'Havasu Elevation'

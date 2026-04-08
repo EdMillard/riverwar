@@ -257,7 +257,6 @@ def create_capacity_chart(
 
     return fig
 
-
 def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow"):
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
@@ -274,7 +273,6 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
         bottom = 0.0
         outflow_only_total = 0.0
 
-        # Outflow bottom
         for label, amount, color in getattr(r, 'outflow_parts', []):
             if amount > 0:
                 maf = amount / 1_000_000
@@ -289,7 +287,6 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                 bottom += amount
                 outflow_only_total += amount
 
-        # Evaporation stacked on top
         evap_total = 0.0
         for label, amount, color in getattr(r, 'evap_parts', []):
             if amount > 0:
@@ -306,7 +303,6 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                 bottom += amount
                 evap_total += amount
 
-        # Total for full left bar
         total_left = outflow_only_total + evap_total
         if total_left > 0:
             ax.annotate(f'{total_left / 1_000_000:.2f}',
@@ -316,7 +312,6 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                         ha='center', va='bottom',
                         fontsize=11.5, fontweight='bold', color='black')
 
-        # Outflow only annotation
         if evap_total > 0 and outflow_only_total > 0:
             outflow_maf = outflow_only_total / 1_000_000
             ax.annotate(f'Out: {outflow_maf:.2f}',
@@ -340,7 +335,6 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                                 fontsize=10, fontweight='bold', color='black')
                 bottom += amount
 
-        # Total Inflow on top
         total_in = sum(a for _, a, _ in getattr(r, 'inflow_parts', []))
         if total_in > 0:
             ax.annotate(f'{total_in / 1_000_000:.2f}',
@@ -350,17 +344,84 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                         ha='center', va='bottom',
                         fontsize=11.5, fontweight='bold', color='black')
 
+    # ==================== DIFFERENCE GAP CONNECTOR (with small difference fix) ====================
+    for i, r in enumerate(reservoirs):
+        total_left  = (sum(a for _, a, _ in getattr(r, 'outflow_parts', [])) +
+                       sum(a for _, a, _ in getattr(r, 'evap_parts', [])))
+        total_right = sum(a for _, a, _ in getattr(r, 'inflow_parts', []))
+
+        if total_left == total_right or total_left == 0 or total_right == 0:
+            continue
+
+        if total_left < total_right:
+            smaller_total = total_left
+            larger_total  = total_right
+            smaller_center_x = x_pos[i] - 0.18
+            diff_color = 'darkgreen'
+        else:
+            smaller_total = total_right
+            larger_total  = total_left
+            smaller_center_x = x_pos[i] + 0.18
+            diff_color = 'darkred'
+
+        diff_af = larger_total - smaller_total
+        if diff_af <= 0:
+            continue
+
+        diff_maf = diff_af / 1_000_000
+
+        top_y = larger_total
+        bottom_y = smaller_total
+
+        # Vertical dashed line with gap (same as capacity chart)
+        gap_center_y = (top_y + bottom_y) / 2
+        gap_offset = 800
+
+        ax.plot([smaller_center_x, smaller_center_x],
+                [bottom_y, gap_center_y - gap_offset],
+                color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+        ax.plot([smaller_center_x, smaller_center_x],
+                [gap_center_y + gap_offset, top_y],
+                color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+
+        # Horizontal dashed lines at top of both bars
+        horiz_left = smaller_center_x - bar_width / 2
+        horiz_right = smaller_center_x + bar_width / 2
+        ax.plot([horiz_left, horiz_right], [bottom_y, bottom_y],
+                color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+        ax.plot([horiz_left, horiz_right], [top_y, top_y],
+                color='black', linewidth=1.0, alpha=0.75, linestyle='--')
+
+        # Difference annotation
+        if diff_maf < 0.5:
+            # Same Y as the total annotation on the taller bar, centered over shorter bar
+            annot_y = top_y
+            ax.annotate(f'{diff_maf:.2f}',
+                        xy=(smaller_center_x, annot_y),
+                        xytext=(0, 4),
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        fontsize=9.5, fontweight='bold', color=diff_color)
+        else:
+            # Normal gap position for larger differences
+            ax.annotate(f'{diff_maf:.2f}',
+                        xy=(smaller_center_x, gap_center_y),
+                        ha='center', va='center',
+                        fontsize=9.5, fontweight='bold', color=diff_color)
+
     # ==================== LEGEND ====================
     handles = [
-        mpatches.Patch(color='darkred', label='Outflow'),
+        mpatches.Patch(color=Reservoir.outflow_actual_color, label='Actual Outflow'),
+        mpatches.Patch(color=Reservoir.outflow_projected_color, label='Projected Outflow'),
         mpatches.Patch(color='orange', label='Evaporation', hatch='///'),
         mpatches.Patch(color=Reservoir.inflow_actual_color, label='Actual Inflow'),
-        mpatches.Patch(color=Reservoir.inflow_projected_color, label='Projected Inflow', hatch='///')
+        mpatches.Patch(color=Reservoir.inflow_projected_color, label='Projected Inflow'),
+        mpatches.Patch(color=Reservoir.side_inflow_actual_color, label='Actual Side Inflow'),
+        mpatches.Patch(color=Reservoir.side_inflow_projected_color, label='Projected Side Inflow')
     ]
     ax.legend(handles=handles, loc='upper right', fontsize=10,
               title_fontsize=10.5, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
 
-    # ==================== STYLING - Smaller top margin ====================
     ax.set_xlabel('')
     ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
     ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
@@ -371,10 +432,9 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     ax.set_axisbelow(True)
 
     fig.tight_layout(pad=1.0)
-    fig.subplots_adjust(left=0.07, right=0.96, bottom=0.15, top=0.89)   # Increased top value = smaller margin
+    fig.subplots_adjust(left=0.07, right=0.96, bottom=0.15, top=0.89)
 
     return fig
-
 
 def datetime64_to_str(dt64) -> str:
     """Convert pandas datetime64 to 'Mar 28, 2026' format"""

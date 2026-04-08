@@ -43,6 +43,8 @@ class Reservoir:
     outflow_projected_color = '#FF746C'
     inflow_actual_color = '#2ca02c'
     inflow_projected_color = '#98fb98'
+    side_inflow_actual_color = '#3cb03c'
+    side_inflow_projected_color = '#a8ffa8'
     # facecolor="skyblue"
     # facecolor="dodgerblue"
     # facecolor="steelblue"
@@ -288,81 +290,67 @@ class Reservoir:
         return df_24_month, df_24_wy
 
     @staticmethod
-    def read_usbr_24month_table(file_path, first_header_row: int = 2, parent_name: str = None):
+    def clean_column_name(col):
+        col = str(col).strip()
+
+        # Find unit in parentheses
+        if '(' in col and ')' in col:
+            base = col.split('(')[0].strip()
+            unit = col.split('(')[1].split(')')[0].strip().lower()
+
+            # Rule 1: If unit is 1000 acre feet (default), discard it
+            if unit in ['1000 ac-ft']:
+                return base
+            # Rule 2: If unit is Ft or CFS or whatever, append without parens
+            elif unit in ['feet', 'ft']:
+                return f"{base} {unit}"
+            elif unit in ['1000 CFS', '1000 cfs']:
+                return f"{base} cfs"
+            else:
+                return f"{base} {unit}"
+        return col
+
+    @staticmethod
+    def read_usbr_24month_table(file_path, parent_name: str = None):
         file_path = Path(file_path)
 
-        # 1. Read headers
-        raw = pd.read_csv(file_path, header=None, dtype=str, quoting=3, escapechar='\\', engine='python')
-
-        h1_idx = first_header_row - 1
-        h2_idx = h1_idx + 1
-        units_idx = h1_idx + 2
-        data_start_idx = h1_idx + 3
-
-        # Merge headers
-        header1 = raw.iloc[h1_idx].fillna('').astype(str).str.strip()
-        header2 = raw.iloc[h2_idx].fillna('').astype(str).str.strip()
-
-        merged_headers = [(h1 or h2).strip() if not (h2 and h2 not in h1) else f"{h1} ({h2})".strip()
-                          for h1, h2 in zip(header1, header2)]
-
-        # 2. Read data rows line by line
-        data_rows = []
-        with open(file_path, 'r', encoding='utf-8', newline='') as f:
-            reader = csv.reader(f, quoting=csv.QUOTE_NONE, escapechar='\\')
-            for _ in range(data_start_idx):
-                next(reader, None)
-            for row in reader:
-                if row and not all(x.strip() == '' for x in row):
-                    data_rows.append(row)
-
-        if not data_rows:
-            raise ValueError(f"No data rows found in {file_path}")
-
-        # Determine correct column count from data
-        max_cols = Counter(len(row) for row in data_rows).most_common(1)[0][0]
-        merged_headers = merged_headers[:max_cols]
-
-        # Align all rows
-        cleaned_data = []
-        for row in data_rows:
-            row = row[:max_cols] + [''] * (max_cols - len(row))
-            cleaned_data.append(row)
-
-        df = pd.DataFrame(cleaned_data, columns=merged_headers)
+        # Skip the units row (row 1, 0-based)
+        df = pd.read_csv(
+            file_path,
+            header=0,  # Use the first row as headers
+            skiprows=[1],  # Skip the second row (units row)
+            quoting=csv.QUOTE_NONE,
+            escapechar='\\',
+            dtype=str,
+            keep_default_na=False
+        )
 
         # Clean column names
-        df.columns = [str(col).strip().replace('\n', ' ').replace('  ', ' ') for col in df.columns]
+        df.columns = [Reservoir.clean_column_name(col) for col in df.columns]
+
+        # Fix first column name if needed
+        if str(df.columns[0]).strip() in ['nan', '', 'Unnamed: 0']:
+            df.columns = ['Date'] + list(df.columns[1:])
 
         date_col = df.columns[0]
 
-        # Split WY vs Monthly
-        def is_wy_row(val):
-            return bool(re.search(r'WY\s*\d{4}', str(val), re.IGNORECASE))
+        print("Loaded columns:", list(df.columns))  # ← debug
 
-        wy_mask = df[date_col].apply(is_wy_row)
+        # Split WY vs Monthly
+        wy_mask = df[date_col].astype(str).str.contains(r'WY', case=False, na=False, regex=True)
 
         df_wy = df[wy_mask].copy().reset_index(drop=True)
         df_monthly = df[~wy_mask].copy().reset_index(drop=True)
 
-        # === SAFE CONVERSION ===
-        if not df_monthly.empty:
-            df_monthly[date_col] = pd.to_datetime(df_monthly[date_col], errors='coerce')
+        # Extra safety: remove any remaining WY rows from monthly
+        df_monthly = df_monthly[~df_monthly[date_col].astype(str).str.contains(r'WY', case=False, na=False, regex=True)]
 
-            numeric_cols = [col for col in df_monthly.columns if col != date_col]
-            for col in numeric_cols:
-                try:
-                    df_monthly[col] = pd.to_numeric(df_monthly[col], errors='coerce')
-                except Exception as e:
-                    print(f"Warning: Could not convert column '{col}' to numeric: {e}")
-
-        if not df_wy.empty:
-            numeric_cols = [col for col in df_wy.columns if col != date_col]
-            for col in numeric_cols:
-                try:
-                    df_wy[col] = pd.to_numeric(df_wy[col], errors='coerce')
-                except Exception as e:
-                    print(f"Warning: Could not convert column '{col}' to numeric: {e}")
+        # Convert to numeric
+        for dframe in [df_monthly, df_wy]:
+            if dframe.empty:
+                continue
+            for col in dframe.columns[1:]:
+                dframe[col] = pd.to_numeric(dframe[col], errors='coerce')
 
         if parent_name:
             if not df_monthly.empty:
@@ -370,6 +358,4 @@ class Reservoir:
             if not df_wy.empty:
                 df_wy.insert(0, 'Source', parent_name)
 
-        units_dict = dict(zip(merged_headers, raw.iloc[units_idx].fillna('').astype(str).str.strip()[:max_cols]))
-
-        return df_monthly, df_wy, units_dict
+        return df_monthly, df_wy, {}

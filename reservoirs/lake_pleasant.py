@@ -48,6 +48,11 @@ class LakePleasant(Reservoir):
 
         self.get_lake_pleasant_data()
 
+        # USGS 09426650 — Central Arizona Project Canal at Havasu Pumping Plant (near Parker, AZ)
+        # USGS 09426700 — CAP Canal at MP 7.9 near Parker Dam, AZ
+        # USGS 09427100 — CAP Canal at MP 162.3 at 7th St at Phoenix, AZ
+        # USGS 09427300 — CAP Canal above Brady Pump Plant near Coolidge, AZ (further downstream, south of Phoenix toward Tucson).
+
         # Elevations
         #
         # Must be called first
