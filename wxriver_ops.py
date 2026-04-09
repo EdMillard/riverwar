@@ -270,50 +270,140 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
 
     edge_color = 'black'
 
-    # ==================== OUTFLOW + PUMP + EVAP STACKED (Left) ====================
+    # ==================== LEFT BAR: OUTFLOW + PUMP + EVAP ====================
     for i, r in enumerate(reservoirs):
         bottom = 0.0
         outflow_only_total = 0.0
 
-        # 1. Outflow
-        for label, amount, color in getattr(r, 'outflow_parts', []):
-            if amount > 0:
-                maf = amount / 1_000_000
-                bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
-                             bottom=bottom, color=color, alpha=0.92, edgecolor=edge_color)[0]
+        left_x = x_pos[i] - 0.18 - bar_width/2 - 0.11
 
-                if maf >= 0.4:
+        # ====================== OUTFLOW ======================
+        outflow_parts = getattr(r, 'outflow_parts', [])
+        j = 0
+        while j < len(outflow_parts):
+            label, amount, color = outflow_parts[j]
+            if amount > 0:
+                current_bottom = bottom
+                maf = amount / 1_000_000
+
+                # Draw bar
+                bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
+                             bottom=current_bottom, color=color, alpha=0.92, edgecolor=edge_color)[0]
+
+                # Individual annotation in middle of bar
+                if maf >= 0.35:
                     ax.annotate(f'{maf:.2f}',
-                                xy=(bar.get_x() + bar.get_width() / 2, bottom + amount / 2),
+                                xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount / 2),
                                 ha='center', va='center',
                                 fontsize=10, fontweight='bold', color='black')
+
+                # Paired Actual + Projected
+                if "Actual" in label and j + 1 < len(outflow_parts):
+                    next_label, next_amount, next_color = outflow_parts[j + 1]
+                    if "Projected" in next_label:
+                        # Draw Projected bar
+                        proj_bottom = current_bottom + amount
+                        proj_maf = next_amount / 1_000_000
+                        proj_bar = ax.bar(x_pos[i] - 0.18, next_amount, width=bar_width,
+                                          bottom=proj_bottom, color=next_color, alpha=0.92, edgecolor=edge_color)[0]
+
+                        if proj_maf >= 0.35:
+                            ax.annotate(f'{proj_maf:.2f}',
+                                        xy=(proj_bar.get_x() + proj_bar.get_width() / 2, proj_bottom + next_amount / 2),
+                                        ha='center', va='center',
+                                        fontsize=10, fontweight='bold', color='black')
+
+                        # Left-side total connector
+                        actual_bottom = current_bottom
+                        projected_top = proj_bottom + next_amount
+
+                        ax.plot([left_x, left_x], [actual_bottom, projected_top],
+                                color='black', linewidth=1.0, linestyle='--', alpha=0.75)
+
+                        if actual_bottom > 0:
+                            ax.plot([left_x - 0.05, left_x + 0.05], [actual_bottom, actual_bottom],
+                                    color='black', linewidth=1.0, alpha=0.75)
+                        ax.plot([left_x - 0.05, left_x + 0.05], [projected_top, projected_top],
+                                color='black', linewidth=1.0, alpha=0.75)
+
+                        total_maf = (amount + next_amount) / 1_000_000
+                        ax.annotate(f'{total_maf:.2f}',
+                                    xy=(left_x, (actual_bottom + projected_top) / 2),
+                                    ha='center', va='center',
+                                    fontsize=9.8, fontweight='bold', color='black')
+
+                        bottom = projected_top
+                        outflow_only_total += (amount + next_amount)
+                        j += 2
+                        continue
+
                 bottom += amount
                 outflow_only_total += amount
+            j += 1
 
-        # 2. Pump parts
-        pump_total = 0.0
-        for label, amount, color in getattr(r, 'pump_parts', []):
-            if amount > 0:
-                maf = amount / 1_000_000
-                bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
-                             bottom=bottom, color=color, alpha=0.90, edgecolor=edge_color)[0]
+        # ====================== PUMPS ======================
+        pump_parts = getattr(r, 'pump_parts', [])
+        j = 0
+        while j < len(pump_parts):
+            label, amount, color = pump_parts[j]
+            if "Actual" in label and j + 1 < len(pump_parts):
+                next_label, next_amount, next_color = pump_parts[j + 1]
+                if "Projected" in next_label:
+                    actual_bottom = bottom
+                    projected_top = bottom + amount + next_amount
 
-                if maf >= 0.4:
-                    ax.annotate(f'{maf:.2f}',
-                                xy=(bar.get_x() + bar.get_width() / 2, bottom + amount / 2),
-                                ha='center', va='center',
-                                fontsize=10, fontweight='bold', color='black')
-                bottom += amount
-                pump_total += amount
+                    # Draw bars
+                    ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
+                           bottom=actual_bottom, color=color, alpha=0.90, edgecolor=edge_color)
+                    ax.bar(x_pos[i] - 0.18, next_amount, width=bar_width,
+                           bottom=actual_bottom + amount, color=next_color, alpha=0.90, edgecolor=edge_color)
 
-        # 3. Evaporation — edgecolor now matches the bar color
+                    # Individual annotations
+                    if amount / 1_000_000 >= 0.35:
+                        ax.annotate(f'{(amount / 1_000_000):.2f}',
+                                    xy=(x_pos[i] - 0.18, actual_bottom + amount / 2),
+                                    ha='center', va='center', fontsize=10, fontweight='bold', color='black')
+                    if next_amount / 1_000_000 >= 0.35:
+                        ax.annotate(f'{(next_amount / 1_000_000):.2f}',
+                                    xy=(x_pos[i] - 0.18, actual_bottom + amount + next_amount / 2),
+                                    ha='center', va='center', fontsize=10, fontweight='bold', color='black')
+
+                    # Left total connector
+                    ax.plot([left_x, left_x], [actual_bottom, projected_top],
+                            color='black', linewidth=1.0, linestyle='--', alpha=0.75)
+
+                    if actual_bottom > 0:
+                        ax.plot([left_x - 0.05, left_x + 0.05], [actual_bottom, actual_bottom],
+                                color='black', linewidth=1.0, alpha=0.75)
+                    ax.plot([left_x - 0.05, left_x + 0.05], [projected_top, projected_top],
+                            color='black', linewidth=1.0, alpha=0.75)
+
+                    total_maf = (amount + next_amount) / 1_000_000
+                    pump_name = label.replace(" Actual", "").replace(" Projected", "").strip()
+
+                    ax.annotate(f"{pump_name} {total_maf:.2f}",
+                                xy=(left_x+0.1, (actual_bottom + projected_top) / 2),
+                                ha='right', va='center',
+                                fontsize=9.7, fontweight='bold', color='black')
+
+                    bottom = projected_top
+                    j += 2
+                    continue
+
+            # fallback
+            ax.bar(x_pos[i] - 0.18, amount, width=bar_width, bottom=bottom,
+                   color=color, alpha=0.90, edgecolor=edge_color)
+            bottom += amount
+            j += 1
+
+        # ====================== EVAPORATION ======================
         evap_total = 0.0
         for label, amount, color in getattr(r, 'evap_parts', []):
             if amount > 0:
                 maf = amount / 1_000_000
                 bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
                              bottom=bottom, color=color, alpha=0.88,
-                             edgecolor=edge_color)[0]          # ← Changed to match fill color
+                             edgecolor=edge_color)[0]
 
                 if maf >= 0.4:
                     ax.annotate(f'{maf:.2f}',
@@ -323,7 +413,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                 bottom += amount
                 evap_total += amount
 
-        total_left = outflow_only_total + pump_total + evap_total
+        total_left = outflow_only_total + evap_total + sum(a for _, a, _ in getattr(r, 'pump_parts', []))
         if total_left > 0:
             ax.annotate(f'{total_left / 1_000_000:.2f}',
                         xy=(x_pos[i] - 0.18, total_left),
@@ -331,14 +421,6 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                         textcoords="offset points",
                         ha='center', va='bottom',
                         fontsize=11.5, fontweight='bold', color='black')
-
-        if outflow_only_total > 0:
-            outflow_maf = outflow_only_total / 1_000_000
-            text_x = x_pos[i] - 0.18 - bar_width/2 - 0.02
-            ax.annotate(f'{outflow_maf:.2f}',
-                        xy=(text_x, outflow_only_total),
-                        ha='right', va='center',
-                        fontsize=9.8, fontweight='bold', color='black')
 
     # ==================== INFLOW (Right) ====================
     for i, r in enumerate(reservoirs):
@@ -422,7 +504,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                         ha='center', va='center',
                         fontsize=9.5, fontweight='bold', color=diff_color)
 
-    # Legends (unchanged)
+    # ==================== LEGENDS ====================
     main_handles = [
         mpatches.Patch(color=Reservoir.outflow_actual_color, label='Outflow Actual'),
         mpatches.Patch(color=Reservoir.outflow_projected_color, label='Outflow Projected'),
@@ -461,7 +543,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     ax.set_axisbelow(True)
 
     fig.tight_layout(pad=1.0)
-    fig.subplots_adjust(left=0.07, right=0.96, bottom=0.15, top=0.89)
+    fig.subplots_adjust(left=0.15, right=0.96, bottom=0.15, top=0.89)
 
     return fig
 
