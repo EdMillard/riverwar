@@ -38,8 +38,8 @@ from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
 from reservoirs.navajo import Navajo
 from reservoirs.lake_pleasant import LakePleasant
-from wx_inflow_outflow import create_inflow_outflow_chart
-from wx_reservoir import create_reservoir_chart
+from colorado.graph_inflow_outflow import create_inflow_outflow_chart
+from colorado.graph_reservoirs import create_reservoir_chart
 
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'      # Most important for Qt errors

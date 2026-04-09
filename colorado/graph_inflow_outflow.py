@@ -24,7 +24,7 @@ import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
 
-def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow"):
+def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow Loss Outflow"):
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
 
@@ -92,7 +92,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     if pump_handles:
         leg_pump = ax.legend(handles=pump_handles, loc='upper right',
                              title="Pumping Plants", title_fontsize=10.5,
-                             fontsize=10, framealpha=0.95, bbox_to_anchor=(0.78, 1.0))
+                             fontsize=10, framealpha=0.95, bbox_to_anchor=(0.83, 1.0))
         ax.add_artist(leg_main)
 
     # Layout matching reservoir chart
