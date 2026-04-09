@@ -45,8 +45,9 @@ class Reservoir:
 
     inflow_actual_color = '#2ca02c'         # Green
     inflow_projected_color = '#98fb98'
-    side_inflow_actual_color = '#17A2B8'    # Cyan
-    side_inflow_projected_color = '#7ED6E8'
+
+    side_inflow_actual_color = '#5acf5a'    # Cyan
+    side_inflow_projected_color = '#c8ffc8'
 
     evap_actual_color = '#F4C300'           # Yellow
     evap_projected_color = '#FFDD33'
@@ -86,6 +87,10 @@ class Reservoir:
         self.inflow_actual_af = 0
         self.inflow_projected_af= 0
         self.inflow_parts:List[tuple] =  []
+
+        self.side_inflow_actual_af = 0
+        self.side_inflow_projected_af= 0
+        self.side_inflow_parts:List[tuple] =  []
 
         self.outflow_actual_af = 0
         self.outflow_projected_af= 0
@@ -325,7 +330,14 @@ class Reservoir:
                  ("Projected", self.inflow_projected_af, Reservoir.inflow_projected_color)]
         return parts
 
-    "Total Release"
+    def get_24_month_side_inflow(self, df:pd.DataFrame, name:str)\
+            -> List[Tuple[str, float, str]]:
+
+        self.side_inflow_actual_af = self.get_24_month_actual(df, name)
+        self.side_inflow_projected_af = self.get_24_month_projected(df, name)
+        parts = [("Actual", self.side_inflow_actual_af, Reservoir.side_inflow_actual_color),
+                 ("Projected", self.side_inflow_projected_af, Reservoir.side_inflow_projected_color)]
+        return parts
 
     def get_24_month_outflow(self, df:pd.DataFrame, name:str="Total Release")\
             -> List[Tuple[str, float, str]]:

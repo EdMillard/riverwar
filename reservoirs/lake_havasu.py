@@ -66,7 +66,8 @@ class LakeHavasu(Reservoir):
         # 24 Month
         #
         self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
-        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Davis Release", side="Side Inflow")
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Davis Release")
+        self.side_inflow_parts = self.get_24_month_inflow(self.df_24_month, "Side Inflow")
         self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
         self.evap_parts = self.get_24_month_evap(self.df_24_month)
 
