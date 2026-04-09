@@ -281,7 +281,7 @@ class Reservoir:
 
         # Ensure date column is datetime
         if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
-            df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+            df[date_col] = pd.to_datetime(df[date_col], errors='coerce', format='%b %Y')
 
         # Convert start/end strings to datetime
         start_date = pd.to_datetime(start_month_year, errors='coerce')
@@ -408,7 +408,7 @@ class Reservoir:
 
         date_col = df.columns[0]
 
-        print("Loaded columns:", list(df.columns))  # ← debug
+        # print("Loaded columns:", list(df.columns))  # ← debug
 
         # Split WY vs Monthly
         wy_mask = df[date_col].astype(str).str.contains(r'WY', case=False, na=False, regex=True)
