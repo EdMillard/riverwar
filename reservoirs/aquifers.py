@@ -120,14 +120,16 @@ class Aquifers(Reservoir):
         # Inflow
 
         self.inflow_actual_af = 0
-        self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
-                             ("Projected", 0, Reservoir.inflow_projected_color)]
+        if self.inflow_actual_af:
+            self.inflow_parts = [("Actual", self.inflow_actual_af, Reservoir.inflow_actual_color),
+                                  ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
         self.outflow_actual_af = 0
         self.release_af = 0
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af
-        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
+        if self.outflow_actual_af or self.outflow_projected_af:
+            self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
                               ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
 
     @staticmethod

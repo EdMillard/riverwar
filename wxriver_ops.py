@@ -28,6 +28,7 @@ from datetime import datetime
 import os
 import pandas as pd
 from reservoirs.reservoir import Reservoir
+from reservoirs.imperial import Imperial
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
 from reservoirs.aquifers import Aquifers
@@ -57,11 +58,13 @@ def create_capacity_chart(
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
 
-    if power_head_zones is None:
-        power_head_zones = [(Reservoir.high_power_pool_color, 'FIXME')]
+    # Filter out reservoirs with zero active capacity
+    active_reservoirs = [r for r in reservoirs if getattr(r, 'active_capacity_af', 0) > 0]
 
-    if reserved_zones is None:
-        reserved_zones = [('darkgoldenrod', 'Reserved')]
+    if not active_reservoirs:
+        raise ValueError("No reservoirs with active capacity > 0")
+
+    reservoirs = active_reservoirs  # Use only active ones
 
     names = [r.name for r in reservoirs]
     capacities_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
@@ -278,6 +281,19 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
 
+    # Filter out reservoirs with no inflow or outflow data
+    active_reservoirs = []
+    for r in reservoirs:
+        inflow = getattr(r, 'inflow_parts', [])
+        outflow = getattr(r, 'outflow_parts', [])
+        if (inflow and len(inflow) > 0) or (outflow and len(outflow) > 0):
+            active_reservoirs.append(r)
+
+    if not active_reservoirs:
+        raise ValueError("No reservoirs with inflow or outflow data")
+
+    reservoirs = active_reservoirs
+
     names = [r.name for r in reservoirs]
     x_pos = np.arange(len(names))
     bar_width = 0.33
@@ -316,12 +332,11 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                     next_label, next_amount, next_color = outflow_parts[j + 1]
                     if "Projected" in next_label:
                         proj_bottom = current_bottom + amount
-                        proj_maf = next_amount / 1_000_000
                         proj_bar = ax.bar(x_pos[i] - 0.18, next_amount, width=bar_width,
                                           bottom=proj_bottom, color=next_color, alpha=0.92, edgecolor=edge_color)[0]
 
-                        if proj_maf >= 0.35:
-                            ax.annotate(f'{proj_maf:.2f}',
+                        if (next_amount / 1_000_000) >= 0.35:
+                            ax.annotate(f'{(next_amount / 1_000_000):.2f}',
                                         xy=(proj_bar.get_x() + proj_bar.get_width() / 2, proj_bottom + next_amount / 2),
                                         ha='center', va='center',
                                         fontsize=10, fontweight='bold', color='black')
@@ -709,6 +724,7 @@ if __name__ == "__main__":
     lake_powell = LakePowell()
 
     reservoirs = [
+        Imperial(),
         # lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
