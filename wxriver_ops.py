@@ -268,16 +268,19 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     fig = Figure(figsize=(14.2, 5.4), dpi=100)
     ax = fig.add_subplot(111)
 
-    # ==================== OUTFLOW + EVAP STACKED (Left) ====================
+    edge_color = 'black'
+
+    # ==================== OUTFLOW + PUMP + EVAP STACKED (Left) ====================
     for i, r in enumerate(reservoirs):
         bottom = 0.0
         outflow_only_total = 0.0
 
+        # 1. Outflow
         for label, amount, color in getattr(r, 'outflow_parts', []):
             if amount > 0:
                 maf = amount / 1_000_000
                 bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
-                             bottom=bottom, color=color, alpha=0.92, edgecolor='darkred')[0]
+                             bottom=bottom, color=color, alpha=0.92, edgecolor=edge_color)[0]
 
                 if maf >= 0.4:
                     ax.annotate(f'{maf:.2f}',
@@ -287,12 +290,30 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                 bottom += amount
                 outflow_only_total += amount
 
+        # 2. Pump parts
+        pump_total = 0.0
+        for label, amount, color in getattr(r, 'pump_parts', []):
+            if amount > 0:
+                maf = amount / 1_000_000
+                bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
+                             bottom=bottom, color=color, alpha=0.90, edgecolor=edge_color)[0]
+
+                if maf >= 0.4:
+                    ax.annotate(f'{maf:.2f}',
+                                xy=(bar.get_x() + bar.get_width() / 2, bottom + amount / 2),
+                                ha='center', va='center',
+                                fontsize=10, fontweight='bold', color='black')
+                bottom += amount
+                pump_total += amount
+
+        # 3. Evaporation — edgecolor now matches the bar color
         evap_total = 0.0
         for label, amount, color in getattr(r, 'evap_parts', []):
             if amount > 0:
                 maf = amount / 1_000_000
                 bar = ax.bar(x_pos[i] - 0.18, amount, width=bar_width,
-                             bottom=bottom, color=color, alpha=0.92, edgecolor='darkred')[0]
+                             bottom=bottom, color=color, alpha=0.88,
+                             edgecolor=edge_color)[0]          # ← Changed to match fill color
 
                 if maf >= 0.4:
                     ax.annotate(f'{maf:.2f}',
@@ -302,7 +323,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                 bottom += amount
                 evap_total += amount
 
-        total_left = outflow_only_total + evap_total
+        total_left = outflow_only_total + pump_total + evap_total
         if total_left > 0:
             ax.annotate(f'{total_left / 1_000_000:.2f}',
                         xy=(x_pos[i] - 0.18, total_left),
@@ -311,11 +332,9 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                         ha='center', va='bottom',
                         fontsize=11.5, fontweight='bold', color='black')
 
-        # === UPDATED: Moved further left (another ~one digit) ===
         if outflow_only_total > 0:
             outflow_maf = outflow_only_total / 1_000_000
-            text_x = x_pos[i] - 0.18 - bar_width/2 - 0.02   # further left
-
+            text_x = x_pos[i] - 0.18 - bar_width/2 - 0.02
             ax.annotate(f'{outflow_maf:.2f}',
                         xy=(text_x, outflow_only_total),
                         ha='right', va='center',
@@ -349,10 +368,15 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
     # ==================== DIFFERENCE GAP CONNECTOR ====================
     for i, r in enumerate(reservoirs):
         total_left  = (sum(a for _, a, _ in getattr(r, 'outflow_parts', [])) +
+                       sum(a for _, a, _ in getattr(r, 'pump_parts', [])) +
                        sum(a for _, a, _ in getattr(r, 'evap_parts', [])))
+
         total_right = sum(a for _, a, _ in getattr(r, 'inflow_parts', []))
 
-        if total_left == total_right or total_left == 0 or total_right == 0:
+        diff_af = abs(total_left - total_right)
+        diff_maf = diff_af / 1_000_000
+
+        if diff_maf <= 0.4:
             continue
 
         if total_left < total_right:
@@ -366,15 +390,8 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
             smaller_center_x = x_pos[i] + 0.18
             diff_color = 'darkred'
 
-        diff_af = larger_total - smaller_total
-        if diff_af <= 0:
-            continue
-
-        diff_maf = diff_af / 1_000_000
-
         top_y = larger_total
         bottom_y = smaller_total
-
         gap_center_y = (top_y + bottom_y) / 2
         gap_offset = 800
 
@@ -393,9 +410,8 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                 color='black', linewidth=1.0, alpha=0.75, linestyle='--')
 
         if diff_maf < 0.6:
-            annot_y = top_y
             ax.annotate(f'{diff_maf:.2f}',
-                        xy=(smaller_center_x, annot_y),
+                        xy=(smaller_center_x, top_y),
                         xytext=(0, 4),
                         textcoords="offset points",
                         ha='center', va='bottom',
@@ -406,8 +422,8 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                         ha='center', va='center',
                         fontsize=9.5, fontweight='bold', color=diff_color)
 
-    # ==================== LEGEND ====================
-    handles = [
+    # Legends (unchanged)
+    main_handles = [
         mpatches.Patch(color=Reservoir.outflow_actual_color, label='Outflow Actual'),
         mpatches.Patch(color=Reservoir.outflow_projected_color, label='Outflow Projected'),
         mpatches.Patch(color=Reservoir.evap_actual_color, label='Evaporation Actual'),
@@ -417,8 +433,23 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
         mpatches.Patch(color=Reservoir.side_inflow_actual_color, label='Side Inflow Actual'),
         mpatches.Patch(color=Reservoir.side_inflow_projected_color, label='Side Inflow Projected')
     ]
-    ax.legend(handles=handles, loc='upper right', fontsize=10,
-              title_fontsize=10.5, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
+    leg_main = ax.legend(handles=main_handles, loc='upper right',
+                         title="Main Components", title_fontsize=10.5,
+                         fontsize=10, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
+
+    pump_handles = []
+    seen = set()
+    for r in reservoirs:
+        for full_label, amount, color in getattr(r, 'pump_parts', []):
+            if amount > 0 and full_label not in seen:
+                seen.add(full_label)
+                pump_handles.append(mpatches.Patch(color=color, label=full_label))
+
+    if pump_handles:
+        leg_pump = ax.legend(handles=pump_handles, loc='upper right',
+                             title="Pumping Plants", title_fontsize=10.5,
+                             fontsize=10, framealpha=0.95, bbox_to_anchor=(0.78, 1.0))
+        ax.add_artist(leg_main)
 
     ax.set_xlabel('')
     ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')

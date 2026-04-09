@@ -62,8 +62,11 @@ class LakeMead(Reservoir):
         self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
         self.evap_parts = self.get_24_month_evap(self.df_24_month)
 
-        self.snwa_diversion_projected_af = self.get_24_month_projected(self.df_24_month, "SNWP Use")
-        self.snwa_diversion_actual_af = self.get_24_month_actual(self.df_24_month, "SNWP Use")
+        self.snwa_actual_af = self.get_24_month_actual(self.df_24_month, "SNWP Use")
+        self.snwa_projected_af = self.get_24_month_projected(self.df_24_month, "SNWP Use")
+
+        self.pump_parts = [("SNWA Actual", self.snwa_actual_af, Reservoir.snwa_pump_actual_color),
+                           ("SNWA Projected", self.snwa_projected_af, Reservoir.snwa_pump_projected_color)]
 
         # Elevations
         #

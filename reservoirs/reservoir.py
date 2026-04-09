@@ -39,19 +39,26 @@ class Reservoir:
     high_power_pool_color = "lightblue"
     low_power_pool_color = "cornflowerblue"
     non_power_pool_color = '#ffbbff'
+
     outflow_actual_color = 'red'
     outflow_projected_color = '#FF746C'
-    inflow_actual_color = '#2ca02c'
-    inflow_projected_color = '#98fb98'
-    side_inflow_actual_color = '#3cb03c'
-    side_inflow_projected_color = '#a8ffa8'
-    evap_actual_color = '#ffbb77'
-    evap_projected_color = '#ffdd99'
 
-    # facecolor="skyblue"
-    # facecolor="dodgerblue"
-    # facecolor="steelblue"
-    # facecolor="deepskyblue"
+    inflow_actual_color = '#2ca02c'         # Green
+    inflow_projected_color = '#98fb98'
+    side_inflow_actual_color = '#17A2B8'    # Cyan
+    side_inflow_projected_color = '#7ED6E8'
+
+    evap_actual_color = '#8B4513'           # Brown
+    evap_projected_color = '#D2A679'
+
+    cap_pump_actual_color = 'dodgerblue'    # Bluw
+    cap_pump_projected_color = 'skyblue'
+
+    snwa_pump_actual_color = '#9B59B6'      # Purple
+    snwa_pump_projected_color = '#C39BD3'
+
+    mpw_pump_actual_color = '#F4D03F'       # Yellow
+    mpw_pump_projected_color = '#F9E79F'
 
     def __init__(self, name:str, headers:List[str], month=10):
         self.name:str = name

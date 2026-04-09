@@ -76,6 +76,13 @@ class LakeHavasu(Reservoir):
         self.mwd_diversion_projected_af = self.get_24_month_projected(self.df_24_month, "MWD Diversion")
         self.mwd_diversion_actual_af = self.get_24_month_actual(self.df_24_month, "MWD Diversion")
 
+        self.pump_parts = [("MPW Actual", self.mwd_diversion_actual_af, Reservoir.mpw_pump_actual_color),
+                           ("MPW Projected", self.mwd_diversion_projected_af, Reservoir.mpw_pump_projected_color),
+                           ("CAP Actual", self.cap_diversion_actual_af, Reservoir.cap_pump_actual_color),
+                           ("CAP Projected", self.cap_diversion_projected_af, Reservoir.cap_pump_projected_color)
+                           ]
+
+
         # usbr_lake_havasu_release_total_af = 6126
         # sheet.usbr_annuals(self.df, usbr_lake_havasu_release_total_af, self.water_year, self.water_year, title=lb.HAVASU_RELEASE, month=all_b.CY, divisor=1)
 
