@@ -368,7 +368,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                 outflow_only_total += amount
             j += 1
 
-        # Pumps
+        # Pumps (unchanged)
         pump_parts = getattr(r, 'pump_parts', [])
         j = 0
         while j < len(pump_parts):
@@ -406,7 +406,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                     pump_name = label.replace(" Actual", "").replace(" Projected", "").strip()
 
                     ax.annotate(f"{pump_name} {total_maf:.2f}",
-                                xy=(left_x, (actual_bottom + projected_top) / 2),
+                                xy=(left_x+0.1, (actual_bottom + projected_top) / 2),
                                 ha='right', va='center',
                                 fontsize=9.7, fontweight='bold', color='black')
 
@@ -445,7 +445,7 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                         ha='center', va='bottom',
                         fontsize=11.5, fontweight='bold', color='black')
 
-    # ==================== RIGHT BAR: INFLOW + SIDE INFLOW ====================
+    # ==================== RIGHT BAR: INFLOW + SIDE INFLOW + GAP WATER ====================
     for i, r in enumerate(reservoirs):
         bottom = 0.0
 
@@ -477,6 +477,44 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow vs Outflow")
                                 fontsize=10, fontweight='bold', color='black')
                 bottom += amount
 
+        # Gap Water Parts - moved one character width to the right
+        gap_water_parts = getattr(r, 'gap_water_parts', [])
+        if gap_water_parts:
+            gap_x = x_pos[i] + 0.18 + bar_width/2 + 0.13   # moved ~1 char right
+            current_bottom = bottom
+
+            for label, amount, color in gap_water_parts:
+                if amount > 0:
+                    maf = amount / 1_000_000
+                    bar = ax.bar(gap_x, amount, width=bar_width * 0.65,
+                                 bottom=current_bottom, color=color, alpha=0.92,
+                                 edgecolor='darkgoldenrod')[0]
+
+                    if maf >= 0.35:
+                        ax.annotate(f'{maf:.2f}',
+                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount / 2),
+                                    ha='center', va='center',
+                                    fontsize=9.5, fontweight='bold', color='black')
+
+                    # Show name just to the right of the bar, vertically centered
+                    ax.annotate(label,
+                                xy=(gap_x + bar_width*0.65/2 + 0.08, current_bottom + amount / 2),
+                                ha='left', va='center',
+                                fontsize=9.5, fontweight='bold', color='black')
+
+                    current_bottom += amount
+
+            # Total gap water
+            total_gap = sum(a for _, a, _ in gap_water_parts)
+            if total_gap > 0:
+                ax.annotate(f'{total_gap / 1_000_000:.2f}',
+                            xy=(gap_x, current_bottom),
+                            xytext=(0, 3),
+                            textcoords="offset points",
+                            ha='center', va='bottom',
+                            fontsize=10.5, fontweight='bold', color='black')
+
+        # Total inflow annotation on top of main inflow bar
         total_in = (sum(a for _, a, _ in getattr(r, 'inflow_parts', [])) +
                     sum(a for _, a, _ in getattr(r, 'side_inflow_parts', [])))
         if total_in > 0:

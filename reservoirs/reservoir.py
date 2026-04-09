@@ -43,20 +43,21 @@ class Reservoir:
     outflow_actual_color = 'red'
     outflow_projected_color = '#FF746C'
 
-    inflow_actual_color = '#2ca02c'         # Green
-    inflow_projected_color = '#98fb98'
+    inflow_actual_color = 'dodgerblue'          # Blue
+    inflow_projected_color = 'skyblue'
 
-    side_inflow_actual_color = '#5acf5a'    # Cyan
-    side_inflow_projected_color = '#c8ffc8'
+    side_inflow_actual_color = '#5acf5a'    # Green
+    side_inflow_projected_color = '#88ff88'
 
     evap_actual_color = '#F4C300'           # Yellow
     evap_projected_color = '#FFDD33'
 
+
     cap_pump_actual_color = '#8B4513'       # Brown
     cap_pump_projected_color = '#D2A679'
 
-    mwd_pump_actual_color = 'dodgerblue'    # Bluw
-    mwd_pump_projected_color = 'skyblue'
+    mwd_pump_actual_color = '#707070'     # Gray
+    mwd_pump_projected_color = '#C0C0C0'
 
     snwa_pump_actual_color = '#9B59B6'      # Purple
     snwa_pump_projected_color = '#C39BD3'

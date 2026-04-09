@@ -25,6 +25,7 @@ from reservoirs.reservoir import Reservoir
 from source.usgs_gage import USGSGage
 from source import usbr_rise
 import colorado.ub as ub
+import colorado.lb as lb
 import colorado.allb as all_b
 from sheet import sheet
 from typing import List
@@ -52,6 +53,12 @@ class LakePowell(Reservoir):
         self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")
         self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
         self.evap_parts = self.get_24_month_evap(self.df_24_month)
+
+        self.gap_water_parts = [
+            ("Cut Release", 1000000, lb.PHX_COLOR),
+            ("Cut Power Head", 1000000, lb.PINAL_COLOR),
+            ("DROA", 500000, lb.TUCSON_COLOR)
+                                ]
 
         # self.df_24_month_min, self.df_24_wy_min =  self.load_24_month_min(self.name, 2026, 'MAR')
         # self.inflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Unregulated Inflow")

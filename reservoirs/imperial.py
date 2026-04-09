@@ -29,7 +29,7 @@ from typing import List
 class Imperial(Reservoir):
     def __init__(self):
         headers:List[str] = [lb.HAVASU, lb.HAVASU_ELEVATION]
-        super().__init__('Imperial', headers)
+        super().__init__('Mexico', headers)
 
         # Elevations
         #
@@ -65,6 +65,17 @@ class Imperial(Reservoir):
         self.flow_to_mexico_actual_af = self.get_24_month_actual(self.df_24_month, "Flow To Mexico")
         self.flow_to_mexico_projected_af = self.get_24_month_projected(self.df_24_month, "Flow To Mexico")
 
+        side_inflow_projected = 1450000 - (self.flow_to_mexico_actual_af + self.flow_to_mexico_projected_af)
+        self.inflow_parts = [
+            ("Actual", self.flow_to_mexico_actual_af, Reservoir.inflow_actual_color),
+            ("Projected", self.flow_to_mexico_projected_af, Reservoir.inflow_projected_color),
+        ]
+
+        self.side_inflow_parts = [
+            ("Actual", 0, Reservoir.side_inflow_actual_color),
+            ("Projected", side_inflow_projected, Reservoir.side_inflow_projected_color),
+        ]
         self.outflow_parts = [
-            ("Outflow Actual", self.flow_to_mexico_actual_af, Reservoir.outflow_actual_color),
-            ("Outflow Projected", self.flow_to_mexico_projected_af, Reservoir.outflow_projected_color),         ]
+            ("Actual", self.flow_to_mexico_actual_af, Reservoir.outflow_actual_color),
+            ("Projected", self.flow_to_mexico_projected_af + side_inflow_projected, Reservoir.outflow_projected_color),
+        ]
