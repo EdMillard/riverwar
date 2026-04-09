@@ -87,7 +87,6 @@ class ReservoirChartFrame(wx.Frame):
             (lb.CA_COLOR, 'CA')
         ]
 
-        # Create figures BEFORE canvases
         self.capacity_fig = create_reservoir_chart(
             reservoirs,
             title=cap_title,
@@ -99,36 +98,37 @@ class ReservoirChartFrame(wx.Frame):
 
         # ==================== COMBINED DASHBOARD PAGE ====================
         self.combined_panel = wx.Panel(self.notebook)
-        splitter = wx.SplitterWindow(self.combined_panel, style=wx.SP_LIVE_UPDATE | wx.SP_3D)
-        splitter.SetMinimumPaneSize(400)
+        self.splitter = wx.SplitterWindow(self.combined_panel, style=wx.SP_LIVE_UPDATE | wx.SP_3D)
+        self.splitter.SetMinimumPaneSize(200)
 
         # Top: Capacity
-        self.cap_panel = wx.Panel(splitter)
+        self.cap_panel = wx.Panel(self.splitter)
         cap_sizer = wx.BoxSizer(wx.VERTICAL)
         self.capacity_canvas = FigureCanvas(self.cap_panel, -1, self.capacity_fig)
         cap_sizer.Add(self.capacity_canvas, 1, wx.EXPAND | wx.ALL, border=8)
         self.cap_panel.SetSizer(cap_sizer)
 
         # Bottom: Inflow/Outflow
-        self.in_panel = wx.Panel(splitter)
+        self.in_panel = wx.Panel(self.splitter)
         in_sizer = wx.BoxSizer(wx.VERTICAL)
         self.inflow_canvas = FigureCanvas(self.in_panel, -1, self.inflow_fig)
         in_sizer.Add(self.inflow_canvas, 1, wx.EXPAND | wx.ALL, border=8)
         self.in_panel.SetSizer(in_sizer)
 
-        splitter.SplitHorizontally(self.cap_panel, self.in_panel)
-        splitter.SetSashPosition(int(window_height * 0.52))
+        self.splitter.SplitHorizontally(self.cap_panel, self.in_panel)
 
         combined_sizer = wx.BoxSizer(wx.VERTICAL)
-        combined_sizer.Add(splitter, 1, wx.EXPAND | wx.ALL, border=8)
+        combined_sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=8)
         self.combined_panel.SetSizer(combined_sizer)
 
         self.notebook.AddPage(self.combined_panel, "Reservoir Dashboard")
 
         # ==================== THIN BOTTOM TOOLBAR ====================
         bottom_toolbar = wx.Panel(self.panel, style=wx.BORDER_NONE)
+        bottom_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))
 
         tb_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
         self.status_text = wx.StaticText(
             bottom_toolbar,
             label=f"Displaying {len(reservoirs)} reservoirs"
@@ -137,16 +137,16 @@ class ReservoirChartFrame(wx.Frame):
 
         tb_sizer.AddStretchSpacer(1)
 
-        self.save_btn = wx.Button(bottom_toolbar, label="Save Combined Dashboard as PNG")
+        self.save_btn = wx.Button(bottom_toolbar, label="Save Combined Dashboard as PNG", size=wx.Size(-1, 28))
         self.save_btn.Bind(wx.EVT_BUTTON, self.on_save_combined)
         tb_sizer.Add(self.save_btn, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
 
         bottom_toolbar.SetSizer(tb_sizer)
 
-        # === Aggressive thin toolbar fix ===
-        bottom_toolbar.SetMinSize(wx.Size(-1, 36))  # Fixed small height
-        bottom_toolbar.SetMaxSize(wx.Size(-1, 42))
-        bottom_toolbar.Layout()
+        bottom_toolbar.Fit()
+        height = bottom_toolbar.GetBestSize().GetHeight()
+        bottom_toolbar.SetMinSize(wx.Size(-1, height))
+        bottom_toolbar.SetMaxSize(wx.Size(-1, height + 2))
 
         # Main layout
         main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=10)
@@ -154,11 +154,27 @@ class ReservoirChartFrame(wx.Frame):
 
         self.panel.SetSizer(main_sizer)
 
+        self.panel.Layout()
+
         self.CreateStatusBar()
         self.SetStatusText("")
 
         self.SetMinSize(wx.Size(1100, 900))
         self.Centre()
+
+        # ==================== FORCE 50/50 SPLIT AFTER FULL LAYOUT ====================
+        # wx.CallAfter(self.force_equal_split)
+
+    def force_equal_split(self):
+        """Force true 50/50 split after everything is laid out"""
+        if hasattr(self, 'splitter'):
+            total_height = self.splitter.GetClientSize().GetHeight()
+            if total_height > 100:
+                half = total_height // 2 + 100
+                self.splitter.SetSashPosition(half)
+                self.splitter.Refresh()
+                # One more call in case matplotlib needs extra time
+                wx.CallLater(100, self.splitter.SetSashPosition, half)
 
     def on_save_combined(self, event):
         default_name = f"Reservoir_Dashboard_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
@@ -180,10 +196,10 @@ if __name__ == "__main__":
 
     reservoirs = [
         Imperial(),
+        Aquifers(),
         # lake_pleasant,
         LakeHavasu(),
         LakeMohave(),
-        Aquifers(),
         LakeMead(),
         lake_powell,
         FlamingGorge(),

@@ -55,8 +55,8 @@ class LakePowell(Reservoir):
         self.evap_parts = self.get_24_month_evap(self.df_24_month)
 
         self.gap_water_parts = [
-            ("Cut Release", 1000000, lb.PHX_COLOR),
-            ("Cut Power Head", 1000000, lb.PINAL_COLOR),
+            ("Cut Release", 1200000, lb.PHX_COLOR),
+            ("Cut Powell", 1000000, lb.PINAL_COLOR),
             ("DROA", 500000, lb.TUCSON_COLOR)
                                 ]
 

@@ -233,8 +233,8 @@ def create_reservoir_chart(
         mpatches.Patch(color=lb.PINAL_COLOR, label='Pinal AMA'),
         mpatches.Patch(color=lb.PHX_COLOR, label='Phoenix AMA')
     ]
-    leg_aquifer = ax.legend(handles=aquifer_patches, title="Aquifer Storage 2023 EOY (LTSC)",
-                            loc='upper left', bbox_to_anchor=(0.02, 1.0),
+    leg_aquifer = ax.legend(handles=aquifer_patches, title="AZ Aquifer LTSC 2023 EOY",
+                            loc='upper left', bbox_to_anchor=(0.15, 1.0),
                             fontsize=9, title_fontsize=10, framealpha=0.95)
 
     ax.add_artist(leg_power)
