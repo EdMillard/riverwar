@@ -70,18 +70,15 @@ class LakePowell(Reservoir):
         # Actual from USBR/USGS
         headers_24_month = list(self.df_24_month.columns.astype(str))
         df: pd.DataFrame = sheet.create_monthly_df(self.water_year_info.start_date, self.water_year_info.end_date, headers_24_month)
-        Reservoir.usbr_monthly_into_df(df, self.usbr_rise_inflow_af_id, self.water_year, "Unregulated Inflow", month=all_b.WY)
-        Reservoir.usbr_monthly_into_df(df, self.usbr_rise_release_af_id, self.water_year, "Total Release", month=all_b.WY)
-        Reservoir.usbr_monthly_into_df(df, self.usbr_rise_evap_af_id, self.water_year, "Evaporation Losses", month=all_b.WY)
+        Reservoir.usbr_monthly(df, self.usbr_rise_inflow_af_id, self.water_year, "Unregulated Inflow", month=all_b.WY)
+        Reservoir.usbr_monthly(df, self.usbr_rise_release_af_id, self.water_year, "Total Release", month=all_b.WY)
+        Reservoir.usbr_monthly(df, self.usbr_rise_evap_af_id, self.water_year, "Evaporation Losses", month=all_b.WY)
 
-        Reservoir.usbr_end_of_month_into_df(df, self.usbr_rise_elevation_ft_id, self.water_year, "Reservoir Elevation End of Month ft", month=all_b.WY)
-        Reservoir.usbr_end_of_month_into_df(df, self.usbr_rise_storage_af_id, self.water_year, "End Of Month Storage", month=all_b.WY)
+        Reservoir.usbr_end_of_month(df, self.usbr_rise_elevation_ft_id, self.water_year, "Reservoir Elevation End of Month ft", month=all_b.WY)
+        Reservoir.usbr_end_of_month(df, self.usbr_rise_storage_af_id, self.water_year, "End Of Month Storage", month=all_b.WY)
 
         self.df_monthly = df
         df_diff = Reservoir.subtract_dataframes(self.df_monthly, self.df_24_month)
-        # monthly = sheet.usbr_monthly(self.usbr_rise_inflow_af_id, self.water_year, month=all_b.WY)
-        # self.inflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_unregulated_inflow_af)
-        # self.outflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_release_total_af)
 
         # self.evap_actual_af = self.get_evaporation(510, ub.POWELL_EVAPORATION_WY)
         # self.evap_actual_af = self.get_sum_end_of_month(510)

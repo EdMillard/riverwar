@@ -77,7 +77,9 @@ def create_inflow_outflow_chart(reservoirs, title="Outflow Loss Inflow, Mar 2026
         mpatches.Patch(color=Reservoir.inflow_actual_color, label='Inflow Actual'),
         mpatches.Patch(color=Reservoir.inflow_projected_color, label='Inflow Projected'),
         mpatches.Patch(color=Reservoir.side_inflow_actual_color, label='Side Inflow Actual'),
-        mpatches.Patch(color=Reservoir.side_inflow_projected_color, label='Side Inflow Projected')
+        mpatches.Patch(color=Reservoir.side_inflow_projected_color, label='Side Inflow Projected'),
+        mpatches.Patch(color=Reservoir.snwa_pump_actual_color, label='SNWA Actual'),
+        mpatches.Patch(color=Reservoir.snwa_pump_projected_color, label='SNWA Projected')
     ]
     leg_main = ax.legend(handles=main_handles, loc='upper right',
                          title="Main Components", title_fontsize=10.5,
@@ -101,20 +103,21 @@ def create_inflow_outflow_chart(reservoirs, title="Outflow Loss Inflow, Mar 2026
                             bbox_to_anchor=(0.82, 1.0))   # Positioned between pump and main
         ax.add_artist(leg_main)
 
-    # 3. Pump Legend (original position)
+    # 3. Havasu Legend (original position)
     pump_handles = []
     seen = set()
     for r in reservoirs:
         for full_label, amount, color in getattr(r, 'pump_parts', []):
-            if amount > 0 and full_label not in seen:
-                seen.add(full_label)
-                pump_handles.append(mpatches.Patch(color=color, label=full_label))
+            if r.name == 'Lake Havasu':
+                if amount > 0 and full_label not in seen:
+                    seen.add(full_label)
+                    pump_handles.append(mpatches.Patch(color=color, label=full_label))
 
     if pump_handles:
         leg_pump = ax.legend(handles=pump_handles, loc='upper right',
-                             title="Pumping Plants", title_fontsize=10.5,
+                             title="Havasu Outflow", title_fontsize=10.5,
                              fontsize=10, framealpha=0.95,
-                             bbox_to_anchor=(0.124, 1.0))
+                             bbox_to_anchor=(0.121, 1.0))
         ax.add_artist(leg_main)   # Re-add main on top
 
     # Optional: Add gap legend again at the end if needed

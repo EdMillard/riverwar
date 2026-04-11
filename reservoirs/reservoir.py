@@ -49,7 +49,7 @@ class Reservoir:
     side_inflow_actual_color = '#5acf5a'    # Green
     side_inflow_projected_color = '#88ff88'
 
-    evap_actual_color = '#F4C300'           # Yellow
+    evap_actual_color = '#FFEA00'           # Yellow
     evap_projected_color = '#FFDD33'
 
     cap_pump_actual_color = '#8B4513'       # Brown
@@ -61,6 +61,11 @@ class Reservoir:
     snwa_pump_actual_color = '#9B59B6'      # Purple
     snwa_pump_projected_color = '#C39BD3'
 
+    flow_to_mexico_actual_color = '#ff9966'      # Orange
+    flow_to_mexico_projected_color = '#ffbb77'
+
+    salton_actual_color = '#FFEA00'  # Yellow, same as evap
+    salton_projected_color = '#FFDD33'
 
     def __init__(self, name:str, headers:List[str], month=10):
         self.name:str = name
@@ -217,7 +222,7 @@ class Reservoir:
 
         return result
 
-    def usbr_end_of_month_into_df(
+    def usbr_end_of_month(
             df: pd.DataFrame,
             gage_id: int,
             year: int,
@@ -288,7 +293,7 @@ class Reservoir:
 
         print(f"✓ Filled {filled} months into '{column_name}' (last value per month + forced partial month)")
 
-    def usbr_monthly_into_df(
+    def usbr_monthly(
             df: pd.DataFrame,
             gage_id: int,
             year: int,

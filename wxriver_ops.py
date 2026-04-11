@@ -98,7 +98,8 @@ class ReservoirChartFrame(wx.Frame):
 
         # ==================== COMBINED DASHBOARD PAGE ====================
         self.combined_panel = wx.Panel(self.notebook)
-        self.splitter = wx.SplitterWindow(self.combined_panel, style=wx.SP_LIVE_UPDATE | wx.SP_3D)
+        self.splitter = wx.SplitterWindow(self.combined_panel,
+                                          style=wx.SP_THIN_SASH |wx.SP_LIVE_UPDATE | wx.SP_3D)
         self.splitter.SetMinimumPaneSize(200)
 
         # Top: Capacity

@@ -71,18 +71,38 @@ class LakeHavasu(Reservoir):
         self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
         self.evap_parts = self.get_24_month_evap(self.df_24_month)
 
-        self.cap_diversion_projected_af = self.get_24_month_projected(self.df_24_month, "CAP Diversion")
         self.cap_diversion_actual_af = self.get_24_month_actual(self.df_24_month, "CAP Diversion")
+        self.cap_diversion_projected_af = self.get_24_month_projected(self.df_24_month, "CAP Diversion")
 
-        self.mwd_diversion_projected_af = self.get_24_month_projected(self.df_24_month, "MWD Diversion")
         self.mwd_diversion_actual_af = self.get_24_month_actual(self.df_24_month, "MWD Diversion")
+        self.mwd_diversion_projected_af = self.get_24_month_projected(self.df_24_month, "MWD Diversion")
+
+        self.flow_to_mexico_actual_af = self.get_24_month_actual(self.df_24_month, "Flow To Mexico")
+        self.flow_to_mexico_projected_af = self.get_24_month_projected(self.df_24_month, "Flow To Mexico")
+
+        self.outflow_actual_af -= self.flow_to_mexico_actual_af
+        self.outflow_projected_af -= self.flow_to_mexico_projected_af
+
+        self.salton_actual_af = 400000
+        self.salton_projected_af = 400000
+
+        self.outflow_actual_af -= self.salton_actual_af
+        self.outflow_projected_af -= self.salton_projected_af
+
+        self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
+                              ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
+
 
         self.pump_parts = [
+            ("MX Actual", self.flow_to_mexico_actual_af, Reservoir.flow_to_mexico_actual_color),
+            ("MX Projected", self.flow_to_mexico_projected_af, Reservoir.flow_to_mexico_projected_color),
+            ("Salton Actual", self.salton_actual_af, Reservoir.salton_actual_color),
+            ("Salton Projected", self.salton_projected_af, Reservoir.salton_projected_color),
             ("CAP Actual", self.cap_diversion_actual_af, Reservoir.cap_pump_actual_color),
             ("CAP Projected", self.cap_diversion_projected_af, Reservoir.cap_pump_projected_color),
             ("MPW Actual", self.mwd_diversion_actual_af, Reservoir.mwd_pump_actual_color),
             ("MPW Projected", self.mwd_diversion_projected_af, Reservoir.mwd_pump_projected_color),
-                           ]
+             ]
 
         # usbr_lake_havasu_release_total_af = 6126
         # sheet.usbr_annuals(self.df, usbr_lake_havasu_release_total_af, self.water_year, self.water_year, title=lb.HAVASU_RELEASE, month=all_b.CY, divisor=1)
