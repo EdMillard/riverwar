@@ -42,10 +42,17 @@ class LakePowell(Reservoir):
 
         self.usgs_release_gage_id:str = '09380000'
 
+        self.usbr_rise_elevation_ft_id = 508 # 1964
+        self.usbr_rise_storage_af_id = 509 # 1964
+        self.usbr_rise_inflow_af_id = 4301 # 1964
+        self.usbr_rise_evap_af_id = 510 # 1964
+        self.usbr_rise_release_af_id = 4354 # 1964
+
+        # usbr_lake_powell_release_total_af = 4354 # 1964
         # Current
         #
-        self.date_time, self.elevation_feet = self.get_elevation(508, ub.POWELL_ELEVATION_WY)
-        self.active_capacity_af = self.get_storage(509, ub.POWELL_WY) # 1964
+        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.POWELL_ELEVATION_WY)
+        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.POWELL_WY) # 1964
 
         # 24 Month
         #
@@ -60,14 +67,20 @@ class LakePowell(Reservoir):
             ("DROA", 500000, lb.TUCSON_COLOR)
                                 ]
 
-        # self.df_24_month_min, self.df_24_wy_min =  self.load_24_month_min(self.name, 2026, 'MAR')
-        # self.inflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Unregulated Inflow")
-        # self.outflow_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Total Release")
-        # self.evap_projected_min_af = self.get_24_month_projected(self.df_24_month_min, "Evaporation Losses")
-        # usbr_lake_powell_unregulated_inflow_af = 4301 # 1964
-        # self.inflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_unregulated_inflow_af)
+        # Actual from USBR/USGS
+        headers_24_month = list(self.df_24_month.columns.astype(str))
+        df: pd.DataFrame = sheet.create_monthly_df(self.water_year_info.start_date, self.water_year_info.end_date, headers_24_month)
+        Reservoir.usbr_monthly_into_df(df, self.usbr_rise_inflow_af_id, self.water_year, "Unregulated Inflow", month=all_b.WY)
+        Reservoir.usbr_monthly_into_df(df, self.usbr_rise_release_af_id, self.water_year, "Total Release", month=all_b.WY)
+        Reservoir.usbr_monthly_into_df(df, self.usbr_rise_evap_af_id, self.water_year, "Evaporation Losses", month=all_b.WY)
 
-        # usbr_lake_powell_release_total_af = 4354 # 1964
+        Reservoir.usbr_end_of_month_into_df(df, self.usbr_rise_elevation_ft_id, self.water_year, "Reservoir Elevation End of Month ft", month=all_b.WY)
+        Reservoir.usbr_end_of_month_into_df(df, self.usbr_rise_storage_af_id, self.water_year, "End Of Month Storage", month=all_b.WY)
+
+        self.df_monthly = df
+        df_diff = Reservoir.subtract_dataframes(self.df_monthly, self.df_24_month)
+        # monthly = sheet.usbr_monthly(self.usbr_rise_inflow_af_id, self.water_year, month=all_b.WY)
+        # self.inflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_unregulated_inflow_af)
         # self.outflow_actual_af = self.get_sum_end_of_month(usbr_lake_powell_release_total_af)
 
         # self.evap_actual_af = self.get_evaporation(510, ub.POWELL_EVAPORATION_WY)

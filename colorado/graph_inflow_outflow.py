@@ -24,7 +24,7 @@ import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
 
-def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow Loss Outflow"):
+def create_inflow_outflow_chart(reservoirs, title="Outflow Loss Inflow, Mar 2026 24 Month, Oct 1, 2025- Oct 1, 2026"):
     if not reservoirs:
         raise ValueError("Reservoir list cannot be empty")
 
@@ -67,6 +67,8 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow Loss Outflow
         _draw_difference_connector(ax, i, total_left, total_right, x_pos, bar_width)
 
     # ==================== LEGENDS ====================
+
+    # 1. Main Components Legend (will stay on top)
     main_handles = [
         mpatches.Patch(color=Reservoir.outflow_actual_color, label='Outflow Actual'),
         mpatches.Patch(color=Reservoir.outflow_projected_color, label='Outflow Projected'),
@@ -81,6 +83,25 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow Loss Outflow
                          title="Main Components", title_fontsize=10.5,
                          fontsize=10, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
 
+    # 2. Gap Water Legend
+    gap_handles = []
+    seen = set()
+    for r in reservoirs:
+        for full_label, amount, color in getattr(r, 'gap_water_parts', []):
+            if amount > 0:
+                clean_label = str(full_label).strip()
+                if clean_label not in seen:
+                    seen.add(clean_label)
+                    gap_handles.append(mpatches.Patch(color=color, label=clean_label))
+
+    if gap_handles:
+        leg_gap = ax.legend(handles=gap_handles, loc='upper right',
+                            title="Gap Water", title_fontsize=10.5,
+                            fontsize=10, framealpha=0.95,
+                            bbox_to_anchor=(0.82, 1.0))   # Positioned between pump and main
+        ax.add_artist(leg_main)
+
+    # 3. Pump Legend (original position)
     pump_handles = []
     seen = set()
     for r in reservoirs:
@@ -92,10 +113,15 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow Loss Outflow
     if pump_handles:
         leg_pump = ax.legend(handles=pump_handles, loc='upper right',
                              title="Pumping Plants", title_fontsize=10.5,
-                             fontsize=10, framealpha=0.95, bbox_to_anchor=(0.124, 1.0))
-        ax.add_artist(leg_main)
+                             fontsize=10, framealpha=0.95,
+                             bbox_to_anchor=(0.124, 1.0))
+        ax.add_artist(leg_main)   # Re-add main on top
 
-    # Layout matching reservoir chart
+    # Optional: Add gap legend again at the end if needed
+    if gap_handles:
+        ax.add_artist(leg_gap)
+
+    # Layout
     ax.set_xlabel('')
     ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
     ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
@@ -109,7 +135,6 @@ def create_inflow_outflow_chart(reservoirs, title="Reservoir Inflow Loss Outflow
     fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.89)
 
     return fig
-
 
 # ====================== HELPER FUNCTIONS ======================
 
@@ -299,10 +324,10 @@ def _draw_inflow_bar(ax, i, r, x_pos, bar_width, edge_color):
                                 ha='center', va='center',
                                 fontsize=9.5, fontweight='bold', color='black')
 
-                ax.annotate(label,
-                            xy=(gap_x + bar_width*0.65/2 + 0.09, current_bottom + amount / 2),
-                            ha='left', va='center',
-                            fontsize=9.5, fontweight='bold', color='black')
+                # ax.annotate(label,
+                #             xy=(gap_x + bar_width*0.65/2 + 0.09, current_bottom + amount / 2),
+                #             ha='left', va='center',
+                #             fontsize=9.5, fontweight='bold', color='black')
 
                 current_bottom += amount
 

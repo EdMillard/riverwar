@@ -22,10 +22,10 @@ SOFTWARE.
 import copy
 import csv
 from datetime import datetime
+from datetime import date
 from pathlib import Path
-import re
-from collections import Counter
 import pandas as pd
+import numpy as np
 from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
 from datetime import date
@@ -33,7 +33,7 @@ from typing import List, Tuple
 from sheet import sheet
 from source import usbr_rise
 import colorado.allb as all_b
-
+from graph.water import WaterGraph
 
 class Reservoir:
     high_power_pool_color = "lightblue"
@@ -52,7 +52,6 @@ class Reservoir:
     evap_actual_color = '#F4C300'           # Yellow
     evap_projected_color = '#FFDD33'
 
-
     cap_pump_actual_color = '#8B4513'       # Brown
     cap_pump_projected_color = '#D2A679'
 
@@ -67,11 +66,30 @@ class Reservoir:
         self.name:str = name
         start_year = self.water_year = 2026
         self.water_year_info = self.get_water_year_info(start_year, month=month)
+
+        # DataFrames
         self.headers = headers
         self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
-        self.date_time:TimeStamp = 0
+        self.date_time:TimeStamp = pd.to_datetime((1970, 1, 1)).normalize()
 
+        # Month Year Range
+        #
+        self.start_month_year_actual = "Oct 2025"
+        self.end_month_year_actual = "Mar 2026"
+        self.start_month_year_projected = "Apr 2026"
+        self.emd_month_year_projected = "Sep 2026"
+
+        # USBR RISE ID's
+        #
+        self.usbr_rise_elevation_ft_id = 0
+        self.usbr_rise_storage_af_id = 0
+        self.usbr_rise_inflow_af_id = 0
+        self.usbr_rise_evap_af_id = 0
+        self.usbr_rise_release_af_id = 0
+
+        # Elevations
+        #
         self.elevation_feet:float = 0
         self.active_capacity_af:float = 0
 
@@ -82,8 +100,6 @@ class Reservoir:
         self.dead_pool_feet:float = 0
 
         self.critical_elevations:List[float] = []
-
-        self.reserved_parts:List[tuple] = []
 
         self.inflow_actual_af = 0
         self.inflow_projected_af= 0
@@ -101,10 +117,9 @@ class Reservoir:
         self.evap_projected_af= 0
         self.evap_parts:List[tuple] =  []
 
-        self.start_month_year_actual = "Oct 2025"
-        self.end_month_year_actual = "Mar 2026"
-        self.start_month_year_projected = "Apr 2026"
-        self.emd_month_year_projected = "Sep 2026"
+        # Reserve (i.e. ICS)
+        self.reserved_parts:List[tuple] = []
+
 
     def copy(self):
         return copy.copy(self)
@@ -152,13 +167,189 @@ class Reservoir:
             total += month['val']
         return total
 
+    @staticmethod
+    def subtract_dataframes(
+            df1: pd.DataFrame,
+            df2: pd.DataFrame,
+            date_col: str = 'Date'
+    ) -> pd.DataFrame:
+        """
+        Returns a new DataFrame containing ONLY the dates/rows that exist in BOTH df1 and df2.
+        Subtracts (df1 - df2) only for those common dates.
+        Columns that don't exist in both are dropped.
+        """
+        if date_col not in df1.columns or date_col not in df2.columns:
+            raise ValueError(f"Date column '{date_col}' not found in one or both DataFrames.")
+
+        # Find common dates
+        common_dates = pd.merge(
+            df1[[date_col]],
+            df2[[date_col]],
+            on=date_col,
+            how='inner'
+        )
+
+        if common_dates.empty:
+            print("Warning: No common dates between the two DataFrames.")
+            return pd.DataFrame(columns=[date_col])
+
+        # Merge only on common dates
+        merged = pd.merge(
+            df1,
+            df2,
+            on=date_col,
+            how='inner',
+            suffixes=('_1', '_2')
+        )
+
+        result = merged[[date_col]].copy()
+
+        # Subtract columns that exist in both
+        for col in df1.columns:
+            if col == date_col:
+                continue
+
+            col1 = f"{col}_1"
+            col2 = f"{col}_2"
+
+            if col1 in merged.columns and col2 in merged.columns:
+                result[col] = merged[col1] - merged[col2]
+
+        return result
+
+    def usbr_end_of_month_into_df(
+            df: pd.DataFrame,
+            gage_id: int,
+            year: int,
+            column_name: str,
+            cfs_to_af: bool = False,
+            month: int = 1
+    ) -> None:
+        """
+        Gets last value for each FULL month, then explicitly adds the very last record
+        if it belongs to a partial month.
+        """
+        if column_name not in df.columns:
+            raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
+
+        # Load data
+        if month != 1:
+            ts = pd.Timestamp(f'{year - 1}-{month:02d}-01')
+        else:
+            ts = pd.Timestamp(f'{year}-{month:02d}-01')
+
+        water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+
+        if cfs_to_af:
+            info, raw_data = usbr_rise.load(gage_id, water_year_info=water_year_info)
+            daily_data = WaterGraph.convert_cfs_to_af_per_day(raw_data)
+        else:
+            info, daily_data = usbr_rise.load(gage_id, water_year_info=water_year_info)
+
+        # Convert to DataFrame
+        daily_list = list(daily_data)
+        dates = [item[0] for item in daily_list]
+        values = [item[1] for item in daily_list]
+
+        daily_df = pd.DataFrame({'date': dates, 'value': values})
+        daily_df['date'] = pd.to_datetime(daily_df['date'])
+        daily_df['month_label'] = daily_df['date'].dt.strftime('%b %Y')
+
+        # 1. Get last value for each FULL month
+        monthly = daily_df.groupby('month_label').last().reset_index()
+
+        # 2. Check the very last record in the entire dataset
+        if len(daily_list) > 0:
+            last_item = daily_list[-1]
+            last_date = pd.to_datetime(last_item[0])
+            last_month_label = last_date.strftime('%b %Y')
+            last_value = float(last_item[1])
+
+            # If this last record is in a month that isn't fully covered or is the current month
+            if last_month_label not in monthly['month_label'].values:
+                # Add it as a new row
+                new_row = pd.DataFrame({
+                    'month_label': [last_month_label],
+                    'date': [last_date],
+                    'value': [last_value]
+                })
+                monthly = pd.concat([monthly, new_row], ignore_index=True)
+            else:
+                # Override with the absolute last value for that month
+                monthly.loc[monthly['month_label'] == last_month_label, 'value'] = last_value
+
+        # Fill into target DataFrame
+        filled = 0
+        for _, row in monthly.iterrows():
+            mask = df['Date'] == row['month_label']
+            if mask.any():
+                df.loc[mask, column_name] = float(row['value'])
+                filled += 1
+
+        print(f"✓ Filled {filled} months into '{column_name}' (last value per month + forced partial month)")
+
+    def usbr_monthly_into_df(
+            df: pd.DataFrame,
+            gage_id: int,
+            year: int,
+            column_name: str,
+            cfs_to_af: bool = False,
+            month: int = 1
+    ) -> None:
+        """
+        Fills monthly USBR data into your existing monthly DataFrame.
+        Matches by 'Date' column ('Apr 2026', 'May 2026', etc.).
+        """
+        if column_name not in df.columns:
+            raise ValueError(f"Column '{column_name}' does not exist in the DataFrame.")
+
+        # Get the data using your original logic
+        if month != 1:
+            ts = pd.Timestamp(f'{year - 1}-{month:02d}-01')
+        else:
+            ts = pd.Timestamp(f'{year}-{month:02d}-01')
+
+        water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+
+        if cfs_to_af:
+            info, daily_cfs = usbr_rise.load(gage_id, water_year_info=water_year_info)
+            daily_af = WaterGraph.convert_cfs_to_af_per_day(daily_cfs)
+        else:
+            info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
+
+        monthly_af = usbr_rise.daily_to_monthly_sum(daily_af)
+
+        # Fill values by matching month-year string
+        for entry in monthly_af:
+            if 'dt' not in entry:
+                continue
+
+            # Convert to 'Mon Year' format to match your df
+            entry_date = pd.to_datetime(entry['dt'])
+            mon_year_str = entry_date.strftime('%b %Y')
+
+            # Find the row and put the value
+            mask = df['Date'] == mon_year_str
+            if mask.any():
+                value = entry.get('val')
+                if value is not None:
+                    df.loc[mask, column_name] = float(value)
+                else:
+                    print('fill_usbt_monthly_into_df failed no value')
+            else:
+                print('fill_usbt_monthly_into_df failed month-year not found')
+
+        filled = df[column_name].notna().sum()
+        print(f"✓ Filled {filled} months into '{column_name}' for gage {gage_id}")
+
+
     def get_24_month_projected(self, df, column_name:str)->float:
         total = Reservoir.sum_column_between_dates(
             df,
             column_name=column_name,
             start_month_year=self.start_month_year_projected,
             end_month_year=self.emd_month_year_projected
-        ) * 1000
+        )
         return total
 
     def get_24_month_actual(self, df, column_name:str)->float:
@@ -167,7 +358,7 @@ class Reservoir:
             column_name=column_name,
             start_month_year=self.start_month_year_actual,
             end_month_year=self.end_month_year_actual
-        ) * 1000
+        )
         return total
 
     def get_value_by_year(self, year: int, column_name: str):
@@ -364,9 +555,9 @@ class Reservoir:
         return df_24_month, df_24_wy
 
     @staticmethod
-    def clean_column_name(col):
+    def clean_column_name(col)->Tuple[str, str]:
         col = str(col).strip()
-
+        unit = ''
         # Find unit in parentheses
         if '(' in col and ')' in col:
             base = col.split('(')[0].strip()
@@ -374,15 +565,15 @@ class Reservoir:
 
             # Rule 1: If unit is 1000 acre feet (default), discard it
             if unit in ['1000 ac-ft']:
-                return base
+                return base, unit
             # Rule 2: If unit is Ft or CFS or whatever, append without parens
             elif unit in ['feet', 'ft']:
-                return f"{base} {unit}"
+                return f"{base} {unit}", unit
             elif unit in ['1000 CFS', '1000 cfs']:
-                return f"{base} cfs"
+                return f"{base} cfs", unit
             else:
-                return f"{base} {unit}"
-        return col
+                return f"{base} {unit}", unit
+        return col, unit
 
     @staticmethod
     def read_usbr_24month_table(file_path, parent_name: str = None):
@@ -400,7 +591,25 @@ class Reservoir:
         )
 
         # Clean column names
-        df.columns = [Reservoir.clean_column_name(col) for col in df.columns]
+        new_columns = []
+        multiplier_columns = {}
+        for col in df.columns:
+            clean_name, unit = Reservoir.clean_column_name(col)
+            new_columns.append(clean_name)
+
+            if unit.lower().startswith('1000') or '1000' in unit:
+                multiplier_columns[clean_name] = 1000.0
+
+        # Apply new column names
+        df.columns = new_columns
+
+        # Apply scaling where needed
+        for col, factor in multiplier_columns.items():
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                df[col] = df[col] * factor
+                df[col] = df[col].round(0).astype('Int64')
+                # print(f"Scaled column '{col}' by {factor:,}")
 
         # Fix first column name if needed
         if str(df.columns[0]).strip() in ['nan', '', 'Unnamed: 0']:

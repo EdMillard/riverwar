@@ -276,6 +276,45 @@ def create_df(min_year: int, max_year: int, headers: List[str], zero=False):
 
     return df
 
+def create_monthly_df(
+    start_date: date | str | tuple[int, int, int],
+    end_date: date | str | tuple[int, int, int],
+    headers: list[str],
+    include_end_month: bool = True
+) -> pd.DataFrame:
+    """
+    Creates a DataFrame with one row per month between start and end date.
+    The 'Date' column shows only 'Mon Year' format (e.g. 'Apr 2026', 'May 2026').
+    """
+    # Normalize inputs
+    if isinstance(start_date, (tuple, list)):
+        start_date = date(*start_date)
+    if isinstance(end_date, (tuple, list)):
+        end_date = date(*end_date)
+
+    start = pd.to_datetime(start_date)
+    end = pd.to_datetime(end_date)
+
+    # Generate monthly range
+    dates = pd.date_range(
+        start=start.replace(day=1),
+        end=end,
+        freq='MS',                    # Month Start
+        inclusive='both' if include_end_month else 'left'
+    )
+
+    # Create friendly month-year labels
+    month_labels = dates.strftime('%b %Y')
+
+    # Build DataFrame
+    df = pd.DataFrame(index=range(len(dates)))   # Simple integer index
+    for col in headers:
+        df[col] = pd.NA
+
+    df['Date'] = month_labels
+
+    return df
+
 def create_daily_df(
         start_date: date | str | tuple[int, int, int],
         end_date: date | str | tuple[int, int, int],
