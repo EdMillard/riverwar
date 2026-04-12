@@ -387,22 +387,22 @@ if __name__ == "__main__":
     blue_mesa = BlueMesa()
     lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
     lake_mead = LakeMead(upstream=[lake_powell])
-    lake_mohave = LakeMohave(upstream=[lake_mead]),
+    lake_mohave = LakeMohave(upstream=[lake_mead])
     lake_havasu = LakeHavasu(upstream=[lake_mohave])
     lake_pleasant = LakePleasant(upstream=[lake_havasu])
-    imperial = Imperial(upstream=[lake_havasu]),
+    imperial = Imperial(upstream=[lake_havasu])
     aquifers = Aquifers()
 
     reservoirs = [
-        Imperial(),
-        Aquifers(),
-        LakeHavasu(),
-        LakeMohave(),
-        LakeMead(),
+        imperial,
+        aquifers,
+        lake_havasu,
+        lake_mohave,
+        lake_mead,
         lake_powell,
-        FlamingGorge(),
-        Navajo(),
-        BlueMesa()
+        flaming_gorge,
+        navajo,
+        blue_mesa
     ]
 
     app = wx.App(False)
