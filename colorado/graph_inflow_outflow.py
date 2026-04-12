@@ -23,121 +23,176 @@ from reservoirs.reservoir import Reservoir
 import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
+import datetime as dt
 
-def create_inflow_outflow_chart(reservoirs, title="Outflow Loss Inflow, Mar 2026 24 Month, Oct 1, 2025- Oct 1, 2026"):
-    if not reservoirs:
-        raise ValueError("Reservoir list cannot be empty")
 
-    # Filter out reservoirs with no inflow or outflow data
-    active_reservoirs = []
-    for r in reservoirs:
-        inflow = getattr(r, 'inflow_parts', [])
-        outflow = getattr(r, 'outflow_parts', [])
-        if (inflow and len(inflow) > 0) or (outflow and len(outflow) > 0):
-            active_reservoirs.append(r)
+class InflowOutflowChart:
+    """Complete class - Gap Water and Havasu legends both working"""
 
-    if not active_reservoirs:
-        raise ValueError("No reservoirs with inflow or outflow data")
+    def __init__(self, reservoirs, start_month=10, start_year=2025,
+                 current_month=4, current_year=2026,
+                 end_month=10, end_year=2026):
 
-    reservoirs = active_reservoirs
+        self.reservoirs = reservoirs
+        self.start_month = start_month
+        self.start_year = start_year
+        self.current_month = current_month
+        self.current_year = current_year
+        self.end_month = end_month
+        self.end_year = end_year
 
-    names = [r.name for r in reservoirs]
-    x_pos = np.arange(len(names))
-    bar_width = 0.33
+        self.width_inch = 14.2
+        self.height_inch = 5.6
+        self.fig = None
 
-    fig = Figure(figsize=(14.2, 5.4), dpi=100)
-    ax = fig.add_subplot(111)
+        self._create_figure()
 
-    edge_color = 'black'
+    def _create_figure(self, width_inch=None, height_inch=None):
+        if width_inch is not None and width_inch > 0:
+            self.width_inch = width_inch
+        if height_inch is not None and height_inch > 0:
+            self.height_inch = height_inch
 
-    # ==================== DRAW BARS ====================
-    for i, r in enumerate(reservoirs):
-        _draw_outflow_bar(ax, i, r, x_pos, bar_width, edge_color)
-        _draw_inflow_bar(ax, i, r, x_pos, bar_width, edge_color)
+        title = (f"Outflow Loss Inflow, "
+                 f"{self.month_to_short_name(self.current_month)} {self.current_year} 24 Month, "
+                 f"{self.month_to_short_name(self.start_month)} {self.start_year} - "
+                 f"{self.month_to_short_name(self.end_month)} {self.end_year}")
 
-    # ==================== DIFFERENCE GAP CONNECTOR ====================
-    for i, r in enumerate(reservoirs):
-        total_left = (sum(a for _, a, _ in getattr(r, 'outflow_parts', [])) +
-                      sum(a for _, a, _ in getattr(r, 'pump_parts', [])) +
-                      sum(a for _, a, _ in getattr(r, 'evap_parts', [])))
+        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
+        ax = fig.add_subplot(111)
 
-        total_right = (sum(a for _, a, _ in getattr(r, 'inflow_parts', [])) +
-                       sum(a for _, a, _ in getattr(r, 'side_inflow_parts', [])))
+        self.create_inflow_outflow_chart(ax, title)
 
-        _draw_difference_connector(ax, i, total_left, total_right, x_pos, bar_width)
+        fig.tight_layout(pad=1.2)
+        fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.89)
 
-    # ==================== LEGENDS ====================
+        self.fig = fig
+        return fig
 
-    # 1. Main Components Legend (will stay on top)
-    main_handles = [
-        mpatches.Patch(color=Reservoir.outflow_actual_color, label='Outflow Actual'),
-        mpatches.Patch(color=Reservoir.outflow_projected_color, label='Outflow Projected'),
-        mpatches.Patch(color=Reservoir.evap_actual_color, label='Evaporation Actual'),
-        mpatches.Patch(color=Reservoir.evap_projected_color, label='Evaporation Projected'),
-        mpatches.Patch(color=Reservoir.inflow_actual_color, label='Inflow Actual'),
-        mpatches.Patch(color=Reservoir.inflow_projected_color, label='Inflow Projected'),
-        mpatches.Patch(color=Reservoir.side_inflow_actual_color, label='Side Inflow Actual'),
-        mpatches.Patch(color=Reservoir.side_inflow_projected_color, label='Side Inflow Projected'),
-        mpatches.Patch(color=Reservoir.snwa_pump_actual_color, label='SNWA Actual'),
-        mpatches.Patch(color=Reservoir.snwa_pump_projected_color, label='SNWA Projected')
-    ]
-    leg_main = ax.legend(handles=main_handles, loc='upper right',
-                         title="Main Components", title_fontsize=10.5,
-                         fontsize=10, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
+    def update_dates(self, start_month=None, start_year=None,
+                     current_month=None, current_year=None,
+                     end_month=None, end_year=None):
+        if start_month is not None: self.start_month = start_month
+        if start_year is not None: self.start_year = start_year
+        if current_month is not None: self.current_month = current_month
+        if current_year is not None: self.current_year = current_year
+        if end_month is not None: self.end_month = end_month
+        if end_year is not None: self.end_year = end_year
 
-    # 2. Gap Water Legend
-    gap_handles = []
-    seen = set()
-    for r in reservoirs:
-        for full_label, amount, color in getattr(r, 'gap_water_parts', []):
-            if amount > 0:
-                clean_label = str(full_label).strip()
-                if clean_label not in seen:
-                    seen.add(clean_label)
-                    gap_handles.append(mpatches.Patch(color=color, label=clean_label))
+        return self._create_figure()
 
-    if gap_handles:
-        leg_gap = ax.legend(handles=gap_handles, loc='upper right',
-                            title="Gap Water", title_fontsize=10.5,
-                            fontsize=10, framealpha=0.95,
-                            bbox_to_anchor=(0.82, 1.0))   # Positioned between pump and main
+    def get_figure(self, width_inch=None, height_inch=None):
+        return self._create_figure(width_inch, height_inch)
+
+    @staticmethod
+    def month_to_short_name(month: int) -> str:
+        if not 1 <= month <= 12:
+            return "???"
+        return dt.date(2026, month, 1).strftime("%b")
+
+    def create_inflow_outflow_chart(self, ax, title):
+        """Full original logic with correct legend order"""
+        if not self.reservoirs:
+            raise ValueError("Reservoir list cannot be empty")
+
+        active_reservoirs = []
+        for r in self.reservoirs:
+            inflow = getattr(r, 'inflow_parts', [])
+            outflow = getattr(r, 'outflow_parts', [])
+            if (inflow and len(inflow) > 0) or (outflow and len(outflow) > 0):
+                active_reservoirs.append(r)
+
+        if not active_reservoirs:
+            raise ValueError("No reservoirs with inflow or outflow data")
+
+        reservoirs = active_reservoirs
+        names = [r.name for r in reservoirs]
+        x_pos = np.arange(len(names))
+        bar_width = 0.33
+
+        edge_color = 'black'
+
+        # Draw bars
+        for i, r in enumerate(reservoirs):
+            _draw_outflow_bar(ax, i, r, x_pos, bar_width, edge_color)
+            _draw_inflow_bar(ax, i, r, x_pos, bar_width, edge_color)
+
+        # Difference connectors
+        for i, r in enumerate(reservoirs):
+            total_left = (sum(a for _, a, _ in getattr(r, 'outflow_parts', [])) +
+                          sum(a for _, a, _ in getattr(r, 'pump_parts', [])) +
+                          sum(a for _, a, _ in getattr(r, 'evap_parts', [])))
+
+            total_right = (sum(a for _, a, _ in getattr(r, 'inflow_parts', [])) +
+                           sum(a for _, a, _ in getattr(r, 'side_inflow_parts', [])))
+
+            _draw_difference_connector(ax, i, total_left, total_right, x_pos, bar_width)
+
+        # ==================== LEGENDS - CORRECT ORDER ====================
+        # 1. Main Components
+        main_handles = [
+            mpatches.Patch(color=Reservoir.outflow_actual_color, label='Outflow Actual'),
+            mpatches.Patch(color=Reservoir.outflow_projected_color, label='Outflow Projected'),
+            mpatches.Patch(color=Reservoir.evap_actual_color, label='Evaporation Actual'),
+            mpatches.Patch(color=Reservoir.evap_projected_color, label='Evaporation Projected'),
+            mpatches.Patch(color=Reservoir.inflow_actual_color, label='Inflow Actual'),
+            mpatches.Patch(color=Reservoir.inflow_projected_color, label='Inflow Projected'),
+            mpatches.Patch(color=Reservoir.side_inflow_actual_color, label='Side Inflow Actual'),
+            mpatches.Patch(color=Reservoir.side_inflow_projected_color, label='Side Inflow Projected'),
+            mpatches.Patch(color=Reservoir.snwa_pump_actual_color, label='SNWA Actual'),
+            mpatches.Patch(color=Reservoir.snwa_pump_projected_color, label='SNWA Projected')
+        ]
+        leg_main = ax.legend(handles=main_handles, loc='upper right',
+                             title="Main Components", title_fontsize=10.5,
+                             fontsize=10, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
+
+        # 2. Gap Water Legend
+        gap_handles = []
+        seen = set()
+        for r in reservoirs:
+            for full_label, amount, color in getattr(r, 'gap_water_parts', []):
+                if amount > 0:
+                    clean_label = str(full_label).strip()
+                    if clean_label not in seen:
+                        seen.add(clean_label)
+                        gap_handles.append(mpatches.Patch(color=color, label=clean_label))
+
+        if gap_handles:
+            leg_gap = ax.legend(handles=gap_handles, loc='upper right',
+                                title="Gap Water", title_fontsize=10.5,
+                                fontsize=10, framealpha=0.95,
+                                bbox_to_anchor=(0.82, 1.0))
+            ax.add_artist(leg_main)  # Keep main on top
+
+        # 3. Havasu Legend
+        pump_handles = []
+        seen = set()
+        for r in reservoirs:
+            for full_label, amount, color in getattr(r, 'pump_parts', []):
+                if r.name == 'Lake Havasu':
+                    if amount > 0 and full_label not in seen:
+                        seen.add(full_label)
+                        pump_handles.append(mpatches.Patch(color=color, label=full_label))
+
+        if pump_handles:
+            leg_pump = ax.legend(handles=pump_handles, loc='upper right',
+                                 title="Havasu Outflow", title_fontsize=10.5,
+                                 fontsize=10, framealpha=0.95,
+                                 bbox_to_anchor=(0.121, 1.0))
+            ax.add_artist(leg_main)  # Keep main on top
+
+        # Bring main legends to front
         ax.add_artist(leg_main)
+        if gap_handles:
+            ax.add_artist(leg_gap)
 
-    # 3. Havasu Legend (original position)
-    pump_handles = []
-    seen = set()
-    for r in reservoirs:
-        for full_label, amount, color in getattr(r, 'pump_parts', []):
-            if r.name == 'Lake Havasu':
-                if amount > 0 and full_label not in seen:
-                    seen.add(full_label)
-                    pump_handles.append(mpatches.Patch(color=color, label=full_label))
-
-    if pump_handles:
-        leg_pump = ax.legend(handles=pump_handles, loc='upper right',
-                             title="Havasu Outflow", title_fontsize=10.5,
-                             fontsize=10, framealpha=0.95,
-                             bbox_to_anchor=(0.121, 1.0))
-        ax.add_artist(leg_main)   # Re-add main on top
-
-    # Optional: Add gap legend again at the end if needed
-    if gap_handles:
-        ax.add_artist(leg_gap)
-
-    # Layout
-    ax.set_xlabel('')
-    ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
-    ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
-
-    ax.set_xticks(x_pos)
-    ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
-    ax.grid(axis='y', linestyle='--', alpha=0.65)
-    ax.set_axisbelow(True)
-
-    fig.tight_layout(pad=1.2)
-    fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.89)
-
-    return fig
+        # Final layout
+        ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
+        ax.grid(axis='y', linestyle='--', alpha=0.65)
+        ax.set_axisbelow(True)
 
 # ====================== HELPER FUNCTIONS ======================
 
