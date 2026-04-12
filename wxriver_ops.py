@@ -1,7 +1,7 @@
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib
-import datetime as dt
+from datetime import date
 import os
 import pandas as pd
 import wx.lib.buttons as buttons
@@ -22,8 +22,7 @@ class MonthYearNavigator(wx.Panel):
         super().__init__(parent, style=wx.BORDER_NONE)
 
         self.name = name                    # "start", "current", or "end"
-        self.current_month = initial_month
-        self.current_year = initial_year
+        self.current_date:date = date(initial_year, initial_month, 1)
         self.on_changed = on_changed
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -62,26 +61,31 @@ class MonthYearNavigator(wx.Panel):
         self._update_display()
 
     def _update_display(self):
-        month_name = dt.date(self.current_year, self.current_month, 1).strftime("%b")
-        self.date_text.SetLabel(f"{month_name} {self.current_year}")
+        month_name = self.current_date.strftime("%b")
+        self.date_text.SetLabel(f"{month_name} {self.current_date.year}")
 
     def _on_left(self, event):
-        self.current_month -= 1
-        if self.current_month < 1:
-            self.current_month = 12
-            self.current_year -= 1
+        month = self.current_date.month - 1
+        year = self.current_date.year
+        if month < 1:
+            month = 12
+            year -= 1
+        self.current_date = date(year, month, 1)
         self._update_display()
         if self.on_changed:
-            self.on_changed(self.name, self.current_month, self.current_year)
+            self.on_changed(self.name,  self.current_date)
 
     def _on_right(self, event):
-        self.current_month += 1
-        if self.current_month > 12:
-            self.current_month = 1
-            self.current_year += 1
+        month = self.current_date.month + 1
+        year = self.current_date.year
+
+        if month > 12:
+            month = 11
+            year += 1
+        self.current_date = date(year, month, 1)
         self._update_display()
         if self.on_changed:
-            self.on_changed(self.name, self.current_month, self.current_year)
+            self.on_changed(self.name, self.current_date)
 
 
 # ==================== MAIN FRAME ====================
@@ -187,29 +191,27 @@ class ReservoirChartFrame(wx.Frame):
                                           style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
         self.splitter.SetMinimumPaneSize(200)
 
-        # Capacity panel (now using new class)
-        self.cap_panel = wx.Panel(self.splitter)
-        self.cap_panel.Layout()
-        cap_width_inch = self.cap_panel.GetClientSize().GetWidth() / 100.0
+        # Reservoir panel
+        self.reservoir_panel = wx.Panel(self.splitter)
+        self.reservoir_panel.Layout()
 
         cap_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.capacity_canvas = FigureCanvas(self.cap_panel, -1,
-                                            self.reservoir_chart.get_figure(cap_width_inch))
-        cap_sizer.Add(self.capacity_canvas, 1, wx.EXPAND | wx.ALL, border=6)
-        self.cap_panel.SetSizer(cap_sizer)
+        self.reservoir_canvas = FigureCanvas(self.reservoir_panel, -1,
+                                            self.reservoir_chart.get_figure(None, None))
+        cap_sizer.Add(self.reservoir_canvas, 1, wx.EXPAND | wx.ALL, border=6)
+        self.reservoir_panel.SetSizer(cap_sizer)
 
         # Inflow panel
         self.in_panel = wx.Panel(self.splitter)
         self.in_panel.Layout()
-        inflow_width_inch = self.in_panel.GetClientSize().GetWidth() / 100.0
 
         in_sizer = wx.BoxSizer(wx.VERTICAL)
         self.inflow_canvas = FigureCanvas(self.in_panel, -1,
-                                          self.inflow_chart.get_figure(inflow_width_inch))
+                                          self.inflow_chart.get_figure(None, None))
         in_sizer.Add(self.inflow_canvas, 1, wx.EXPAND | wx.ALL, border=6)
         self.in_panel.SetSizer(in_sizer)
 
-        self.splitter.SplitHorizontally(self.cap_panel, self.in_panel)
+        self.splitter.SplitHorizontally(self.reservoir_panel, self.in_panel)
 
         combined_sizer = wx.BoxSizer(wx.VERTICAL)
         combined_sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=4)
@@ -229,19 +231,41 @@ class ReservoirChartFrame(wx.Frame):
 
         wx.CallAfter(self.panel.Layout)
 
-    def on_date_changed(self, which: str, month: int = None, year: int = None):
+    def on_date_changed(self, which: str, date: date | None):
         """One single redraw for ANY date change"""
         print(f"Date changed → {which}")
 
         if which == "start":
-            self.inflow_chart.update_dates(start_month=month, start_year=year)
+            self.reservoir_chart.update_dates(start_date=date)
+            self.inflow_chart.update_dates(start_date=date)
         elif which == "current":
-            self.inflow_chart.update_dates(current_month=month, current_year=year)
+            self.reservoir_chart.update_dates(current_date=date)
+            self.inflow_chart.update_dates(current_date=date)
         elif which == "end":
-            self.inflow_chart.update_dates(end_month=month, end_year=year)
-        # "global" does nothing extra - it just triggers the final redraw
-
+            self.reservoir_chart.update_dates(end_date=date)
+            self.inflow_chart.update_dates(end_date=date)
+        else:
+            # "global" does nothing extra - it just triggers the final redraw
+            pass
+        self._update_reservoir_canvas()
         self._update_inflow_canvas()
+
+    def _update_reservoir_canvas(self):
+        """Redraw with current panel width"""
+        if not hasattr(self, 'reservoir_canvas'):
+            return
+
+        panel_width_inch = max(8.0, self.in_panel.GetClientSize().GetWidth() / 100.0)
+        panel_height_inch = max(4.0, self.in_panel.GetClientSize().GetHeight() / 100.0)
+
+        new_fig = self.reservoir_chart.get_figure(panel_width_inch, panel_height_inch)
+
+        self.reservoir_canvas.figure = new_fig
+        self.reservoir_canvas.draw()
+        self.reservoir_canvas.Refresh()
+
+        self.in_panel.Layout()
+        self.splitter.Layout()
 
     def _update_inflow_canvas(self):
         """Redraw with current panel width"""
@@ -261,59 +285,57 @@ class ReservoirChartFrame(wx.Frame):
         self.splitter.Layout()
 
     # ==================== GLOBAL ARROW CALLBACKS ====================
-    def _on_global_left(self, event):
-        """Shift all three dates back by one month - single redraw"""
+
+    def _on_global_change(self, delta:int):
+
         for nav in (self.start_nav, self.current_nav, self.end_nav):
-            nav.current_month -= 1
-            if nav.current_month < 1:
-                nav.current_month = 12
-                nav.current_year -= 1
+            month = nav.current_date.month + delta
+            year = nav.current_date.year
+            if delta < 0:
+                if month < 1:
+                    month = 12
+                    year -= 1
+            else:
+                if month > 12:
+                    month = 1
+                    year += 1
+            nav.current_date = date(year, month, 1)
             nav._update_display()
 
         # Now update the chart with the new values from all three
         self.inflow_chart.update_dates(
-            start_month=self.start_nav.current_month,
-            start_year=self.start_nav.current_year,
-            current_month=self.current_nav.current_month,
-            current_year=self.current_nav.current_year,
-            end_month=self.end_nav.current_month,
-            end_year=self.end_nav.current_year
+            start_date=self.start_nav.current_date,
+            current_date=self.current_nav.current_date,
+            end_date=self.end_nav.current_date,
         )
-
         self._update_inflow_canvas()
 
+        self.reservoir_chart.update_dates(
+            start_date=self.start_nav.current_date,
+            current_date=self.current_nav.current_date,
+            end_date=self.end_nav.current_date,
+        )
+        self._update_reservoir_canvas()
+
+    def _on_global_left(self, event):
+        """Shift all three dates back by one month - single redraw"""
+        self._on_global_change(-1)
 
     def _on_global_right(self, event):
         """Shift all three dates forward by one month - single redraw"""
-        for nav in (self.start_nav, self.current_nav, self.end_nav):
-            nav.current_month += 1
-            if nav.current_month > 12:
-                nav.current_month = 1
-                nav.current_year += 1
-            nav._update_display()
-
-        # Update the chart with all new values
-        self.inflow_chart.update_dates(
-            start_month=self.start_nav.current_month,
-            start_year=self.start_nav.current_year,
-            current_month=self.current_nav.current_month,
-            current_year=self.current_nav.current_year,
-            end_month=self.end_nav.current_month,
-            end_year=self.end_nav.current_year
-        )
-
-        self._update_inflow_canvas()
+        self._on_global_change(1)
 
     # ==================== SAVE CALLBACKS ====================
     def on_save_combined(self, event):
-        default_name = f"Reservoir_Dashboard_{dt.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        default_name = f"Reservoir_Dashboard_{date.today().strftime('%Y%m%d_%H%M%S')}.png"
         with wx.FileDialog(self, "Save Combined Dashboard as PNG",
                            defaultDir=os.getcwd(), defaultFile=default_name,
                            wildcard="PNG files (*.png)|*.png",
                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
             if dlg.ShowModal() == wx.ID_OK:
                 try:
-                    self.capacity_fig.savefig(dlg.GetPath(), dpi=200, bbox_inches='tight')
+                    self.reservoir_canvas.figure.savefig(dlg.GetPath(), dpi=200, bbox_inches='tight')
+                    self.inflow_canvas.figure.savefig(dlg.GetPath(), dpi=200, bbox_inches='tight')
                     wx.MessageBox("Dashboard saved successfully", "Success", wx.OK | wx.ICON_INFORMATION)
                 except Exception as e:
                     wx.MessageBox(str(e), "Save Error", wx.OK | wx.ICON_ERROR)

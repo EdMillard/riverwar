@@ -48,7 +48,6 @@ class LakePowell(Reservoir):
         self.usbr_rise_evap_af_id = 510 # 1964
         self.usbr_rise_release_af_id = 4354 # 1964
 
-        # usbr_lake_powell_release_total_af = 4354 # 1964
         # Current
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.POWELL_ELEVATION_WY)

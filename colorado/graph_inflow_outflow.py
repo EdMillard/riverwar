@@ -23,29 +23,18 @@ from reservoirs.reservoir import Reservoir
 import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
-import datetime as dt
+from datetime import date
+from colorado.chart import Chart
+from typing import List
 
-
-class InflowOutflowChart:
-    """Complete class - Gap Water and Havasu legends both working"""
-
-    def __init__(self, reservoirs, start_month=10, start_year=2025,
-                 current_month=4, current_year=2026,
-                 end_month=10, end_year=2026):
-
-        self.reservoirs = reservoirs
-        self.start_month = start_month
-        self.start_year = start_year
-        self.current_month = current_month
-        self.current_year = current_year
-        self.end_month = end_month
-        self.end_year = end_year
-
-        self.width_inch = 14.2
+class InflowOutflowChart(Chart):
+    def __init__(self,
+                 reservoirs: List[Reservoir],
+                 start_date: date | None = None,
+                 current_date: date | None = None,
+                 end_date: date | None = None):
+        super().__init__(reservoirs, start_date, current_date, end_date)
         self.height_inch = 5.6
-        self.fig = None
-
-        self._create_figure()
 
     def _create_figure(self, width_inch=None, height_inch=None):
         if width_inch is not None and width_inch > 0:
@@ -54,9 +43,9 @@ class InflowOutflowChart:
             self.height_inch = height_inch
 
         title = (f"Outflow Loss Inflow, "
-                 f"{self.month_to_short_name(self.current_month)} {self.current_year} 24 Month, "
-                 f"{self.month_to_short_name(self.start_month)} {self.start_year} - "
-                 f"{self.month_to_short_name(self.end_month)} {self.end_year}")
+                 f"{self.month_to_short_name(self.current_date.month)} {self.current_date.year} 24 Month, "
+                 f"{self.month_to_short_name(self.start_date.month)} {self.start_date.year} - "
+                 f"{self.month_to_short_name(self.end_date.month)} {self.end_date.year}")
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
         ax = fig.add_subplot(111)
@@ -68,27 +57,6 @@ class InflowOutflowChart:
 
         self.fig = fig
         return fig
-
-    def update_dates(self, start_month=None, start_year=None,
-                     current_month=None, current_year=None,
-                     end_month=None, end_year=None):
-        if start_month is not None: self.start_month = start_month
-        if start_year is not None: self.start_year = start_year
-        if current_month is not None: self.current_month = current_month
-        if current_year is not None: self.current_year = current_year
-        if end_month is not None: self.end_month = end_month
-        if end_year is not None: self.end_year = end_year
-
-        return self._create_figure()
-
-    def get_figure(self, width_inch=None, height_inch=None):
-        return self._create_figure(width_inch, height_inch)
-
-    @staticmethod
-    def month_to_short_name(month: int) -> str:
-        if not 1 <= month <= 12:
-            return "???"
-        return dt.date(2026, month, 1).strftime("%b")
 
     def create_inflow_outflow_chart(self, ax, title):
         """Full original logic with correct legend order"""
