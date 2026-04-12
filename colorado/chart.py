@@ -23,7 +23,7 @@ from reservoirs.reservoir import Reservoir
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 class Chart:
     """Complete ReservoirChart class with all original legends and deduplication"""
@@ -52,24 +52,12 @@ class Chart:
     def create_chart(self, ax:Axes, title:str):
         pass
 
-    def _create_figure(self, width_inch=int | None, height_inch=int | None):
-        if width_inch is not None and width_inch > 0:
-            self.width_inch = width_inch
-        # if height_inch is not None and height_inch > 0:
-        #     self.height_inch = height_inch
-
-        title = f'Reservoir Active Capacity - {self.month_to_short_name(self.current_month)} {self.current_year}'
-
-        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
-        ax = fig.add_subplot(111)
-
-        self.create_chart(ax, title)
-
-        fig.tight_layout(pad=1.2)
-        fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.89)
-
-        self.fig = fig
-        return fig
+    def create_figure(
+            self,
+            width_inch: Optional[int] = None,
+            height_inch: Optional[int] = None
+    ) -> Optional[Figure]:
+        return None
 
     def update_dates(self, start_date=None,
                      current_date=None,
@@ -79,7 +67,7 @@ class Chart:
         if end_date is not None: self.end_date = end_date
 
     def get_figure(self, width_inch=None, height_inch=None):
-        return self._create_figure(width_inch, height_inch)
+        return self.create_figure(width_inch, height_inch)
 
     @staticmethod
     def month_to_short_name(month: int) -> str:

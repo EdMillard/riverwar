@@ -26,12 +26,10 @@ import matplotlib.patches as mpatches
 from datetime import date
 import colorado.lb as lb
 from colorado.chart import Chart
-from typing import List
+from typing import List, Optional
 
 
 class ReservoirChart(Chart):
-    """Complete ReservoirChart class with all original legends and deduplication"""
-
     def __init__(self,
                  reservoirs: List[Reservoir],
                  start_date: date | None = None,
@@ -43,7 +41,11 @@ class ReservoirChart(Chart):
         self.reserved_zones = reserved_zones or []
         self.height_inch = 6.5
 
-    def _create_figure(self, width_inch=None, height_inch=None):
+    def create_figure(
+            self,
+            width_inch: Optional[int] = None,
+            height_inch: Optional[int] = None
+    ) -> Optional[Figure]:
         if width_inch is not None and width_inch > 0:
             self.width_inch = width_inch
         # if height_inch is not None and height_inch > 0:
@@ -193,6 +195,7 @@ class ReservoirChart(Chart):
 
         # ==================== LEGENDS WITH seen() DEDUPLICATION ====================
         # Power Head Zones
+        leg_power = None
         if self.power_head_zones:
             power_patches = [mpatches.Patch(color=color, label=label) for color, label in self.power_head_zones]
             leg_power = ax.legend(handles=power_patches, title="Power Head Zones",
@@ -200,6 +203,7 @@ class ReservoirChart(Chart):
                                   fontsize=9, title_fontsize=10, framealpha=0.95)
 
         # ICS / Reserved Zones
+        leg_ics = None
         if self.reserved_zones:
             state_patches = [mpatches.Patch(color=color, label=label) for color, label in self.reserved_zones]
             leg_ics = ax.legend(handles=state_patches, title="ICS 2024 EoY",
@@ -212,7 +216,7 @@ class ReservoirChart(Chart):
             mpatches.Patch(color=lb.PINAL_COLOR, label='Pinal AMA'),
             mpatches.Patch(color=lb.PHX_COLOR, label='Phoenix AMA')
         ]
-        leg_aquifer = ax.legend(handles=aquifer_patches, title="AZ Aquifer LTSC 2023 EOY",
+        ax.legend(handles=aquifer_patches, title="AZ Aquifer LTSC 2023 EOY",
                                 loc='upper left', bbox_to_anchor=(0.15, 1.0),
                                 fontsize=9, title_fontsize=10, framealpha=0.95)
 

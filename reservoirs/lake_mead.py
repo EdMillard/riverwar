@@ -20,13 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import copy
+from datetime import date
 from reservoirs.reservoir import Reservoir
-from source import usbr_rise
 import colorado.lb as lb
 from sheet import sheet
-from typing import List
-from pathlib import Path
-import colorado.allb as all_b
+from typing import List, Optional
 
 # HDB SDI's
 # Reservoir water surface elevation (end of period, primary)
@@ -41,34 +39,9 @@ import colorado.allb as all_b
 # 1874 cfs
 
 class LakeMead(Reservoir):
-    def __init__(self, month=1):
+    def __init__(self, upstream: Optional[List[Reservoir]] = None, month=1):
         headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION, lb.HOOVER_RELEASE]
-        super().__init__('Lake Mead', headers, month=month)
-
-        # Current
-        #
-        self.date_time, self.elevation_feet = self.get_elevation(6123, lb.MEAD_ELEVATION)
-        self.active_capacity_af = self.get_storage(6124, lb.MEAD) # 1937
-
-        usbr_lake_mead_storage_af = 6124  # 1937
-        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
-        self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MEAD)
-
-        # 24 Month
-        #
-        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
-
-        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Glen Release")
-        self.side_inflow_parts = self.get_24_month_side_inflow(self.df_24_month, "Side Inflow Glen to Hoover")
-        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
-        self.evap_parts = self.get_24_month_evap(self.df_24_month)
-
-        self.snwa_actual_af = self.get_24_month_actual(self.df_24_month, "SNWP Use")
-        self.snwa_projected_af = self.get_24_month_projected(self.df_24_month, "SNWP Use")
-
-        self.draw_pump_name = False
-        self.pump_parts = [("SNWA Actual", self.snwa_actual_af, Reservoir.snwa_pump_actual_color),
-                           ("SNWA Projected", self.snwa_projected_af, Reservoir.snwa_pump_projected_color)]
+        super().__init__('Lake Mead', headers, upstream=upstream, month=month)
 
         # Elevations
         #
@@ -103,8 +76,37 @@ class LakeMead(Reservoir):
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
-        t1 = '2026-01-01T00:00'
-        t2 = '2026-03-27T23:59'
+        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
+
+
+    def load_data(self, start_date:date, current_date:date, end_date:date):
+        self.load_date(start_date, current_date, end_date)
+
+        # Current
+        #
+        self.date_time, self.elevation_feet = self.get_elevation(6123, lb.MEAD_ELEVATION)
+        self.active_capacity_af = self.get_storage(6124, lb.MEAD) # 1937
+
+        usbr_lake_mead_storage_af = 6124  # 1937
+        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
+        self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MEAD)
+
+        # 24 Month
+        #
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Glen Release")
+        self.side_inflow_parts = self.get_24_month_side_inflow(self.df_24_month, "Side Inflow Glen to Hoover")
+        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
+        self.evap_parts = self.get_24_month_evap(self.df_24_month)
+
+        self.snwa_actual_af = self.get_24_month_actual(self.df_24_month, "SNWP Use")
+        self.snwa_projected_af = self.get_24_month_projected(self.df_24_month, "SNWP Use")
+
+        self.draw_pump_name = False
+        self.pump_parts = [("SNWA Actual", self.snwa_actual_af, Reservoir.snwa_pump_actual_color),
+                           ("SNWA Projected", self.snwa_projected_af, Reservoir.snwa_pump_projected_color)]
+
+        # t1 = '2026-01-01T00:00'
+        # t2 = '2026-03-27T23:59'
         # FIXME compare to CUL in 2024
         # evap = usbr_rise.request_hdb(1776, t1, t2)  # Mead evao
         # release = usbr_rise.request_hdb(2114, t1, t2)  # Mead release

@@ -5,6 +5,8 @@ from datetime import date
 import os
 import pandas as pd
 import wx.lib.buttons as buttons
+from typing import List
+from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
 import colorado.lb as lb
@@ -90,14 +92,14 @@ class MonthYearNavigator(wx.Panel):
 
 # ==================== MAIN FRAME ====================
 class ReservoirChartFrame(wx.Frame):
-    def __init__(self, reservoirs, date_time, title="Reservoir Analysis Dashboard"):
+    def __init__(self, reservoir_list:List[Reservoir], date_time: date, title:str="Reservoir Analysis Dashboard"):
         screen_w, screen_h = wx.DisplaySize()
         window_height = screen_h - 64
         window_width = min(1580, screen_w - 40)
 
         super().__init__(None, title=title, size=wx.Size(window_width, window_height))
 
-        self.reservoirs = reservoirs
+        self.reservoirs = reservoir_list
 
         self.panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -129,7 +131,7 @@ class ReservoirChartFrame(wx.Frame):
         self.end_nav = MonthYearNavigator(top_toolbar, 10, 2026, self.on_date_changed, name="end")
         tb_sizer.Add(self.end_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # Global arrows (unchanged)
+        # Global arrows
         global_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.global_left = buttons.GenButton(top_toolbar, label="◀◀", size=wx.Size(38, 32))
         self.global_left.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
@@ -164,8 +166,8 @@ class ReservoirChartFrame(wx.Frame):
         top_toolbar.SetMinSize(wx.Size(-1, 42))
 
         # ==================== CREATE CHARTS ====================
-        date_str = datetime64_to_str(date_time)
-        cap_title = f'Reservoir Storage - {date_str} AM - USBR RISE'
+        # date_str = datetime64_to_str(date_time)
+        # cap_title = f'Reservoir Storage - {date_str} AM - USBR RISE'
 
         power_zones = [
             (Reservoir.high_power_pool_color, 'Full Power Head'),
@@ -179,9 +181,16 @@ class ReservoirChartFrame(wx.Frame):
             (lb.CA_COLOR, 'CA')
         ]
 
-        self.reservoir_chart = ReservoirChart(reservoirs, power_head_zones=power_zones, reserved_zones=reserved_zones)   # New class
+        # Rubber meets the road
+        self.load_reservoirs()
+        start = self.start_nav.current_date
+        current = self.current_nav.current_date
+        end = self.end_nav.current_date
 
-        self.inflow_chart = InflowOutflowChart(reservoirs)
+        self.reservoir_chart = ReservoirChart(reservoirs,start_date=start,current_date=current,end_date=end,
+                                              power_head_zones=power_zones, reserved_zones=reserved_zones)   # New class
+
+        self.inflow_chart = InflowOutflowChart(reservoirs, start_date=start,current_date=current,end_date=end)
 
         # ==================== NOTEBOOK ====================
         self.notebook = wx.Notebook(self.panel)
@@ -231,9 +240,17 @@ class ReservoirChartFrame(wx.Frame):
 
         wx.CallAfter(self.panel.Layout)
 
+    def load_reservoirs(self)->None:
+        start = self.start_nav.current_date
+        current = self.current_nav.current_date
+        end = self.end_nav.current_date
+        for reservoir in self.reservoirs:
+            reservoir.load_data(start, current, end)
+
     def on_date_changed(self, which: str, date: date | None):
         """One single redraw for ANY date change"""
         print(f"Date changed → {which}")
+        self.load_reservoirs()
 
         if which == "start":
             self.reservoir_chart.update_dates(start_date=date)
@@ -302,6 +319,8 @@ class ReservoirChartFrame(wx.Frame):
             nav.current_date = date(year, month, 1)
             nav._update_display()
 
+        self.load_reservoirs()
+
         # Now update the chart with the new values from all three
         self.inflow_chart.update_dates(
             start_date=self.start_nav.current_date,
@@ -353,6 +372,7 @@ if __name__ == "__main__":
     # Your reservoir imports (add the missing ones as needed)
     from reservoirs.reservoir import Reservoir
     from reservoirs.imperial import Imperial
+    from reservoirs.lake_pleasant import LakePleasant
     from reservoirs.lake_havasu import LakeHavasu
     from reservoirs.lake_mohave import LakeMohave
     from reservoirs.aquifers import Aquifers
@@ -362,8 +382,16 @@ if __name__ == "__main__":
     from reservoirs.blue_mesa import BlueMesa
     from reservoirs.navajo import Navajo
 
-
-    lake_powell = LakePowell()
+    flaming_gorge = FlamingGorge()
+    navajo = Navajo()
+    blue_mesa = BlueMesa()
+    lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
+    lake_mead = LakeMead(upstream=[lake_powell])
+    lake_mohave = LakeMohave(upstream=[lake_mead]),
+    lake_havasu = LakeHavasu(upstream=[lake_mohave])
+    lake_pleasant = LakePleasant(upstream=[lake_havasu])
+    imperial = Imperial(upstream=[lake_havasu]),
+    aquifers = Aquifers()
 
     reservoirs = [
         Imperial(),

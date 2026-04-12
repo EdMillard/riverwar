@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from datetime import date
 from pathlib import Path
 from reservoirs.reservoir import Reservoir
 import colorado.lb as lb
@@ -26,7 +27,7 @@ import openpyxl
 from sheet import sheet
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl import Workbook
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 import pandas as pd
 import csv
 
@@ -59,9 +60,9 @@ class LTSC:
         self.stored = stored_adjusted
 
 class Aquifers(Reservoir):
-    def __init__(self):
+    def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [lb.AQUIFER, lb.AQUIFER_INFLOW, lb.AQUIFER_RELEASE]
-        super().__init__('AZ Aquifers', headers)
+        super().__init__('AZ Aquifers', headers, upstream=upstream)
         self.start_year = 1989
         self.end_year = 2023
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
@@ -131,6 +132,9 @@ class Aquifers(Reservoir):
         if self.outflow_actual_af or self.outflow_projected_af:
             self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
                               ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
+
+    def load_data(self, start_date:date, current_date:date, end_date:date):
+        self.load_date(start_date, current_date, end_date)
 
     @staticmethod
     def add_total_row(df: pd.DataFrame, decimals: int = 2) -> pd.DataFrame:

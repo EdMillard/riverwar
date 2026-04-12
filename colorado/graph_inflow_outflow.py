@@ -25,7 +25,7 @@ from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
 from datetime import date
 from colorado.chart import Chart
-from typing import List
+from typing import List, Optional
 
 class InflowOutflowChart(Chart):
     def __init__(self,
@@ -36,7 +36,11 @@ class InflowOutflowChart(Chart):
         super().__init__(reservoirs, start_date, current_date, end_date)
         self.height_inch = 5.6
 
-    def _create_figure(self, width_inch=None, height_inch=None):
+    def create_figure(
+            self,
+            width_inch: Optional[int] = None,
+            height_inch: Optional[int] = None
+    ) -> Optional[Figure]:
         if width_inch is not None and width_inch > 0:
             self.width_inch = width_inch
         if height_inch is not None and height_inch > 0:
@@ -124,9 +128,8 @@ class InflowOutflowChart(Chart):
                     if clean_label not in seen:
                         seen.add(clean_label)
                         gap_handles.append(mpatches.Patch(color=color, label=clean_label))
-
         if gap_handles:
-            leg_gap = ax.legend(handles=gap_handles, loc='upper right',
+            ax.legend(handles=gap_handles, loc='upper right',
                                 title="Gap Water", title_fontsize=10.5,
                                 fontsize=10, framealpha=0.95,
                                 bbox_to_anchor=(0.82, 1.0))
@@ -142,8 +145,9 @@ class InflowOutflowChart(Chart):
                         seen.add(full_label)
                         pump_handles.append(mpatches.Patch(color=color, label=full_label))
 
+        leg_gap = None
         if pump_handles:
-            leg_pump = ax.legend(handles=pump_handles, loc='upper right',
+            leg_gap = ax.legend(handles=pump_handles, loc='upper right',
                                  title="Havasu Outflow", title_fontsize=10.5,
                                  fontsize=10, framealpha=0.95,
                                  bbox_to_anchor=(0.121, 1.0))

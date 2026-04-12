@@ -19,18 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from datetime import date
 from reservoirs.reservoir import Reservoir
 from source import usbr_rise
 import colorado.ub as ub
 import colorado.allb as all_b
 from sheet import sheet
-from typing import List
+from typing import List, Optional
 
 class BlueMesa(Reservoir):
-    def __init__(self):
+    def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [ub.BLUE_MESA_WY,  ub.BLUE_MESA_ELEVATION_WY, ub.BLUE_MESA_INFLOW_WY,
                              ub.BLUE_MESA_RELEASE_WY, ub.BLUE_MESA_EVAPORATION_WY]
-        super().__init__('Blue Mesa', headers)
+        super().__init__('Blue Mesa', headers, upstream=upstream)
 
         # Elevations
         #
@@ -52,6 +53,9 @@ class BlueMesa(Reservoir):
         self.turbine_intake_af = 0
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
+
+    def load_data(self, start_date: date, current_date: date, end_date: date):
+        self.load_date(start_date, current_date, end_date)
 
         # Current
         #

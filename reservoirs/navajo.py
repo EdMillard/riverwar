@@ -19,18 +19,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from datetime import date
 from reservoirs.reservoir import Reservoir
 from source import usbr_rise
 import colorado.ub as ub
 import colorado.allb as all_b
 from sheet import sheet
-from typing import List
+from typing import List, Optional
 
 class Navajo(Reservoir):
-    def __init__(self):
+    def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [ub.NAVAJO_WY,  ub.NAVAJO_ELEVATION_WY, ub.NAVAJO_INFLOW_WY,
                              ub.NAVAJO_RELEASE_WY, ub.NAVAJO_EVAPORATION_WY]
-        super().__init__('Navajo', headers)
+        super().__init__('Navajo', headers, upstream=upstream)
 
         # Elevations
         #
@@ -53,7 +54,10 @@ class Navajo(Reservoir):
         self.turbine_intake_af = 0
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
+        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
 
+    def load_data(self, start_date: date, current_date: date, end_date: date):
+        self.load_date(start_date, current_date, end_date)
         # Current
         #
         self.elevation_feet = self.get_elevation(self.water_year)[1]
@@ -62,7 +66,6 @@ class Navajo(Reservoir):
         sheet.usbr_last_value(self.df, usbr_navajo_storage_af, self.water_year, self.water_year, title=ub.NAVAJO_WY, month=all_b.WY, divisor=1)
         self.active_capacity_af = self.get_value_by_year(self.water_year, ub.NAVAJO_WY)
 
-        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
         self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Modified Unregulated Inflow")
         self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
         self.evap_parts = self.get_24_month_evap(self.df_24_month)

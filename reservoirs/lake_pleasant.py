@@ -19,12 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from datetime import date
 from reservoirs.reservoir import Reservoir
 from source import usbr_rise
 import colorado.lb as lb
-import colorado.allb as all_b
 from sheet import sheet
-from typing import List
+from typing import List, Optional
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
@@ -41,10 +41,10 @@ from datetime import datetime
 selenium_driver = None
 
 class LakePleasant(Reservoir):
-    def __init__(self):
+    def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [lb.MOHAVE,  lb.MOHAVE_ELEVATION, lb.MOHAVE_INFLOW,
                              lb.MOHAVE_RELEASE,lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
-        super().__init__('Lake Pleasant', headers)
+        super().__init__('Lake Pleasant', headers, upstream=upstream)
 
         self.get_lake_pleasant_data()
 
@@ -101,6 +101,9 @@ class LakePleasant(Reservoir):
                               ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
 
         # self.reserved_parts = reserved_parts or []
+
+    def load_data(self, start_date:date, current_date:date, end_date:date):
+        self.load_date(start_date, current_date, end_date)
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_lake_mohave_elevation_ft = 6133

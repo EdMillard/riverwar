@@ -19,17 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from __future__ import annotations
 import copy
 import csv
 from datetime import datetime
-from datetime import date
+from dateutil.relativedelta import relativedelta
 from pathlib import Path
 import pandas as pd
-import numpy as np
 from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
 from datetime import date
-from typing import List, Tuple
+from typing import List, Tuple, Literal, Optional
 from sheet import sheet
 from source import usbr_rise
 import colorado.allb as all_b
@@ -67,8 +67,9 @@ class Reservoir:
     salton_actual_color = '#FFEA00'  # Yellow, same as evap
     salton_projected_color = '#FFDD33'
 
-    def __init__(self, name:str, headers:List[str], month=10):
+    def __init__(self, name:str, headers:List[str], upstream:Optional[List[Reservoir]]=None, month=10):
         self.name:str = name
+        self.upstream = upstream
         start_year = self.water_year = 2026
         self.water_year_info = self.get_water_year_info(start_year, month=month)
 
@@ -125,6 +126,17 @@ class Reservoir:
         # Reserve (i.e. ICS)
         self.reserved_parts:List[tuple] = []
 
+    def load_date(self, start_date:date, current_date:date, end_date:date):
+        today = date.today()
+        previous_month = today - relativedelta(months=1)
+
+        self.start_month_year_actual = start_date.strftime("%b %Y")
+        self.end_month_year_actual = previous_month.strftime("%b %Y")
+        self.start_month_year_projected = today.strftime("%b %Y")
+        self.emd_month_year_projected = end_date.strftime("%b %Y")
+        
+    def load_data(self, start_date:date, current_date:date, end_date:date):
+        pass
 
     def copy(self):
         return copy.copy(self)
@@ -222,6 +234,7 @@ class Reservoir:
 
         return result
 
+    @staticmethod
     def usbr_end_of_month(
             df: pd.DataFrame,
             gage_id: int,
@@ -284,15 +297,12 @@ class Reservoir:
                 monthly.loc[monthly['month_label'] == last_month_label, 'value'] = last_value
 
         # Fill into target DataFrame
-        filled = 0
-        for _, row in monthly.iterrows():
-            mask = df['Date'] == row['month_label']
-            if mask.any():
-                df.loc[mask, column_name] = float(row['value'])
-                filled += 1
+        mask = df['Date'].isin(monthly['month_label'])
+        filled = mask.sum()
 
         print(f"✓ Filled {filled} months into '{column_name}' (last value per month + forced partial month)")
 
+    @staticmethod
     def usbr_monthly(
             df: pd.DataFrame,
             gage_id: int,
@@ -335,14 +345,13 @@ class Reservoir:
 
             # Find the row and put the value
             mask = df['Date'] == mon_year_str
-            if mask.any():
+
+            if mask.any():  # type: ignore[attr-defined]
                 value = entry.get('val')
                 if value is not None:
                     df.loc[mask, column_name] = float(value)
                 else:
-                    print('fill_usbt_monthly_into_df failed no value')
-            else:
-                print('fill_usbt_monthly_into_df failed month-year not found')
+                    print(f'fill_usbt_monthly_into_df failed: month-year not found -> {mon_year_str}')
 
         filled = df[column_name].notna().sum()
         print(f"✓ Filled {filled} months into '{column_name}' for gage {gage_id}")
@@ -371,7 +380,6 @@ class Reservoir:
         Returns the value from a DataFrame for a given year and column.
 
         Parameters:
-            df (pd.DataFrame): DataFrame where the first column contains years
             year (int): The year to look up
             column_name (str): Name of the column to retrieve the value from
 
@@ -387,7 +395,7 @@ class Reservoir:
         # Find the row where the year matches
         mask = self.df[year_col] == year
 
-        if not mask.any():
+        if not mask.any():  # type: ignore[attr-defined]
             print(f"Warning: Year {year} not found in data.")
             return None
 
@@ -402,6 +410,41 @@ class Reservoir:
             print(f"Error retrieving value: {e}")
             return None
 
+    @staticmethod
+    def compare_to_today(
+            target_date: date,
+            mode: Literal["month_year", "full"] = "month_year"
+    ) -> Literal["less", "match", "greater"]:
+        """
+        Compare a date against today's date.
+
+        Parameters:
+            target_date: One of self.start_date, self.current_date, or self.end_date
+            mode: "month_year" = ignore day, "full" = compare exact date
+
+        Returns: "less", "match", or "greater"
+        """
+        today = date.today()
+
+        if mode == "month_year":
+            # Compare only year and month
+            target_ym = (target_date.year, target_date.month)
+            today_ym = (today.year, today.month)
+
+            if target_ym < today_ym:
+                return "less"
+            elif target_ym > today_ym:
+                return "greater"
+            else:
+                return "match"
+
+        else:  # full date comparison
+            if target_date < today:
+                return "less"
+            elif target_date > today:
+                return "greater"
+            else:
+                return "match"
     @staticmethod
     def get_float_value(df: pd.DataFrame,
                         row_key: str,
@@ -440,6 +483,7 @@ class Reservoir:
         water_year_info = WaterYearInfo.get_water_year(start_date, month=month)
         return water_year_info
 
+    @staticmethod
     def sum_column_between_dates(
             df_monthly: pd.DataFrame,
             column_name: str,

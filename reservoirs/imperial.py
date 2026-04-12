@@ -20,16 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from reservoirs.reservoir import Reservoir
-from source import usbr_rise
+from datetime import date
 import colorado.lb as lb
-import colorado.allb as all_b
-from sheet import sheet
-from typing import List
+from typing import List, Optional
 
 class Imperial(Reservoir):
-    def __init__(self):
+    def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [lb.HAVASU, lb.HAVASU_ELEVATION]
-        super().__init__('Mexico', headers)
+        super().__init__('Mexico', headers, upstream=upstream)
 
         # Elevations
         #
@@ -53,6 +51,10 @@ class Imperial(Reservoir):
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
+        self.df_24_month, self.df_24_wy =  self.load_24_month('Lake Havasu', 2026, 'MAR')
+
+    def load_data(self, start_date: date, current_date: date, end_date: date):
+        self.load_date(start_date, current_date, end_date)
         # Current
         #
         self.elevation_feet = 0
@@ -61,7 +63,6 @@ class Imperial(Reservoir):
         # 24 Month
         #
         # HACK name to get Lake Havasu 24 month with Mexico in it
-        self.df_24_month, self.df_24_wy =  self.load_24_month('Lake Havasu', 2026, 'MAR')
         self.flow_to_mexico_actual_af = self.get_24_month_actual(self.df_24_month, "Flow To Mexico")
         self.flow_to_mexico_projected_af = self.get_24_month_projected(self.df_24_month, "Flow To Mexico")
 
@@ -79,3 +80,5 @@ class Imperial(Reservoir):
             ("Actual", self.flow_to_mexico_actual_af, Reservoir.outflow_actual_color),
             ("Projected", self.flow_to_mexico_projected_af + side_inflow_projected, Reservoir.outflow_projected_color),
         ]
+
+
