@@ -33,6 +33,13 @@ class Navajo(Reservoir):
                              ub.NAVAJO_RELEASE_WY, ub.NAVAJO_EVAPORATION_WY]
         super().__init__('Navajo', headers, upstream=upstream)
 
+        self.usbr_rise_elevation_ft_id = 612
+        self.usbr_rise_storage_af_id = 613
+        self.end_of_month_storage_str = 'Live Storage'
+        self.usbr_rise_inflow_af_id = 4289
+        self.usbr_rise_evap_af_id = 617
+        # self.usbr_rise_release_af_id = 0
+
         # Elevations
         #
         # Must be called first
@@ -60,11 +67,12 @@ class Navajo(Reservoir):
         self.load_date(start_date, current_date, end_date)
         # Current
         #
-        self.elevation_feet = self.get_elevation(self.water_year)[1]
+        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.NAVAJO_ELEVATION_WY)
+        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.NAVAJO_WY)
 
-        usbr_navajo_storage_af = 613
-        sheet.usbr_last_value(self.df, usbr_navajo_storage_af, self.water_year, self.water_year, title=ub.NAVAJO_WY, month=all_b.WY, divisor=1)
-        self.active_capacity_af = self.get_value_by_year(self.water_year, ub.NAVAJO_WY)
+        # usbr_navajo_storage_af = 613
+        # sheet.usbr_last_value(self.df, usbr_navajo_storage_af, self.water_year, self.water_year, title=ub.NAVAJO_WY, month=all_b.WY, divisor=1)
+        # self.active_capacity_af = self.get_value_by_year(self.water_year, ub.NAVAJO_WY)
 
         self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Modified Unregulated Inflow")
         self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
@@ -91,11 +99,3 @@ class Navajo(Reservoir):
         # usbr_navajo_inflow_cfs = 616
         # sheet.usbr_annuals(self.df, usbr_navajo_inflow_cfs, self.water_year, self.water_year,  title=ub.NAVAJO_INFLOW_WY, month=all_b.WY, divisor=1)
         # self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.NAVAJO_INFLOW_WY)
-
-
-    def get_elevation(self, year, end_year:int|None =None)->float:
-        usbr_navajo_elevation_ft = 612
-        info, daily_elevation_ft = usbr_rise.load(usbr_navajo_elevation_ft, water_year_info=self.water_year_info,
-                                                  alias=ub.NAVAJO_ELEVATION_WY)
-        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=ub.NAVAJO_ELEVATION_WY)
-        return daily_elevation_ft[-1]

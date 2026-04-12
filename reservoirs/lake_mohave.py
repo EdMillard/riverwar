@@ -33,6 +33,12 @@ class LakeMohave(Reservoir):
                              lb.MOHAVE_RELEASE,lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
         super().__init__('Lake Mohave', headers, upstream=upstream)
 
+        self.usbr_rise_elevation_ft_id = 6133
+        self.usbr_rise_storage_af_id = 6134
+        # self.usbr_rise_inflow_af_id = 0
+        # self.usbr_rise_evap_af_id = 0
+        self.usbr_rise_release_af_id = 6131
+
         # Elevations
         #
         # Must be called first
@@ -59,13 +65,15 @@ class LakeMohave(Reservoir):
 
     def load_data(self, start_date: date, current_date: date, end_date: date):
         self.load_date(start_date, current_date, end_date)
+
         # Current
         #
-        self.elevation_feet = self.get_elevation(self.water_year)[1]
+        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.MOHAVE_ELEVATION)
+        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.MOHAVE)
 
-        usbr_lake_mohave_storage_af = 6134
-        sheet.usbr_last_value(self.df, usbr_lake_mohave_storage_af, self.water_year, self.water_year, title=lb.MOHAVE, month=all_b.CY, divisor=1)
-        self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MOHAVE)
+        # usbr_lake_mohave_storage_af = 6134
+        # sheet.usbr_last_value(self.df, usbr_lake_mohave_storage_af, self.water_year, self.water_year, title=lb.MOHAVE, month=all_b.CY, divisor=1)
+        # self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MOHAVE)
 
         # 24 Month
         #
@@ -87,10 +95,3 @@ class LakeMohave(Reservoir):
 
         # Outflow
         # self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_RELEASE)
-
-    def get_elevation(self, year, end_year:int|None =None)->float:
-        usbr_lake_mohave_elevation_ft = 6133
-        info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft, water_year_info=self.water_year_info,
-                                                  alias=lb.MOHAVE_ELEVATION)
-        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.MOHAVE_ELEVATION)
-        return daily_elevation_ft[-1]

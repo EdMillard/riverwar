@@ -33,6 +33,13 @@ class BlueMesa(Reservoir):
                              ub.BLUE_MESA_RELEASE_WY, ub.BLUE_MESA_EVAPORATION_WY]
         super().__init__('Blue Mesa', headers, upstream=upstream)
 
+        self.usbr_rise_elevation_ft_id = 78
+        self.usbr_rise_storage_af_id = 76
+        self.end_of_month_storage_str = 'Live Storage'
+        self.usbr_rise_inflow_af_id = 4283
+        self.usbr_rise_evap_af_id = 79
+        # self.usbr_rise_release_af_id = 0
+
         # Elevations
         #
         # Must be called first
@@ -59,11 +66,13 @@ class BlueMesa(Reservoir):
 
         # Current
         #
-        self.elevation_feet = self.get_elevation(self.water_year)[1]
-        usbr_blue_mesa_storage_af = 76
-        sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.water_year, self.water_year,
-                              title=ub.BLUE_MESA_WY, month=all_b.WY, divisor=1)
-        self.active_capacity_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_WY)
+        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
+        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.BLUE_MESA_WY)
+
+        # usbr_blue_mesa_storage_af = 76
+        # sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.water_year, self.water_year,
+        #                        title=ub.BLUE_MESA_WY, month=all_b.WY, divisor=1)
+        # self.active_capacity_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_WY)
 
         # 24 Month
         #
@@ -95,10 +104,3 @@ class BlueMesa(Reservoir):
         # usbr_blue_mesa_inflow_cfs = 4279
         # sheet.usbr_annuals(self.df, usbr_blue_mesa_inflow_cfs, self.water_year, self.water_year,  title=ub.BLUE_MESA_INFLOW_WY, month=all_b.WY, divisor=1)
         # self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_INFLOW_WY)
-
-    def get_elevation(self, year, end_year:int|None =None)->float:
-        usbr_blue_mesa_elevation_ft = 78
-        info, daily_elevation_ft = usbr_rise.load(usbr_blue_mesa_elevation_ft, water_year_info=self.water_year_info,
-                                                  alias=ub.BLUE_MESA_ELEVATION_WY)
-        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=ub.BLUE_MESA_ELEVATION_WY)
-        return daily_elevation_ft[-1]

@@ -369,7 +369,6 @@ def datetime64_to_str(dt64) -> str:
 
 # ==================== RUN ====================
 if __name__ == "__main__":
-    # Your reservoir imports (add the missing ones as needed)
     from reservoirs.reservoir import Reservoir
     from reservoirs.imperial import Imperial
     from reservoirs.lake_pleasant import LakePleasant
@@ -389,9 +388,9 @@ if __name__ == "__main__":
     lake_mead = LakeMead(upstream=[lake_powell])
     lake_mohave = LakeMohave(upstream=[lake_mead])
     lake_havasu = LakeHavasu(upstream=[lake_mohave])
-    lake_pleasant = LakePleasant(upstream=[lake_havasu])
+    # lake_pleasant = LakePleasant(upstream=[lake_havasu])
     imperial = Imperial(upstream=[lake_havasu])
-    aquifers = Aquifers()
+    aquifers = Aquifers(upstream=[])
 
     reservoirs = [
         imperial,

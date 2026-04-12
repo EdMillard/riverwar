@@ -78,9 +78,15 @@ class Reservoir:
         self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
         self.date_time:TimeStamp = pd.to_datetime((1970, 1, 1)).normalize()
+        self.df_24_month = None
 
         # Month Year Range
         #
+        self.start_date = None
+        self.current_date = None
+        self.end_date = None
+        self.today = date.today()
+
         self.start_month_year_actual = "Oct 2025"
         self.end_month_year_actual = "Mar 2026"
         self.start_month_year_projected = "Apr 2026"
@@ -90,6 +96,7 @@ class Reservoir:
         #
         self.usbr_rise_elevation_ft_id = 0
         self.usbr_rise_storage_af_id = 0
+        self.end_of_month_storage_str = 'End Of Month Storage'
         self.usbr_rise_inflow_af_id = 0
         self.usbr_rise_evap_af_id = 0
         self.usbr_rise_release_af_id = 0
@@ -127,12 +134,13 @@ class Reservoir:
         self.reserved_parts:List[tuple] = []
 
     def load_date(self, start_date:date, current_date:date, end_date:date):
-        today = date.today()
-        previous_month = today - relativedelta(months=1)
-
+        self.start_date = start_date
+        self.current_date = current_date
+        self.end_date = end_date
+        previous_month = self.today - relativedelta(months=1)
         self.start_month_year_actual = start_date.strftime("%b %Y")
         self.end_month_year_actual = previous_month.strftime("%b %Y")
-        self.start_month_year_projected = today.strftime("%b %Y")
+        self.start_month_year_projected = self.today.strftime("%b %Y")
         self.emd_month_year_projected = end_date.strftime("%b %Y")
         
     def load_data(self, start_date:date, current_date:date, end_date:date):
@@ -149,23 +157,43 @@ class Reservoir:
         return string
 
     def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:
-        info, daily_elevation_ft = usbr_rise.load(usbr_rise_id,
-                                                  water_year_info=self.water_year_info,
-                                                  alias=column_name)
-        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date',
-                                            value_column_name=column_name)
+        when = Reservoir.compare_to_today(self.current_date)
+        print(f'relative time: {when}')
+        if when == 'match':
+            info, daily_elevation_ft = usbr_rise.load(usbr_rise_id,
+                                                      water_year_info=self.water_year_info,
+                                                      alias=column_name)
+            sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date',
+                                                value_column_name=column_name)
+            date_time = daily_elevation_ft['dt'][-1]
+            elevation_feet = daily_elevation_ft['val'][-1]
+        elif when =='less':
+            # actual for month
+            date_time = self.date_time
+            elevation_feet = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, 'Reservoir Elevation End of Month ft')
+        else:
+            # predicted for month
+            date_time = self.date_time
+            elevation_feet = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, 'Reservoir Elevation End of Month ft')
 
-        date_time = daily_elevation_ft['dt'][-1]
-        elevation_feet = daily_elevation_ft['val'][-1]
         return date_time, elevation_feet
 
     def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->float:
-        if usbr_rise_id:
-            sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
-                                  title=column_name, month=month, divisor=divisor)
-            active_capacity_af = self.get_value_by_year(self.water_year, column_name)
+        active_capacity_af = 0
+        when = Reservoir.compare_to_today(self.current_date)
+        print(f'relative time: {when}')
+        if when == 'match':
+            if usbr_rise_id:
+                sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
+                                      title=column_name, month=month, divisor=divisor)
+                active_capacity_af = self.get_value_by_year(self.water_year, column_name)
+        elif when =='less':
+            # actual for month
+            active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
         else:
-            active_capacity_af = 0
+            # predicted for month
+            active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
+
         return active_capacity_af
 
     def get_evaporation(self, usbr_rise_id: int, column_name: str, month=all_b.WY, divisor: int = 1)->float:
@@ -356,6 +384,31 @@ class Reservoir:
         filled = df[column_name].notna().sum()
         print(f"✓ Filled {filled} months into '{column_name}' for gage {gage_id}")
 
+    @staticmethod
+    def get_value_for_month_year(
+            df: pd.DataFrame,
+            target_month_year: date,
+            column_name: str,
+            date_column: str = 'Date'  # if None, uses first column
+    ) -> Optional[float]:
+        """
+        Returns the value for a given 'Mon Year' string (e.g. 'Mar 2026')
+        """
+        if date_column is None:
+            date_column = df.columns[0]  # First column by default
+
+        # Find the matching row
+        month_name = target_month_year.strftime("%b")
+        date_str = (f"{month_name} {target_month_year.year}")
+        mask = df[date_column] == date_str
+
+        if not mask.any():
+            print(f"Warning: '{target_month_year}' not found in column '{date_column}'")
+            return None
+
+        # Return the value (first match)
+        value = df.loc[mask, column_name].iloc[0]
+        return float(value) if pd.notna(value) else None
 
     def get_24_month_projected(self, df, column_name:str)->float:
         total = Reservoir.sum_column_between_dates(

@@ -43,6 +43,12 @@ class LakeMead(Reservoir):
         headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION, lb.HOOVER_RELEASE]
         super().__init__('Lake Mead', headers, upstream=upstream, month=month)
 
+        self.usbr_rise_elevation_ft_id = 6123 # 1937
+        self.usbr_rise_storage_af_id = 6124 # 1937
+        # self.usbr_rise_inflow_af_id = 0 # 1937
+        # self.usbr_rise_evap_af_id = 0 # 1937
+        self.usbr_rise_release_af_id = 6122 # 1937
+
         # Elevations
         #
         # Must be called first
@@ -84,12 +90,12 @@ class LakeMead(Reservoir):
 
         # Current
         #
-        self.date_time, self.elevation_feet = self.get_elevation(6123, lb.MEAD_ELEVATION)
-        self.active_capacity_af = self.get_storage(6124, lb.MEAD) # 1937
+        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.MEAD_ELEVATION)
+        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.MEAD)  # 1937
 
-        usbr_lake_mead_storage_af = 6124  # 1937
-        sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
-        self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MEAD)
+        # usbr_lake_mead_storage_af = 6124  # 1937
+        # sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
+        # self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MEAD)
 
         # 24 Month
         #
