@@ -48,8 +48,6 @@ class ReservoirChart(Chart):
     ) -> Optional[Figure]:
         if width_inch is not None and width_inch > 0:
             self.width_inch = width_inch
-        # if height_inch is not None and height_inch > 0:
-        #     self.height_inch = height_inch
 
         title = f'Reservoir Active Capacity - {self.month_to_short_name(self.current_date.month)} {self.current_date.year}'
 
@@ -65,7 +63,8 @@ class ReservoirChart(Chart):
         return fig
 
     def create_reservoir_chart(self, ax, title):
-        """Full original logic with seen() deduplication"""
+        """Fixed stacked-bar logic: correctly truncates at current storage
+        and changes color/height when dropping below any critical elevation(s)."""
         if not self.reservoirs:
             raise ValueError("Reservoir list cannot be empty")
 
@@ -82,7 +81,7 @@ class ReservoirChart(Chart):
         reserved_width = 0.26
         main_width = 0.55
 
-        # ==================== RESERVED BARS ====================
+        # ==================== RESERVED BARS (unchanged) ====================
         for i, r in enumerate(reservoirs):
             reserved_parts = getattr(r, 'reserved_parts', [])
             if reserved_parts:
@@ -125,48 +124,66 @@ class ReservoirChart(Chart):
                             ha='center', va='bottom',
                             fontsize=10.5, fontweight='bold', color='black')
 
-        # ==================== MAIN STACKED BARS ====================
+        # ==================== FIXED MAIN STACKED BARS ====================
         for i, r in enumerate(reservoirs):
+            current_cap_maf = capacities_maf[i]
+            if current_cap_maf <= 0:
+                continue
+
             crit_points = getattr(r, 'critical_elevations_feet', [])
-            segments = []
+            # Build ordered zones from bottom up (each zone = height, color, label, total_cap_maf, elev_ft)
+            zones = []
             prev_cap_maf = 0.0
+
+            # Add every critical level as a zone
             for item in crit_points:
                 if isinstance(item, (list, tuple)) and len(item) >= 4:
                     name, elev_ft, cap_af, color = item[:4]
                     cap_maf = cap_af / 1_000_000
                     if cap_maf > prev_cap_maf:
-                        segment_height_maf = cap_maf - prev_cap_maf
-                        segments.append((segment_height_maf, color, name, cap_maf, elev_ft))
+                        zone_height = cap_maf - prev_cap_maf
+                        zones.append((zone_height, color, name, cap_maf, elev_ft))
                         prev_cap_maf = cap_maf
 
-            if capacities_maf[i] > prev_cap_maf:
-                segment_height_maf = capacities_maf[i] - prev_cap_maf
-                color = Reservoir.high_power_pool_color if elevations_feet[i] > 0 else Reservoir.non_power_pool_color
-                segments.append((segment_height_maf, color, 'Above Highest Critical',
-                               capacities_maf[i], elevations_feet[i]))
+            # Final zone above the highest critical (or the whole bar if no criticals)
+            top_color = Reservoir.high_power_pool_color if elevations_feet[i] > 0 else Reservoir.non_power_pool_color
+            if current_cap_maf > prev_cap_maf:
+                zone_height = current_cap_maf - prev_cap_maf
+                zones.append((zone_height, top_color, 'Above Highest Critical',
+                              current_cap_maf, elevations_feet[i]))
 
+            # Now draw only up to the *current* capacity, truncating any zone that would exceed it
             current_bottom = 0.0
-            for height_maf, color, label, total_cap_maf, elev_ft in segments:
-                bar = ax.bar(x_pos[i], height_maf, width=main_width,
+            for zone_height, color, label, total_cap_maf, elev_ft in zones:
+                # How much of this zone is still visible?
+                draw_height = min(zone_height, current_cap_maf - current_bottom)
+                if draw_height <= 0:
+                    break  # nothing left to draw
+
+                bar = ax.bar(x_pos[i], draw_height, width=main_width,
                              bottom=current_bottom, color=color, alpha=0.85, edgecolor='navy')[0]
 
-                if height_maf >= 0.3:
-                    mid_y = current_bottom + height_maf / 2
-                    ax.annotate(f'{height_maf:.3f}',
+                # Value label inside the segment
+                if draw_height >= 0.3:
+                    mid_y = current_bottom + draw_height / 2
+                    ax.annotate(f'{draw_height:.3f}',
                                 xy=(bar.get_x() + bar.get_width() / 2, mid_y),
                                 ha='center', va='center',
                                 fontsize=9, fontweight='bold', color='black')
 
+                # Elevation label on the right side of the bar (only for segments that are drawn)
                 if "Above Highest Critical" not in label:
                     ax.annotate(f'{elev_ft:,.0f}\'',
-                                xy=(x_pos[i] + main_width * 0.52, current_bottom + height_maf),
+                                xy=(x_pos[i] + main_width * 0.52, current_bottom + draw_height),
                                 ha='left', va='center',
                                 fontsize=9, fontweight='bold', color='darkblue',
                                 bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9))
 
-                current_bottom += height_maf
+                current_bottom += draw_height
+                if current_bottom >= current_cap_maf:
+                    break
 
-        # Special levels and top annotations (your original code)
+        # ==================== SPECIAL LEVEL MARKERS (unchanged) ====================
         for i, r in enumerate(reservoirs):
             special_levels = getattr(r, 'special_levels', [])
             if not special_levels:
@@ -175,12 +192,15 @@ class ReservoirChart(Chart):
             right_x = x + main_width * 0.52 + 0.04
             for elev_ft, cap_af, label in special_levels:
                 cap_maf = cap_af / 1_000_000
-                ax.plot(x + main_width/2 - 0.035, cap_maf, marker='<', markersize=8.5,
-                        color='black', markeredgecolor='black', markerfacecolor='white')
-                annot_text = f'{elev_ft:,.0f}\'\n{label}'
-                ax.annotate(annot_text, xy=(right_x, cap_maf),
-                            ha='left', va='center', fontsize=9.5, fontweight='bold', color='black')
+                # Only draw marker if it is still below current storage
+                if cap_maf <= capacities_maf[i]:
+                    ax.plot(x + main_width/2 - 0.035, cap_maf, marker='<', markersize=8.5,
+                            color='black', markeredgecolor='black', markerfacecolor='white')
+                    annot_text = f'{elev_ft:,.0f}\'\n{label}'
+                    ax.annotate(annot_text, xy=(right_x, cap_maf),
+                                ha='left', va='center', fontsize=9.5, fontweight='bold', color='black')
 
+        # ==================== TOP TOTAL ANNOTATIONS ====================
         for i in range(len(names)):
             ax.annotate(f'{capacities_maf[i]:.3f}',
                         xy=(x_pos[i], capacities_maf[i]),
