@@ -271,12 +271,35 @@ class ReservoirChart(Chart):
 
         # Legends
         if self.power_head_zones:
-            power_patches = [mpatches.Patch(color=c, label=l) for c, l in self.power_head_zones]
-            leg = ax.legend(handles=power_patches, title="Power Head Zones",
-                            loc='upper right', bbox_to_anchor=(0.98, 1.0),
-                            fontsize=9, title_fontsize=10, framealpha=0.95)
-            ax.add_artist(leg)
+            power_patches = []
+            teacup_index = -1
 
+            for idx, (c, l) in enumerate(self.power_head_zones):
+                if str(c).lower() in ('#ffffff', 'white', 'w'):
+                    teacup_index = idx
+                    # Special teacup patch
+                    patch = mpatches.Patch(
+                        facecolor='white',
+                        edgecolor='#1f1f1f',
+                        linewidth=1.8,
+                        alpha=0.55,
+                        label=l
+                    )
+                else:
+                    patch = mpatches.Patch(color=c, label=l)
+                power_patches.append(patch)
+
+            leg_power = ax.legend(handles=power_patches, title="Power Head Zones",
+                                  loc='upper right', bbox_to_anchor=(0.98, 1.0),
+                                  fontsize=9, title_fontsize=10, framealpha=0.95)
+            ax.add_artist(leg_power)
+
+            # Change text color ONLY for the teacup (white) entry
+            if teacup_index >= 0 and teacup_index < len(leg_power.get_texts()):
+                teacup_text = leg_power.get_texts()[teacup_index]
+                teacup_text.set_color('darkred')
+                teacup_text.set_fontweight('bold')
+                
         if self.reserved_zones:
             ics_patches = [mpatches.Patch(color=c, label=l) for c, l in self.reserved_zones]
             leg = ax.legend(handles=ics_patches, title="ICS 2024 EoY",
