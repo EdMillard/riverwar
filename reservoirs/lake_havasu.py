@@ -44,8 +44,8 @@ class LakeHavasu(Reservoir):
         self.dead_pool_af = 0
         # Bottom 5586.00
 
-        self.full_feet =  0
-        self.full_af = 0
+        self.full_feet = 445
+        self.full_af = 619_400  # Most commonly used, USBR often says 646_200 at 450' as real max
 
         # Critical
         self.power_head_target_feet = 0

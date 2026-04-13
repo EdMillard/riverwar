@@ -44,11 +44,11 @@ class LakeMohave(Reservoir):
         self.dead_pool_af = 0
         # Bottom 5586.00
 
-        self.full_feet =  7519.4
-        self.full_af = 748430
+        self.full_feet =  647
+        self.full_af = 1_810_000
 
         # Critical
-        self.power_head_target_feet = 7460
+        self.power_head_target_feet = 0
         self.power_head_target_af = 0
 
         self.power_head_min_feet = 0
