@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
+import tempfile
+from PIL import Image, ImageSequence
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib
@@ -201,10 +203,18 @@ class ReservoirChartFrame(wx.Frame):
 
         tb_sizer.AddStretchSpacer(1)
 
-        # Save Button
-        self.save_btn = wx.Button(top_toolbar, label="Save", size=wx.Size(-1, 28))
-        self.save_btn.Bind(wx.EVT_BUTTON, self.on_save_combined)
-        tb_sizer.Add(self.save_btn, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
+        # Save Buttons
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.save_pdf_btn = wx.Button(top_toolbar, label="Save PDF", size=wx.Size(-1, 28))
+        self.save_pdf_btn.Bind(wx.EVT_BUTTON, self.on_save_pdf)
+        btn_sizer.Add(self.save_pdf_btn, 0, wx.RIGHT, border=8)
+
+        self.save_gif_btn = wx.Button(top_toolbar, label="Save GIF", size=wx.Size(-1, 28))
+        self.save_gif_btn.Bind(wx.EVT_BUTTON, self.on_save_gif)
+        btn_sizer.Add(self.save_gif_btn, 0)
+
+        tb_sizer.Add(btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
 
         top_toolbar.SetSizer(tb_sizer)
         top_toolbar.SetMinSize(wx.Size(-1, 42))
@@ -402,19 +412,112 @@ class ReservoirChartFrame(wx.Frame):
         self._on_global_change(1)
 
     # ==================== SAVE CALLBACKS ====================
-    def on_save_combined(self, event):
-        default_name = f"Reservoir_Dashboard_{date.today().strftime('%Y%m%d_%H%M%S')}.png"
-        with wx.FileDialog(self, "Save Combined Dashboard as PNG",
-                           defaultDir=os.getcwd(), defaultFile=default_name,
-                           wildcard="PNG files (*.png)|*.png",
+    def on_save_gif(self, event):
+        """Save current Reservoir (top) + Inflow/Outflow (bottom) as a single-frame GIF"""
+        if not hasattr(self, 'reservoir_canvas') or not hasattr(self, 'inflow_canvas'):
+            wx.MessageBox("Charts not ready yet", "Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        default_name = f"Reservoir_Dashboard_{date.today().strftime('%Y%m%d_%H%M%S')}.gif"
+
+        with wx.FileDialog(self, "Save Dashboard as GIF",
+                           defaultDir=os.getcwd(),
+                           defaultFile=default_name,
+                           wildcard="GIF files (*.gif)|*.gif",
                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                try:
-                    self.reservoir_canvas.figure.savefig(dlg.GetPath(), dpi=200, bbox_inches='tight')
-                    self.inflow_canvas.figure.savefig(dlg.GetPath(), dpi=200, bbox_inches='tight')
-                    wx.MessageBox("Dashboard saved successfully", "Success", wx.OK | wx.ICON_INFORMATION)
-                except Exception as e:
-                    wx.MessageBox(str(e), "Save Error", wx.OK | wx.ICON_ERROR)
+            if dlg.ShowModal() != wx.ID_OK:
+                return
+
+            save_path = dlg.GetPath()
+            if not save_path.lower().endswith('.gif'):
+                save_path += '.gif'
+
+            try:
+                fig_top = self.reservoir_canvas.figure
+                fig_bottom = self.inflow_canvas.figure
+
+                with tempfile.TemporaryDirectory() as tmp:
+                    top_png = Path(tmp) / "top.png"
+                    bottom_png = Path(tmp) / "bottom.png"
+
+                    fig_top.savefig(top_png, dpi=180, bbox_inches='tight')
+                    fig_bottom.savefig(bottom_png, dpi=180, bbox_inches='tight')
+
+                    # Combine vertically
+                    img_top = Image.open(top_png)
+                    img_bottom = Image.open(bottom_png)
+
+                    total_height = img_top.height + img_bottom.height
+                    combined = Image.new('RGB', (img_top.width, total_height), (255, 255, 255))
+
+                    combined.paste(img_top, (0, 0))
+                    combined.paste(img_bottom, (0, img_top.height))
+
+                    # Save as GIF (single frame for now)
+                    combined.save(save_path, "GIF", save_all=True, append_images=[],
+                                duration=1000, loop=0, optimize=True)
+
+                wx.MessageBox("Dashboard saved as GIF successfully\n\n"
+                              "Top = Reservoir Chart\n"
+                              "Bottom = Inflow/Outflow Chart",
+                              "Success", wx.OK | wx.ICON_INFORMATION)
+
+            except Exception as e:
+                wx.MessageBox(f"Save failed:\n{str(e)}", "Error", wx.OK | wx.ICON_ERROR)
+
+    def on_save_pdf(self, event):
+        """Save current Reservoir (top) + Inflow/Outflow (bottom) as a single-page PDF"""
+        if not hasattr(self, 'reservoir_canvas') or not hasattr(self, 'inflow_canvas'):
+            wx.MessageBox("Charts not ready yet", "Error", wx.OK | wx.ICON_ERROR)
+            return
+
+        default_name = f"Reservoir_Dashboard_{date.today().strftime('%Y%m%d_%H%M%S')}.pdf"
+
+        with wx.FileDialog(self, "Save Dashboard as PDF",
+                           defaultDir=os.getcwd(),
+                           defaultFile=default_name,
+                           wildcard="PDF files (*.pdf)|*.pdf",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as dlg:
+            if dlg.ShowModal() != wx.ID_OK:
+                return
+
+            save_path = dlg.GetPath()
+            if not save_path.lower().endswith('.pdf'):
+                save_path += '.pdf'
+
+            try:
+                # Use the already-rendered figures (exact size shown on screen)
+                fig_top = self.reservoir_canvas.figure
+                fig_bottom = self.inflow_canvas.figure
+
+                with tempfile.TemporaryDirectory() as tmp:
+                    top_png = Path(tmp) / "top.png"
+                    bottom_png = Path(tmp) / "bottom.png"
+
+                    # Save at high quality (matches current on-screen size)
+                    fig_top.savefig(top_png, dpi=200, bbox_inches='tight')
+                    fig_bottom.savefig(bottom_png, dpi=200, bbox_inches='tight')
+
+                    # Combine into one tall image (top chart + bottom chart)
+                    img_top = Image.open(top_png)
+                    img_bottom = Image.open(bottom_png)
+
+                    total_height = img_top.height + img_bottom.height
+                    combined = Image.new('RGB', (img_top.width, total_height), (255, 255, 255))
+
+                    combined.paste(img_top, (0, 0))
+                    combined.paste(img_bottom, (0, img_top.height))
+
+                    # Save as single-page PDF
+                    combined.save(save_path, "PDF", resolution=200)
+
+                wx.MessageBox("Dashboard saved as single-page PDF successfully\n\n"
+                              f"Top = Reservoir Chart\n"
+                              f"Bottom = Inflow/Outflow Chart",
+                              "Success", wx.OK | wx.ICON_INFORMATION)
+
+            except Exception as e:
+                wx.MessageBox(f"Save failed:\n{str(e)}", "Error", wx.OK | wx.ICON_ERROR)
 
 def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
     """
