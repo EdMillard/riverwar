@@ -133,7 +133,7 @@ class Reservoir:
         # Reserve (i.e. ICS)
         self.reserved_parts:List[tuple] = []
 
-    def load_date(self, start_date:date, current_date:date, end_date:date):
+    def load_date(self, report_path:Optional[Path], start_date:date, current_date:date, end_date:date):
         self.start_date = start_date
         self.current_date = current_date
         self.end_date = end_date
@@ -142,8 +142,11 @@ class Reservoir:
         self.end_month_year_actual = previous_month.strftime("%b %Y")
         self.start_month_year_projected = self.today.strftime("%b %Y")
         self.emd_month_year_projected = end_date.strftime("%b %Y")
+
+        if report_path is not None:
+            self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
         
-    def load_data(self, start_date:date, current_date:date, end_date:date):
+    def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
         pass
 
     def copy(self):
@@ -181,7 +184,6 @@ class Reservoir:
     def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->float:
         active_capacity_af = 0
         when = Reservoir.compare_to_today(self.current_date)
-        print(f'relative time: {when}')
         if when == 'match':
             if usbr_rise_id:
                 sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
@@ -597,11 +599,14 @@ class Reservoir:
         return float(total)
 
     @staticmethod
-    def load_24_month(name:str, year:int, month:str)->Tuple[pd.DataFrame, pd.DataFrame|None]:
-        res_peth = name.replace(' ', '_') + '.csv'
-        path = f'data/USBR_24Month_Reports/{year}/{month.upper()}{year%100:02d}/'
-        df_24_month, df_24_wy, units = Reservoir.read_usbr_24month_table(path + res_peth)
-        return df_24_month, df_24_wy
+    def load_24_month(report_path:Path, name:str)->Tuple[pd.DataFrame, pd.DataFrame] | Tuple[None, None]:
+        if report_path is not None:
+            res_peth = name.replace(' ', '_') + '.csv'
+            path = report_path / res_peth
+            df_24_month, df_24_wy, units = Reservoir.read_usbr_24month_table(path)
+            return df_24_month, df_24_wy
+        else:
+            return None, None
 
     def get_24_month_inflow(self, df:pd.DataFrame, inflow_name:str, side:str|None=None)\
             -> List[Tuple[str, float, str]]:

@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pathlib import Path
 from datetime import date
 from reservoirs.reservoir import Reservoir
 from source import usbr_rise
@@ -102,8 +103,8 @@ class LakePleasant(Reservoir):
 
         # self.reserved_parts = reserved_parts or []
 
-    def load_data(self, start_date:date, current_date:date, end_date:date):
-        self.load_date(start_date, current_date, end_date)
+    def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
+        self.load_date(None, start_date, current_date, end_date)
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_lake_mohave_elevation_ft = 6133

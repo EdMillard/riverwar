@@ -133,8 +133,8 @@ class Aquifers(Reservoir):
             self.outflow_parts = [("Actual", self.outflow_actual_af, Reservoir.outflow_actual_color),
                               ("Projected", self.outflow_projected_af, Reservoir.outflow_projected_color)]
 
-    def load_data(self, start_date:date, current_date:date, end_date:date):
-        self.load_date(start_date, current_date, end_date)
+    def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
+        self.load_date(None, start_date, current_date, end_date)
 
     @staticmethod
     def add_total_row(df: pd.DataFrame, decimals: int = 2) -> pd.DataFrame:

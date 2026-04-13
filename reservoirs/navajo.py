@@ -19,12 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pathlib import Path
 from datetime import date
 from reservoirs.reservoir import Reservoir
-from source import usbr_rise
 import colorado.ub as ub
-import colorado.allb as all_b
-from sheet import sheet
 from typing import List, Optional
 
 class Navajo(Reservoir):
@@ -61,10 +59,10 @@ class Navajo(Reservoir):
         self.turbine_intake_af = 0
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
-        self.df_24_month, self.df_24_wy =  self.load_24_month(self.name, 2026, 'MAR')
 
-    def load_data(self, start_date: date, current_date: date, end_date: date):
-        self.load_date(start_date, current_date, end_date)
+    def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
+        self.load_date(report_path, start_date, current_date, end_date)
+
         # Current
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.NAVAJO_ELEVATION_WY)

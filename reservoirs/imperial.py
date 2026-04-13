@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pathlib import Path
 from reservoirs.reservoir import Reservoir
 from datetime import date
 import colorado.lb as lb
@@ -51,10 +52,11 @@ class Imperial(Reservoir):
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
-        self.df_24_month, self.df_24_wy =  self.load_24_month('Lake Havasu', 2026, 'MAR')
+    def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
+        self.name = 'Lake Havasu'
+        self.load_date(report_path, start_date, current_date, end_date)
+        self.name = 'Mexico'
 
-    def load_data(self, start_date: date, current_date: date, end_date: date):
-        self.load_date(start_date, current_date, end_date)
         # Current
         #
         self.elevation_feet = 0

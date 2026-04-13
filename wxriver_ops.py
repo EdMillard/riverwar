@@ -1,3 +1,25 @@
+"""
+Copyright (c) 2025 Ed Millard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+from pathlib import Path
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib
@@ -92,7 +114,10 @@ class MonthYearNavigator(wx.Panel):
 
 # ==================== MAIN FRAME ====================
 class ReservoirChartFrame(wx.Frame):
-    def __init__(self, reservoir_list:List[Reservoir], date_time: date, title:str="Reservoir Analysis Dashboard"):
+    def __init__(self, reservoir_list: List[Reservoir], date_time: date,
+                 report_list: List[str] | None = None,
+                 title: str = "Reservoir Analysis Dashboard"):
+
         screen_w, screen_h = wx.DisplaySize()
         window_height = screen_h - 64
         window_width = min(1580, screen_w - 40)
@@ -100,6 +125,7 @@ class ReservoirChartFrame(wx.Frame):
         super().__init__(None, title=title, size=wx.Size(window_width, window_height))
 
         self.reservoirs = reservoir_list
+        self.report_list = report_list  # Store for later use
 
         self.panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -118,6 +144,22 @@ class ReservoirChartFrame(wx.Frame):
 
         tb_sizer.AddStretchSpacer(1)
 
+        # ==================== REPORT DIRECTORY SELECTOR ====================
+        if report_list and len(report_list) > 0:
+            # Show only directory names (not full paths)
+            dir_names = [Path(p).name for p in report_list]
+
+            self.report_choice = wx.Choice(top_toolbar, choices=dir_names)
+            self.report_choice.SetSelection(len(dir_names) - 2)
+            self.report_path = self.report_list[len(dir_names) - 2]
+            self.report_choice.SetToolTip("Select report directory")
+            self.report_choice.Bind(wx.EVT_CHOICE, self.on_report_selected)
+
+            tb_sizer.Add(self.report_choice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
+        else:
+            self.report_choice = None
+
+        # ==================== DATE NAVIGATORS ====================
         self.start_nav = MonthYearNavigator(top_toolbar, 10, 2025, self.on_date_changed, name="start")
         tb_sizer.Add(self.start_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
@@ -131,7 +173,7 @@ class ReservoirChartFrame(wx.Frame):
         self.end_nav = MonthYearNavigator(top_toolbar, 10, 2026, self.on_date_changed, name="end")
         tb_sizer.Add(self.end_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
-        # Global arrows
+        # ==================== GLOBAL ARROWS ====================
         global_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.global_left = buttons.GenButton(top_toolbar, label="◀◀", size=wx.Size(38, 32))
         self.global_left.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
@@ -156,9 +198,11 @@ class ReservoirChartFrame(wx.Frame):
         global_sizer.Add(self.global_right, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=12)
 
         tb_sizer.Add(global_sizer, 0, wx.ALIGN_CENTER_VERTICAL)
+
         tb_sizer.AddStretchSpacer(1)
 
-        self.save_btn = wx.Button(top_toolbar, label="Save Combined Dashboard as PNG", size=wx.Size(-1, 28))
+        # Save Button
+        self.save_btn = wx.Button(top_toolbar, label="Save", size=wx.Size(-1, 28))
         self.save_btn.Bind(wx.EVT_BUTTON, self.on_save_combined)
         tb_sizer.Add(self.save_btn, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
 
@@ -166,9 +210,6 @@ class ReservoirChartFrame(wx.Frame):
         top_toolbar.SetMinSize(wx.Size(-1, 42))
 
         # ==================== CREATE CHARTS ====================
-        # date_str = datetime64_to_str(date_time)
-        # cap_title = f'Reservoir Storage - {date_str} AM - USBR RISE'
-
         power_zones = [
             (Reservoir.high_power_pool_color, 'Full Power Head'),
             (Reservoir.low_power_pool_color, 'Low Power Head'),
@@ -181,18 +222,29 @@ class ReservoirChartFrame(wx.Frame):
             (lb.CA_COLOR, 'CA')
         ]
 
-        # Rubber meets the road
+        # Load reservoir data
         self.load_reservoirs()
         start = self.start_nav.current_date
         current = self.current_nav.current_date
         end = self.end_nav.current_date
 
-        self.reservoir_chart = ReservoirChart(reservoirs,start_date=start,current_date=current,end_date=end,
-                                              power_head_zones=power_zones, reserved_zones=reserved_zones)   # New class
+        self.reservoir_chart = ReservoirChart(
+            reservoirs,
+            start_date=start,
+            current_date=current,
+            end_date=end,
+            power_head_zones=power_zones,
+            reserved_zones=reserved_zones
+        )
 
-        self.inflow_chart = InflowOutflowChart(reservoirs, start_date=start,current_date=current,end_date=end)
+        self.inflow_chart = InflowOutflowChart(
+            reservoirs,
+            start_date=start,
+            current_date=current,
+            end_date=end
+        )
 
-        # ==================== NOTEBOOK ====================
+        # ==================== NOTEBOOK & SPLITTER ====================
         self.notebook = wx.Notebook(self.panel)
 
         self.combined_panel = wx.Panel(self.notebook)
@@ -202,18 +254,14 @@ class ReservoirChartFrame(wx.Frame):
 
         # Reservoir panel
         self.reservoir_panel = wx.Panel(self.splitter)
-        self.reservoir_panel.Layout()
-
         cap_sizer = wx.BoxSizer(wx.VERTICAL)
         self.reservoir_canvas = FigureCanvas(self.reservoir_panel, -1,
-                                            self.reservoir_chart.get_figure(None, None))
+                                             self.reservoir_chart.get_figure(None, None))
         cap_sizer.Add(self.reservoir_canvas, 1, wx.EXPAND | wx.ALL, border=6)
         self.reservoir_panel.SetSizer(cap_sizer)
 
         # Inflow panel
         self.in_panel = wx.Panel(self.splitter)
-        self.in_panel.Layout()
-
         in_sizer = wx.BoxSizer(wx.VERTICAL)
         self.inflow_canvas = FigureCanvas(self.in_panel, -1,
                                           self.inflow_chart.get_figure(None, None))
@@ -245,7 +293,16 @@ class ReservoirChartFrame(wx.Frame):
         current = self.current_nav.current_date
         end = self.end_nav.current_date
         for reservoir in self.reservoirs:
-            reservoir.load_data(start, current, end)
+            reservoir.load_data(Path(self.report_path), start, current, end)
+
+    def on_report_selected(self, event):
+        """Callback when user selects a different report directory"""
+        if self.report_choice is None:
+            return
+        selected_index = self.report_choice.GetSelection()
+        self.report_path = self.report_list[selected_index]
+        print(f"Selected report directory: {Path(self.report_path).name}  ({self.report_path})")
+        self.load_reservoirs()
 
     def on_date_changed(self, which: str, date: date | None):
         """One single redraw for ANY date change"""
@@ -359,6 +416,30 @@ class ReservoirChartFrame(wx.Frame):
                 except Exception as e:
                     wx.MessageBox(str(e), "Save Error", wx.OK | wx.ICON_ERROR)
 
+def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
+    """
+    Return a list of all bottom-level (leaf) directories
+    under root_dir that contain the given filename.
+
+    Bottom-level means the deepest directories that actually contain the file.
+    """
+    root = Path(root_dir)
+    if not root.exists():
+        raise FileNotFoundError(f"Directory not found: {root_dir}")
+
+    matching_dirs = []
+
+    # Walk through all directories
+    for dir_path in root.rglob("*"):
+        if dir_path.is_dir():
+            file_path = dir_path / filename
+            if file_path.is_file():
+                matching_dirs.append(str(dir_path.resolve()))
+
+    # Optional: Remove duplicates and sort
+    matching_dirs = sorted(set(matching_dirs))
+
+    return matching_dirs
 
 def datetime64_to_str(dt64) -> str:
     if pd.isna(dt64):
@@ -380,6 +461,8 @@ if __name__ == "__main__":
     from reservoirs.flaming_gorge import FlamingGorge
     from reservoirs.blue_mesa import BlueMesa
     from reservoirs.navajo import Navajo
+
+    reports = find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
     flaming_gorge = FlamingGorge()
     navajo = Navajo()
@@ -405,6 +488,6 @@ if __name__ == "__main__":
     ]
 
     app = wx.App(False)
-    frame = ReservoirChartFrame(reservoirs, lake_powell.date_time)
+    frame = ReservoirChartFrame(reservoirs, lake_powell.date_time, reports)
     frame.Show()
     app.MainLoop()
