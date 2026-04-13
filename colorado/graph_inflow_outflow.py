@@ -46,9 +46,9 @@ class InflowOutflowChart(Chart):
         if height_inch is not None and height_inch > 0:
             self.height_inch = height_inch
 
-        title = (f"Outflow Loss Inflow, "
-                 f"{self.month_to_short_name(self.current_date.month)} {self.current_date.year} 24 Month, "
-                 f"{self.month_to_short_name(self.start_date.month)} {self.start_date.year} - "
+        title = (f"{self.report_name}  Outflow Loss Inflow, "
+                 f"{self.month_to_short_name(self.current_date.month)} {self.current_date.year}, "
+                 f"{self.month_to_short_name(self.start_date.month)} {self.start_date.year}-"
                  f"{self.month_to_short_name(self.end_date.month)} {self.end_date.year}")
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)

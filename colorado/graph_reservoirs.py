@@ -66,7 +66,7 @@ class ReservoirChart(Chart):
         if width_inch is not None and width_inch > 0:
             self.width_inch = width_inch
 
-        title = f'Reservoir Active Capacity - {self.month_to_short_name(self.current_date.month)} {self.current_date.year}'
+        title = f'Storage - {self.month_to_short_name(self.current_date.month)} {self.current_date.year}'
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
         ax = fig.add_subplot(111)
@@ -299,7 +299,7 @@ class ReservoirChart(Chart):
                 teacup_text = leg_power.get_texts()[teacup_index]
                 teacup_text.set_color('darkred')
                 teacup_text.set_fontweight('bold')
-                
+
         if self.reserved_zones:
             ics_patches = [mpatches.Patch(color=c, label=l) for c, l in self.reserved_zones]
             leg = ax.legend(handles=ics_patches, title="ICS 2024 EoY",

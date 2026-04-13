@@ -38,6 +38,8 @@ class Chart:
 
         self.reservoirs = reservoirs
 
+        self.report_name = ''
+
         # Default values
         self.start_date = start_date or date(2025, 10, 1)
         self.current_date = current_date or date(2026, 4, 1)
@@ -58,6 +60,9 @@ class Chart:
             height_inch: Optional[int] = None
     ) -> Optional[Figure]:
         return None
+
+    def update_report(self, report_name:str):
+        self.report_name = report_name
 
     def update_dates(self, start_date=None,
                      current_date=None,

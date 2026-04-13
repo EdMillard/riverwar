@@ -27,7 +27,6 @@ from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib
 from datetime import date
 import os
-import pandas as pd
 import wx.lib.buttons as buttons
 from typing import List
 from reservoirs.reservoir import Reservoir
@@ -41,6 +40,8 @@ matplotlib.use('Agg')
 os.environ['QT_SILENT'] = '1'
 
 arrow_fg = wx.Colour(150, 150, 150)
+
+GIF_FRAME_DELAY_MS = 750   # ← Change this value to adjust speed (milliseconds per frame)
 
 
 def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
@@ -129,7 +130,7 @@ class MonthYearNavigator(wx.Panel):
 class ReservoirChartFrame(wx.Frame):
     def __init__(self, reservoir_list: List[Reservoir], date_time: date,
                  report_list: List[str] | None = None,
-                 title: str = "Reservoir Analysis Dashboard"):
+                 title: str = "Colorado River War"):
 
         screen_w, screen_h = wx.DisplaySize()
         window_height = screen_h - 64
@@ -162,6 +163,7 @@ class ReservoirChartFrame(wx.Frame):
         tb_sizer.AddStretchSpacer(1)
 
         # Report selector
+        report_str:str = ''
         if report_list and len(report_list) > 0:
             dir_names = [Path(p).name for p in report_list]
             self.report_choice = wx.Choice(top_toolbar, choices=dir_names)
@@ -236,7 +238,7 @@ class ReservoirChartFrame(wx.Frame):
         # ==================== CHARTS ====================
         power_zones = [
             ('#ffffff', 'Available Head'),
-            (Reservoir.high_power_pool_color, 'Full Power Head'),
+            (Reservoir.high_power_pool_color, 'Normal Power Head'),
             (Reservoir.low_power_pool_color, 'Low Power Head'),
             (Reservoir.non_power_pool_color, 'Limited Access')
         ]
@@ -260,6 +262,7 @@ class ReservoirChartFrame(wx.Frame):
         self.inflow_chart = InflowOutflowChart(
             reservoirs, start_date=start, current_date=current, end_date=end
         )
+        self.set_report(self.report_path)
 
         # Notebook + Splitter
         self.notebook = wx.Notebook(self.panel)
@@ -288,7 +291,7 @@ class ReservoirChartFrame(wx.Frame):
         combined_sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=4)
         self.combined_panel.SetSizer(combined_sizer)
 
-        self.notebook.AddPage(self.combined_panel, "Reservoir Dashboard")
+        self.notebook.AddPage(self.combined_panel, 'Reservoirs')
 
         main_sizer.Add(top_toolbar, 0, wx.EXPAND)
         main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=4)
@@ -306,12 +309,19 @@ class ReservoirChartFrame(wx.Frame):
             reservoir.load_data(Path(self.report_path), start, current, end)
 
     # ==================== EVENT HANDLERS ====================
+    def set_report(self, report_str:str):
+        self.report_path = report_str
+        self.reservoir_chart.update_report(Path(self.report_path).name)
+        self.inflow_chart.update_report(Path(self.report_path).name)
 
     def on_report_selected(self, event):
         if self.report_choice is None:
             return
+
+
         idx = self.report_choice.GetSelection()
-        self.report_path = self.report_list[idx]
+        self.set_report(self.report_list[idx])
+
         print(f"Selected report: {Path(self.report_path).name}")
         self.load_reservoirs()
         self.reservoir_chart.update_dates(start_date=self.start_nav.current_date,
@@ -498,11 +508,18 @@ class ReservoirChartFrame(wx.Frame):
                                save_all=True, append_images=self.pdf_pages[1:])
 
     def _save_gif_final(self):
-        if not self.gif_frames: return
-        self.gif_frames[0].save(self.gif_filename, "GIF", save_all=True,
-                                append_images=self.gif_frames[1:],
-                                duration=800, loop=0, optimize=True)
+        if not self.gif_frames:
+            return
 
+        self.gif_frames[0].save(
+            self.gif_filename,
+            "GIF",
+            save_all=True,
+            append_images=self.gif_frames[1:],
+            duration=GIF_FRAME_DELAY_MS,   # ← Now uses the constant (750ms)
+            loop=0,
+            optimize=True
+        )
 
 # ==================== RUN ====================
 if __name__ == "__main__":
