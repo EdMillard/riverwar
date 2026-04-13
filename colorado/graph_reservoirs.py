@@ -184,7 +184,7 @@ class ReservoirChart(Chart):
             empty = full_maf - curr_maf
             if empty <= 0: continue
 
-            # Teacup bar
+            # Teacup bar (visual height unchanged)
             container = ax.bar(x_pos[i], empty, width=main_width, bottom=curr_maf,
                                color='white', alpha=0.0,
                                edgecolor=teacup_color, linewidth=teacup_linewidth)
@@ -196,9 +196,29 @@ class ReservoirChart(Chart):
             ax.plot([x_pos[i]-main_width/2, x_pos[i]+main_width/2], [top_y, top_y],
                     color=teacup_color, linewidth=teacup_linewidth, alpha=teacup_alpha)
 
-            # === ANNOTATIONS ===
-            percent_full = round((curr_af / full_af) * 100)
+            # ==================== PRACTICAL AVAILABLE ABOVE LOWEST NON-ZERO CRITICAL ====================
+            lowest_crit_cap_af = 0
+            crit_points = getattr(r, 'critical_elevations_feet', [])
 
+            if crit_points:
+                # Only consider critical elevations with positive capacity
+                valid_caps = [item[2] for item in crit_points
+                              if len(item) >= 3 and item[2] > 0]
+                if valid_caps:
+                    lowest_crit_cap_af = min(valid_caps)
+
+            # Practical available capacity above the lowest valid critical
+            practical_available_af = full_af - lowest_crit_cap_af
+            if practical_available_af <= 0:
+                practical_available_af = full_af  # fallback
+
+            practical_available_maf = practical_available_af / 1_000_000
+
+            # Percentage of practical available
+            percent_practical = round(((curr_af - lowest_crit_cap_af) / practical_available_af) * 100) \
+                if practical_available_af > 0 else 100
+
+            # Positioning
             if full_maf > self.y_max:
                 label_y = self.y_max
                 offset_y = 1.5
@@ -206,20 +226,20 @@ class ReservoirChart(Chart):
                 label_y = full_maf
                 offset_y = 9.5
 
-            # Acre-feet — centered over the bar
-            ax.annotate(f'{full_maf:.3f}',
+            # Acre-feet (practical) — centered
+            ax.annotate(f'{practical_available_maf:.3f}',
                         xy=(x_pos[i], label_y),
                         xytext=(0, offset_y),
                         textcoords="offset points",
                         ha='center', va='bottom',
                         fontsize=9.5, fontweight='bold', color='darkred')
 
-            # Percentage — centered exactly over the RIGHT EDGE of the bar
-            ax.annotate(f'{percent_full}%',
-                        xy=(x_pos[i] + main_width/2, label_y),   # Centered on right edge
+            # Percentage — right justified at elevation position
+            ax.annotate(f'{percent_practical}%',
+                        xy=(x_pos[i] + main_width * 0.52, label_y),
                         xytext=(0, offset_y),
                         textcoords="offset points",
-                        ha='center', va='bottom',
+                        ha='left', va='bottom',
                         fontsize=9.5, fontweight='bold', color='darkred')
 
         # ==================== ANNOTATIONS ====================
