@@ -235,6 +235,7 @@ class ReservoirChartFrame(wx.Frame):
 
         # ==================== CHARTS ====================
         power_zones = [
+            ('#ffffff', 'Available Head'),
             (Reservoir.high_power_pool_color, 'Full Power Head'),
             (Reservoir.low_power_pool_color, 'Low Power Head'),
             (Reservoir.non_power_pool_color, 'Limited Access')

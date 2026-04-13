@@ -48,8 +48,8 @@ class FlamingGorge(Reservoir):
         self.dead_pool_af = 0
         # Bottom 5586.00
 
-        self.full_feet = 6046
-        self.full_af = 0
+        self.full_feet = 6047
+        self.full_af = 4_019_148.1
 
         # Critical
         self.power_head_target_feet = 5908

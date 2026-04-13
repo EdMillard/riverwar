@@ -196,20 +196,27 @@ class ReservoirChart(Chart):
             ax.plot([x_pos[i]-main_width/2, x_pos[i]+main_width/2], [top_y, top_y],
                     color=teacup_color, linewidth=teacup_linewidth, alpha=teacup_alpha)
 
-            # === SMART POSITIONING WITH LOWERED CLIPPED LABEL ===
+            # === ANNOTATIONS ===
             percent_full = round((curr_af / full_af) * 100)
 
             if full_maf > self.y_max:
-                # When clipped above chart → lower it by ~2/3 font height
                 label_y = self.y_max
-                offset_y = 2          # Lowered significantly (was 4)
+                offset_y = 1.5
             else:
-                # Normal visible case
                 label_y = full_maf
-                offset_y = 7
+                offset_y = 9.5
 
-            ax.annotate(f'{percent_full}% ({full_maf:.3f})',
+            # Acre-feet — centered over the bar
+            ax.annotate(f'{full_maf:.3f}',
                         xy=(x_pos[i], label_y),
+                        xytext=(0, offset_y),
+                        textcoords="offset points",
+                        ha='center', va='bottom',
+                        fontsize=9.5, fontweight='bold', color='darkred')
+
+            # Percentage — centered exactly over the RIGHT EDGE of the bar
+            ax.annotate(f'{percent_full}%',
+                        xy=(x_pos[i] + main_width/2, label_y),   # Centered on right edge
                         xytext=(0, offset_y),
                         textcoords="offset points",
                         ha='center', va='bottom',
