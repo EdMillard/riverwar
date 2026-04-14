@@ -35,6 +35,7 @@ from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
 from colorado.chart import Chart
+from colorado.month_nav import MonthYearNavigator
 import colorado.lb as lb
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -61,72 +62,6 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
                 matching_dirs.append(str(dir_path.resolve()))
 
     return sorted(set(matching_dirs))
-
-
-class MonthYearNavigator(wx.Panel):
-    """Reusable single month/year navigator with smaller raised buttons"""
-    def __init__(self, parent:wx.Panel, current_date:date, on_changed=None, name:str=""):
-        super().__init__(parent, style=wx.BORDER_NONE)
-
-        self.name = name
-        self.current_date = current_date
-        self.on_changed = on_changed
-
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK)
-        arrow_fg = wx.Colour(160, 160, 160)
-
-        self.btn_left = buttons.GenButton(self, label="◀", size=wx.Size(34, 32))
-        self.btn_left.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-        self.btn_left.SetForegroundColour(arrow_fg)
-        self.btn_left.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
-        self.btn_left.SetBezelWidth(3)
-        self.btn_left.SetUseFocusIndicator(False)
-        self.btn_left.Bind(wx.EVT_BUTTON, self._on_left)
-        sizer.Add(self.btn_left, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=6)
-
-        self.date_text = wx.StaticText(self, label="")
-        self.date_text.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL))
-        self.date_text.SetForegroundColour(wx.Colour(230, 230, 230))
-        sizer.Add(self.date_text, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=12)
-
-        self.btn_right = buttons.GenButton(self, label="▶", size=wx.Size(34, 32))
-        self.btn_right.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-        self.btn_right.SetForegroundColour(arrow_fg)
-        self.btn_right.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE))
-        self.btn_right.SetBezelWidth(3)
-        self.btn_right.SetUseFocusIndicator(False)
-        self.btn_right.Bind(wx.EVT_BUTTON, self._on_right)
-        sizer.Add(self.btn_right, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, border=6)
-
-        self.SetSizer(sizer)
-        self.SetBackgroundColour(bg)
-        self._update_display()
-
-    def _update_display(self):
-        self.date_text.SetLabel(Chart.date_to_string(self.current_date))
-
-    def _on_left(self, event):
-        month = self.current_date.month - 1
-        year = self.current_date.year
-        if month < 1:
-            month = 12
-            year -= 1
-        self.current_date = date(year, month, 1)
-        self._update_display()
-        if self.on_changed:
-            self.on_changed(self.name, self.current_date)
-
-    def _on_right(self, event):
-        month = self.current_date.month + 1
-        year = self.current_date.year
-        if month > 12:
-            month = 1
-            year += 1
-        self.current_date = date(year, month, 1)
-        self._update_display()
-        if self.on_changed:
-            self.on_changed(self.name, self.current_date)
 
 
 # ==================== MAIN FRAME ====================
