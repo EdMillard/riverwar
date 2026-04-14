@@ -20,8 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from reservoirs.reservoir import Reservoir
+import wx
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from PIL import Image
+import io
 from datetime import date, timedelta
 from typing import List, Optional
 
@@ -35,6 +39,9 @@ class Chart:
                  end_date: date | None = None,
                  power_head_zones=None,
                  reserved_zones=None):
+
+        self.canvas = None
+        self.panel = None
 
         self.reservoirs = reservoirs
 
@@ -61,8 +68,33 @@ class Chart:
     ) -> Optional[Figure]:
         return None
 
+    def get_figure(self, width_inch=None, height_inch=None):
+        return self.create_figure(width_inch, height_inch)
+
+    def save_figure(self)->Image:
+        buffer = io.BytesIO()
+        self.canvas.figure.savefig(buffer, dpi=180, bbox_inches='tight', format='png')
+        buffer.seek(0)
+        image = Image.open(buffer)
+        return image
+
     def update_report(self, report_name:str):
         self.report_name = report_name
+
+    def create_panel(self, parent:wx.SplitterWindow):
+        self.panel = wx.Panel(parent)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        self.canvas = FigureCanvas(self.panel, -1,  self.get_figure(None, None))
+        sizer.Add(self.canvas, 1, wx.EXPAND | wx.ALL, border=6)
+        self.panel.SetSizer(sizer)
+
+    def update_canvas(self):
+        w = max(8.0, self.panel.GetClientSize().GetWidth() / 100.0)
+        h = max(4.0, self.panel.GetClientSize().GetHeight() / 100.0)
+        new_fig = self.get_figure(w, h)
+        self.canvas.figure = new_fig
+        self.canvas.draw()
+        self.canvas.Refresh()
 
     def update_dates(self, start_date=None,
                      current_date=None,
@@ -71,8 +103,6 @@ class Chart:
         if current_date is not None: self.current_date = current_date
         if end_date is not None: self.end_date = end_date
 
-    def get_figure(self, width_inch=None, height_inch=None):
-        return self.create_figure(width_inch, height_inch)
 
     @staticmethod
     def last_day_of_month(year: int, month: int) -> date:

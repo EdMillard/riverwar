@@ -54,11 +54,20 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 
 # ==================== RESERVOIR CHART ====================
 class ReservoirChart(Chart):
-    def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None,
-                 end_date=None, power_head_zones=None, reserved_zones=None):
+    def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None):
         super().__init__(reservoirs, start_date, current_date, end_date)
-        self.power_head_zones = power_head_zones or []
-        self.reserved_zones = reserved_zones or []
+        self.power_zones = [
+            ('#ffffff', 'Available Head'),
+            (Reservoir.high_power_pool_color, 'Normal Power Head'),
+            (Reservoir.low_power_pool_color, 'Low Power Head'),
+            (Reservoir.non_power_pool_color, 'Limited Access')
+        ]
+
+        self.reserved_zones = [
+            (lb.AZ_COLOR, 'AZ'),
+            (lb.NV_COLOR, 'NV'),
+            (lb.CA_COLOR, 'CA')
+        ]
         self.height_inch = 6.5
         self.y_max = 14.0
 

@@ -21,10 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
-import io
 from PIL import Image
 import wx
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib
 import pandas as pd
 from datetime import date
@@ -36,7 +34,6 @@ from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
 from colorado.chart import Chart
 from colorado.month_nav import MonthYearNavigator
-import colorado.lb as lb
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -78,6 +75,8 @@ class ReservoirChartFrame(wx.Frame):
 
         self.reservoirs = reservoir_list
         self.report_list = report_list
+
+        self.charts:List[Chart] = []
 
         # ====================== RECORDING STATE ======================
         self.saving_pdf = False
@@ -187,32 +186,21 @@ class ReservoirChartFrame(wx.Frame):
         top_toolbar.SetMinSize(wx.Size(-1, 42))
 
         # ==================== CHARTS ====================
-        power_zones = [
-            ('#ffffff', 'Available Head'),
-            (Reservoir.high_power_pool_color, 'Normal Power Head'),
-            (Reservoir.low_power_pool_color, 'Low Power Head'),
-            (Reservoir.non_power_pool_color, 'Limited Access')
-        ]
-
-        reserved_zones = [
-            (lb.AZ_COLOR, 'AZ'),
-            (lb.NV_COLOR, 'NV'),
-            (lb.CA_COLOR, 'CA')
-        ]
-
         current_time_from_usbr = self.load_reservoirs()
         start = self.start_nav.current_date
         current = self.current_nav.current_date
         end = self.end_nav.current_date
 
         self.reservoir_chart = ReservoirChart(
-            reservoirs, start_date=start, current_date=current_time_from_usbr, end_date=end,
-            power_head_zones=power_zones, reserved_zones=reserved_zones
+            reservoirs, start_date=start, current_date=current_time_from_usbr, end_date=end
         )
+        self.charts.append(self.reservoir_chart)
 
         self.inflow_chart = InflowOutflowChart(
             reservoirs, start_date=start, current_date=current, end_date=end
         )
+        self.charts.append(self.inflow_chart)
+
         self.set_report(self.report_path)
 
         # Notebook + Splitter
@@ -222,21 +210,12 @@ class ReservoirChartFrame(wx.Frame):
                                           style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
         self.splitter.SetMinimumPaneSize(200)
 
-        self.reservoir_panel = wx.Panel(self.splitter)
-        cap_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.reservoir_canvas = FigureCanvas(self.reservoir_panel, -1,
-                                             self.reservoir_chart.get_figure(None, None))
-        cap_sizer.Add(self.reservoir_canvas, 1, wx.EXPAND | wx.ALL, border=6)
-        self.reservoir_panel.SetSizer(cap_sizer)
-
-        self.in_panel = wx.Panel(self.splitter)
-        in_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.inflow_canvas = FigureCanvas(self.in_panel, -1,
-                                          self.inflow_chart.get_figure(None, None))
-        in_sizer.Add(self.inflow_canvas, 1, wx.EXPAND | wx.ALL, border=6)
-        self.in_panel.SetSizer(in_sizer)
-
-        self.splitter.SplitHorizontally(self.reservoir_panel, self.in_panel)
+        for chart in self.charts:
+            chart.create_panel(self.splitter)
+        if len(self.charts) == 2:
+            self.splitter.SplitHorizontally(self.charts[0].panel,self.charts[1].panel)
+        else:
+            print("ReservoirChartFrame doesn't have two charts")
 
         combined_sizer = wx.BoxSizer(wx.VERTICAL)
         combined_sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=4)
@@ -266,8 +245,8 @@ class ReservoirChartFrame(wx.Frame):
     # ==================== EVENT HANDLERS ====================
     def set_report(self, report_str:str):
         self.report_path = report_str
-        self.reservoir_chart.update_report(Path(self.report_path).name)
-        self.inflow_chart.update_report(Path(self.report_path).name)
+        for chart in self.charts:
+            chart.update_report(Path(self.report_path).name)
 
     def on_report_selected(self, event):
         if self.report_choice is None:
@@ -279,50 +258,30 @@ class ReservoirChartFrame(wx.Frame):
 
         print(f"Selected report: {Path(self.report_path).name}")
         self.load_reservoirs()
-        self.reservoir_chart.update_dates(start_date=self.start_nav.current_date,
-                                          current_date=self.current_nav.current_date,
-                                          end_date=self.end_nav.current_date)
-        self.inflow_chart.update_dates(start_date=self.start_nav.current_date,
-                                       current_date=self.current_nav.current_date,
-                                       end_date=self.end_nav.current_date)
-        self._update_reservoir_canvas()
-        self._update_inflow_canvas()
+        for chart in self.charts:
+            chart.update_dates(start_date=self.start_nav.current_date,
+                                              current_date=self.current_nav.current_date,
+                                              end_date=self.end_nav.current_date)
+            chart.update_canvas()
         self._take_snapshot()
 
     def on_date_changed(self, which: str, date_val: date):
         self.load_reservoirs()
 
         if which == "start":
-            self.reservoir_chart.update_dates(start_date=date_val)
-            self.inflow_chart.update_dates(start_date=date_val)
+            for chart in self.charts:
+                chart.update_dates(start_date=date_val)
         elif which == "current":
-            self.reservoir_chart.update_dates(current_date=date_val)
-            self.inflow_chart.update_dates(current_date=date_val)
+            for chart in self.charts:
+                chart.update_dates(current_date=date_val)
         elif which == "end":
-            self.reservoir_chart.update_dates(end_date=date_val)
-            self.inflow_chart.update_dates(end_date=date_val)
+            for chart in self.charts:
+                chart.update_dates(end_date=date_val)
 
-        self._update_reservoir_canvas()
-        self._update_inflow_canvas()
+        for chart in self.charts:
+            chart.update_canvas()
+
         self._take_snapshot()
-
-    def _update_reservoir_canvas(self):
-        if not hasattr(self, 'reservoir_canvas'): return
-        w = max(8.0, self.in_panel.GetClientSize().GetWidth() / 100.0)
-        h = max(4.0, self.in_panel.GetClientSize().GetHeight() / 100.0)
-        new_fig = self.reservoir_chart.get_figure(w, h)
-        self.reservoir_canvas.figure = new_fig
-        self.reservoir_canvas.draw()
-        self.reservoir_canvas.Refresh()
-
-    def _update_inflow_canvas(self):
-        if not hasattr(self, 'inflow_canvas'): return
-        w = max(8.0, self.in_panel.GetClientSize().GetWidth() / 100.0)
-        h = max(4.0, self.in_panel.GetClientSize().GetHeight() / 100.0)
-        new_fig = self.inflow_chart.get_figure(w, h)
-        self.inflow_canvas.figure = new_fig
-        self.inflow_canvas.draw()
-        self.inflow_canvas.Refresh()
 
     def _on_global_change(self, delta: int):
         for nav in (self.start_nav, self.current_nav, self.end_nav):
@@ -339,14 +298,11 @@ class ReservoirChartFrame(wx.Frame):
             nav._update_display()
 
         self.load_reservoirs()
-        self.inflow_chart.update_dates(start_date=self.start_nav.current_date,
+        for chart in self.charts:
+            chart.update_dates(start_date=self.start_nav.current_date,
                                        current_date=self.current_nav.current_date,
                                        end_date=self.end_nav.current_date)
-        self.reservoir_chart.update_dates(start_date=self.start_nav.current_date,
-                                          current_date=self.current_nav.current_date,
-                                          end_date=self.end_nav.current_date)
-        self._update_inflow_canvas()
-        self._update_reservoir_canvas()
+            chart.update_canvas()
         self._take_snapshot()
 
     def _on_global_left(self, event):
@@ -430,32 +386,24 @@ class ReservoirChartFrame(wx.Frame):
     def _take_snapshot(self):
         if not (self.saving_pdf or self.saving_gif):
             return
-        if not hasattr(self, 'reservoir_canvas') or not hasattr(self, 'inflow_canvas'):
-            return
-
         try:
-            fig_top = self.reservoir_canvas.figure
-            fig_bottom = self.inflow_canvas.figure
+            images:List[Image] = []
+            for chart in self.charts:
+                images.append(chart.save_figure())
+            if images:
+                total_h = 0
+                for image in images:
+                    total_h += image.height
+                combined = Image.new('RGB', (images[0].width, total_h), (255, 255, 255))
+                y = 0
+                for image in images:
+                    combined.paste(image, (0, y))
+                    y += image.height
 
-            buf_top = io.BytesIO()
-            buf_bottom = io.BytesIO()
-            fig_top.savefig(buf_top, dpi=180, bbox_inches='tight', format='png')
-            fig_bottom.savefig(buf_bottom, dpi=180, bbox_inches='tight', format='png')
-            buf_top.seek(0)
-            buf_bottom.seek(0)
-
-            img_top = Image.open(buf_top)
-            img_bottom = Image.open(buf_bottom)
-
-            total_h = img_top.height + img_bottom.height
-            combined = Image.new('RGB', (img_top.width, total_h), (255, 255, 255))
-            combined.paste(img_top, (0, 0))
-            combined.paste(img_bottom, (0, img_top.height))
-
-            if self.saving_pdf:
-                self.pdf_pages.append(combined.copy())
-            if self.saving_gif:
-                self.gif_frames.append(combined.copy())
+                if self.saving_pdf:
+                    self.pdf_pages.append(combined.copy())
+                if self.saving_gif:
+                    self.gif_frames.append(combined.copy())
 
         except Exception as e:
             print(f"[Snapshot Error] {e}")
