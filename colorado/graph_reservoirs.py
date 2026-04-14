@@ -66,7 +66,7 @@ class ReservoirChart(Chart):
         if width_inch is not None and width_inch > 0:
             self.width_inch = width_inch
 
-        title = f'Storage - {self.month_to_short_name(self.current_date.month)} {self.current_date.year}'
+        title = f'Colorado River Storage - {self.month_to_short_name(self.current_date.month)} {self.current_date.day}, {self.current_date.year} '
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
         ax = fig.add_subplot(111)
@@ -243,6 +243,17 @@ class ReservoirChart(Chart):
                         fontsize=9.5, fontweight='bold', color='darkred')
 
         # ==================== ANNOTATIONS ====================
+        # Special levels
+        for i, r in enumerate(reservoirs):
+            for elev_ft, cap_af, label in getattr(r, 'special_levels', []):
+                cap_maf = cap_af / 1_000_000
+                if cap_maf <= current_maf[i]:
+                    ax.plot(x_pos[i] + main_width/2 - 0.035, cap_maf, marker='<', markersize=8.5,
+                            color='black', markeredgecolor='black', markerfacecolor='white')
+                    ax.annotate(f'{elev_ft:,.0f}\'\n{label}',
+                                xy=(x_pos[i] + main_width*0.52 + 0.04, cap_maf),
+                                ha='left', va='center', fontsize=9.5, fontweight='bold', color='black')
+
         for i in range(len(names)):
             # Active storage total on top of bar (lowered)
             ax.annotate(f'{current_maf[i]:.3f}',
@@ -257,17 +268,6 @@ class ReservoirChart(Chart):
                             xy=(x_pos[i] + main_width * 0.52, current_maf[i]),
                             ha='left', va='center', fontsize=9.5, color='darkgreen', fontweight='bold',
                             bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
-
-        # Special levels
-        for i, r in enumerate(reservoirs):
-            for elev_ft, cap_af, label in getattr(r, 'special_levels', []):
-                cap_maf = cap_af / 1_000_000
-                if cap_maf <= current_maf[i]:
-                    ax.plot(x_pos[i] + main_width/2 - 0.035, cap_maf, marker='<', markersize=8.5,
-                            color='black', markeredgecolor='black', markerfacecolor='white')
-                    ax.annotate(f'{elev_ft:,.0f}\'\n{label}',
-                                xy=(x_pos[i] + main_width*0.52 + 0.04, cap_maf),
-                                ha='left', va='center', fontsize=9.5, fontweight='bold', color='black')
 
         # Legends
         if self.power_head_zones:

@@ -8,7 +8,8 @@ to use, copy, modify, merge, publish, distribute copies of the Software, and
 to permit persons to whom the Software is furnished to do so, subject to the
 following conditions:
 
-The above copyright notice and this permission notice shall be included in all
+The above copyright notice and this permission notice shall be included in allimport pandas as pd
+
 copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -25,6 +26,7 @@ from PIL import Image
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 import matplotlib
+import pandas as pd
 from datetime import date
 import os
 import wx.lib.buttons as buttons
@@ -41,8 +43,9 @@ os.environ['QT_SILENT'] = '1'
 
 arrow_fg = wx.Colour(150, 150, 150)
 
-GIF_FRAME_DELAY_MS = 750   # ← Change this value to adjust speed (milliseconds per frame)
-
+# ====================== GIF SETTINGS ======================
+GIF_FRAME_DELAY_MS = 750
+GIF_LOOP_ENABLED = False
 
 def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
     """Return list of directories containing the given filename."""
@@ -249,13 +252,13 @@ class ReservoirChartFrame(wx.Frame):
             (lb.CA_COLOR, 'CA')
         ]
 
-        self.load_reservoirs()
+        current_time_from_usbr = self.load_reservoirs()
         start = self.start_nav.current_date
         current = self.current_nav.current_date
         end = self.end_nav.current_date
 
         self.reservoir_chart = ReservoirChart(
-            reservoirs, start_date=start, current_date=current, end_date=end,
+            reservoirs, start_date=start, current_date=current_time_from_usbr, end_date=end,
             power_head_zones=power_zones, reserved_zones=reserved_zones
         )
 
@@ -301,12 +304,16 @@ class ReservoirChartFrame(wx.Frame):
         self.Centre()
         wx.CallAfter(self.panel.Layout)
 
-    def load_reservoirs(self):
+    def load_reservoirs(self)->date|None:
+        date_time_as_date = None
         start = self.start_nav.current_date
         current = self.current_nav.current_date
         end = self.end_nav.current_date
         for reservoir in self.reservoirs:
             reservoir.load_data(Path(self.report_path), start, current, end)
+            if reservoir.name == 'Lake Powell':
+                date_time_as_date = pd.Timestamp(reservoir.date_time)
+        return date_time_as_date
 
     # ==================== EVENT HANDLERS ====================
     def set_report(self, report_str:str):
@@ -516,8 +523,8 @@ class ReservoirChartFrame(wx.Frame):
             "GIF",
             save_all=True,
             append_images=self.gif_frames[1:],
-            duration=GIF_FRAME_DELAY_MS,   # ← Now uses the constant (750ms)
-            loop=0,
+            duration=GIF_FRAME_DELAY_MS,
+            loop=0 if not GIF_LOOP_ENABLED else 0,   # 0 = infinite loop in PIL
             optimize=True
         )
 

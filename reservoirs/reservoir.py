@@ -77,7 +77,7 @@ class Reservoir:
         self.headers = headers
         self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
-        self.date_time:TimeStamp = pd.to_datetime((1970, 1, 1)).normalize()
+        self.date_time:TimeStamp = TimeStamp(1970, 1, 1)
         self.df_24_month = None
 
         # Month Year Range

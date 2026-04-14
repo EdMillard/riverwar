@@ -83,11 +83,12 @@ class InflowOutflowChart(Chart):
         bar_width = 0.33
 
         edge_color = 'black'
+        show_gap_water = True
 
         # Draw bars
         for i, r in enumerate(reservoirs):
             _draw_outflow_bar(ax, i, r, x_pos, bar_width, edge_color)
-            _draw_inflow_bar(ax, i, r, x_pos, bar_width, edge_color)
+            _draw_inflow_bar(ax, i, r, show_gap_water, x_pos, bar_width, edge_color)
 
         # Difference connectors
         for i, r in enumerate(reservoirs):
@@ -120,42 +121,46 @@ class InflowOutflowChart(Chart):
 
         # 2. Gap Water Legend
         gap_handles = []
-        seen = set()
-        for r in reservoirs:
-            for full_label, amount, color in getattr(r, 'gap_water_parts', []):
-                if amount > 0:
-                    clean_label = str(full_label).strip()
-                    if clean_label not in seen:
-                        seen.add(clean_label)
-                        gap_handles.append(mpatches.Patch(color=color, label=clean_label))
-        if gap_handles:
-            ax.legend(handles=gap_handles, loc='upper right',
-                                title="Gap Water", title_fontsize=10.5,
-                                fontsize=10, framealpha=0.95,
-                                bbox_to_anchor=(0.82, 1.0))
-            ax.add_artist(leg_main)  # Keep main on top
+        leg_gap = None
+        if show_gap_water:
+            seen = set()
+            for r in reservoirs:
+                for full_label, amount, color in getattr(r, 'gap_water_parts', []):
+                    if amount > 0:
+                        clean_label = str(full_label).strip()
+                        if clean_label not in seen:
+                            seen.add(clean_label)
+                            gap_handles.append(mpatches.Patch(color=color, label=clean_label))
+            if gap_handles:
+                leg_gap = ax.legend(handles=gap_handles, loc='upper right',
+                                    title="Gap Water", title_fontsize=10.5,
+                                    fontsize=10, framealpha=0.95,
+                                    bbox_to_anchor=(0.82, 1.0))
+                ax.add_artist(leg_main)  # Keep main on top
 
         # 3. Havasu Legend
-        pump_handles = []
-        seen = set()
-        for r in reservoirs:
-            for full_label, amount, color in getattr(r, 'pump_parts', []):
-                if r.name == 'Lake Havasu':
-                    if amount > 0 and full_label not in seen:
-                        seen.add(full_label)
-                        pump_handles.append(mpatches.Patch(color=color, label=full_label))
+        show_havasu_legend = False
+        if show_havasu_legend:
+            pump_handles = []
+            seen = set()
+            for r in reservoirs:
+                for full_label, amount, color in getattr(r, 'pump_parts', []):
+                    if r.name == 'Lake Havasu':
+                        if amount > 0 and full_label not in seen:
+                            seen.add(full_label)
+                            pump_handles.append(mpatches.Patch(color=color, label=full_label))
 
-        leg_gap = None
-        if pump_handles:
-            leg_gap = ax.legend(handles=pump_handles, loc='upper right',
-                                 title="Havasu Outflow", title_fontsize=10.5,
-                                 fontsize=10, framealpha=0.95,
-                                 bbox_to_anchor=(0.121, 1.0))
-            ax.add_artist(leg_main)  # Keep main on top
+            leg_gap = None
+            if pump_handles:
+                leg_gap = ax.legend(handles=pump_handles, loc='upper right',
+                                     title="Havasu Outflow", title_fontsize=10.5,
+                                     fontsize=10, framealpha=0.95,
+                                     bbox_to_anchor=(0.121, 1.0))
+                ax.add_artist(leg_main)  # Keep main on top
 
         # Bring main legends to front
         ax.add_artist(leg_main)
-        if gap_handles:
+        if show_gap_water and gap_handles:
             ax.add_artist(leg_gap)
 
         # Final layout
@@ -303,7 +308,7 @@ def _draw_outflow_bar(ax, i, r, x_pos, bar_width, edge_color):
                     fontsize=11.5, fontweight='bold', color='black')
 
 
-def _draw_inflow_bar(ax, i, r, x_pos, bar_width, edge_color):
+def _draw_inflow_bar(ax, i, r, show_gap_water, x_pos, bar_width, edge_color):
     """Right bar: Inflow + Side Inflow + Gap Water"""
     bottom = 0.0
 
@@ -336,38 +341,39 @@ def _draw_inflow_bar(ax, i, r, x_pos, bar_width, edge_color):
             bottom += amount
 
     # Gap Water
-    gap_water_parts = getattr(r, 'gap_water_parts', [])
-    if gap_water_parts:
-        gap_x = x_pos[i] + 0.18 + bar_width/2 + 0.13
-        current_bottom = bottom
+    if show_gap_water:
+        gap_water_parts = getattr(r, 'gap_water_parts', [])
+        if gap_water_parts:
+            gap_x = x_pos[i] + 0.18 + bar_width/2 + 0.13
+            current_bottom = bottom
 
-        for label, amount, color in gap_water_parts:
-            if amount > 0:
-                maf = amount / 1_000_000
-                bar = ax.bar(gap_x, amount, width=bar_width * 0.65,
-                             bottom=current_bottom, color=color, alpha=0.92,
-                             edgecolor='darkgoldenrod')[0]
+            for label, amount, color in gap_water_parts:
+                if amount > 0:
+                    maf = amount / 1_000_000
+                    bar = ax.bar(gap_x, amount, width=bar_width * 0.65,
+                                 bottom=current_bottom, color=color, alpha=0.92,
+                                 edgecolor='darkgoldenrod')[0]
 
-                if maf >= 0.35:
-                    ax.annotate(f'{maf:.2f}',
-                                xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount / 2),
-                                ha='center', va='center',
-                                fontsize=9.5, fontweight='bold', color='black')
+                    if maf >= 0.35:
+                        ax.annotate(f'{maf:.2f}',
+                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount / 2),
+                                    ha='center', va='center',
+                                    fontsize=9.5, fontweight='bold', color='black')
 
-                # ax.annotate(label,
-                #             xy=(gap_x + bar_width*0.65/2 + 0.09, current_bottom + amount / 2),
-                #             ha='left', va='center',
-                #             fontsize=9.5, fontweight='bold', color='black')
+                    # ax.annotate(label,
+                    #             xy=(gap_x + bar_width*0.65/2 + 0.09, current_bottom + amount / 2),
+                    #             ha='left', va='center',
+                    #             fontsize=9.5, fontweight='bold', color='black')
 
-                current_bottom += amount
+                    current_bottom += amount
 
-        total_gap = sum(a for _, a, _ in gap_water_parts)
-        if total_gap > 0:
-            ax.annotate(f'{total_gap / 1_000_000:.2f}',
-                        xy=(gap_x, current_bottom),
-                        xytext=(0, 3), textcoords="offset points",
-                        ha='center', va='bottom',
-                        fontsize=10.5, fontweight='bold', color='black')
+            total_gap = sum(a for _, a, _ in gap_water_parts)
+            if total_gap > 0:
+                ax.annotate(f'{total_gap / 1_000_000:.2f}',
+                            xy=(gap_x, current_bottom),
+                            xytext=(0, 3), textcoords="offset points",
+                            ha='center', va='bottom',
+                            fontsize=10.5, fontweight='bold', color='black')
 
     # Total inflow annotation
     total_in = (sum(a for _, a, _ in getattr(r, 'inflow_parts', [])) +
