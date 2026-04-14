@@ -22,7 +22,7 @@ SOFTWARE.
 from reservoirs.reservoir import Reservoir
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-from datetime import date
+from datetime import date, timedelta
 from typing import List, Optional
 
 class Chart:
@@ -43,7 +43,7 @@ class Chart:
         # Default values
         self.start_date = start_date or date(2025, 10, 1)
         self.current_date = current_date or date(2026, 4, 1)
-        self.end_date = end_date or date(2026, 10, 1)
+        self.end_date = end_date or date(2026, 9, 30)
         self.power_head_zones = power_head_zones or []
         self.reserved_zones = reserved_zones or []
 
@@ -73,6 +73,25 @@ class Chart:
 
     def get_figure(self, width_inch=None, height_inch=None):
         return self.create_figure(width_inch, height_inch)
+
+    @staticmethod
+    def last_day_of_month(year: int, month: int) -> date:
+        """Return a date object set to the last day of the given month/year."""
+        # Start with first day of next month, then subtract 1 day
+        if month == 12:
+            next_month = 1
+            next_year = year + 1
+        else:
+            next_month = month + 1
+            next_year = year
+
+        first_of_next_month = date(next_year, next_month, 1)
+        last_day = first_of_next_month - timedelta(days=1)
+        return last_day
+
+    @staticmethod
+    def date_to_string(date:date)->str:
+        return f"{Chart.month_to_short_name(date.month)} {date.day} {date.year}"
 
     @staticmethod
     def month_to_short_name(month: int) -> str:

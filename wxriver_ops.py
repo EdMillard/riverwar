@@ -34,6 +34,7 @@ from typing import List
 from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
+from colorado.chart import Chart
 import colorado.lb as lb
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -64,11 +65,11 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 
 class MonthYearNavigator(wx.Panel):
     """Reusable single month/year navigator with smaller raised buttons"""
-    def __init__(self, parent, initial_month: int, initial_year: int, on_changed=None, name=""):
+    def __init__(self, parent:wx.Panel, current_date:date, on_changed=None, name:str=""):
         super().__init__(parent, style=wx.BORDER_NONE)
 
         self.name = name
-        self.current_date = date(initial_year, initial_month, 1)
+        self.current_date = current_date
         self.on_changed = on_changed
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -103,8 +104,7 @@ class MonthYearNavigator(wx.Panel):
         self._update_display()
 
     def _update_display(self):
-        month_name = self.current_date.strftime("%b")
-        self.date_text.SetLabel(f"{month_name} {self.current_date.year}")
+        self.date_text.SetLabel(Chart.date_to_string(self.current_date))
 
     def _on_left(self, event):
         month = self.current_date.month - 1
@@ -179,16 +179,29 @@ class ReservoirChartFrame(wx.Frame):
             self.report_choice = None
 
         # Date navigators
-        self.start_nav = MonthYearNavigator(top_toolbar, 10, 2025, self.on_date_changed, name="start")
-        tb_sizer.Add(self.start_nav, 0, wx.ALIGN_CENTER_VERTICAL)
-        tb_sizer.AddSpacer(25)
-
-        self.current_nav = MonthYearNavigator(top_toolbar, 4, 2026, self.on_date_changed, name="current")
+        self.current_nav = MonthYearNavigator(top_toolbar, date(2026, 4, 1), self.on_date_changed, name="current")
         tb_sizer.Add(self.current_nav, 0, wx.ALIGN_CENTER_VERTICAL)
-        tb_sizer.AddSpacer(25)
 
-        self.end_nav = MonthYearNavigator(top_toolbar, 10, 2026, self.on_date_changed, name="end")
+        separator = wx.StaticText(top_toolbar, label="[")
+        separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        # separator.SetForegroundColour(wx.Colour(100, 100, 100))  # Dark gray
+        tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
+
+        self.start_nav = MonthYearNavigator(top_toolbar, date(2025, 10, 1), self.on_date_changed, name="start")
+        tb_sizer.Add(self.start_nav, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        separator = wx.StaticText(top_toolbar, label="-")
+        separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
+
+        self.end_nav = MonthYearNavigator(top_toolbar, Chart.last_day_of_month(2026, 9), self.on_date_changed, name="end")
         tb_sizer.Add(self.end_nav, 0, wx.ALIGN_CENTER_VERTICAL)
+
+        separator = wx.StaticText(top_toolbar, label="]")
+        separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
+
+        # tb_sizer.AddSpacer(25)
 
         # Global arrows
         global_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -384,7 +397,10 @@ class ReservoirChartFrame(wx.Frame):
                 if month < 1: month, year = 12, year - 1
             else:
                 if month > 12: month, year = 1, year + 1
-            nav.current_date = date(year, month, 1)
+            if nav == self.end_nav:
+                nav.current_date = Chart.last_day_of_month(year, month)
+            else:
+                nav.current_date = date(year, month, 1)
             nav._update_display()
 
         self.load_reservoirs()
