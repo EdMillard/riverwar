@@ -27,16 +27,21 @@ from typing import List, Optional
 
 class Navajo(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
-        headers:List[str] = [ub.NAVAJO_WY,  ub.NAVAJO_ELEVATION_WY, ub.NAVAJO_INFLOW_WY,
-                             ub.NAVAJO_RELEASE_WY, ub.NAVAJO_EVAPORATION_WY]
+        headers:List[str] = [ub.NAVAJO_WY,  ub.NAVAJO_ELEVATION_WY,
+                             ub.NAVAJO_INFLOW, ub.NAVAJO_INFLOW_CFS,
+                             ub.NAVAJO_RELEASE, ub.NAVAJO_RELEASE_CFS, ub.NAVAJO_EVAPORATION_WY]
         super().__init__('Navajo', headers, upstream=upstream)
 
         self.usbr_rise_elevation_ft_id = 612
         self.usbr_rise_storage_af_id = 613
         self.end_of_month_storage_str = 'Live Storage'
         self.usbr_rise_inflow_af_id = 4289
+        self.usbr_rise_inflow_cfs_id = 615
         self.usbr_rise_evap_af_id = 617
-        # self.usbr_rise_release_af_id = 0
+        self.usbr_rise_release_af_id = 4290
+        self.usbr_rise_release_cfs_id = 616
+        self.usbr_rise_power_release_af_id = 4290
+        self.usbr_rise_power_release_cfs_id = 4316
 
         # Elevations
         #
@@ -67,6 +72,15 @@ class Navajo(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.NAVAJO_ELEVATION_WY)
         self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.NAVAJO_WY)
+
+        self.evao_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.NAVAJO_EVAPORATION_WY)
+        self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.NAVAJO_INFLOW_CFS)
+        # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.NAVAJO_INFLOW)
+        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.NAVAJO_RELEASE_CFS)
+        # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.NAVAJO_RELEASE)
+
+        # self.power_release_cfs = self.get_daily_and_last(self.usbr_rise_power_release_cfs_id, ub.NAVAJO_POWER_RELEASE_CFS)
+        # self.power_release_af = self.get_daily_and_last(self.usbr_rise_power_release_af_id, ub.NAVAJO_POWER_RELEASE)
 
         # usbr_navajo_storage_af = 613
         # sheet.usbr_last_value(self.df, usbr_navajo_storage_af, self.water_year, self.water_year, title=ub.NAVAJO_WY, month=all_b.WY, divisor=1)

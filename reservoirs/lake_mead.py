@@ -41,14 +41,16 @@ from typing import List, Optional
 
 class LakeMead(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None, month=1):
-        headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION, lb.HOOVER_RELEASE]
+        headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION,
+                             lb.MEAD_RELEASE, lb.MEAD_RELEASE_CFS]
         super().__init__('Lake Mead', headers, upstream=upstream, month=month)
 
         self.usbr_rise_elevation_ft_id = 6123 # 1937
-        self.usbr_rise_storage_af_id = 6124 # 1937
-        # self.usbr_rise_inflow_af_id = 0 # 1937
-        # self.usbr_rise_evap_af_id = 0 # 1937
-        self.usbr_rise_release_af_id = 6122 # 1937
+        self.usbr_rise_storage_af_id = 6124
+        # self.usbr_rise_inflow_af_id = 0
+        # self.usbr_rise_evap_af_id = 0
+        self.usbr_rise_release_af_id = 6122
+        self.usbr_rise_release_cfs_id = 6125
 
         # Elevations
         #
@@ -91,6 +93,8 @@ class LakeMead(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.MEAD_ELEVATION)
         self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.MEAD)  # 1937
+        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, lb.MEAD_RELEASE_CFS)
+        self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, lb.MEAD_RELEASE)
 
         # usbr_lake_mead_storage_af = 6124  # 1937
         # sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
@@ -145,11 +149,6 @@ class LakeMead(Reservoir):
         self.reserved_parts = [("CA", 1661832, lb.CA_COLOR),
                                ("NV", 954013, lb.NV_COLOR),
                                ("AZ", 710589, lb.AZ_COLOR)]
-
-    def get_elevationX(self, year, end_year:int|None =None)->float:
-        usbr_lake_mead_elevation_ft = 6123 # 1936
-        sheet.usbr_last_value(self.df, usbr_lake_mead_elevation_ft, self.water_year, self.water_year, title=lb.MEAD_ELEVATION, divisor=1)
-        return self.get_value_by_year(self.water_year, lb.MEAD_ELEVATION)
 
     def copy(self):
         return copy.copy(self)

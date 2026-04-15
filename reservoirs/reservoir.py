@@ -100,11 +100,20 @@ class Reservoir:
         self.usbr_rise_inflow_af_id = 0
         self.usbr_rise_evap_af_id = 0
         self.usbr_rise_release_af_id = 0
+        self.usbr_rise_release_cfs_id = 0
 
         # Elevations
         #
         self.elevation_feet:float = 0
         self.active_capacity_af:float = 0
+        self.evap_af:float = 0
+        self.inflow_af:float = 0
+        self.inflow_cfs:float = 0
+        self.release_af:float = 0
+        self.release_cfs:float = 0
+
+        self.inflow_unregulated_af = 0
+        self.inflow_unregulated_cfs = 0
 
         self.full_feet:float = 0
         self.power_head_target_feet:float = 0
@@ -159,15 +168,19 @@ class Reservoir:
 
         return string
 
+    def usbr_rise_load_daily(self, usbr_rise_id:int, column_name:str):
+        info, daily = usbr_rise.load(usbr_rise_id,
+                                                  water_year_info=self.water_year_info,
+                                                  alias=column_name)
+        sheet.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date',
+                                            value_column_name=column_name)
+        return daily
+
     def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:
         when = Reservoir.compare_to_today(self.current_date)
-        print(f'relative time: {when}')
+        # print(f'relative time: {when}')
         if when == 'match':
-            info, daily_elevation_ft = usbr_rise.load(usbr_rise_id,
-                                                      water_year_info=self.water_year_info,
-                                                      alias=column_name)
-            sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date',
-                                                value_column_name=column_name)
+            daily_elevation_ft = self.usbr_rise_load_daily(usbr_rise_id, column_name)
             date_time = daily_elevation_ft['dt'][-1]
             elevation_feet = daily_elevation_ft['val'][-1]
         elif when =='less':
@@ -186,9 +199,12 @@ class Reservoir:
         when = Reservoir.compare_to_today(self.current_date)
         if when == 'match':
             if usbr_rise_id:
-                sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
-                                      title=column_name, month=month, divisor=divisor)
-                active_capacity_af = self.get_value_by_year(self.water_year, column_name)
+                daily_storage_af = self.usbr_rise_load_daily(usbr_rise_id, column_name)
+                date_time = daily_storage_af['dt'][-1]
+                active_capacity_af = daily_storage_af['val'][-1]
+                # sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
+                #                       title=column_name, month=month, divisor=divisor)
+                # active_capacity_af = self.get_value_by_year(self.water_year, column_name)
         elif when =='less':
             # actual for month
             active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
@@ -197,6 +213,16 @@ class Reservoir:
             active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
 
         return active_capacity_af
+
+    def get_daily_and_last(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->float:
+        release = 0
+
+        if usbr_rise_id:
+            daily_release = self.usbr_rise_load_daily(usbr_rise_id, column_name)
+            date_time = daily_release['dt'][-1]
+            release = daily_release['val'][-1]
+
+        return release
 
     def get_evaporation(self, usbr_rise_id: int, column_name: str, month=all_b.WY, divisor: int = 1)->float:
         if usbr_rise_id:

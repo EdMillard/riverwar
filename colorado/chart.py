@@ -24,7 +24,9 @@ import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+import matplotlib.dates
 import numpy as np
+import pandas as pd
 from PIL import Image
 import io
 from datetime import date, timedelta
@@ -147,3 +149,91 @@ class BarChart(Chart):
         ax.grid(axis='y', linestyle='--', alpha=0.65)
         ax.set_axisbelow(True)
         ax.set_ylim(0, self.y_max)
+
+    class LineChart(Chart):
+        """
+        Line chart for time series data.
+        Expects a DataFrame with a 'Date' column (first column) and numeric columns to plot.
+        """
+        def __init__(self,
+                     df: pd.DataFrame,
+                     columns: List[str],
+                     title: str = "",
+                     start_date: date | None = None,
+                     current_date: date | None = None,
+                     end_date: date | None = None,
+                     reservoirs: List[Reservoir] | None = None):  # optional for compatibility
+
+            # Pass reservoirs only if needed for base class compatibility
+            super().__init__(reservoirs or [], start_date, current_date, end_date)
+
+            self.df = df.copy()
+            self.columns = columns
+            self.title = title
+
+            # Ensure Date column is datetime
+            if 'Date' in self.df.columns:
+                self.df['Date'] = pd.to_datetime(self.df['Date'])
+                self.df = self.df.sort_values('Date')
+
+            self.height_inch = 6.0
+            self.y_max = None  # Let matplotlib auto-scale for lines
+
+        def create_figure(
+                self,
+                width_inch: Optional[float] = None,
+                height_inch: Optional[float] = None
+        ) -> Optional[Figure]:
+
+            if width_inch is not None:
+                self.width_inch = width_inch
+            if height_inch is not None:
+                self.height_inch = height_inch
+
+            fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
+            ax = fig.add_subplot(111)
+
+            self.create_line_chart(ax)
+
+            fig.tight_layout(pad=1.5)
+            self.fig = fig
+            return fig
+
+        def create_line_chart(self, ax):
+            """Core plotting logic"""
+            if self.df.empty or not self.columns:
+                ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
+                return
+
+            # Plot each requested column
+            for col in self.columns:
+                if col in self.df.columns:
+                    ax.plot(self.df['Date'], self.df[col],
+                            label=col,
+                            linewidth=2.2,
+                            marker='o',
+                            markersize=3)
+
+            # Formatting
+            ax.set_title(self.title or "Daily Values", fontsize=14, fontweight='bold', pad=15)
+            ax.set_xlabel("Date", fontsize=11.5, fontweight='bold')
+            ax.set_ylabel("Value", fontsize=11.5, fontweight='bold')
+
+            # Nice date formatting on x-axis
+            ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%b %d'))
+            ax.xaxis.set_major_locator(matplotlib.dates.AutoDateLocator())
+            fig = ax.get_figure()
+            fig.autofmt_xdate(rotation=45)
+
+            ax.grid(True, linestyle='--', alpha=0.6)
+            ax.legend(fontsize=10, loc='best')
+
+            # Optional: set y limit if you want consistent scaling later
+            if self.y_max is not None:
+                ax.set_ylim(0, self.y_max)
+
+        def update_data(self, new_df: pd.DataFrame, new_columns: List[str] = None):
+            """Convenient method to update data"""
+            self.df = new_df.copy()
+            if new_columns:
+                self.columns = new_columns

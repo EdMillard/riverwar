@@ -37,16 +37,23 @@ import warnings
 class LakePowell(Reservoir):
     def __init__(self, upstream:Optional[List[Reservoir]]=None):
         headers:List[str] = [ub.POWELL_WY, ub.POWELL_EVAPORATION_WY, ub.POWELL_ELEVATION_WY,
-                                  ub.GLEN_CANYON_WY, ub.INFLOW_WY, ub.INFLOW_UNREGULATED_WY]
+                             ub.GLEN_CANYON_WY,
+                             ub.POWELL_INFLOW, ub.POWELL_INFLOW_CFS,
+                             ub.POWELL_INFLOW_UNREGULATED, ub.POWELL_INFLOW_UNREGULATED_CFS,
+                             ub.POWELL_RELEASE, ub.POWELL_RELEASE_CFS]
         super().__init__('Lake Powell', headers, upstream=upstream)
 
         self.usgs_release_gage_id:str = '09380000'
 
         self.usbr_rise_elevation_ft_id = 508 # 1964
-        self.usbr_rise_storage_af_id = 509 # 1964
-        self.usbr_rise_inflow_af_id = 4301 # 1964
-        self.usbr_rise_evap_af_id = 510 # 1964
-        self.usbr_rise_release_af_id = 4354 # 1964
+        self.usbr_rise_storage_af_id = 509
+        self.usbr_rise_inflow_af_id = 4288
+        self.usbr_rise_inflow_cfs_id = 511
+        self.usbr_rise_inflow_unregulated_af_id = 4301
+        self.usbr_rise_inflow_unregulated_cfs_id = 512
+        self.usbr_rise_evap_af_id = 510
+        self.usbr_rise_release_af_id = 4354
+        self.usbr_rise_release_cfs_id = 4315
 
         # Elevations
         #
@@ -79,6 +86,15 @@ class LakePowell(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.POWELL_ELEVATION_WY)
         self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.POWELL_WY)  # 1964
+
+        self.evao_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.POWELL_EVAPORATION_WY)
+        self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.POWELL_INFLOW_CFS)
+        # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.POWELL_INFLOW)
+        self.inflow_unregulated_cfs = self.get_daily_and_last(self.usbr_rise_inflow_unregulated_cfs_id, ub.POWELL_INFLOW_UNREGULATED_CFS)
+        # self.inflow_unregulated_af = self.get_daily_and_last(self.usbr_rise_inflow_unregulated_af_id, ub.POWELL_INFLOW_UNREGULATED)
+
+        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.POWELL_RELEASE_CFS)
+        # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.POWELL_RELEASE)
 
         # 24 Month
         #

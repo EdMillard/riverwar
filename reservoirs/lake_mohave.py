@@ -28,7 +28,7 @@ from typing import List, Optional
 class LakeMohave(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [lb.MOHAVE,  lb.MOHAVE_ELEVATION, lb.MOHAVE_INFLOW,
-                             lb.MOHAVE_RELEASE,lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
+                             lb.MOHAVE_RELEASE, lb.MOHAVE_RELEASE_CFS, lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
         super().__init__('Lake Mohave', headers, upstream=upstream)
 
         self.usbr_rise_elevation_ft_id = 6133
@@ -36,6 +36,7 @@ class LakeMohave(Reservoir):
         # self.usbr_rise_inflow_af_id = 0
         # self.usbr_rise_evap_af_id = 0
         self.usbr_rise_release_af_id = 6131
+        self.usbr_rise_release_cfs_id = 6135
 
         # Elevations
         #
@@ -66,6 +67,8 @@ class LakeMohave(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.MOHAVE_ELEVATION)
         self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.MOHAVE)
+        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, lb.MOHAVE_RELEASE_CFS)
+        self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, lb.MOHAVE_RELEASE)
 
         # usbr_lake_mohave_storage_af = 6134
         # sheet.usbr_last_value(self.df, usbr_lake_mohave_storage_af, self.water_year, self.water_year, title=lb.MOHAVE, month=all_b.CY, divisor=1)

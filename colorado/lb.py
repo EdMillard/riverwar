@@ -50,12 +50,14 @@ HAVASU = 'Havasu'
 HAVASU_ELEVATION = 'Havasu Elevation'
 HAVASU_EVAPORATION = 'Havasu Evaporation'
 HAVASU_RELEASE = 'Havasu Release'
+HAVASU_RELEASE_CFS = 'Havasu Release CFS'
 HAVASU_INFLOW = 'Havasu Inflow'
 
 MOHAVE = 'Mohave'
 MOHAVE_ELEVATION = 'Mohave Elevation'
 MOHAVE_EVAPORATION = 'Mohave Evaporation'
 MOHAVE_RELEASE = 'Mohave Release'
+MOHAVE_RELEASE_CFS = 'Mohave Release CFS'
 MOHAVE_INFLOW = 'Mohave Inflow'
 
 AQUIFER = 'Aquifer'
@@ -80,6 +82,8 @@ MEAD_ELEVATION = 'Mead Elevation'
 MEAD_ELEVATION_DELTA = 'Mead Δ Elevation'
 MEAD_EVAPORATION = 'Mead Evaporation'
 MEAD_INFLOW = 'Mead Inflow'
+MEAD_RELEASE = 'Mead Release'
+MEAD_RELEASE_CFS = 'Mead Release CFS'
 
 GILA_NATURAL = "Natural Gila"
 GILA_CUL = "Gila CUL"

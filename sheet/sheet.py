@@ -867,8 +867,6 @@ def usbr_monthly(gage_id, year, cfs_to_af=False, month=1) -> List[Dict[str, Any]
     monthly_af = usbr_rise.daily_to_monthly_sum(daily_af)
     return monthly_af
 
-
-
 def format_sheet(ws: Worksheet, number_format:str='0.00'):
     # Set font for everything
     red_font = Font(name='Arial Narrow', size=10, color="700000")

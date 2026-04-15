@@ -28,7 +28,7 @@ from typing import List, Optional
 class LakeHavasu(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [lb.HAVASU, lb.HAVASU_ELEVATION, lb.HAVASU_INFLOW,
-                             lb.HAVASU_RELEASE, lb.HAVASU_EVAPORATION]
+                             lb.HAVASU_RELEASE, lb.HAVASU_RELEASE_CFS, lb.HAVASU_EVAPORATION]
         super().__init__('Lake Havasu', headers, upstream=upstream)
 
         self.usbr_rise_elevation_ft_id = 6128
@@ -36,6 +36,7 @@ class LakeHavasu(Reservoir):
         # self.usbr_rise_inflow_af_id = 0
         # self.usbr_rise_evap_af_id = 0
         self.usbr_rise_release_af_id = 6126
+        self.usbr_rise_release_cfs_id = 6130
 
         # Elevations
         #
@@ -66,6 +67,8 @@ class LakeHavasu(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.HAVASU_ELEVATION)
         self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.HAVASU)
+        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, lb.HAVASU_RELEASE_CFS)
+        self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, lb.HAVASU_RELEASE)
 
         # usbr_lake_havasu_storage_af = 6129
         # sheet.usbr_last_value(self.df, usbr_lake_havasu_storage_af, self.water_year, self.water_year, title=lb.HAVASU, month=all_b.CY, divisor=1)
