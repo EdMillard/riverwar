@@ -57,7 +57,7 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 class ChartFrame(wx.Frame):
     def __init__(self, reservoir_list: List[Reservoir], date_time: date,
                  report_list: List[str] | None = None,
-                 title: str = "Colorado River War"):
+                 title: str = "Colorado River War", page_name:str = 'Chart'):
 
         screen_w, screen_h = wx.DisplaySize()
         window_height = screen_h - 64
@@ -93,33 +93,114 @@ class ChartFrame(wx.Frame):
 
         self.set_report(self.report_path)
 
-        # ==================== NOTEBOOK/SPLITTER ==================
+        # ==================== NOTEBOOK / CHARTS ==================
         self.notebook = wx.Notebook(self.panel)
         self.combined_panel = wx.Panel(self.notebook)
-        self.splitter = wx.SplitterWindow(self.combined_panel,
-                                          style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
-        self.splitter.SetMinimumPaneSize(200)
 
-        for chart in self.charts:
-            chart.create_panel(self.splitter)
         if len(self.charts) == 2:
-            self.splitter.SplitHorizontally(self.charts[0].panel,self.charts[1].panel)
+            # === 2 CHARTS: Use Splitter (draggable) ===
+            self.splitter = wx.SplitterWindow(self.combined_panel,
+                                              style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
+            self.splitter.SetMinimumPaneSize(200)
+
+            # Important: Create panels with splitter as parent
+            for chart in self.charts:
+                chart.create_panel(self.splitter)
+
+            self.splitter.SplitHorizontally(self.charts[0].panel, self.charts[1].panel)
+
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=5)
+            self.combined_panel.SetSizer(sizer)
+
+        elif len(self.charts) == 1:
+            # === Single chart ===
+            self.charts[0].create_panel(self.combined_panel)
+
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(self.charts[0].panel, 1, wx.EXPAND | wx.ALL, border=5)
+            self.combined_panel.SetSizer(sizer)
+
         else:
-            print("ReservoirChartFrame doesn't have two charts")
+            # === 3 or more charts: Manual layout ===
+            for chart in self.charts:
+                chart.create_panel(self.combined_panel)
 
-        combined_sizer = wx.BoxSizer(wx.VERTICAL)
-        combined_sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=4)
-        self.combined_panel.SetSizer(combined_sizer)
+            self.combined_panel.Bind(wx.EVT_SIZE, self.on_combined_panel_resize)
+            self.do_manual_chart_layout()  # initial layout
 
-        self.notebook.AddPage(self.combined_panel, 'Reservoirs')
+        # Add page to notebook
+        self.notebook.AddPage(self.combined_panel, page_name)
 
+        # Main sizer
         main_sizer.Add(top_toolbar, 0, wx.EXPAND)
         main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=4)
 
         self.panel.SetSizer(main_sizer)
         self.SetMinSize(wx.Size(1100, 900))
         self.Centre()
-        wx.CallAfter(self.panel.Layout)
+
+        # wx.CallAfter(self.final_layout_pass)
+        # self.final_layout_pass()
+
+    def final_layout_pass(self):
+        """One last strong layout pass after everything is visible"""
+        if len(self.charts) > 2:
+            self.do_manual_chart_layout()
+        self.combined_panel.Layout()
+        self.notebook.Layout()
+        self.panel.Layout()
+        self.Layout()
+        self.Refresh()
+
+    def on_combined_panel_resize(self, event):
+        """Called whenever the combined_panel is resized"""
+        event.Skip()  # Important: allow normal processing
+        wx.CallAfter(self.do_manual_chart_layout)  # Do layout after resize completes
+
+    def do_manual_chart_layout(self):
+        """Manually position and size each chart equally + force matplotlib resize"""
+        if len(self.charts) == 0 or not self.combined_panel:
+            return
+
+        client_size = self.combined_panel.GetClientSize()
+        width = client_size.width
+        height = client_size.height
+
+        if width < 300 or height < 200:
+            return
+
+        n = len(self.charts)
+        border = 6
+        total_borders = border * (n + 1)
+        available_height = max(150, height - total_borders)  # reduced minimum
+
+        chart_height = available_height // n
+
+        y_offset = border
+        for chart in self.charts:
+            if hasattr(chart, 'panel') and chart.panel:
+                # Set new size
+                new_width = width - 2 * border
+                new_height = chart_height
+
+                chart.panel.SetSize(border, y_offset, new_width, new_height)
+                chart.panel.Refresh()
+
+                # === CRITICAL: Force matplotlib canvas to resize ===
+                if hasattr(chart, 'canvas') and chart.canvas:
+                    # Resize the canvas widget itself
+                    chart.canvas.SetSize(new_width, new_height)
+
+                    # Resize the figure to match new dimensions
+                    dpi = chart.fig.dpi
+                    chart.fig.set_size_inches(new_width / dpi, new_height / dpi)
+
+                    # Redraw
+                    chart.canvas.draw_idle()
+                    chart.canvas.Refresh()
+
+                y_offset += chart_height + border
 
     def load_charts(self):
         pass

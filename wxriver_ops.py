@@ -63,7 +63,7 @@ class ReservoirChartFrame(ChartFrame):
     def __init__(self, reservoir_list: List[Reservoir], date_time: date,
                  report_list: List[str] | None = None,
                  title: str = "Colorado River War"):
-        super().__init__(reservoir_list, date_time, report_list, title)
+        super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
 
     def load_charts(self):
         start = self.start_nav.current_date

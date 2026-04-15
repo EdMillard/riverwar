@@ -84,11 +84,11 @@ class Chart:
     def update_report(self, report_name:str):
         self.report_name = report_name
 
-    def create_panel(self, parent:wx.SplitterWindow):
+    def create_panel(self, parent:wx.SplitterWindow|wx.Panel):
         self.panel = wx.Panel(parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.canvas = FigureCanvas(self.panel, -1,  self.get_figure(None, None))
-        sizer.Add(self.canvas, 1, wx.EXPAND | wx.ALL, border=6)
+        sizer.Add(self.canvas, 1, wx.EXPAND | wx.ALL, border=2)
         self.panel.SetSizer(sizer)
 
     def update_canvas(self):
