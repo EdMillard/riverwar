@@ -64,30 +64,30 @@ class MonthYearNavigator(wx.Panel):
 
         self.SetSizer(sizer)
         self.SetBackgroundColour(bg)
-        self._update_display()
+        self.update_display()
 
-    def _update_display(self):
+    def update_display(self):
         self.date_text.SetLabel(Chart.date_to_string(self.current_date))
 
-    def _on_left(self, event):
+    def _on_left(self, _):
         month = self.current_date.month - 1
         year = self.current_date.year
         if month < 1:
             month = 12
             year -= 1
         self.current_date = date(year, month, 1)
-        self._update_display()
+        self.update_display()
         if self.on_changed:
             self.on_changed(self.name, self.current_date)
 
-    def _on_right(self, event):
+    def _on_right(self, _):
         month = self.current_date.month + 1
         year = self.current_date.year
         if month > 12:
             month = 1
             year += 1
         self.current_date = date(year, month, 1)
-        self._update_display()
+        self.update_display()
         if self.on_changed:
             self.on_changed(self.name, self.current_date)
 

@@ -68,7 +68,7 @@ class Chart:
     def get_figure(self, width_inch=None, height_inch=None):
         return self.create_figure(width_inch, height_inch)
 
-    def save_figure(self)->Image:
+    def save_figure(self)->Image.Image:
         buffer = io.BytesIO()
         self.canvas.figure.savefig(buffer, dpi=180, bbox_inches='tight', format='png')
         buffer.seek(0)
@@ -117,8 +117,8 @@ class Chart:
         return last_day
 
     @staticmethod
-    def date_to_string(date:date)->str:
-        return f"{Chart.month_to_short_name(date.month)} {date.day} {date.year}"
+    def date_to_string(date_in:date)->str:
+        return f"{Chart.month_to_short_name(date_in.month)} {date_in.day} {date_in.year}"
 
     @staticmethod
     def month_to_short_name(month: int) -> str:

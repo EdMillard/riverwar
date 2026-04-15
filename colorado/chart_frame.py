@@ -67,6 +67,7 @@ class ChartFrame(wx.Frame):
 
         self.reservoirs = reservoir_list
         self.report_list = report_list
+        self.report_path = ''
 
         self.charts:List[Chart] = []
 
@@ -145,7 +146,6 @@ class ChartFrame(wx.Frame):
         tb_sizer.AddStretchSpacer(1)
 
         # Report selector
-        report_str: str = ''
         if report_list and len(report_list) > 0:
             dir_names = [Path(p).name for p in report_list]
             self.report_choice = wx.Choice(top_toolbar, choices=dir_names)
@@ -239,7 +239,7 @@ class ChartFrame(wx.Frame):
         for chart in self.charts:
             chart.update_report(Path(self.report_path).name)
 
-    def on_report_selected(self, event):
+    def on_report_selected(self, _):
         if self.report_choice is None:
             return
 
@@ -286,7 +286,7 @@ class ChartFrame(wx.Frame):
                 nav.current_date = Chart.last_day_of_month(year, month)
             else:
                 nav.current_date = date(year, month, 1)
-            nav._update_display()
+            nav.update_display()
 
         self.load_reservoirs()
         for chart in self.charts:
@@ -296,29 +296,29 @@ class ChartFrame(wx.Frame):
             chart.update_canvas()
         self._take_snapshot()
 
-    def _on_global_left(self, event):
+    def _on_global_left(self, _):
         self._on_global_change(-1)
 
-    def _on_global_right(self, event):
+    def _on_global_right(self, _):
         self._on_global_change(1)
 
     # ==================== RECORDING ====================
 
-    def on_toggle_pdf(self, event):
+    def on_toggle_pdf(self, _):
         if self.save_pdf_btn.GetValue():
             self._start_pdf_recording()
         else:
             self.save_pdf_btn.SetValue(True)
             wx.MessageBox("Use **Stop Recording** to finish.", "Info", wx.OK | wx.ICON_INFORMATION)
 
-    def on_toggle_gif(self, event):
+    def on_toggle_gif(self, _):
         if self.save_gif_btn.GetValue():
             self._start_gif_recording()
         else:
             self.save_gif_btn.SetValue(True)
             wx.MessageBox("Use **Stop Recording** to finish.", "Info", wx.OK | wx.ICON_INFORMATION)
 
-    def on_stop_recording(self, event):
+    def on_stop_recording(self, _):
         stopped = False
         if self.saving_pdf and self.pdf_pages:
             self._save_pdf_final()
