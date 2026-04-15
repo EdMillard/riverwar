@@ -24,11 +24,11 @@ import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
 from datetime import date
-from colorado.chart import Chart
+from colorado.chart import Chart, BarChart
 from typing import List, Optional
 
 
-class InflowOutflowChart(Chart):
+class InflowOutflowChart(BarChart):
     def __init__(self,
                  reservoirs: List[Reservoir],
                  start_date: date | None = None,
@@ -36,7 +36,7 @@ class InflowOutflowChart(Chart):
                  end_date: date | None = None):
         super().__init__(reservoirs, start_date, current_date, end_date)
         self.height_inch = 5.6
-        self.y_max = 10.0                     # Same as ReservoirChart
+        self.y_max = 10.0
 
     def create_figure(
             self,
@@ -116,6 +116,7 @@ class InflowOutflowChart(Chart):
                              fontsize=10, framealpha=0.95, bbox_to_anchor=(0.98, 1.0))
 
         gap_handles = []
+        leg_gap = None
         if show_gap_water:
             seen = set()
             for r in reservoirs:
@@ -133,17 +134,11 @@ class InflowOutflowChart(Chart):
                 ax.add_artist(leg_main)
 
         ax.add_artist(leg_main)
-        if show_gap_water and gap_handles:
+        if show_gap_water and gap_handles and leg_gap is not None:
             ax.add_artist(leg_gap)
 
         # Final layout
-        ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
-        ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
-        ax.grid(axis='y', linestyle='--', alpha=0.65)
-        ax.set_axisbelow(True)
-        ax.set_ylim(0, self.y_max)
+        self.final_layout(ax, title, names, x_pos)
 
 
 # ====================== HELPER FUNCTIONS ======================
@@ -370,12 +365,12 @@ def _draw_difference_connector(ax, i, total_left_af, total_right_af, x_pos, bar_
     ax.plot([smaller_x, smaller_x], [gap_center_y + gap_offset, top_y],
             color='black', linewidth=1.0, linestyle='--', alpha=0.75)
 
-    horiz_left = smaller_x - bar_width / 2
-    horiz_right = smaller_x + bar_width / 2
+    horizontal_left = smaller_x - bar_width / 2
+    horizontal_right = smaller_x + bar_width / 2
 
-    ax.plot([horiz_left, horiz_right], [bottom_y, bottom_y],
+    ax.plot([horizontal_left, horizontal_right], [bottom_y, bottom_y],
             color='black', linewidth=1.0, alpha=0.75, linestyle='--')
-    ax.plot([horiz_left, horiz_right], [top_y, top_y],
+    ax.plot([horizontal_left, horizontal_right], [top_y, top_y],
             color='black', linewidth=1.0, alpha=0.75, linestyle='--')
 
     if diff_maf < 0.6:

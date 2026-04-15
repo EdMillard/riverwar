@@ -24,14 +24,13 @@ import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+import numpy as np
 from PIL import Image
 import io
 from datetime import date, timedelta
 from typing import List, Optional
 
 class Chart:
-    """Complete ReservoirChart class with all original legends and deduplication"""
-
     def __init__(self,
                  reservoirs: List[Reservoir],
                  start_date: date | None = None,
@@ -55,7 +54,12 @@ class Chart:
         self.height_inch = 6.5
         self.fig = None
 
+        self.y_max = 10.0
+
     def create_chart(self, ax:Axes, title:str):
+        pass
+
+    def final_layout(self, ax, title:str, names:List[str], x_pos:np.ndarray):
         pass
 
     def create_figure(
@@ -125,3 +129,21 @@ class Chart:
         if not 1 <= month <= 12:
             return "???"
         return date(2026, month, 1).strftime("%b")
+
+class BarChart(Chart):
+    def __init__(self,
+                 reservoirs: List[Reservoir],
+                 start_date: date | None = None,
+                 current_date: date | None = None,
+                 end_date: date | None = None
+                 ):
+        super().__init__(reservoirs, start_date, current_date, end_date)
+
+    def final_layout(self, ax, title:str, names:List[str], x_pos:np.ndarray):
+        ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
+        ax.grid(axis='y', linestyle='--', alpha=0.65)
+        ax.set_axisbelow(True)
+        ax.set_ylim(0, self.y_max)

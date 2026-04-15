@@ -21,23 +21,15 @@ SOFTWARE.
 """
 from pathlib import Path
 import wx
-import matplotlib
-import os
 from typing import List
 from reservoirs.reservoir import Reservoir
 import colorado.lb as lb
-from colorado.chart import Chart
+from colorado.chart import BarChart
 import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
 
-os.environ['QT_QPA_PLATFORM'] = 'offscreen'
-os.environ['MPLBACKEND'] = 'Agg'
-matplotlib.use('Agg')
-os.environ['QT_SILENT'] = '1'
-
 arrow_fg = wx.Colour(150, 150, 150)
-
 
 def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
     """Return list of directories containing the given filename."""
@@ -53,7 +45,7 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 
 
 # ==================== RESERVOIR CHART ====================
-class ReservoirChart(Chart):
+class ReservoirChart(BarChart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None):
         super().__init__(reservoirs, start_date, current_date, end_date)
         self.power_head_zones = [
@@ -304,7 +296,7 @@ class ReservoirChart(Chart):
             ax.add_artist(leg_power)
 
             # Change text color ONLY for the teacup (white) entry
-            if teacup_index >= 0 and teacup_index < len(leg_power.get_texts()):
+            if 0 <= teacup_index < len(leg_power.get_texts()):
                 teacup_text = leg_power.get_texts()[teacup_index]
                 teacup_text.set_color('darkred')
                 teacup_text.set_fontweight('bold')
@@ -325,9 +317,4 @@ class ReservoirChart(Chart):
                   loc='upper left', bbox_to_anchor=(0.15, 1.0),
                   fontsize=9, title_fontsize=10, framealpha=0.95)
 
-        ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11, fontweight='bold')
-        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(names, ha='center', fontsize=10.5)
-        ax.grid(axis='y', linestyle='--', alpha=0.6)
-        ax.set_ylim(0, self.y_max)
+        self.final_layout(ax, title, names, x_pos)
