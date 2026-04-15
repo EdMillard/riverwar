@@ -56,7 +56,7 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 class ReservoirChart(Chart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None):
         super().__init__(reservoirs, start_date, current_date, end_date)
-        self.power_zones = [
+        self.power_head_zones = [
             ('#ffffff', 'Available Head'),
             (Reservoir.high_power_pool_color, 'Normal Power Head'),
             (Reservoir.low_power_pool_color, 'Low Power Head'),
@@ -278,7 +278,7 @@ class ReservoirChart(Chart):
                             ha='left', va='center', fontsize=9.5, color='darkgreen', fontweight='bold',
                             bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
 
-        # Legends
+        # ==================== ANNOTATIONS ====================
         if self.power_head_zones:
             power_patches = []
             teacup_index = -1

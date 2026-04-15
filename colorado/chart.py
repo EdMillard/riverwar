@@ -36,9 +36,8 @@ class Chart:
                  reservoirs: List[Reservoir],
                  start_date: date | None = None,
                  current_date: date | None = None,
-                 end_date: date | None = None,
-                 power_head_zones=None,
-                 reserved_zones=None):
+                 end_date: date | None = None
+                 ):
 
         self.canvas = None
         self.panel = None
@@ -51,8 +50,6 @@ class Chart:
         self.start_date = start_date or date(2025, 10, 1)
         self.current_date = current_date or date(2026, 4, 1)
         self.end_date = end_date or date(2026, 9, 30)
-        self.power_head_zones = power_head_zones or []
-        self.reserved_zones = reserved_zones or []
 
         self.width_inch = 14.8
         self.height_inch = 6.5
