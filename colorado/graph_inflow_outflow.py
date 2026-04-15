@@ -24,7 +24,7 @@ import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches
 from datetime import date
-from colorado.chart import Chart, BarChart
+from chart.chart import Chart, BarChart
 from typing import List, Optional
 
 

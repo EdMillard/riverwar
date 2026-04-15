@@ -29,7 +29,7 @@ import os
 import wx.lib.buttons as buttons
 from typing import List
 from reservoirs.reservoir import Reservoir
-from colorado.chart import Chart
+from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
 
 arrow_fg = wx.Colour(150, 150, 150)

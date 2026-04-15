@@ -24,7 +24,7 @@ import wx
 from typing import List
 from reservoirs.reservoir import Reservoir
 import colorado.lb as lb
-from colorado.chart import BarChart
+from chart.chart import BarChart
 import numpy as np
 from matplotlib.figure import Figure
 import matplotlib.patches as mpatches

@@ -29,7 +29,7 @@ from typing import List
 from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
-from colorado.chart_frame import ChartFrame
+from chart.chart_frame import ChartFrame
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'

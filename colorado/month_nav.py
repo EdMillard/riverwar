@@ -23,7 +23,7 @@ SOFTWARE.
 import wx
 from datetime import date
 import wx.lib.buttons as buttons
-from colorado.chart import Chart
+from chart.chart import Chart
 
 arrow_fg = wx.Colour(150, 150, 150)
 
