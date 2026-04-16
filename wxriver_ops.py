@@ -25,14 +25,21 @@ import wx
 import matplotlib
 from datetime import date
 import os
+import pandas as pd
 from typing import List
+from sheet import sheet
+from colorado.lb_mainstream_cul import LBMainstreamCUL
+from colorado.lb_reservoir_cul import LBReservoirCUL
+from colorado.lb_tributary_cul import LBTributaryCUL
 from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
 from chart.chart_frame import ChartFrame
 from chart.line_chart import LineChart
+from chart.pie_chart import PieChart
 import colorado.lb as lb
 import colorado.ub as ub
+import colorado.allb as all_b
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -68,35 +75,85 @@ class ReservoirChartFrame(ChartFrame):
                  title: str = "Colorado River War"):
         super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
 
-    def load_charts(self):
+    def chart_pie(self):
+        headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU]
+        df_ub_cul: pd.DataFrame = sheet.create_df(1964, 2024, headers)
+        sheet.upper_basin_cul_from_excel(df_ub_cul)
+        df_ub_cul[ub.CU_CO] = df_ub_cul[ub.CU_CO] * 1_000_000
+        df_ub_cul[ub.CU_WY] = df_ub_cul[ub.CU_WY] * 1_000_000
+        df_ub_cul[ub.CU_UT] = df_ub_cul[ub.CU_UT] * 1_000_000
+        df_ub_cul[ub.CU_NM] = df_ub_cul[ub.CU_NM] * 1_000_000
+
+        df_empty = pd.DataFrame()
+        lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
+        lb_tributary_cul.load_df(df_empty)
+        lb_reservoirs_cul = LBReservoirCUL(all_b.LB_RESERVOIRS_CUL_SHEET)
+        lb_reservoirs_cul.load_df(df_empty)
+        lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
+        lb_mainstream_cul.load_df(df_empty)
+
+        pie_wedges = []
+        pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
+        pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
+        pie_wedges.append((df_ub_cul, ub.CU_NM, '#a0a0ff'))
+        pie_wedges.append((df_ub_cul, ub.CU_WY, '#c0c0ff'))
+
+        pie_wedges.append((lb_reservoirs_cul.df, lb.LAKE_MEAD_CUL, '#ffff80'))
+
+        pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#ff80ff'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.CA_AGRICULTURE, '#ffa0ff'))
+
+        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, '#ffa0a0'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_AGRICULTURE, '#ff8080'))
+        pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
+
+        pie_wedges.append((lb_mainstream_cul.df, lb.NV_M_I_OTHER, '#ffc080'))
+
+        pie_chart = PieChart(
+            pie_wedges, title='CUL',
+        )
+        self.charts.append(pie_chart)
+
+    def chart_line(self):
+        time_series = []
+        for reservoir in reservoirs:
+            if reservoir.name == 'Lake Powell':
+                time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
+                time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
+            elif reservoir.name == 'Lake Mead':
+                time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
+                time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
+        line_chart = LineChart(
+            time_series, title='MAR26 24 Month Reservoir Storage Above Critical Elevation',
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date
+        )
+        self.charts.append(line_chart)
+
+    def chart_reservoir(self):
         start = self.start_nav.current_date
         current = self.current_nav.current_date
         end = self.end_nav.current_date
-        line = True
-        if line:
-            time_series = []
-            for reservoir in reservoirs:
-                if reservoir.name == 'Lake Powell':
-                    time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
-                    time_series.append( (reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
-                elif reservoir.name == 'Lake Mead':
-                    time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
-                    time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
-            line_chart = LineChart(
-                time_series, title='MAR26 24 Month Reservoir Storage Above Critical Elevation',
-                start_date=start, current_date=self.current_time_from_usbr, end_date=end
-            )
-            self.charts.append(line_chart)
-        else:
-            reservoir_chart = ReservoirChart(
-                reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end
-            )
-            self.charts.append(reservoir_chart)
 
-            inflow_chart = InflowOutflowChart(
-                reservoirs, start_date=start, current_date=current, end_date=end
-            )
-            self.charts.append(inflow_chart)
+        reservoir_chart = ReservoirChart(
+            reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end
+        )
+        self.charts.append(reservoir_chart)
+
+        inflow_chart = InflowOutflowChart(
+            reservoirs, start_date=start, current_date=current, end_date=end
+        )
+        self.charts.append(inflow_chart)
+
+    def load_charts(self):
+        chart_type = 'line'
+        chart_type = 'reservoir'
+        chart_type = 'pie'
+        if chart_type == 'pie':
+            self.chart_pie()
+        elif chart_type == 'line':
+            self.chart_line()
+        else:
+            self.chart_reservoir()
 
 # ==================== RUN ====================
 if __name__ == "__main__":

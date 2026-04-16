@@ -112,7 +112,7 @@ AZ_TOTAL = 'AZ Total CUL'
 AZ_AGRICULTURE = 'AZ Agriculture CUL'
 AZ_M_I_OTHER = 'AZ M I Other CUL'
 AZ_POWER = 'AZ Power CUL'
-AZ_WITHIN_SYSTEM = 'AZ Within SystemCUL '
+AZ_WITHIN_SYSTEM = 'AZ Within System CUL'
 
 CA_TOTAL = 'CA Total CUL'
 CA_AGRICULTURE = 'CA Agriculture CUL'
