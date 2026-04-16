@@ -36,7 +36,8 @@ import warnings
 # https://www.cbrfc.noaa.gov/dbdata/station/espgraph/espgraph_hc.html?id=GLDA3&year=2026
 class LakePowell(Reservoir):
     def __init__(self, upstream:Optional[List[Reservoir]]=None):
-        headers:List[str] = [ub.POWELL_WY, ub.POWELL_EVAPORATION_WY, ub.POWELL_ELEVATION_WY,
+        headers:List[str] = [ub.POWELL_WY, ub.POWELL_MOST, ub.POWELL_ABOVE_3500,
+                             ub.POWELL_EVAPORATION_WY, ub.POWELL_ELEVATION_WY,
                              ub.GLEN_CANYON_WY,
                              ub.POWELL_INFLOW, ub.POWELL_INFLOW_CFS,
                              ub.POWELL_INFLOW_UNREGULATED, ub.POWELL_INFLOW_UNREGULATED_CFS,
@@ -123,6 +124,14 @@ class LakePowell(Reservoir):
 
         self.df_monthly = df
         df_diff = Reservoir.subtract_dataframes(self.df_monthly, self.df_24_month)
+
+        Reservoir.subtract_constant(self.df_daily, ub.POWELL_WY, ub.POWELL_ABOVE_3500, self.power_head_min_af)
+        # initial_value = self.df_daily[ub.POWELL_WY].iloc[0]
+        Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
+                                                       monthly_value_col='End Of Month Storage',
+                                                       daily_target_col=ub.POWELL_MOST)
+        Reservoir.subtract_constant(self.df_daily, ub.POWELL_MOST, ub.POWELL_MOST, self.power_head_min_af)
+
 
         # self.evap_actual_af = self.get_evaporation(510, ub.POWELL_EVAPORATION_WY)
         # self.evap_actual_af = self.get_sum_end_of_month(510)

@@ -30,6 +30,9 @@ from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
 from chart.chart_frame import ChartFrame
+from chart.line_chart import LineChart
+import colorado.lb as lb
+import colorado.ub as ub
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -69,16 +72,31 @@ class ReservoirChartFrame(ChartFrame):
         start = self.start_nav.current_date
         current = self.current_nav.current_date
         end = self.end_nav.current_date
+        line = True
+        if line:
+            time_series = []
+            for reservoir in reservoirs:
+                if reservoir.name == 'Lake Powell':
+                    time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
+                    time_series.append( (reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
+                elif reservoir.name == 'Lake Mead':
+                    time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
+                    time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
+            line_chart = LineChart(
+                time_series, title='MAR26 24 Month Reservoir Storage Above Critical Elevation',
+                start_date=start, current_date=self.current_time_from_usbr, end_date=end
+            )
+            self.charts.append(line_chart)
+        else:
+            reservoir_chart = ReservoirChart(
+                reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end
+            )
+            self.charts.append(reservoir_chart)
 
-        reservoir_chart = ReservoirChart(
-            reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end
-        )
-        self.charts.append(reservoir_chart)
-
-        inflow_chart = InflowOutflowChart(
-            reservoirs, start_date=start, current_date=current, end_date=end
-        )
-        self.charts.append(inflow_chart)
+            inflow_chart = InflowOutflowChart(
+                reservoirs, start_date=start, current_date=current, end_date=end
+            )
+            self.charts.append(inflow_chart)
 
 # ==================== RUN ====================
 if __name__ == "__main__":

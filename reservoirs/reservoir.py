@@ -34,6 +34,10 @@ from sheet import sheet
 from source import usbr_rise
 import colorado.allb as all_b
 from graph.water import WaterGraph
+import calendar
+from pandas.tseries.offsets import MonthEnd
+from scipy.interpolate import interp1d
+import numpy as np
 
 class Reservoir:
     high_power_pool_color = "lightblue"
@@ -70,15 +74,16 @@ class Reservoir:
     def __init__(self, name:str, headers:List[str], upstream:Optional[List[Reservoir]]=None, month=10):
         self.name:str = name
         self.upstream = upstream
+        self.water_year_month = month
         start_year = self.water_year = 2026
         self.water_year_info = self.get_water_year_info(start_year, month=month)
 
         # DataFrames
         self.headers = headers
-        self.df = sheet.create_df(self.water_year, self.water_year, self.headers)
-        self.df_daily: pd.DataFrame = sheet.create_daily_df(self.water_year_info.start_date, self.water_year_info.end_date, self.headers)
+        self.df: Optional[pd.DataFrame] = sheet.create_df(self.water_year, self.water_year, self.headers)
+        self.df_daily: Optional[pd.DataFrame] = None
+        self.df_24_month: Optional[pd.DataFrame] = None
         self.date_time:TimeStamp = TimeStamp(1970, 1, 1)
-        self.df_24_month = None
 
         # Month Year Range
         #
@@ -86,6 +91,9 @@ class Reservoir:
         self.current_date = None
         self.end_date = None
         self.today = date.today()
+
+        self.report_start_date = None
+        self.report_end_date = None
 
         self.start_month_year_actual = "Oct 2025"
         self.end_month_year_actual = "Mar 2026"
@@ -142,6 +150,15 @@ class Reservoir:
         # Reserve (i.e. ICS)
         self.reserved_parts:List[tuple] = []
 
+    @staticmethod
+    def get_end_of_month(d: date) -> date:
+        """Return a date set to the last day of the input date's month."""
+        if not isinstance(d, date):
+            d = pd.to_datetime(d).date()  # in case it's a string or Timestamp
+
+        last_day = calendar.monthrange(d.year, d.month)[1]
+        return date(d.year, d.month, last_day)
+
     def load_date(self, report_path:Optional[Path], start_date:date, current_date:date, end_date:date):
         self.start_date = start_date
         self.current_date = current_date
@@ -154,6 +171,16 @@ class Reservoir:
 
         if report_path is not None:
             self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
+            start_str = self.df_24_month['Date'].iloc[0]
+            end_str = self.df_24_month['Date'].iloc[-1]
+            self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
+            end_date = pd.to_datetime(end_str, format="%b %Y").date()
+            self.report_end_date = Reservoir.get_end_of_month(end_date)
+            self.df_daily = sheet.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
+        else:
+            self.df_daily = sheet.create_daily_df(self.start_date, self.end_date, self.headers)
+            self.report_start_date = self.start_date
+            self.report_end_date = self.end_date
         
     def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
         pass
@@ -169,11 +196,20 @@ class Reservoir:
         return string
 
     def usbr_rise_load_daily(self, usbr_rise_id:int, column_name:str):
-        info, daily = usbr_rise.load(usbr_rise_id,
-                                                  water_year_info=self.water_year_info,
-                                                  alias=column_name)
-        sheet.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date',
-                                            value_column_name=column_name)
+
+        daily = 0
+        start_year = self.report_start_date.year
+        end_year = self.report_end_date.year
+        if end_year > date.today().year:
+            end_year = date.today().year
+        for year in range(start_year, end_year+1):
+            self.water_year_info = self.get_water_year_info(year, month=self.water_year_month)
+
+            info, daily = usbr_rise.load(usbr_rise_id,
+                                                      water_year_info=self.water_year_info,
+                                                      alias=column_name)
+            sheet.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date',
+                                                value_column_name=column_name)
         return daily
 
     def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:
@@ -239,6 +275,79 @@ class Reservoir:
         for month in monthly:
             total += month['val']
         return total
+
+    @staticmethod
+    def subtract_constant(
+            df: pd.DataFrame,
+            source_col: str,
+            target_col: str,
+            constant: float,
+            inplace: bool = True
+    ) -> None:
+        """
+        Subtract a constant from source_col and store result in target_col.
+
+        Example:
+            subtract_constant(df_daily, "Inflow_cfs", "Inflow_cfs_minus_5000", 5000)
+        """
+        if source_col not in df.columns:
+            raise ValueError(f"Column '{source_col}' not found in DataFrame")
+
+        if not inplace:
+            df = df.copy()
+
+        df[target_col] = df[source_col] - constant
+
+        # Optional: convert to numeric and handle NaNs gracefully
+        df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
+
+    def interpolate_monthly_storage_to_daily(
+            df_monthly: pd.DataFrame,
+            df_daily: pd.DataFrame,
+            monthly_date_col: str = "Date",
+            monthly_value_col: str = "Storage_af",
+            daily_date_col: str = "Date",
+            daily_target_col: str = "Storage_af",
+            smoothing: str = "cubic"
+    ) -> None:
+        """
+        Full smooth interpolation using ALL monthly points,
+        then forces the first calendar month in df_daily to NaN.
+        """
+        if df_monthly.empty or df_daily.empty:
+            return
+
+        # 1. Prepare monthly data (end of each month)
+        monthly = df_monthly[[monthly_date_col, monthly_value_col]].copy()
+        monthly[monthly_date_col] = pd.to_datetime(
+            monthly[monthly_date_col], format="%b %Y"
+        ) + MonthEnd(0)
+
+        monthly_series = monthly.set_index(monthly_date_col)[monthly_value_col].sort_index()
+
+        # 2. Daily dates
+        daily_dates = pd.to_datetime(df_daily[daily_date_col])
+
+        # 3. Full interpolation using ALL monthly points
+        if smoothing in ['quadratic', 'cubic'] and len(monthly_series) >= 3:
+            from scipy.interpolate import interp1d
+            x = monthly_series.index.astype('int64')
+            y = monthly_series.values
+            f = interp1d(x, y, kind=smoothing, fill_value="extrapolate")
+            interpolated = f(daily_dates.astype('int64'))
+        else:
+            interpolated = monthly_series.reindex(daily_dates).interpolate(method='linear')
+
+        # 4. Copy ALL interpolated values first
+        df_daily[daily_target_col] = interpolated
+
+        # 5. Then force the entire FIRST MONTH to NaN
+        first_day = daily_dates.iloc[0]
+        first_month_start = first_day.replace(day=1)
+        first_month_end = first_month_start + MonthEnd(0)
+
+        mask = (daily_dates >= first_month_start) & (daily_dates <= first_month_end)
+        df_daily.loc[mask, daily_target_col] = pd.NA
 
     @staticmethod
     def subtract_dataframes(

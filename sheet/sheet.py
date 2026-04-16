@@ -315,6 +315,7 @@ def create_monthly_df(
 
     return df
 
+
 def create_daily_df(
         start_date: date | str | tuple[int, int, int],
         end_date: date | str | tuple[int, int, int],
@@ -322,17 +323,17 @@ def create_daily_df(
         include_end_date: bool = True
 ) -> pd.DataFrame:
     """
-    Creates a DataFrame with one row per day between start_date and end_date (inclusive by default),
-    with a proper datetime64[ns] index (date only) and the requested columns filled with pd.NA.
+    Creates a DataFrame with one row per day between start_date and end_date,
+    with a 'Date' column (datetime64[ns]) and the requested columns filled with pd.NA.
 
     Parameters:
         start_date: date, 'YYYY-MM-DD' string, or (year, month, day) tuple
         end_date:   date, 'YYYY-MM-DD' string, or (year, month, day) tuple
-        headers: list of column names (excluding the date)
+        headers: list of column names (excluding the Date column)
         include_end_date: whether to include the end_date row (default True)
 
     Returns:
-        DataFrame with daily date index
+        DataFrame with 'Date' column as first column
     """
     # Normalize inputs to datetime
     if isinstance(start_date, (tuple, list)):
@@ -351,102 +352,89 @@ def create_daily_df(
         inclusive='both' if include_end_date else 'left'
     )
 
-    # Create empty DataFrame
-    df = pd.DataFrame(
-        index=dates,
-        columns=headers,
-        dtype='object'
-    )
+    # Create DataFrame with Date as a column (not index)
+    df = pd.DataFrame({
+        'Date': dates
+    })
 
-    df[:] = pd.NA
+    # Add the requested columns filled with NA
+    for col in headers:
+        df[col] = pd.NA
 
-    # Optional: make index name nicer
-    df.index.name = 'date'
+    # Optional: Set clean dtypes
+    df['Date'] = pd.to_datetime(df['Date']).dt.date  # or keep as datetime64[ns]
+    # df['Date'] = pd.to_datetime(df['Date'])          # Uncomment if you prefer full datetime
 
     return df
+
 
 def fill_df_from_structured_array(
     df: pd.DataFrame,
     arr: np.ndarray,
     value_column_name: str = None,
-    date_column_name: str = None,
-    method: str = 'setitem'   # or 'loc' / 'at'
+    date_column_name: str = "Date",      # Default to 'Date' column
+    method: str = 'setitem'              # 'setitem' (fast), 'loc', or 'at'
 ) -> pd.DataFrame:
     """
     Fills values from a structured array [('dt', '<M8[s]'), ('val', '<f4')]
-    into the DataFrame, matching on date (truncating time to date-only).
-
-    Assumes:
-    - If df.index is datetime-like → uses index for matching
-    - If df has a date column → uses that column (specify date_column_name)
+    into the DataFrame by matching on the 'Date' column.
 
     Parameters:
-        df: DataFrame with daily dates (index or column)
+        df: DataFrame with a 'Date' column (or specified date_column_name)
         arr: structured ndarray with fields 'dt' and 'val'
-        value_column_name: optional - name of column in df to fill
-                           (if None, assumes there's only one data column)
-        date_column_name: required only if date is not the index
-        method: 'setitem' (fastest), 'loc', or 'at'
+        value_column_name: column in df to fill (required if >1 data column)
+        date_column_name: name of the date column in df (default: 'Date')
+        method: 'setitem' (recommended/fastest), 'loc', or 'at'
 
     Returns:
-        Modified DataFrame (in place)
+        Modified DataFrame (filled in-place)
     """
-    if not len(arr):
+    if len(arr) == 0:
         return df
 
-    # Extract dates and values
-    dates = arr['dt'].astype('datetime64[D]')   # truncate to day
+    if date_column_name not in df.columns:
+        raise ValueError(f"Date column '{date_column_name}' not found in DataFrame. "
+                        f"Available columns: {list(df.columns)}")
+
+    # Extract dates and values from structured array
+    dates = arr['dt'].astype('datetime64[D]')   # truncate to day only
     values = arr['val']
 
-    # Determine where dates live
-    if isinstance(df.index, (pd.DatetimeIndex, pd.RangeIndex)):
-        date_source = 'index'
-        df_dates = df.index.floor('D') if df.index.dtype == 'datetime64[ns]' else df.index
-    elif date_column_name is not None and date_column_name in df.columns:
-        date_source = 'column'
-        df_dates = pd.to_datetime(df[date_column_name]).dt.floor('D')
-    else:
-        raise ValueError("Could not find date information. "
-                         "Use date_column_name= or make sure index is datetime-like.")
+    # Ensure df['Date'] is datetime for reliable comparison
+    df_dates = pd.to_datetime(df[date_column_name]).dt.floor('D')
 
-    # Choose target column
+    # Determine which column to fill
     if value_column_name is None:
-        data_cols = [c for c in df.columns if c not in (date_column_name or [])]
+        data_cols = [c for c in df.columns if c != date_column_name]
         if len(data_cols) != 1:
-            raise ValueError("value_column_name required when >1 non-date column exists")
+            raise ValueError("value_column_name must be specified when there are multiple data columns")
         value_column_name = data_cols[0]
 
     if value_column_name not in df.columns:
         raise ValueError(f"Column '{value_column_name}' not found in DataFrame")
 
-    # Fastest method: vectorized boolean indexing + numpy assignment
+    # === Fastest and cleanest method ===
     if method == 'setitem':
         for dt, val in zip(dates, values):
-            mask = df_dates == dt
+            mask = (df_dates == dt)
             if mask.any():
                 df.loc[mask, value_column_name] = val
 
     elif method == 'loc':
-        # Alternative (sometimes clearer)
         for dt, val in zip(dates, values):
-            if date_source == 'index':
-                if dt in df.index:
-                    df.loc[dt, value_column_name] = val
-            else:
-                mask = df[date_column_name].dt.date == dt.astype('datetime64[D]').astype(date)
-                if mask.any():
-                    df.loc[mask, value_column_name] = val
+            mask = (df_dates == dt)
+            if mask.any():
+                df.loc[mask, value_column_name] = val
 
     elif method == 'at':
-        # Fastest for single-cell writes when index is unique
-        if date_source != 'index':
-            raise ValueError("'at' method only supported when date is index")
+        # 'at' is fast but requires integer position or unique index
+        df = df.set_index(date_column_name, drop=False)  # temporary index for 'at'
         for dt, val in zip(dates, values):
             if dt in df.index:
                 df.at[dt, value_column_name] = val
-
+        df = df.reset_index(drop=True)   # restore original structure
     else:
-        raise ValueError("method must be 'setitem', 'loc' or 'at'")
+        raise ValueError("method must be 'setitem', 'loc', or 'at'")
 
     return df
 

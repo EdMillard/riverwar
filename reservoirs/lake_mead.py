@@ -41,7 +41,8 @@ from typing import List, Optional
 
 class LakeMead(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None, month=1):
-        headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION,
+        headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.MEAD_ABOVE_1000, lb.MEAD_MOST,
+                             lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION,
                              lb.MEAD_RELEASE, lb.MEAD_RELEASE_CFS]
         super().__init__('Lake Mead', headers, upstream=upstream, month=month)
 
@@ -113,6 +114,11 @@ class LakeMead(Reservoir):
         self.draw_pump_name = False
         self.pump_parts = [("SNWA Actual", self.snwa_actual_af, Reservoir.snwa_pump_actual_color),
                            ("SNWA Projected", self.snwa_projected_af, Reservoir.snwa_pump_projected_color)]
+
+        Reservoir.subtract_constant(self.df_daily, lb.MEAD, lb.MEAD_ABOVE_1000, self.power_head_min_af)
+        Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
+                                                       monthly_value_col='End Of Month Storage', daily_target_col=lb.MEAD_MOST)
+        Reservoir.subtract_constant(self.df_daily, lb.MEAD_MOST, lb.MEAD_MOST, self.power_head_min_af)
 
         # t1 = '2026-01-01T00:00'
         # t2 = '2026-03-27T23:59'
