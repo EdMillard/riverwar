@@ -23,17 +23,9 @@ SOFTWARE.
 from pathlib import Path
 import wx
 import matplotlib
-from datetime import date
 import os
 from typing import List
 from colorado.pie_chart_frame import PieChartFrame
-from colorado.time_series_chart_frame import TimeSeriesChartFrame
-from colorado.reservoir_chart_frame import ReservoirChartFrame
-from colorado.graph_inflow_outflow import InflowOutflowChart
-from colorado.graph_reservoirs import ReservoirChart
-from reservoirs.reservoir import Reservoir
-from chart.chart_frame import ChartFrame
-
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -94,10 +86,10 @@ if __name__ == "__main__":
     # frame = ReservoirChartFrame(reservoirs, lake_powell.date_time, reports)
     # frame.Show()
 
-    # frame = PieChartFrame(reservoirs, lake_powell.date_time, reports)
-    # frame.Show()
-
-    frame = TimeSeriesChartFrame(reservoirs, lake_powell.date_time, reports)
+    frame = PieChartFrame(reservoirs, lake_powell.date_time, reports)
     frame.Show()
+
+    # frame = TimeSeriesChartFrame(reservoirs, lake_powell.date_time, reports)
+    # frame.Show()
 
     app.MainLoop()

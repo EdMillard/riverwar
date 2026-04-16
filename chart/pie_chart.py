@@ -34,17 +34,18 @@ class PieChart(Chart):
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
-                 reservoirs: List[Reservoir] | None = None):
+                 reservoirs: List[Reservoir] | None = None,
+                 value_divisor: float = 1_000_000):
 
         super().__init__(reservoirs or [], start_date, current_date, end_date)
 
         self.data_series = data_series
         self.title = title
-
-        self.height_inch = 7.0
-        self.width_inch = 8.0
-
+        self.value_divisor = value_divisor               # e.g. 1_000_000
         self.year = 2024
+
+        self.height_inch = 7.5
+        self.width_inch = 8.5
 
         # Normalize DataFrames
         for i, (df, col, color) in enumerate(self.data_series):
@@ -52,69 +53,72 @@ class PieChart(Chart):
                 df['Date'] = pd.to_datetime(df['Date'])
                 self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
 
-    def create_figure(
-            self,
-            width_inch: Optional[float] = None,
-            height_inch: Optional[float] = None
-    ) -> Optional[Figure]:
-
-        if width_inch is not None:
-            self.width_inch = width_inch
-        if height_inch is not None:
-            self.height_inch = height_inch
-
-        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=110)
-        ax = fig.add_subplot(111)
-
-        self.create_pie_chart(ax)
-
-        fig.tight_layout(pad=2.0)
-        self.fig = fig
-        return fig
-
     def create_pie_chart(self, ax):
-        """Create the pie chart using current data"""
+        """Pie chart - values divided by divisor only for display"""
         if not self.data_series:
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
 
-        values = []
+        values = []      # Original values (used for pie proportions)
         labels = []
         colors = []
 
         for df, col, color in self.data_series:
-            matching = df['Year'] == self.year
-            row_for_year = matching[matching].index[0]
             if df.empty or col not in df.columns:
-                print(f'create_pie_chart column not found {col}')
                 continue
 
-            val = pd.to_numeric(df[col], errors='coerce').iloc[row_for_year]  # Current value (will be updated by year)
-            if pd.notna(val):
-                values.append(val)
-                labels.append(col.replace('_', ' '))
-                colors.append(color)
+            matching = df['Year'] == self.year
+            if matching.any():
+                row_idx = matching.idxmax()
+                val = pd.to_numeric(df[col].iloc[row_idx], errors='coerce')
+                if pd.notna(val) and val > 0:
+                    values.append(val)                    # Keep full value for pie
+                    labels.append(col.replace('_', ' '))
+                    colors.append(color)
 
         if not values:
             ax.text(0.5, 0.5, "No valid data", ha='center', va='center', fontsize=14)
             return
 
-        # Create pie chart
+        # Custom formatter - divide only for display
+        def autopct_format(pct):
+            total = sum(values)
+            absolute = (pct * total / 100) / self.value_divisor
+            return f'{pct:.1f}%\n{absolute:,.2f}'
+
+        # Create the pie
         wedges, texts, autotexts = ax.pie(
-            values,
+            values,                                   # Use original values for correct proportions
             labels=labels,
             colors=colors,
-            autopct='%1.1f%%',
+            autopct=autopct_format,
             startangle=90,
-            textprops={'fontsize': 11}
+            pctdistance=0.75,
+            textprops={'fontsize': 10},
+            wedgeprops=dict(linewidth=1.5, edgecolor='white')
         )
 
-        # Make percentage text bold
         for autotext in autotexts:
             autotext.set_fontweight('bold')
+            autotext.set_color('black')
 
-        ax.set_title(self.title or "Distribution", fontsize=14, fontweight='bold', pad=20)
-        ax.axis('equal')  # Equal aspect ratio ensures pie is circular
+        ax.set_title(self.title or "Distribution", fontsize=15, fontweight='bold', pad=25)
+        ax.axis('equal')
+
+    def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
+        if width_inch is not None:
+            self.width_inch = width_inch
+        if height_inch is not None:
+            self.height_inch = height_inch
+
+        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=120)
+        ax = fig.add_subplot(111)
+
+        self.create_pie_chart(ax)
+
+        fig.tight_layout(pad=2.5)
+        self.fig = fig
+        return fig
 
     def update_for_year(self, year: int) -> bool:
         """

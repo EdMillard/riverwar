@@ -519,7 +519,7 @@ class Reservoir:
                     print(f'fill_usbt_monthly_into_df failed: month-year not found -> {mon_year_str}')
 
         filled = df[column_name].notna().sum()
-        print(f"✓ Filled {filled} months into '{column_name}' for gage {gage_id}")
+        # print(f"✓ Filled {filled} months into '{column_name}' for gage {gage_id}")
 
     @staticmethod
     def get_value_for_month_year(

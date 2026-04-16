@@ -49,6 +49,8 @@ class PieChartFrame(ChartFrame):
         df_ub_cul[ub.CU_UT] = df_ub_cul[ub.CU_UT] * 1_000_000
         df_ub_cul[ub.CU_NM] = df_ub_cul[ub.CU_NM] * 1_000_000
 
+
+
         df_empty = pd.DataFrame()
         lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
         lb_tributary_cul.load_df(df_empty)
@@ -57,13 +59,21 @@ class PieChartFrame(ChartFrame):
         lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
         lb_mainstream_cul.load_df(df_empty)
 
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_mx, lb.MEXICO, divisor=1)
+
         pie_wedges = []
+
         pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
         pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
         pie_wedges.append((df_ub_cul, ub.CU_NM, '#a0a0ff'))
         pie_wedges.append((df_ub_cul, ub.CU_WY, '#c0c0ff'))
 
-        pie_wedges.append((lb_reservoirs_cul.df, lb.LAKE_MEAD_CUL, '#ffff80'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.MEXICO, '#40ff40'))
+
+        pie_wedges.append((lb_reservoirs_cul.df, lb.LAKE_MEAD_CUL, 'gold'))
+
+        pie_wedges.append((lb_mainstream_cul.df, lb.NV_M_I_OTHER, 'orange'))
 
         pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#ff80ff'))
         pie_wedges.append((lb_mainstream_cul.df, lb.CA_AGRICULTURE, '#ffa0ff'))
@@ -72,7 +82,6 @@ class PieChartFrame(ChartFrame):
         pie_wedges.append((lb_mainstream_cul.df, lb.AZ_AGRICULTURE, '#ff8080'))
         pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
 
-        pie_wedges.append((lb_mainstream_cul.df, lb.NV_M_I_OTHER, '#ffc080'))
 
         pie_chart = PieChart(
             pie_wedges, title='Colorado River Consumptive Use Losses',

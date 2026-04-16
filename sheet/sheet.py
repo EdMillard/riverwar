@@ -1232,23 +1232,41 @@ def color_column(
         cell.fill = fill
         cell.font = font
 
-def merge_annual_column(df:pd.DataFrame, annual_df:pd.DataFrame,
-                        column_name:str, inp_column_name='Total', divisor=1_000_000):
-    if divisor != 1:
-        try:
-            annual_df[inp_column_name] = annual_df[inp_column_name] / divisor
-        except Exception as e:
-            print(f"merge_annual_column {column_name} {inp_column_name} error: {e}")
-    df1 = df.merge(
-        annual_df[['Year', inp_column_name]],
-        on='Year',
-        how='left'  # keeps all rows from df1, fills NaN where no match
-    )
-    try:
-        df[column_name] = df1[inp_column_name].fillna(df[column_name])
-    except Exception as e:
-        print(f"merge_annual_column {inp_column_name} {column_name} error: {e}")
+def merge_annual_column(
+    df: pd.DataFrame,
+    annual_df: pd.DataFrame,
+    column_name: str,
+    inp_column_name: str = 'Total',
+    divisor: float = 1_000_000
+) -> pd.DataFrame:
+    """
+    Merges annual value into df. Adds the column if it doesn't exist.
+    """
+    if df.empty or annual_df.empty:
+        return df
 
+    # Make a copy so we don't modify the original annual_df
+    annual = annual_df[['Year', inp_column_name]].copy()
+
+    # Apply divisor if needed
+    if divisor != 1.0:
+        annual[inp_column_name] = annual[inp_column_name] / divisor
+
+    # Merge
+    df_merged = df.merge(
+        annual,
+        on='Year',
+        how='left'
+    )
+
+    # === KEY FIX: Add column if it doesn't exist ===
+    if column_name not in df.columns:
+        df[column_name] = df_merged[inp_column_name]
+    else:
+        # Column exists → prefer new value, fallback to old value
+        df[column_name] = df_merged[inp_column_name].fillna(df[column_name])
+
+    return df
 def insert_values_from_year(
         df: pd.DataFrame,
         target_column: str,
