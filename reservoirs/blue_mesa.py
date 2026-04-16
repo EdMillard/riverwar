@@ -70,7 +70,7 @@ class BlueMesa(Reservoir):
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
         self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.BLUE_MESA_WY)
 
-        self.evao_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.BLUE_MESA_EVAPORATION_WY)
+        self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.BLUE_MESA_EVAPORATION_WY)
         self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.BLUE_MESA_INFLOW_CFS)
         # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.BLUE_MESA_INFLOW)
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.BLUE_MESA_RELEASE_CFS)
@@ -97,10 +97,10 @@ class BlueMesa(Reservoir):
         # usbr_blue_mesa_inflow_af = 4283
         # usbr_blue_mesa_inflow_unregulated_cfs = 4295
         # usbr_blue_mesa_inflow_volume_unregulated_af = 4297
-        # usbr_blue_mesa_release_powerplant_cfs = 4302
+        # usbr_blue_mesa_release_power_plant_cfs = 4302
 
         # usbr_blue_mesa_release_total_af = 4349
-        # usbr_blue_mesa_release_powerplant_af = 4361
+        # usbr_blue_mesa_release_power_plant_af = 4361
         # usbr_blue_mesa_release_spillway_cfs = 4380
         # usbr_blue_mesa_release_bypass_cfs = 4381
         # usbr_blue_mesa_release_bypass_af = 4382

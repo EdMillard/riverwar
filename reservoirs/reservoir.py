@@ -36,8 +36,7 @@ import colorado.allb as all_b
 from graph.water import WaterGraph
 import calendar
 from pandas.tseries.offsets import MonthEnd
-from scipy.interpolate import interp1d
-import numpy as np
+from api import df_utils
 
 class Reservoir:
     high_power_pool_color = "lightblue"
@@ -80,7 +79,7 @@ class Reservoir:
 
         # DataFrames
         self.headers = headers
-        self.df: Optional[pd.DataFrame] = sheet.create_df(self.water_year, self.water_year, self.headers)
+        self.df: Optional[pd.DataFrame] = df_utils.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: Optional[pd.DataFrame] = None
         self.df_24_month: Optional[pd.DataFrame] = None
         self.date_time:TimeStamp = TimeStamp(1970, 1, 1)
@@ -143,6 +142,7 @@ class Reservoir:
         self.outflow_projected_af= 0
         self.outflow_parts:List[tuple] =  []
 
+        self.evap_af = 0
         self.evap_actual_af = 0
         self.evap_projected_af= 0
         self.evap_parts:List[tuple] =  []
@@ -176,9 +176,9 @@ class Reservoir:
             self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
             end_date = pd.to_datetime(end_str, format="%b %Y").date()
             self.report_end_date = Reservoir.get_end_of_month(end_date)
-            self.df_daily = sheet.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
+            self.df_daily = df_utils.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
         else:
-            self.df_daily = sheet.create_daily_df(self.start_date, self.end_date, self.headers)
+            self.df_daily = df_utils.create_daily_df(self.start_date, self.end_date, self.headers)
             self.report_start_date = self.start_date
             self.report_end_date = self.end_date
         
@@ -208,7 +208,7 @@ class Reservoir:
             info, daily = usbr_rise.load(usbr_rise_id,
                                                       water_year_info=self.water_year_info,
                                                       alias=column_name)
-            sheet.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date',
+            df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date',
                                                 value_column_name=column_name)
         return daily
 
@@ -277,30 +277,6 @@ class Reservoir:
         return total
 
     @staticmethod
-    def subtract_constant(
-            df: pd.DataFrame,
-            source_col: str,
-            target_col: str,
-            constant: float,
-            inplace: bool = True
-    ) -> None:
-        """
-        Subtract a constant from source_col and store result in target_col.
-
-        Example:
-            subtract_constant(df_daily, "Inflow_cfs", "Inflow_cfs_minus_5000", 5000)
-        """
-        if source_col not in df.columns:
-            raise ValueError(f"Column '{source_col}' not found in DataFrame")
-
-        if not inplace:
-            df = df.copy()
-
-        df[target_col] = df[source_col] - constant
-
-        # Optional: convert to numeric and handle NaNs gracefully
-        df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
-
     def interpolate_monthly_storage_to_daily(
             df_monthly: pd.DataFrame,
             df_daily: pd.DataFrame,
@@ -349,55 +325,6 @@ class Reservoir:
         mask = (daily_dates >= first_month_start) & (daily_dates <= first_month_end)
         df_daily.loc[mask, daily_target_col] = pd.NA
 
-    @staticmethod
-    def subtract_dataframes(
-            df1: pd.DataFrame,
-            df2: pd.DataFrame,
-            date_col: str = 'Date'
-    ) -> pd.DataFrame:
-        """
-        Returns a new DataFrame containing ONLY the dates/rows that exist in BOTH df1 and df2.
-        Subtracts (df1 - df2) only for those common dates.
-        Columns that don't exist in both are dropped.
-        """
-        if date_col not in df1.columns or date_col not in df2.columns:
-            raise ValueError(f"Date column '{date_col}' not found in one or both DataFrames.")
-
-        # Find common dates
-        common_dates = pd.merge(
-            df1[[date_col]],
-            df2[[date_col]],
-            on=date_col,
-            how='inner'
-        )
-
-        if common_dates.empty:
-            print("Warning: No common dates between the two DataFrames.")
-            return pd.DataFrame(columns=[date_col])
-
-        # Merge only on common dates
-        merged = pd.merge(
-            df1,
-            df2,
-            on=date_col,
-            how='inner',
-            suffixes=('_1', '_2')
-        )
-
-        result = merged[[date_col]].copy()
-
-        # Subtract columns that exist in both
-        for col in df1.columns:
-            if col == date_col:
-                continue
-
-            col1 = f"{col}_1"
-            col2 = f"{col}_2"
-
-            if col1 in merged.columns and col2 in merged.columns:
-                result[col] = merged[col1] - merged[col2]
-
-        return result
 
     @staticmethod
     def usbr_end_of_month(
@@ -536,7 +463,7 @@ class Reservoir:
 
         # Find the matching row
         month_name = target_month_year.strftime("%b")
-        date_str = (f"{month_name} {target_month_year.year}")
+        date_str = f"{month_name} {target_month_year.year}"
         mask = df[date_column] == date_str
 
         if not mask.any():

@@ -24,7 +24,7 @@ import copy
 from datetime import date
 from reservoirs.reservoir import Reservoir
 import colorado.lb as lb
-from sheet import sheet
+from api import df_utils
 from typing import List, Optional
 
 # HDB SDI's
@@ -115,10 +115,10 @@ class LakeMead(Reservoir):
         self.pump_parts = [("SNWA Actual", self.snwa_actual_af, Reservoir.snwa_pump_actual_color),
                            ("SNWA Projected", self.snwa_projected_af, Reservoir.snwa_pump_projected_color)]
 
-        Reservoir.subtract_constant(self.df_daily, lb.MEAD, lb.MEAD_ABOVE_1000, self.power_head_min_af)
+        df_utils.subtract_constant(self.df_daily, lb.MEAD, lb.MEAD_ABOVE_1000, self.power_head_min_af)
         Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
                                                        monthly_value_col='End Of Month Storage', daily_target_col=lb.MEAD_MOST)
-        Reservoir.subtract_constant(self.df_daily, lb.MEAD_MOST, lb.MEAD_MOST, self.power_head_min_af)
+        df_utils.subtract_constant(self.df_daily, lb.MEAD_MOST, lb.MEAD_MOST, self.power_head_min_af)
 
         # t1 = '2026-01-01T00:00'
         # t2 = '2026-03-27T23:59'

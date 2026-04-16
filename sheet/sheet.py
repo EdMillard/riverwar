@@ -21,17 +21,16 @@ SOFTWARE.
 """
 from pathlib import Path
 from copy import copy
-from datetime import date
 from io import StringIO
 import openpyxl
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
-import pandas as pd
-from source.usgs_gage import USGSGage, daily_to_water_year, usgs_csv_summary
+from source.usgs_gage import USGSGage, daily_to_water_year
 from source.water_year_info import WaterYearInfo
 from typing import Optional
+from api import df_utils
 from graph.water import WaterGraph
 from source import usbr_rise
 import numpy as np
@@ -56,7 +55,7 @@ class Sheet(ABC):
         self.start_year: int = start_year
         self.end_year: int = end_year
         self.headers: List[str] = headers
-        self.df: pd.DataFrame = create_df(self.start_year, self.end_year, headers)
+        self.df: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, headers)
         self.ws: Optional[Worksheet] = None
 
     def export(self, writer: pd.ExcelWriter, df_main:pd.DataFrame, number_format:str='0.00') -> Worksheet:
@@ -264,179 +263,7 @@ def read_year_value_pairs(
 
     return pairs, values
 
-def create_df(min_year: int, max_year: int, headers: List[str], zero=False):
-    years = list(range(min_year, max_year + 1))
 
-    df = pd.DataFrame(index=range(len(years)), columns=['Year'] + headers)
-    df['Year'] = years
-    if zero:
-        df.iloc[:, 1:] = 0
-    else:
-        df.iloc[:, 1:] = pd.NA
-
-    return df
-
-def create_monthly_df(
-    start_date: date | str | tuple[int, int, int],
-    end_date: date | str | tuple[int, int, int],
-    headers: list[str],
-    include_end_month: bool = True
-) -> pd.DataFrame:
-    """
-    Creates a DataFrame with one row per month between start and end date.
-    The 'Date' column shows only 'Mon Year' format (e.g. 'Apr 2026', 'May 2026').
-    """
-    # Normalize inputs
-    if isinstance(start_date, (tuple, list)):
-        start_date = date(*start_date)
-    if isinstance(end_date, (tuple, list)):
-        end_date = date(*end_date)
-
-    start = pd.to_datetime(start_date)
-    end = pd.to_datetime(end_date)
-
-    # Generate monthly range
-    dates = pd.date_range(
-        start=start.replace(day=1),
-        end=end,
-        freq='MS',                    # Month Start
-        inclusive='both' if include_end_month else 'left'
-    )
-
-    # Create friendly month-year labels
-    month_labels = dates.strftime('%b %Y')
-
-    # Build DataFrame
-    df = pd.DataFrame(index=range(len(dates)))   # Simple integer index
-    for col in headers:
-        df[col] = pd.NA
-
-    df['Date'] = month_labels
-
-    return df
-
-
-def create_daily_df(
-        start_date: date | str | tuple[int, int, int],
-        end_date: date | str | tuple[int, int, int],
-        headers: list[str],
-        include_end_date: bool = True
-) -> pd.DataFrame:
-    """
-    Creates a DataFrame with one row per day between start_date and end_date,
-    with a 'Date' column (datetime64[ns]) and the requested columns filled with pd.NA.
-
-    Parameters:
-        start_date: date, 'YYYY-MM-DD' string, or (year, month, day) tuple
-        end_date:   date, 'YYYY-MM-DD' string, or (year, month, day) tuple
-        headers: list of column names (excluding the Date column)
-        include_end_date: whether to include the end_date row (default True)
-
-    Returns:
-        DataFrame with 'Date' column as first column
-    """
-    # Normalize inputs to datetime
-    if isinstance(start_date, (tuple, list)):
-        start_date = date(*start_date)
-    if isinstance(end_date, (tuple, list)):
-        end_date = date(*end_date)
-
-    start = pd.to_datetime(start_date)
-    end = pd.to_datetime(end_date)
-
-    # Generate daily date range
-    dates = pd.date_range(
-        start=start,
-        end=end,
-        freq='D',
-        inclusive='both' if include_end_date else 'left'
-    )
-
-    # Create DataFrame with Date as a column (not index)
-    df = pd.DataFrame({
-        'Date': dates
-    })
-
-    # Add the requested columns filled with NA
-    for col in headers:
-        df[col] = pd.NA
-
-    # Optional: Set clean dtypes
-    df['Date'] = pd.to_datetime(df['Date']).dt.date  # or keep as datetime64[ns]
-    # df['Date'] = pd.to_datetime(df['Date'])          # Uncomment if you prefer full datetime
-
-    return df
-
-
-def fill_df_from_structured_array(
-    df: pd.DataFrame,
-    arr: np.ndarray,
-    value_column_name: str = None,
-    date_column_name: str = "Date",      # Default to 'Date' column
-    method: str = 'setitem'              # 'setitem' (fast), 'loc', or 'at'
-) -> pd.DataFrame:
-    """
-    Fills values from a structured array [('dt', '<M8[s]'), ('val', '<f4')]
-    into the DataFrame by matching on the 'Date' column.
-
-    Parameters:
-        df: DataFrame with a 'Date' column (or specified date_column_name)
-        arr: structured ndarray with fields 'dt' and 'val'
-        value_column_name: column in df to fill (required if >1 data column)
-        date_column_name: name of the date column in df (default: 'Date')
-        method: 'setitem' (recommended/fastest), 'loc', or 'at'
-
-    Returns:
-        Modified DataFrame (filled in-place)
-    """
-    if len(arr) == 0:
-        return df
-
-    if date_column_name not in df.columns:
-        raise ValueError(f"Date column '{date_column_name}' not found in DataFrame. "
-                        f"Available columns: {list(df.columns)}")
-
-    # Extract dates and values from structured array
-    dates = arr['dt'].astype('datetime64[D]')   # truncate to day only
-    values = arr['val']
-
-    # Ensure df['Date'] is datetime for reliable comparison
-    df_dates = pd.to_datetime(df[date_column_name]).dt.floor('D')
-
-    # Determine which column to fill
-    if value_column_name is None:
-        data_cols = [c for c in df.columns if c != date_column_name]
-        if len(data_cols) != 1:
-            raise ValueError("value_column_name must be specified when there are multiple data columns")
-        value_column_name = data_cols[0]
-
-    if value_column_name not in df.columns:
-        raise ValueError(f"Column '{value_column_name}' not found in DataFrame")
-
-    # === Fastest and cleanest method ===
-    if method == 'setitem':
-        for dt, val in zip(dates, values):
-            mask = (df_dates == dt)
-            if mask.any():
-                df.loc[mask, value_column_name] = val
-
-    elif method == 'loc':
-        for dt, val in zip(dates, values):
-            mask = (df_dates == dt)
-            if mask.any():
-                df.loc[mask, value_column_name] = val
-
-    elif method == 'at':
-        # 'at' is fast but requires integer position or unique index
-        df = df.set_index(date_column_name, drop=False)  # temporary index for 'at'
-        for dt, val in zip(dates, values):
-            if dt in df.index:
-                df.at[dt, value_column_name] = val
-        df = df.reset_index(drop=True)   # restore original structure
-    else:
-        raise ValueError("method must be 'setitem', 'loc', or 'at'")
-
-    return df
 
 def lf_natural_flow_from_excel(df: pd.DataFrame, start_row=62):
     wb = openpyxl.load_workbook('data/Colorado_River/LFnatFlow1906-2024.2024.9.12.xlsx', data_only=True)
@@ -644,7 +471,7 @@ def create_month_year_df(years: List[int]) -> pd.DataFrame:
         'Total': 0
     })
 
-def upper_basin_cul_from_excel(df:pd.DataFrame):
+def upper_basin_cul_from_excel(df:pd.DataFrame, row_offset:int=7, divisor=1_000_000):
     wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
     ws = wb['CY Pivot']
     header_row = 2
@@ -660,23 +487,42 @@ def upper_basin_cul_from_excel(df:pd.DataFrame):
             year_column_index = column_index
 
         if header == 'Grand Total':
-            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.III_A_UB] = values
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.III_A_UB] = values
         if header == 'Colorado':
-            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.CU_CO] = values
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.CU_CO] = values
         elif header == 'Utah':
-            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.CU_UT] = values
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.CU_UT] = values
         elif header == 'Wyoming':
-            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.CU_WY] = values
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.CU_WY] = values
         elif header == 'NewMexico':
-            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.CU_NM] = values
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.CU_NM] = values
         elif header == 'Arizona':
-            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[7: 7 + len(values) - 1, ub.AZ_CU] = values
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.AZ_CU] = values
+        elif header == 'Lake Powell':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.POWELL_EVAPORATION] = values
+        elif header == 'Flaming Gorge':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.FLAMING_GORGE_EVAPORATION_WY] = values
+        elif header == 'Blue Mesa':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.BLUE_MESA_EVAPORATION_WY] = values
+        elif header == 'Navajo': # Not in USBR spreadsheet for some reason
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.NAVAJO_EVAPORATION_WY] = values
+        elif header == 'Morrow Point':
+            pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
+            df.loc[row_offset: row_offset + len(values) - 1, ub.MORROW_EVAPORATION_WY] = values
+        elif header is None:
+            pass
+        else:
+            pass
 
 
 def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='00060', stat_cd='00003',

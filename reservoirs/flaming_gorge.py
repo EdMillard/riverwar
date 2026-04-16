@@ -22,10 +22,7 @@ SOFTWARE.
 from pathlib import Path
 from datetime import date
 from reservoirs.reservoir import Reservoir
-from source import usbr_rise
 import colorado.ub as ub
-import colorado.allb as all_b
-from sheet import sheet
 from typing import List, Optional
 
 class FlamingGorge(Reservoir):
@@ -110,7 +107,7 @@ class FlamingGorge(Reservoir):
         # usbr_flaming_gorge_bank_storage_af = 4275
         # usbr_flaming_gorge_inflow_af = 4287
         # usbr_flaming_gorge_inflow_volume_unregulated_af = 4300
-        # usbr_flaming_gorge_release_powerplant_cfs = 4306
+        # usbr_flaming_gorge_release_power_plant_cfs = 4306
 
         # Inflow
         # usbr_flaming_gorge_inflow_cfs = 339

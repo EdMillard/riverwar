@@ -73,7 +73,7 @@ class Navajo(Reservoir):
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.NAVAJO_ELEVATION_WY)
         self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.NAVAJO_WY)
 
-        self.evao_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.NAVAJO_EVAPORATION_WY)
+        self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.NAVAJO_EVAPORATION_WY)
         self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.NAVAJO_INFLOW_CFS)
         # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.NAVAJO_INFLOW)
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.NAVAJO_RELEASE_CFS)

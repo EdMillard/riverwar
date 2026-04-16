@@ -30,6 +30,7 @@ from chart.chart import Chart
 class PieChart(Chart):
     def __init__(self,
                  data_series: List[Tuple[pd.DataFrame, str, str]],
+                 year: int = 2024,
                  title: str = "",
                  start_date: date | None = None,
                  current_date: date | None = None,
@@ -42,7 +43,7 @@ class PieChart(Chart):
         self.data_series = data_series
         self.title = title
         self.value_divisor = value_divisor               # e.g. 1_000_000
-        self.year = 2024
+        self.year = year
 
         self.height_inch = 7.5
         self.width_inch = 8.5

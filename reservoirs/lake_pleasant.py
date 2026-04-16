@@ -24,7 +24,7 @@ from datetime import date
 from reservoirs.reservoir import Reservoir
 from source import usbr_rise
 import colorado.lb as lb
-from sheet import sheet
+from api import df_utils
 from typing import List, Optional
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
@@ -110,7 +110,7 @@ class LakePleasant(Reservoir):
         usbr_lake_mohave_elevation_ft = 6133
         info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft, water_year_info=self.water_year_info,
                                                   alias=lb.MOHAVE_ELEVATION)
-        sheet.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.MOHAVE_ELEVATION)
+        df_utils.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.MOHAVE_ELEVATION)
         return daily_elevation_ft[-1]
 
     def get_lake_pleasant_data(self):
@@ -149,7 +149,7 @@ class LakePleasant(Reservoir):
                 EC.presence_of_element_located((By.TAG_NAME, "iframe"))
             ))
 
-            # Extra small wait for numbers to populate
+            # Small wait for numbers to populate
             time.sleep(4)
 
             # Get full rendered text (including content from iframes if they injected)

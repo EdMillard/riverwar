@@ -6,7 +6,8 @@ of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute copies of the Software, and
 to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+following conditions:from api import df_utils
+
 
 The above copyright notice and this permission notice shall be included in all
 
@@ -23,6 +24,8 @@ SOFTWARE.
 from datetime import date
 import pandas as pd
 from typing import List
+
+from colorado.lb import AZ_TRIB_BELOW_LAKE_MEAD_CUL
 from sheet import sheet
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
@@ -33,6 +36,7 @@ from chart.pie_chart import PieChart
 import colorado.lb as lb
 import colorado.ub as ub
 import colorado.allb as all_b
+from api import df_utils
 
 class PieChartFrame(ChartFrame):
     def __init__(self, reservoir_list: List[Reservoir], date_time: date,
@@ -41,15 +45,11 @@ class PieChartFrame(ChartFrame):
         super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
 
     def load_charts(self):
-        headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU]
-        df_ub_cul: pd.DataFrame = sheet.create_df(1964, 2024, headers)
-        sheet.upper_basin_cul_from_excel(df_ub_cul)
-        df_ub_cul[ub.CU_CO] = df_ub_cul[ub.CU_CO] * 1_000_000
-        df_ub_cul[ub.CU_WY] = df_ub_cul[ub.CU_WY] * 1_000_000
-        df_ub_cul[ub.CU_UT] = df_ub_cul[ub.CU_UT] * 1_000_000
-        df_ub_cul[ub.CU_NM] = df_ub_cul[ub.CU_NM] * 1_000_000
-
-
+        headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU,
+                   ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
+                   ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY]
+        df_ub_cul: pd.DataFrame = df_utils.create_df(1971, 2025, headers)
+        sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=1, divisor=1)
 
         df_empty = pd.DataFrame()
         lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
@@ -66,25 +66,45 @@ class PieChartFrame(ChartFrame):
 
         pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
         pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
-        pie_wedges.append((df_ub_cul, ub.CU_NM, '#a0a0ff'))
         pie_wedges.append((df_ub_cul, ub.CU_WY, '#c0c0ff'))
+        pie_wedges.append((df_ub_cul, ub.CU_NM, '#a0a0ff'))
+        df_utils.add_column_sum(df_ub_cul,
+                                [ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
+                                 ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY],
+                                ub.UB_RESERVOIR_EVAP)
+        pie_wedges.append((df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'))
 
         pie_wedges.append((lb_mainstream_cul.df, lb.MEXICO, '#40ff40'))
 
-        pie_wedges.append((lb_reservoirs_cul.df, lb.LAKE_MEAD_CUL, 'gold'))
+        df_utils.add_column_sum(lb_reservoirs_cul.df,
+                                [lb.LAKE_MEAD_CUL, lb.LAKE_MOHAVE_CUL, lb.LAKE_HAVASU_CUL,
+                                 lb.SENATOR_WASH_CUL, lb.DIVERSION_DAMS_CUL],
+                                lb.LB_RESERVOIR_EVAP)
+        pie_wedges.append((lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP, 'gold'))
 
-        pie_wedges.append((lb_mainstream_cul.df, lb.NV_M_I_OTHER, 'orange'))
+        df_utils.add_column_sum(lb_mainstream_cul.df,
+                                [lb.CA_M_I_OTHER, lb.CA_AGRICULTURE], lb.CA_IN_BASIN)
+        pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#ff80d0'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.CA_IN_BASIN, '#ffa0d0'))
 
-        pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#ff80ff'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.CA_AGRICULTURE, '#ffa0ff'))
+        df_utils.add_column_sum(lb_mainstream_cul.df,
+                                [lb.NV_M_I_OTHER, lb.NV_POWER], lb.NV_TOTAL)
+        pie_wedges.append((lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'))
 
-        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, '#ffa0a0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_AGRICULTURE, '#ff8080'))
+        df_utils.add_column_sum(lb_mainstream_cul.df,
+                                [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_TOTAL)
+        df_utils.rename_column(lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, lb.AZ_CAP, inplace=True)
+        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_CAP, '#ffa0a0'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_TOTAL, '#ff8080'))
+
         pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
-
+        df_utils.add_column_sum(lb_tributary_cul.df,
+                                [lb.AZ_LITTLE_COLORADO_CUL, lb.AZ_VIRGIN_CUL,
+                                 lb.AZ_BILL_WILLIAMS_CUL, AZ_TRIB_BELOW_LAKE_MEAD_CUL], lb.AZ_TRIBUTARY_CUL)
+        pie_wedges.append((lb_tributary_cul.df, lb.AZ_TRIBUTARY_CUL, '#ff4040'))
 
         pie_chart = PieChart(
-            pie_wedges, title='Colorado River Consumptive Use Losses',
+            pie_wedges, title='Colorado River Consumptive Use Losses', year=2018
         )
         self.charts.append(pie_chart)
 

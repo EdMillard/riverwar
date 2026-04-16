@@ -21,6 +21,7 @@ SOFTWARE.
 """
 NATURAL_LEES_FERRY = 'Natural Lees Ferry'
 
+UB_RESERVOIR_EVAP = 'UB Reservoir Evap'
 GLEN_CANYON_RELEASE = 'Glen Canyon Release'
 POWELL = 'Powell'
 POWELL_DELTA = 'Powell Δ'
@@ -95,6 +96,9 @@ NAVAJO_INFLOW = 'Navajo Inflow'
 NAVAJO_INFLOW_CFS = 'Navajo Inflow CFS'
 NAVAJO_ELEVATION_WY = 'Navajo Elevation WY'
 NAVAJO_EVAPORATION_WY = 'Navajo Evap WY'
+
+MORROW_EVAPORATION_WY = 'Morrow Evap WY'
+
 
 III_A_UB = 'III(a) Upper'
 CU_CO = 'CO'
