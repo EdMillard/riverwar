@@ -465,7 +465,7 @@ class Reservoir:
         mask = df['Date'].isin(monthly['month_label'])
         filled = mask.sum()
 
-        print(f"✓ Filled {filled} months into '{column_name}' (last value per month + forced partial month)")
+        # print(f"✓ Filled {filled} months into '{column_name}' (last value per month + forced partial month)")
 
     @staticmethod
     def usbr_monthly(
