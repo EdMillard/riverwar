@@ -562,6 +562,12 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
     #        print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
 
     if title:
+        # Ensure the column exists first
+        if title not in df.columns:
+            # Create the column with appropriate length, filled with NaN
+            df[title] = pd.NA
+
+        # Now safely check length and update
         if len(values) != len(df[title]):
             insert_values_from_year(df, title, start_year, values, offset=offset)
         else:

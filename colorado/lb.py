@@ -128,6 +128,7 @@ NV_AGRICULTURE = 'NV Agriculture CUL'
 NV_M_I_OTHER = 'NV M I Other CUL'
 NV_POWER = 'NV Power CUL'
 
+LB_TOTAL = 'Lower Basin Total'
 LB_RESERVOIR_EVAP = 'LB Reservoir Evap'
 LC_RESERVOIR_TOTAL_CUL = 'LC Reservoir Total CUL'
 LAKE_MEAD_CUL = 'Mead CUL'
@@ -210,4 +211,10 @@ IMPERIAL_RETURN = 'Imperial Return'
 COACHELLA_CU = 'Coachella CU'
 COACHELLA_DIVERSION = 'Coachella Diversion'
 COACHELLA_RETURN = 'Coachella Return'
+
+IMPERIAL_VALLEY_CU = 'Imperial Valley CU'
+
+METROPOLITAN_CU = 'Metropolitan CU'
+METROPOLITAN_DIVERSION = 'Metropolitan Diversion'
+METROPOLITAN_RETURN = 'Metropolitan Return'
 

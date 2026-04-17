@@ -39,6 +39,8 @@ III_C = 'III(c)'
 III_C_AZ = "III(c) AZ"
 III_D = "III(d)"
 
+EVAP_TOTAL = 'Evap Total'
+
 # Data colors
 LIGHT_RED_BG = 'fff0f0'
 LIGHT_GREEN_BG = 'e8ffe0'

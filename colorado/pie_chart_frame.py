@@ -41,28 +41,22 @@ class PieChartFrame(ChartFrame):
     def __init__(self, reservoir_list: List[Reservoir], date_time: date,
                  report_list: List[str] | None = None,
                  title: str = "Colorado River War"):
+        self.start_year = 1971
+        self.end_year = 2025
         super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
+
 
     def load_charts(self):
         headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU,
                    ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                    ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY]
-        df_ub_cul: pd.DataFrame = df_utils.create_df(1971, 2025, headers)
-        sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=1, divisor=1)
-
-        df_empty = pd.DataFrame()
-        lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
-        lb_tributary_cul.load_df(df_empty)
-        lb_reservoirs_cul = LBReservoirCUL(all_b.LB_RESERVOIRS_CUL_SHEET)
-        lb_reservoirs_cul.load_df(df_empty)
-        lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
-        lb_mainstream_cul.load_df(df_empty)
-
-        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
-        sheet.merge_annual_column(lb_mainstream_cul.df, df_mx, lb.MEXICO, divisor=1)
+        df_ub_cul: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, headers)
 
         pie_wedges = []
 
+        # Upper Basin
+        #
+        sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=1, divisor=1)
         pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
         pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
         pie_wedges.append((df_ub_cul, ub.CU_WY, '#a0a0ff'))
@@ -73,34 +67,82 @@ class PieChartFrame(ChartFrame):
                                 ub.UB_RESERVOIR_EVAP)
         pie_wedges.append((df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'))
 
-        pie_wedges.append((lb_mainstream_cul.df, lb.MEXICO, '#40ff40'))
+        # Lower Basin
+        #
+        df_empty = pd.DataFrame()
+        lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
+        lb_mainstream_cul.load_df(df_empty)
 
+
+
+        # Lower Basin Reservoir Evap
+        lb_reservoirs_cul = LBReservoirCUL(all_b.LB_RESERVOIRS_CUL_SHEET)
+        lb_reservoirs_cul.load_df(df_empty)
         df_utils.add_column_sum(lb_reservoirs_cul.df,
                                 [lb.LAKE_MEAD_CUL, lb.LAKE_MOHAVE_CUL, lb.LAKE_HAVASU_CUL,
                                  lb.SENATOR_WASH_CUL, lb.DIVERSION_DAMS_CUL],
                                 lb.LB_RESERVOIR_EVAP)
         pie_wedges.append((lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP, 'gold'))
 
-        df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.CA_M_I_OTHER, lb.CA_AGRICULTURE], lb.CA_MAINSTEM)
-        pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#ff80d0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.CA_MAINSTEM, '#ffa0d0'))
-        df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.CA_OUTSIDE_SYSTEM, lb.CA_MAINSTEM], lb.CA_TOTAL)
+        # California
+        #
+        # Imperial Valley
+        #
+        sheet.usgs_annuals(lb_mainstream_cul.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER, divisor=1)
+        sheet.usgs_annuals(lb_mainstream_cul.df, '10255550', self.start_year, self.end_year, title=lb.NEW_RIVER, divisor=1)
+        sheet.usgs_annuals(lb_mainstream_cul.df, '10259540', self.start_year, self.end_year, title=lb.WHITEWATER, divisor=1)
+        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER], lb.SALTON_INFLOW)
+
+        df_cu = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_imperial_irrigation_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_cu, lb.IMPERIAL_CU, divisor=1)
+
+        df_cu = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_coachella_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_cu, lb.COACHELLA_CU, divisor=1)
+        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.IMPERIAL_CU, lb.COACHELLA_CU], lb.IMPERIAL_VALLEY_CU)
+
+        df_cu = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_metropolitan_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_cu, lb.METROPOLITAN_CU, divisor=1)
+
+        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.CA_M_I_OTHER, lb.CA_AGRICULTURE], lb.CA_MAINSTEM)
+
+        df_utils.subtract_column(lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, lb.IMPERIAL_VALLEY_CU, lb.CA_OUTSIDE_SYSTEM)
+        df_utils.subtract_column(lb_mainstream_cul.df, lb.IMPERIAL_VALLEY_CU, lb.SALTON_INFLOW, lb.IMPERIAL_VALLEY_CU)
+        pie_wedges.append((lb_mainstream_cul.df, lb.SALTON_INFLOW, 'gold'))
+
+        # Mexico
+        #
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_mx, lb.MEXICO, divisor=1)
+        pie_wedges.append((lb_mainstream_cul.df, lb.MEXICO, '#40a040'))
+
+        # California
+        #
+        pie_wedges.append((lb_mainstream_cul.df, lb.IMPERIAL_VALLEY_CU, '#c040c0'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#e080e0'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.CA_MAINSTEM, '#ffa0ff'))
 
         df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.NV_M_I_OTHER, lb.NV_POWER], lb.NV_TOTAL)
+                                [lb.CA_OUTSIDE_SYSTEM, lb.CA_MAINSTEM, lb.SALTON_INFLOW, lb.IMPERIAL_VALLEY_CU],
+                                lb.CA_TOTAL)
+
+        # Nevada
+        #
+        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.NV_M_I_OTHER, lb.NV_POWER], lb.NV_TOTAL)
         pie_wedges.append((lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'))
 
-        df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_MAINSTEM)
+        # Arizona Mainstem
+        #
+        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_MAINSTEM)
         df_utils.rename_column(lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, lb.AZ_CAP, inplace=True)
-        df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.AZ_CAP, lb.AZ_MAINSTEM], lb.AZ_COLORADO_RIVER_TOTAL)
+        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.AZ_CAP, lb.AZ_MAINSTEM], lb.AZ_COLORADO_RIVER_TOTAL)
 
         pie_wedges.append((lb_mainstream_cul.df, lb.AZ_MAINSTEM, '#ffa0a0'))
         pie_wedges.append((lb_mainstream_cul.df, lb.AZ_CAP,  '#ff8080'))
 
+        # Arizona Tributary
+        #
+        lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
+        lb_tributary_cul.load_df(df_empty)
         pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
         df_utils.add_column_sum(lb_tributary_cul.df,
                                 [lb.AZ_LITTLE_COLORADO_CUL, lb.AZ_VIRGIN_CUL,
@@ -112,10 +154,22 @@ class PieChartFrame(ChartFrame):
         df_utils.add_column_sum(lb_mainstream_cul.df,
                                 [lb.AZ_COLORADO_RIVER_TOTAL, lb.AZ_GILA_CUL, lb.AZ_TRIBUTARY_CUL], lb.AZ_TOTAL)
 
+        # Evap total
+        df_utils.copy_column(df_ub_cul, lb_mainstream_cul.df, ub.UB_RESERVOIR_EVAP)
+        df_utils.copy_column(lb_reservoirs_cul.df, lb_mainstream_cul.df, lb.LB_RESERVOIR_EVAP)
+
+        df_utils.add_column_sum(lb_mainstream_cul.df, [ub.UB_RESERVOIR_EVAP, lb.LB_RESERVOIR_EVAP, lb.SALTON_INFLOW],
+                                all_b.EVAP_TOTAL)
+
+        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.CA_TOTAL, lb.AZ_TOTAL, lb.NV_TOTAL, lb.LB_RESERVOIR_EVAP],
+                                lb.LB_TOTAL)
+
         annotations = [
             ("AZ Total", 45, (lb_mainstream_cul.df, lb.AZ_TOTAL)),
             ("AZ Colorado River", 30, (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL)),
+            ("Lower Basin Total", 0, (lb_mainstream_cul.df, lb.LB_TOTAL)),
             ("CA Total", 290, (lb_mainstream_cul.df, lb.CA_TOTAL)),
+            ("Evap Total", 200, (lb_mainstream_cul.df, all_b.EVAP_TOTAL)),
             ("Upper Basin Total", 140, (df_ub_cul, ub.III_A_UB)),
         ]
 
@@ -126,4 +180,3 @@ class PieChartFrame(ChartFrame):
             outer_annotations=annotations
         )
         self.charts.append(pie_chart)
-

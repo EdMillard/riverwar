@@ -300,6 +300,47 @@ def add_column_sum(df: pd.DataFrame,
 
     return df
 
+
+def subtract_column(
+        df: pd.DataFrame,
+        col1: str,
+        col2: str,
+        result_column: str = 'difference',
+        inplace: bool = True
+) -> pd.DataFrame:
+    """
+    Subtract one column from another and store the result in a new column.
+    Creates the result column if it doesn't exist.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to modify.
+        col1 (str): Column to subtract from (minuend).
+        col2 (str): Column to subtract (subtrahend). Result = col1 - col2.
+        result_column (str): Name of the column to store the result.
+        inplace (bool): Whether to modify the DataFrame in place (default True).
+
+    Returns:
+        pd.DataFrame: The modified DataFrame.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Input must be a pandas DataFrame")
+
+    # Check both columns exist
+    missing = [col for col in [col1, col2] if col not in df.columns]
+    if missing:
+        raise ValueError(f"Columns not found in DataFrame: {missing}")
+
+    # Work on a copy or inplace
+    if inplace:
+        target = df
+    else:
+        target = df.copy()
+
+    # Perform subtraction and create/update column
+    target[result_column] = target[col1] - target[col2]
+
+    return target
+
 def rename_column(
         df: pd.DataFrame,
         old_name: Union[str, Dict[str, str]],
