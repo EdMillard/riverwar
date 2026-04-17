@@ -39,7 +39,9 @@ class PieChart(Chart):
                  end_date: date | None = None,
                  reservoirs: List[Reservoir] | None = None,
                  value_divisor: float = 1_000_000,
-                 outer_annotations: List[Tuple[str, float, Tuple[pd.DataFrame, str]]] | None = None):
+                 outer_annotations: List[Tuple[str, float, Tuple[pd.DataFrame, str]]] | None = None,
+                 annotations: List[ Tuple[float, float, List[ Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
+    ):
 
         super().__init__(reservoirs or [], start_date, current_date, end_date)
 
@@ -48,6 +50,7 @@ class PieChart(Chart):
         self.value_divisor = value_divisor
         self.year = year
         self.outer_annotations = outer_annotations or []   # (name, degrees, (df, col))
+        self.annotations = annotations or []   # (name, (df, col))
 
         self.height_inch = 7.5
         self.width_inch = 8.5
@@ -115,19 +118,15 @@ class PieChart(Chart):
 
         # ==================== TITLE + SUBTITLE ====================
         main_title = self.title or "Distribution"
+        main_title += f"  {self.year}"
         ax.set_title(main_title, fontsize=15, fontweight='bold', pad=10)
-
-        subtitle = f"{self.year}     Total: {total_maf:,.2f} MAF"
-        ax.text(0.85, 1.0, subtitle,
-                transform=ax.transAxes,
-                ha='left', va='top',
-                fontsize=12,
-                fontweight='semibold',
-                color='darkblue')
 
         ax.axis('equal')
 
-        # ====================== OUTER ANNOTATIONS (Unchanged) ======================
+        # ====================== ANNOTATIONS ======================
+        for annotations in self.annotations:
+            self.add_total_annotations(annotations)
+
         if self.outer_annotations:
             radius = 1.25
 
@@ -176,9 +175,9 @@ class PieChart(Chart):
             self.height_inch = height_inch
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=120)
-        ax = fig.add_subplot(111)
+        self.ax = fig.add_subplot(111)
 
-        self.create_pie_chart(ax)
+        self.create_pie_chart(self.ax)
 
         fig.tight_layout(pad=2.5)
         self.fig = fig
@@ -205,9 +204,41 @@ class PieChart(Chart):
 
         return updated
 
-    def update_data(self, new_data_series: List[Tuple[pd.DataFrame, str, str]]):
-        self.data_series = new_data_series
-        for i, (df, col, color) in enumerate(self.data_series):
-            if 'Date' in df.columns:
-                df['Date'] = pd.to_datetime(df['Date'])
-                self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
+    def add_total_annotations(self, annotations, divisor=1_000_000):
+        lines = []
+        x = annotations[0]
+        y = annotations[1]
+        annotations_list = annotations[2]
+        for label, (df, col) in annotations_list:
+            matching = df['Year'] == self.year
+            if matching.any():
+                row_idx = matching.idxmax()
+                value = pd.to_numeric(df[col].iloc[row_idx], errors='coerce')
+                value /= divisor
+            else:
+                value = 0.0
+
+            # Value first + fixed width for perfect column alignment
+            lines.append(f"{value:7.2f} MAF {label}")
+
+        text_block = "\n".join(lines)
+
+        self.ax.text(
+            x=x,
+            y=y,
+            s=text_block,
+            transform=self.ax.transAxes,
+            fontsize=11,
+            fontfamily='monospace',  # Very important for alignment
+            fontweight='semibold',
+            ha='left',
+            va='top',
+            # bbox=dict(
+            #     boxstyle="round,pad=0.8",
+            #     facecolor="white",
+            #     edgecolor="#1f4e79",
+            #     linewidth=1.2,
+            #     alpha=0.97
+            # ),
+            zorder=15
+        )

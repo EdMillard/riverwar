@@ -56,7 +56,7 @@ class PieChartFrame(ChartFrame):
 
         # Upper Basin
         #
-        sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=1, divisor=1)
+        sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=0, divisor=1)
         pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
         pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
         pie_wedges.append((df_ub_cul, ub.CU_WY, '#a0a0ff'))
@@ -122,7 +122,6 @@ class PieChartFrame(ChartFrame):
         df_utils.add_column_sum(lb_mainstream_cul.df,
                                 [lb.CA_OUTSIDE_SYSTEM, lb.CA_MAINSTEM, lb.SALTON_INFLOW, lb.IMPERIAL_VALLEY_CU],
                                 lb.CA_TOTAL)
-
         # Nevada
         #
         lb_tributary_cul = None
@@ -181,8 +180,6 @@ class PieChartFrame(ChartFrame):
             (lb_mainstream_cul.df, lb.SALTON_INFLOW)],
             lb_mainstream_cul.df, all_b.EVAP_TOTAL)
 
-        # df_utils.add_column_sum(lb_mainstream_cul.df, [lb.CA_TOTAL, lb.AZ_TOTAL, lb.NV_TOTAL, lb.LB_RESERVOIR_EVAP],
-        #                         lb.LB_TOTAL)
         df_utils.add_columns_across_dfs([
             (lb_mainstream_cul.df, lb.CA_TOTAL),
             (lb_mainstream_cul.df, lb.AZ_TOTAL),
@@ -190,19 +187,37 @@ class PieChartFrame(ChartFrame):
             (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP)],
             lb_mainstream_cul.df, lb.LB_TOTAL)
 
-        annotations = [
-            ("AZ Total", 45, (lb_mainstream_cul.df, lb.AZ_TOTAL)),
-            ("AZ Colorado River", 30, (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL)),
-            ("Lower Basin Total", 0, (lb_mainstream_cul.df, lb.LB_TOTAL)),
-            ("CA Total", 290, (lb_mainstream_cul.df, lb.CA_TOTAL)),
-            ("Evap Total", 200, (lb_mainstream_cul.df, all_b.EVAP_TOTAL)),
-            ("Upper Basin Total", 140, (df_ub_cul, ub.III_A_UB)),
-        ]
+        df_utils.add_columns_across_dfs([
+            (df_ub_cul, ub.III_A_UB),
+            (lb_mainstream_cul.df, lb.LB_TOTAL),
+            (lb_mainstream_cul.df, lb.MEXICO)],
+            lb_mainstream_cul.df, all_b.COLORADO_RIVER_TOTAL)
+        totals = (0.0, 0.99, [
+            ("Lower Basin", (lb_mainstream_cul.df, lb.LB_TOTAL)),
+            ("Upper Basin", (df_ub_cul, ub.III_A_UB)),
+            ("Mexico", (lb_mainstream_cul.df, lb.MEXICO)),
+            ("Total", (lb_mainstream_cul.df, all_b.COLORADO_RIVER_TOTAL))
+        ])
+
+        lb_totals = (0.9, 0.99, [
+            ("CA", (lb_mainstream_cul.df, lb.CA_TOTAL)),
+            ("AZ", (lb_mainstream_cul.df, lb.AZ_TOTAL)),
+            ("NV", (lb_mainstream_cul.df, lb.NV_TOTAL)),
+            ("LB Evap", (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP)),
+            ("Total", (lb_mainstream_cul.df, lb.LB_TOTAL))
+        ])
+
+        evap_totals = (0.0, 0.05, [
+            ("UB Evap", (df_ub_cul, ub.UB_RESERVOIR_EVAP)),
+            ("LB Evap", (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP)),
+            ("Salton Evap", (lb_mainstream_cul.df, lb.SALTON_INFLOW)),
+            ("Total", (lb_mainstream_cul.df, all_b.EVAP_TOTAL))
+        ])
 
         pie_chart = PieChart(
             pie_wedges,
             title='Colorado River Consumptive Use Losses',
             year=2018,
-            outer_annotations=annotations
+            annotations=[totals, lb_totals, evap_totals]
         )
         self.charts.append(pie_chart)
