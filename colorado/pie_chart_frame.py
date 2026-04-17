@@ -24,7 +24,6 @@ SOFTWARE.
 from datetime import date
 import pandas as pd
 from typing import List, Optional
-from colorado.lb import AZ_TRIB_BELOW_LAKE_MEAD_CUL
 from sheet import sheet
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
@@ -51,6 +50,7 @@ class PieChartFrame(ChartFrame):
                    ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                    ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY]
         df_ub_cul: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, headers)
+        show_tributaries = False
 
         pie_wedges = []
 
@@ -72,8 +72,6 @@ class PieChartFrame(ChartFrame):
         df_empty = pd.DataFrame()
         lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
         lb_mainstream_cul.load_df(df_empty)
-
-
 
         # Lower Basin Reservoir Evap
         lb_reservoirs_cul = LBReservoirCUL(all_b.LB_RESERVOIRS_CUL_SHEET)
@@ -127,7 +125,24 @@ class PieChartFrame(ChartFrame):
 
         # Nevada
         #
-        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.NV_M_I_OTHER, lb.NV_POWER], lb.NV_TOTAL)
+        lb_tributary_cul = None
+        if show_tributaries:
+            lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
+            lb_tributary_cul.load_df(df_empty)
+            df_utils.add_column_sum(lb_tributary_cul.df,
+                                    [lb.NV_VIRGIN_CUL,
+                                     lb.NV_MUDDY_CUL,
+                                     lb.NV_TRIB_ABOVE_LAKE_MEAD_CUL],
+                                    lb.NV_TRIBUTARY_CUL)
+
+        df_utils.add_columns_across_dfs([(lb_mainstream_cul.df, lb.NV_M_I_OTHER),
+                                         (lb_mainstream_cul.df, lb.NV_AGRICULTURE),
+                                         (lb_mainstream_cul.df, lb.NV_POWER)],
+                                        lb_mainstream_cul.df, lb.NV_TOTAL)
+        if show_tributaries:
+            df_utils.add_columns_across_dfs([(lb_mainstream_cul.df, lb.NV_TOTAL),
+                                             (lb_tributary_cul.df, lb.NV_TRIBUTARY_CUL)],
+                                            lb_mainstream_cul.df, lb.NV_TOTAL)
         pie_wedges.append((lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'))
 
         # Arizona Mainstem
@@ -141,28 +156,39 @@ class PieChartFrame(ChartFrame):
 
         # Arizona Tributary
         #
-        lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
-        lb_tributary_cul.load_df(df_empty)
-        pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
-        df_utils.add_column_sum(lb_tributary_cul.df,
-                                [lb.AZ_LITTLE_COLORADO_CUL, lb.AZ_VIRGIN_CUL,
-                                 lb.AZ_BILL_WILLIAMS_CUL, AZ_TRIB_BELOW_LAKE_MEAD_CUL], lb.AZ_TRIBUTARY_CUL)
-        pie_wedges.append((lb_tributary_cul.df, lb.AZ_TRIBUTARY_CUL, '#ff4040'))
+        if show_tributaries:
+            pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
+            df_utils.add_column_sum(lb_tributary_cul.df,
+                                    [lb.AZ_LITTLE_COLORADO_CUL,
+                                     lb.AZ_VIRGIN_CUL,
+                                     lb.AZ_BILL_WILLIAMS_CUL,
+                                     lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL],
+                                    lb.AZ_TRIBUTARY_CUL)
+            pie_wedges.append((lb_tributary_cul.df, lb.AZ_TRIBUTARY_CUL, '#ff4040'))
+            df_utils.add_columns_across_dfs([
+                (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL),
+                (lb_tributary_cul.df, lb.AZ_GILA_CUL),
+                (lb_tributary_cul.df, lb.AZ_TRIBUTARY_CUL)],
+                lb_mainstream_cul.df, lb.AZ_TOTAL)
+        else:
+            df_utils.add_columns_across_dfs([
+                (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL)],
+                lb_mainstream_cul.df, lb.AZ_TOTAL)
 
-        df_utils.copy_column(lb_tributary_cul.df, lb_mainstream_cul.df, lb.AZ_GILA_CUL)
-        df_utils.copy_column(lb_tributary_cul.df, lb_mainstream_cul.df, lb.AZ_TRIBUTARY_CUL)
-        df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.AZ_COLORADO_RIVER_TOTAL, lb.AZ_GILA_CUL, lb.AZ_TRIBUTARY_CUL], lb.AZ_TOTAL)
+        df_utils.add_columns_across_dfs([
+            (df_ub_cul, ub.UB_RESERVOIR_EVAP),
+            (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP),
+            (lb_mainstream_cul.df, lb.SALTON_INFLOW)],
+            lb_mainstream_cul.df, all_b.EVAP_TOTAL)
 
-        # Evap total
-        df_utils.copy_column(df_ub_cul, lb_mainstream_cul.df, ub.UB_RESERVOIR_EVAP)
-        df_utils.copy_column(lb_reservoirs_cul.df, lb_mainstream_cul.df, lb.LB_RESERVOIR_EVAP)
-
-        df_utils.add_column_sum(lb_mainstream_cul.df, [ub.UB_RESERVOIR_EVAP, lb.LB_RESERVOIR_EVAP, lb.SALTON_INFLOW],
-                                all_b.EVAP_TOTAL)
-
-        df_utils.add_column_sum(lb_mainstream_cul.df, [lb.CA_TOTAL, lb.AZ_TOTAL, lb.NV_TOTAL, lb.LB_RESERVOIR_EVAP],
-                                lb.LB_TOTAL)
+        # df_utils.add_column_sum(lb_mainstream_cul.df, [lb.CA_TOTAL, lb.AZ_TOTAL, lb.NV_TOTAL, lb.LB_RESERVOIR_EVAP],
+        #                         lb.LB_TOTAL)
+        df_utils.add_columns_across_dfs([
+            (lb_mainstream_cul.df, lb.CA_TOTAL),
+            (lb_mainstream_cul.df, lb.AZ_TOTAL),
+            (lb_mainstream_cul.df, lb.NV_TOTAL),
+            (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP)],
+            lb_mainstream_cul.df, lb.LB_TOTAL)
 
         annotations = [
             ("AZ Total", 45, (lb_mainstream_cul.df, lb.AZ_TOTAL)),

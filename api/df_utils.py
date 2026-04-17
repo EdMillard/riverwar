@@ -301,6 +301,71 @@ def add_column_sum(df: pd.DataFrame,
     return df
 
 
+import pandas as pd
+from typing import List, Tuple, Optional
+
+
+def add_columns_across_dfs(
+        sources: List[Tuple[pd.DataFrame, str]],
+        target_df: pd.DataFrame,
+        result_column: str = 'total_sum',
+        key_column: Optional[str] = None,
+        inplace: bool = True,
+        fill_value: float = 0.0
+) -> pd.DataFrame:
+    """
+    Sum columns from multiple DataFrames into target_df, aligned by key_column.
+    """
+    if not isinstance(target_df, pd.DataFrame):
+        raise TypeError("target_df must be a pandas DataFrame")
+
+    if not sources:
+        raise ValueError("sources list cannot be empty")
+
+    target = target_df if inplace else target_df.copy()
+
+    # Auto-detect key column
+    if key_column is None:
+        for candidate in ['Year', 'Date', 'year', 'date', 'Month', 'quarter']:
+            if candidate in target.columns:
+                key_column = candidate
+                break
+        else:
+            raise ValueError("Could not auto-detect key_column. Please specify it.")
+
+    if key_column not in target.columns:
+        raise ValueError(f"Key column '{key_column}' not found in target_df")
+
+    # === CRITICAL FIXES ===
+    # 1. Ensure key_column is the same dtype everywhere
+    target_key = target[key_column].astype(str).str.strip()
+
+    # Initialize result column safely
+    if result_column in target.columns:
+        target[result_column] = pd.to_numeric(target[result_column], errors='coerce')
+    else:
+        target[result_column] = fill_value
+
+    # Make sure it's numeric (prevents object dtype issues)
+    target[result_column] = pd.to_numeric(target[result_column], errors='coerce').fillna(fill_value)
+
+    for src_df, col_name in sources:
+        if col_name not in src_df.columns:
+            raise ValueError(f"Column '{col_name}' not found in source DataFrame")
+
+        # Normalize key in source too
+        src_key = src_df[key_column].astype(str).str.strip()
+        src_map = pd.Series(
+            pd.to_numeric(src_df[col_name], errors='coerce').fillna(fill_value).values,
+            index=src_key
+        )
+
+        # Map and add
+        mapped = target_key.map(src_map).fillna(fill_value)
+        target[result_column] = target[result_column] + mapped
+
+    return target
+
 def subtract_column(
         df: pd.DataFrame,
         col1: str,
