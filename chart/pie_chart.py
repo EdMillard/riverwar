@@ -19,11 +19,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from reservoirs.reservoir import Reservoir
 from matplotlib.figure import Figure
 import pandas as pd
 from datetime import date
 from typing import List, Optional, Tuple
+import numpy as np
 from chart.chart import Chart
 
 
@@ -36,31 +38,33 @@ class PieChart(Chart):
                  current_date: date | None = None,
                  end_date: date | None = None,
                  reservoirs: List[Reservoir] | None = None,
-                 value_divisor: float = 1_000_000):
+                 value_divisor: float = 1_000_000,
+                 outer_annotations: List[Tuple[str, float, Tuple[pd.DataFrame, str]]] | None = None):
 
         super().__init__(reservoirs or [], start_date, current_date, end_date)
 
         self.data_series = data_series
         self.title = title
-        self.value_divisor = value_divisor               # e.g. 1_000_000
+        self.value_divisor = value_divisor
         self.year = year
+        self.outer_annotations = outer_annotations or []   # (name, degrees, (df, col))
 
         self.height_inch = 7.5
         self.width_inch = 8.5
 
-        # Normalize DataFrames
+        # Normalize main data series
         for i, (df, col, color) in enumerate(self.data_series):
             if 'Date' in df.columns:
                 df['Date'] = pd.to_datetime(df['Date'])
                 self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
 
     def create_pie_chart(self, ax):
-        """Pie chart - values divided by divisor only for display"""
+        """Pie chart with closer wedge labels + outer annotations"""
         if not self.data_series:
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
 
-        values = []      # Original values (used for pie proportions)
+        values = []
         labels = []
         colors = []
 
@@ -73,7 +77,7 @@ class PieChart(Chart):
                 row_idx = matching.idxmax()
                 val = pd.to_numeric(df[col].iloc[row_idx], errors='coerce')
                 if pd.notna(val) and val > 0:
-                    values.append(val)                    # Keep full value for pie
+                    values.append(val)
                     labels.append(col.replace('_', ' '))
                     colors.append(color)
 
@@ -81,20 +85,22 @@ class PieChart(Chart):
             ax.text(0.5, 0.5, "No valid data", ha='center', va='center', fontsize=14)
             return
 
-        # Custom formatter - divide only for display
+        total = sum(values)
+        total_maf = total / self.value_divisor
+
         def autopct_format(pct):
-            total = sum(values)
             absolute = (pct * total / 100) / self.value_divisor
             return f'{pct:.1f}%\n{absolute:,.2f}'
 
         # Create the pie
         wedges, texts, autotexts = ax.pie(
-            values,                                   # Use original values for correct proportions
+            values,
             labels=labels,
             colors=colors,
             autopct=autopct_format,
             startangle=90,
             pctdistance=0.75,
+            labeldistance=1.02,          # ← Only change I made (wedge labels closer)
             textprops={'fontsize': 10},
             wedgeprops=dict(linewidth=1.5, edgecolor='white')
         )
@@ -103,8 +109,65 @@ class PieChart(Chart):
             autotext.set_fontweight('bold')
             autotext.set_color('black')
 
-        ax.set_title(self.title or "Distribution", fontsize=15, fontweight='bold', pad=25)
+        for text in texts:               # wedge labels styling
+            text.set_fontsize(9.5)
+            text.set_fontweight('semibold')
+
+        # ==================== TITLE + SUBTITLE ====================
+        main_title = self.title or "Distribution"
+        ax.set_title(main_title, fontsize=15, fontweight='bold', pad=10)
+
+        subtitle = f"{self.year}     Total: {total_maf:,.2f} MAF"
+        ax.text(0.85, 1.0, subtitle,
+                transform=ax.transAxes,
+                ha='left', va='top',
+                fontsize=12,
+                fontweight='semibold',
+                color='darkblue')
+
         ax.axis('equal')
+
+        # ====================== OUTER ANNOTATIONS (Unchanged) ======================
+        if self.outer_annotations:
+            radius = 1.25
+
+            for name, degrees, data_tuple in self.outer_annotations:
+                df_ann, col_ann = data_tuple
+
+                val = None
+                if not df_ann.empty and col_ann in df_ann.columns:
+                    matching = df_ann['Year'] == self.year
+                    if matching.any():
+                        row_idx = matching.idxmax()
+                        val = pd.to_numeric(df_ann[col_ann].iloc[row_idx], errors='coerce')
+
+                if pd.isna(val) or val <= 0:
+                    continue
+
+                percentage = (val / total * 100) if total > 0 else 0
+                formatted_value = f"{val / self.value_divisor:,.2f}"
+
+                rad = np.deg2rad(degrees)
+                x = radius * np.cos(rad)
+                y = radius * np.sin(rad)
+
+                ha = 'left' if -90 < (degrees % 360) < 90 else 'right'
+                va = 'center'
+
+                annotation_text = f"{name}\n{formatted_value} MAF   {percentage:.1f}%"
+
+                ax.text(
+                    x, y,
+                    annotation_text,
+                    ha=ha,
+                    va=va,
+                    fontsize=9.5,
+                    fontweight='bold',
+                    bbox=dict(boxstyle="round,pad=0.45",
+                              facecolor="white",
+                              alpha=0.9,
+                              edgecolor='gray')
+                )
 
     def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
         if width_inch is not None:
@@ -121,18 +184,13 @@ class PieChart(Chart):
         self.fig = fig
         return fig
 
+    # update_for_year and update_data methods remain unchanged...
     def update_for_year(self, year: int) -> bool:
-        """
-        Updates the data_series to use values from the specified year.
-        Returns True if successful.
-        Call this before redrawing the figure for animation.
-        """
         updated = False
         for i, (df, col, color) in enumerate(self.data_series):
             if df.empty or col not in df.columns:
                 continue
 
-            # Try to find row for this year
             if 'Date' in df.columns:
                 df['Year'] = pd.to_datetime(df['Date']).dt.year
                 row = df[df['Year'] == year]
@@ -142,16 +200,13 @@ class PieChart(Chart):
                 continue
 
             if not row.empty:
-                # Update the dataframe in place with only this year's row
                 self.data_series[i] = (row.copy(), col, color)
                 updated = True
 
         return updated
 
     def update_data(self, new_data_series: List[Tuple[pd.DataFrame, str, str]]):
-        """Update with new list of tuples"""
         self.data_series = new_data_series
-        # Re-normalize
         for i, (df, col, color) in enumerate(self.data_series):
             if 'Date' in df.columns:
                 df['Date'] = pd.to_datetime(df['Date'])

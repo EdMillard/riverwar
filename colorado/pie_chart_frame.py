@@ -23,8 +23,7 @@ SOFTWARE.
 """
 from datetime import date
 import pandas as pd
-from typing import List
-
+from typing import List, Optional
 from colorado.lb import AZ_TRIB_BELOW_LAKE_MEAD_CUL
 from sheet import sheet
 from colorado.lb_mainstream_cul import LBMainstreamCUL
@@ -66,8 +65,8 @@ class PieChartFrame(ChartFrame):
 
         pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
         pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
-        pie_wedges.append((df_ub_cul, ub.CU_WY, '#c0c0ff'))
-        pie_wedges.append((df_ub_cul, ub.CU_NM, '#a0a0ff'))
+        pie_wedges.append((df_ub_cul, ub.CU_WY, '#a0a0ff'))
+        pie_wedges.append((df_ub_cul, ub.CU_NM, '#c0c0ff'))
         df_utils.add_column_sum(df_ub_cul,
                                 [ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                                  ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY],
@@ -83,19 +82,24 @@ class PieChartFrame(ChartFrame):
         pie_wedges.append((lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP, 'gold'))
 
         df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.CA_M_I_OTHER, lb.CA_AGRICULTURE], lb.CA_IN_BASIN)
+                                [lb.CA_M_I_OTHER, lb.CA_AGRICULTURE], lb.CA_MAINSTEM)
         pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#ff80d0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.CA_IN_BASIN, '#ffa0d0'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.CA_MAINSTEM, '#ffa0d0'))
+        df_utils.add_column_sum(lb_mainstream_cul.df,
+                                [lb.CA_OUTSIDE_SYSTEM, lb.CA_MAINSTEM], lb.CA_TOTAL)
 
         df_utils.add_column_sum(lb_mainstream_cul.df,
                                 [lb.NV_M_I_OTHER, lb.NV_POWER], lb.NV_TOTAL)
         pie_wedges.append((lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'))
 
         df_utils.add_column_sum(lb_mainstream_cul.df,
-                                [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_TOTAL)
+                                [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_MAINSTEM)
         df_utils.rename_column(lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, lb.AZ_CAP, inplace=True)
-        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_CAP, '#ffa0a0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_TOTAL, '#ff8080'))
+        df_utils.add_column_sum(lb_mainstream_cul.df,
+                                [lb.AZ_CAP, lb.AZ_MAINSTEM], lb.AZ_COLORADO_RIVER_TOTAL)
+
+        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_MAINSTEM, '#ffa0a0'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_CAP,  '#ff8080'))
 
         pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
         df_utils.add_column_sum(lb_tributary_cul.df,
@@ -103,8 +107,23 @@ class PieChartFrame(ChartFrame):
                                  lb.AZ_BILL_WILLIAMS_CUL, AZ_TRIB_BELOW_LAKE_MEAD_CUL], lb.AZ_TRIBUTARY_CUL)
         pie_wedges.append((lb_tributary_cul.df, lb.AZ_TRIBUTARY_CUL, '#ff4040'))
 
+        df_utils.copy_column(lb_tributary_cul.df, lb_mainstream_cul.df, lb.AZ_GILA_CUL)
+        df_utils.copy_column(lb_tributary_cul.df, lb_mainstream_cul.df, lb.AZ_TRIBUTARY_CUL)
+        df_utils.add_column_sum(lb_mainstream_cul.df,
+                                [lb.AZ_COLORADO_RIVER_TOTAL, lb.AZ_GILA_CUL, lb.AZ_TRIBUTARY_CUL], lb.AZ_TOTAL)
+
+        annotations = [
+            ("AZ Total", 45, (lb_mainstream_cul.df, lb.AZ_TOTAL)),
+            ("AZ Colorado River", 30, (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL)),
+            ("CA Total", 290, (lb_mainstream_cul.df, lb.CA_TOTAL)),
+            ("Upper Basin Total", 140, (df_ub_cul, ub.III_A_UB)),
+        ]
+
         pie_chart = PieChart(
-            pie_wedges, title='Colorado River Consumptive Use Losses', year=2018
+            pie_wedges,
+            title='Colorado River Consumptive Use Losses',
+            year=2018,
+            outer_annotations=annotations
         )
         self.charts.append(pie_chart)
 

@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from datetime import date
 import numpy as np
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 import pandas as pd
 
 
@@ -334,3 +334,62 @@ def rename_column(
         raise TypeError("old_name must be a string or a dictionary")
 
     return df_copy
+
+def copy_column(
+        source_df: pd.DataFrame,
+        target_df: pd.DataFrame,
+        column_name: str,
+        new_name: Optional[str] = None,
+        key_column: Optional[str] = None,
+        inplace: bool = True
+) -> pd.DataFrame:
+    """
+    Copy a column from source_df to target_df, aligning on a key column (Year/Date).
+    Creates the column if it doesn't exist.
+
+    Parameters:
+        source_df (pd.DataFrame): Source DataFrame
+        target_df (pd.DataFrame): Target DataFrame
+        column_name (str): Column to copy from source
+        new_name (str, optional): Name to use in target (default = column_name)
+        key_column (str, optional): Column to match on (auto-detects 'Year' or 'Date')
+        inplace (bool): Modify target_df in place if True
+
+    Returns:
+        pd.DataFrame: Target DataFrame with the copied column
+    """
+    if column_name not in source_df.columns:
+        raise KeyError(f"Column '{column_name}' not found in source DataFrame")
+
+    # Auto-detect key column if not provided
+    if key_column is None:
+        for candidate in ['Year', 'Date', 'year', 'date']:
+            if candidate in source_df.columns and candidate in target_df.columns:
+                key_column = candidate
+                break
+        else:
+            raise ValueError("No common key column (Year/Date) found. Please specify key_column.")
+
+    if key_column not in source_df.columns or key_column not in target_df.columns:
+        raise ValueError(f"Key column '{key_column}' not found in both DataFrames")
+
+    # Use new name or original
+    target_col_name = new_name if new_name is not None else column_name
+
+    if inplace:
+        target = target_df
+    else:
+        target = target_df.copy()
+
+    # Create a mapping from source: key → value
+    source_map = source_df.set_index(key_column)[column_name]
+
+    # Assign to target (aligns on key_column)
+    target[target_col_name] = target[key_column].map(source_map)
+
+    # Optional: Warn if many values couldn't be matched
+    missing = target[target_col_name].isna().sum()
+    if missing > 0:
+        print(f"Warning: {missing} rows in target could not be matched on '{key_column}'")
+
+    return target
