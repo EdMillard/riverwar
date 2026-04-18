@@ -722,7 +722,7 @@ def download_usbr_24mo_reports(
                     continue
 
                 try:
-                    print(f"Downloading: {year}/{filename} ... {file_url}", end="")
+                    print(f"Downloading: {year}/{filename} ... {file_url} ", end="")
                     r = session.get(file_url, timeout=30)
 
                     if r.status_code == 200 and len(r.content) > 5000:
@@ -730,6 +730,7 @@ def download_usbr_24mo_reports(
                         print("✅ Done")
                     else:
                         print("Not found")
+                        return
                 except Exception as e:
                     print(f"Failed: {e}")
 
