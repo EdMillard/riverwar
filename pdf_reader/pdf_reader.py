@@ -5,12 +5,10 @@ import camelot
 import camelot.utils as utils
 import camelot.core
 import matplotlib
-import pdfplumber
 import pandas as pd
 import re
-from typing import List, Tuple
 import warnings
-from typing import List, Optional
+from typing import Optional
 import time
 import requests
 import math
@@ -102,7 +100,7 @@ def get_reservoir_names(pdf_path: str | Path) -> List[Tuple[int, str]]:
             if len(title_candidates) < 4:
                 continue
 
-            report = title_candidates[2]
+            # report = title_candidates[2]
             reservoir = title_candidates[3]
 
             if 'Lake' in reservoir or 'Reservoir' in reservoir:
@@ -251,9 +249,7 @@ def extract_reservoir_tables(pdf_path: str | Path, output_dir: str = "extracted_
 def read_reservoir_camelot(
     report_path: Path,
     out_path: Path,
-    reservoir_page_names,
-    max_pages: int = 200,
-    lattice: bool = False
+    reservoir_page_names
 ) -> List[Tuple[int, str, pd.DataFrame]]:
     """
     Reads PDF one page at a time using camelot.
@@ -592,7 +588,7 @@ def usbr_24_month_to_csv(reservoirs: List[Tuple[int, str, pd.DataFrame]], path: 
 
     table_num = 0
 
-    for page_num, reservoir_name, df in reservoirs:
+    for page_num, name, df in reservoirs:
         table_num += 1
         if 'Reservoir' in name or 'Lake' in name or 'Power' in name or 'Flood' in name:
             if 'Powell' in name:
@@ -717,16 +713,16 @@ def download_usbr_24mo_reports(
                     if not 'Chart' in filename:
                         out_path = Path(local_path.with_suffix(''))
                         # FIXME - RESTORE THIS
-                        # if not out_path.exists():
-                        # extract_reservoir_tables(local_path, Path('tmp/'))
-                        reservoir_page_names = get_reservoir_names(local_path)
-                        # extract_reservoir_tables(local_path, str(out_path))
-                        reservoirs = read_reservoir_camelot(local_path, out_path, reservoir_page_names, lattice=True)
-                        # usbr_24_month_to_csv(reservoirs, out_path)
+                        if not out_path.exists():
+                            # extract_reservoir_tables(local_path, Path('tmp/'))
+                            reservoir_page_names = get_reservoir_names(local_path)
+                            # extract_reservoir_tables(local_path, str(out_path))
+                            reservoirs = read_reservoir_camelot(local_path, out_path, reservoir_page_names)
+                            # usbr_24_month_to_csv(reservoirs, out_path)
                     continue
 
                 try:
-                    print(f"Downloading: {year}/{filename} ... ", end="")
+                    print(f"Downloading: {year}/{filename} ... {file_url}", end="")
                     r = session.get(file_url, timeout=30)
 
                     if r.status_code == 200 and len(r.content) > 5000:
@@ -743,7 +739,7 @@ def download_usbr_24mo_reports(
 
 
 if __name__ == "__main__":
-    years = [2026, 2027]
+    years = [2026]
     download_usbr_24mo_reports(years=years)
     # https://www.usbr.gov/lc/region/g4000/24mo/index.html
     # report_path = Path('/opt/dev/riverwar/data/USBR_24_Month/March_2026/24mo.pdf')
