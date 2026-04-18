@@ -114,7 +114,7 @@ class LakePowell(Reservoir):
         headers_24_month = list(self.df_24_month.columns.astype(str))
         df: pd.DataFrame = df_utils.create_monthly_df(self.water_year_info.start_date, self.water_year_info.end_date,
                                                    headers_24_month)
-        Reservoir.usbr_monthly(df, self.usbr_rise_inflow_af_id, self.water_year, "Unregulated Inflow", month=all_b.WY)
+        Reservoir.usbr_monthly(df, self.usbr_rise_inflow_af_id, self.water_year, "Regulated Inflow", month=all_b.WY)
         Reservoir.usbr_monthly(df, self.usbr_rise_release_af_id, self.water_year, "Total Release", month=all_b.WY)
         Reservoir.usbr_monthly(df, self.usbr_rise_evap_af_id, self.water_year, "Evaporation Losses", month=all_b.WY)
 
@@ -127,11 +127,7 @@ class LakePowell(Reservoir):
         # df_diff = df_utils.subtract_dataframes(self.df_monthly, self.df_24_month)
 
         df_utils.subtract_constant(self.df_daily, ub.POWELL_WY, ub.POWELL_ABOVE_3500, self.power_head_min_af)
-        # initial_value = self.df_daily[ub.POWELL_WY].iloc[0]
-        Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
-                                                       monthly_value_col='End Of Month Storage',
-                                                       daily_target_col=ub.POWELL_MOST)
-        df_utils.subtract_constant(self.df_daily, ub.POWELL_MOST, ub.POWELL_MOST, self.power_head_min_af)
+        self.get_projection(self.df_24_month, ub.POWELL_MOST)
 
         # self.evap_actual_af = self.get_evaporation(510, ub.POWELL_EVAPORATION_WY)
         # self.evap_actual_af = self.get_sum_end_of_month(510)
@@ -146,7 +142,6 @@ class LakePowell(Reservoir):
         # Outflow
         # sheet.usbr_annuals(self.df, usbr_lake_powell_release_total_af, self.water_year, self.water_year, title=ub.GLEN_CANYON_WY, month=all_b.WY, divisor=1)
         # self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.GLEN_CANYON_WY)
-
 
     def af_for_elevation(self, feet:float|int):
         return LakePowell.get_capacity(feet, elev_col='Elevation_ft_NAVD88', cap_col='Capacity_acrefeet') - self.dead_pool_af

@@ -110,7 +110,7 @@ class ChartFrame(wx.Frame):
             self.splitter.SplitHorizontally(self.charts[0].panel, self.charts[1].panel)
 
             sizer = wx.BoxSizer(wx.VERTICAL)
-            sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=5)
+            sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=1)
             self.combined_panel.SetSizer(sizer)
 
         elif len(self.charts) == 1:

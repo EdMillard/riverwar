@@ -19,13 +19,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from reservoirs.reservoir import Reservoir
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date
 from typing import List, Optional, Tuple
 from chart.chart import Chart
+
 
 class LineChart(Chart):
     """
@@ -37,15 +40,21 @@ class LineChart(Chart):
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
-                 reservoirs: List[Reservoir] | None = None):
+                 reservoirs: List[Reservoir] | None = None,
+                 show_x_labels: bool = True,
+                 y_label: str = 'Volume (Million Acre-Feet)',
+                 y_divisor: float = 1_000_000):           # ← New option
 
         super().__init__(reservoirs or [], start_date, current_date, end_date)
 
         self.data_series = data_series
         self.title = title
+        self.show_x_labels = show_x_labels
+        self.y_divisor = y_divisor
+        self.y_label = y_label
 
-        self.height_inch = 6.0
-        self.width_inch = 10.5   # Slightly wider for better month labels
+        self.height_inch = 5.5
+        self.width_inch = 10.5
         self.y_max = None
 
         # Normalize DataFrames
@@ -69,7 +78,7 @@ class LineChart(Chart):
         self.fig = fig
         return fig
 
-    def create_line_chart(self, ax, y_label='Volume (Million Acre-Feet)'):
+    def create_line_chart(self, ax):
         if not self.data_series:
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
@@ -86,35 +95,45 @@ class LineChart(Chart):
                     color=color)
 
         # ==================== FORMATTING ====================
-        ax.set_title(self.title or "Daily Values", fontsize=14, fontweight='bold', pad=15)
-        ax.set_xlabel("Date", fontsize=12, fontweight='bold')
-        ax.set_ylabel(y_label, fontsize=12, fontweight='bold')
+        ax.set_ylabel(self.y_label, fontsize=12, fontweight='bold')
 
-        # === MONTH YEAR LABELS (What you wanted) ===
-        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))        # One label per month
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))        # "Apr 2025"
+        if self.title and str(self.title).strip():
+            ax.set_title(self.title, fontsize=14, fontweight='bold', pad=15)
 
-        # Optional: Show every 2 or 3 months if too crowded
-        # ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+        # === X-AXIS ===
+        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
 
+        if not self.show_x_labels:
+            ax.set_xticklabels([])
+            ax.tick_params(axis='x', which='major', length=0)
+
+        # === Y-AXIS: Scaled by y_divisor ===
+        def scaled_formatter(x, pos):
+            if self.y_divisor == 1:
+                return f'{x:,.0f}'
+            else:
+                return f'{x / self.y_divisor:,.2f}'
+
+        ax.yaxis.set_major_formatter(ticker.FuncFormatter(scaled_formatter))
+        ax.yaxis.set_major_locator(ticker.AutoLocator())
+        ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+
+        # === TIGHTER BOTTOM MARGIN WHEN X LABELS ARE HIDDEN ===
         fig = ax.get_figure()
+        if not self.show_x_labels:
+            fig.subplots_adjust(bottom=0.08)   # Much tighter bottom
+        else:
+            fig.subplots_adjust(bottom=0.15)   # Normal spacing with labels
+
         fig.autofmt_xdate(rotation=45, ha='right')
 
         ax.grid(True, linestyle='--', alpha=0.7)
 
-        # ==================== BOLD Y=0 ORIGIN LINE ====================
+        # Bold Y=0 origin line
         ax.axhline(y=0, color='black', linewidth=2.5, linestyle='-', alpha=0.9, zorder=3)
 
         ax.legend(fontsize=10.5, loc='best')
 
         if self.y_max is not None:
             ax.set_ylim(0, self.y_max)
-
-    def update_data(self, new_data_series: List[Tuple[pd.DataFrame, str, str]]):
-        """Update with new list of tuples"""
-        self.data_series = new_data_series
-        # Re-normalize dates
-        for i, (df, col, color) in enumerate(self.data_series):
-            if 'Date' in df.columns:
-                df['Date'] = pd.to_datetime(df['Date'])
-                self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)

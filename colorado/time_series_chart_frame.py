@@ -21,10 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
+from datetime import datetime, timedelta
 import wx
 import matplotlib
 from datetime import date
 import os
+import api.df_utils as df_utils
 from typing import List
 from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
@@ -95,6 +97,11 @@ class TimeSeriesChartFrame(ChartFrame):
             if reservoir.name == 'Lake Powell':
                 time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
                 time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
+                prev_path = previous_month_path(Path(reservoir.report_path))
+                df_24_month_prev, df_24_wy_prev = prev = reservoir.load_24_month(prev_path, reservoir.name)
+                reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
+                time_series.append((reservoir.df_daily, 'Powell Most MAR26', '#6060ff'))
+                df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
             elif reservoir.name == 'Lake Mead':
                 time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
                 time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
@@ -102,8 +109,59 @@ class TimeSeriesChartFrame(ChartFrame):
                 time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050'))
                 time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
         line_chart = LineChart(
-            time_series, title='MAR26 24 Month Reservoir Storage Above Critical Elevation',
+            time_series, title='Reservoir Storage Above Critical Elevation',
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
+            show_x_labels = False
+        )
+        self.charts.append(line_chart)
+
+        time_series = []
+        for reservoir in self.reservoirs:
+            if reservoir.name == 'Lake Powell':
+                if reservoir.report_path is not None:
+                    time_series.append((reservoir.df_daily, 'Diff', 'maroon'))
+        line_chart = LineChart(
+            time_series, title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date
         )
         self.charts.append(line_chart)
+
+
+def previous_month_path(path: Path) -> Path:
+    """
+    Takes a path like: /.../2026/APR26
+    Returns:          /.../2026/MAR26
+
+    Handles year rollover: JAN26 → DEC25
+    """
+    path_str = str(path)
+
+    # Match the year and month code (e.g. 2026/APR26)
+    import re
+    match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})$', path_str)
+    if not match:
+        raise ValueError(f"Could not find month-year pattern in path: {path}")
+
+    year_str = match.group(1)
+    month_code = match.group(2)  # e.g. APR26
+
+    # Parse to datetime
+    dt = datetime.strptime(month_code, '%b%y')
+    dt = dt.replace(year=int(year_str))
+
+    # Go to previous month
+    if dt.month == 1:
+        prev_dt = dt.replace(year=dt.year - 1, month=12, day=1)
+    else:
+        prev_dt = dt.replace(month=dt.month - 1, day=1)
+
+    # Format back to APR26 style
+    new_month_code = prev_dt.strftime('%b%y').upper()
+
+    # Replace in the original path
+    new_path_str = re.sub(r'/(\d{4})/[A-Z]{3}\d{2}$',
+                          f'/{prev_dt.year}/{new_month_code}',
+                          path_str)
+
+    return Path(new_path_str)
 

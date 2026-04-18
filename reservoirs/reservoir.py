@@ -81,6 +81,8 @@ class Reservoir:
         self.headers = headers
         self.df: Optional[pd.DataFrame] = df_utils.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: Optional[pd.DataFrame] = None
+
+        self.report_path: Optional[str|None] = ''
         self.df_24_month: Optional[pd.DataFrame] = None
         self.df_24_wy: Optional[pd.DataFrame] = None
         self.date_time:TimeStamp = TimeStamp(1970, 1, 1)
@@ -171,13 +173,15 @@ class Reservoir:
         self.emd_month_year_projected = end_date.strftime("%b %Y")
 
         if report_path is not None:
-            self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
-            start_str = self.df_24_month['Date'].iloc[0]
-            end_str = self.df_24_month['Date'].iloc[-1]
-            self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
-            end_date = pd.to_datetime(end_str, format="%b %Y").date()
-            self.report_end_date = Reservoir.get_end_of_month(end_date)
-            self.df_daily = df_utils.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
+            if self.report_path != report_path:
+                self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
+                start_str = self.df_24_month['Date'].iloc[0]
+                end_str = self.df_24_month['Date'].iloc[-1]
+                self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
+                end_date = pd.to_datetime(end_str, format="%b %Y").date()
+                self.report_end_date = Reservoir.get_end_of_month(end_date)
+                self.df_daily = df_utils.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
+                self.report_path = report_path
         else:
             self.df_daily = df_utils.create_daily_df(self.start_date, self.end_date, self.headers)
             self.report_start_date = self.start_date
@@ -185,6 +189,13 @@ class Reservoir:
         
     def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
         pass
+
+    def get_projection(self, df_monthly:pd.DataFrame, column_name:str, monthly_column_name:str ='End Of Month Storage'):
+        # initial_value = self.df_daily[ub.POWELL_WY].iloc[0]
+        Reservoir.interpolate_monthly_storage_to_daily(df_monthly, self.df_daily,
+                                                       monthly_value_col=monthly_column_name,
+                                                       daily_target_col=column_name)
+        df_utils.subtract_constant(self.df_daily, column_name, column_name, self.power_head_min_af)
 
     def copy(self):
         return copy.copy(self)
