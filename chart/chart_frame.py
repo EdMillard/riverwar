@@ -230,8 +230,9 @@ class ChartFrame(wx.Frame):
         if report_list and len(report_list) > 0:
             dir_names = [Path(p).name for p in report_list]
             self.report_choice = wx.Choice(top_toolbar, choices=dir_names)
-            self.report_choice.SetSelection(len(dir_names) - 2)
-            self.report_path = self.report_list[len(dir_names) - 2]
+            last_report = report_list[-1]
+            self.report_choice.SetSelection(len(dir_names) - 1 )
+            self.report_path = last_report
             self.report_choice.SetToolTip("Select report directory")
             self.report_choice.Bind(wx.EVT_CHOICE, self.on_report_selected)
             tb_sizer.Add(self.report_choice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
