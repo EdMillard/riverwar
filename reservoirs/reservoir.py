@@ -82,6 +82,7 @@ class Reservoir:
         self.df: Optional[pd.DataFrame] = df_utils.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: Optional[pd.DataFrame] = None
         self.df_24_month: Optional[pd.DataFrame] = None
+        self.df_24_wy: Optional[pd.DataFrame] = None
         self.date_time:TimeStamp = TimeStamp(1970, 1, 1)
 
         # Month Year Range

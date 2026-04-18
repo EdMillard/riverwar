@@ -28,8 +28,8 @@ import matplotlib
 import os
 from typing import List
 # from colorado.pie_chart_frame import PieChartFrame
-from colorado.reservoir_chart_frame import ReservoirChartFrame
-# from colorado.time_series_chart_frame import TimeSeriesChartFrame
+# from colorado.reservoir_chart_frame import ReservoirChartFrame
+from colorado.time_series_chart_frame import TimeSeriesChartFrame
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -63,7 +63,7 @@ def filter_and_sort_usbr_reports(paths):
         # Extract year and month code (only for main reports)
         match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})$', path)  # Note: $ ensures nothing after month code
         if not match:
-            return (datetime.min, path)
+            return datetime.min, path
 
         year = int(match.group(1))
         month_code = match.group(2)
@@ -73,7 +73,7 @@ def filter_and_sort_usbr_reports(paths):
         except ValueError:
             dt = datetime.min
 
-        return (dt, path)
+        return dt, path
 
     # First filter: keep only paths that do NOT have _XXX after the month/year
     filtered = [p for p in paths if re.search(r'/(\d{4})/[A-Z]{3}\d{2}$', str(p))]
@@ -112,13 +112,16 @@ if __name__ == "__main__":
 
     app = wx.App(False)
 
-    frame = ReservoirChartFrame(reservoirs, lake_powell.date_time, reports)
-    frame.Show()
+    # frame = ReservoirChartFrame(reservoirs, lake_powell.date_time, reports)
+    # frame.Show()
 
     # frame = PieChartFrame(reservoirs, lake_powell.date_time, reports)
     # frame.Show()
 
-    # frame = TimeSeriesChartFrame(reservoirs, lake_powell.date_time, reports)
-    # frame.Show()
+    reservoirs = [
+        lake_mead, lake_powell, flaming_gorge
+    ]
+    frame = TimeSeriesChartFrame(reservoirs, lake_powell.date_time, reports)
+    frame.Show()
 
     app.MainLoop()

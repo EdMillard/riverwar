@@ -21,6 +21,9 @@ SOFTWARE.
 """
 from pathlib import Path
 from datetime import date
+import pandas as pd
+from api import df_utils
+import colorado.allb as all_b
 from reservoirs.reservoir import Reservoir
 import colorado.ub as ub
 from typing import List, Optional
@@ -66,8 +69,6 @@ class FlamingGorge(Reservoir):
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
-
-
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
 
         self.load_date(report_path, start_date, current_date, end_date)
@@ -82,6 +83,25 @@ class FlamingGorge(Reservoir):
         # self.inflow_unregulated_af = self.get_daily_and_last(self.usbr_rise_inflow_unregulated_af_id, ub.FLAMING_GORGE_INFLOW_UNREGULATED)
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.FLAMING_GORGE_RELEASE_CFS)
         # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.FLAMING_GORGE_RELEASE)
+
+        # Actual from USBR/USGS
+        headers_24_month = list(self.df_24_month.columns.astype(str))
+        df: pd.DataFrame = df_utils.create_monthly_df(self.water_year_info.start_date, self.water_year_info.end_date,
+                                                   headers_24_month)
+        Reservoir.usbr_monthly(df, self.usbr_rise_inflow_af_id, self.water_year, "Unregulated Inflow", month=all_b.WY)
+        Reservoir.usbr_monthly(df, self.usbr_rise_release_af_id, self.water_year, "Total Release", month=all_b.WY)
+        Reservoir.usbr_monthly(df, self.usbr_rise_evap_af_id, self.water_year, "Evaporation Losses", month=all_b.WY)
+
+        Reservoir.usbr_end_of_month(df, self.usbr_rise_elevation_ft_id, self.water_year,
+                                    "Reservoir Elevation End of Month ft", month=all_b.WY)
+        Reservoir.usbr_end_of_month(df, self.usbr_rise_storage_af_id, self.water_year, "Live Storage",
+                                    month=all_b.WY)
+
+        df_utils.subtract_constant(self.df_daily, ub.FLAMING_GORGE_WY, ub.FLAMING_GORGE_ABOVE_5868, self.power_head_min_af)
+        Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
+                                                       monthly_value_col='Live Storage',
+                                                       daily_target_col=ub.FLAMING_GORGE_MOST)
+        df_utils.subtract_constant(self.df_daily, ub.FLAMING_GORGE_MOST, ub.FLAMING_GORGE_MOST, self.power_head_min_af)
 
         # usbr_flaming_gorge_storage_af = 337
         # sheet.usbr_last_value(self.df, usbr_flaming_gorge_storage_af, self.water_year, self.water_year,

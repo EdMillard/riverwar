@@ -98,6 +98,9 @@ class TimeSeriesChartFrame(ChartFrame):
             elif reservoir.name == 'Lake Mead':
                 time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
                 time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
+            elif reservoir.name == 'Flaming Gorge':
+                time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050'))
+                time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
         line_chart = LineChart(
             time_series, title='MAR26 24 Month Reservoir Storage Above Critical Elevation',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date

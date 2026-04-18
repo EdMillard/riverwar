@@ -123,8 +123,8 @@ class LakePowell(Reservoir):
         Reservoir.usbr_end_of_month(df, self.usbr_rise_storage_af_id, self.water_year, "End Of Month Storage",
                                     month=all_b.WY)
 
-        self.df_monthly = df
-        df_diff = df_utils.subtract_dataframes(self.df_monthly, self.df_24_month)
+        # self.df_monthly = df
+        # df_diff = df_utils.subtract_dataframes(self.df_monthly, self.df_24_month)
 
         df_utils.subtract_constant(self.df_daily, ub.POWELL_WY, ub.POWELL_ABOVE_3500, self.power_head_min_af)
         # initial_value = self.df_daily[ub.POWELL_WY].iloc[0]
