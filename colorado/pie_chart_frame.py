@@ -129,6 +129,12 @@ class PieChartFrame(ChartFrame):
                                 ub.UB_RESERVOIR_EVAP)
         pie_wedges.append((df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'))
 
+        # ====================== LAKE POWELL ======================
+        df_powell: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, [ub.POWELL])
+        usbr_lake_powell_storage_af = 509
+        sheet.usbr_last_value(df_powell, usbr_lake_powell_storage_af, self.start_year, self.end_year, month=all_b.WY,
+                              title=ub.POWELL, divisor=1)
+
         # ====================== LOWER BASIN ======================
         df_empty = pd.DataFrame()
 
@@ -284,10 +290,15 @@ class PieChartFrame(ChartFrame):
         sheet.lf_natural_flow_from_excel(df_natural_flow, column_name=ub.SUPPLY)
         df_natural_flow[ub.SUPPLY] = df_natural_flow[ub.SUPPLY] * 1_000_000
 
-        line_groups = [("Demand", [(lb_mainstream_cul.df, all_b.DEMAND, 'black')])
-]
+        overlay_lines = [
+            (lb_mainstream_cul.df, all_b.DEMAND, 'darkred'),
+        ]
+
+        underlay_lines = [
+            (df_powell, ub.POWELL, 'darkblue',  {"linestyle": "dotted", "marker": "", "linewidth": 2.0, "label": "Lake Powell"}),
+        ]
         bar_groups = [
-            ('Supply', [(df_natural_flow, ub.SUPPLY, 'green')])]
+            ('Supply', [(df_natural_flow, ub.SUPPLY, 'royalblue')])]
         a = [('Demand', [
                 (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
                 (lb_mainstream_cul.df, lb.CA_TOTAL, '#c040c0'),
@@ -297,7 +308,8 @@ class PieChartFrame(ChartFrame):
             ]
         self.multi_bar_chart = MultiBarChart(
             groups=bar_groups,
-            line_groups=line_groups,
+            underlay_lines=underlay_lines,
+            overlay_lines=overlay_lines,
             title="Colorado River Supply vs Demand",
         )
         self.charts.append(self.multi_bar_chart)

@@ -53,7 +53,6 @@ class Compact(Sheet):
         sheets.append(self)
 
     def load_df(self, df_compact : pd.DataFrame) -> None:
-
         sheet.usgs_annuals(self.df, '09522000', self.start_year, self.end_year, title=lb.NIB_MORELOS_USGS)
 
         sheet.upper_basin_cul_from_excel(self.df)

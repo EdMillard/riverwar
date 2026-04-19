@@ -24,14 +24,18 @@ from matplotlib.figure import Figure
 import pandas as pd
 import numpy as np
 from datetime import date
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 from chart.chart import Chart
 from collections import defaultdict
+
 
 class MultiBarChart(Chart):
     def __init__(self,
                  groups: List[Tuple[str, List[Tuple[pd.DataFrame, str, str]]]],
-                 line_groups: List[Tuple[str, List[Tuple[pd.DataFrame, str, str]]]] | None = None,  # ← NEW
+                 underlay_lines: List[Tuple[pd.DataFrame, str, str] |
+                                   Tuple[pd.DataFrame, str, str, Dict[str, Any]]] | None = None,
+                 overlay_lines: List[Tuple[pd.DataFrame, str, str] |
+                                   Tuple[pd.DataFrame, str, str, Dict[str, Any]]] | None = None,
                  title: str = "",
                  start_date: date | None = None,
                  current_date: date | None = None,
@@ -44,7 +48,9 @@ class MultiBarChart(Chart):
         super().__init__(reservoirs or [], start_date, current_date, end_date)
 
         self.groups = groups
-        self.line_groups = line_groups or []
+        self.underlay_lines = underlay_lines or []
+        self.overlay_lines = overlay_lines or []
+
         self.title = title
         self.value_divisor = value_divisor
         self.annotations = annotations or []
@@ -54,14 +60,10 @@ class MultiBarChart(Chart):
         self.ax = None
         self.fig = None
 
-        # Store originals
+        # Store originals for safety
         self.original_groups = [
             (label, [(df.copy(), col, color) for df, col, color in series_list])
             for label, series_list in groups
-        ]
-        self.original_line_groups = [
-            (label, [(df.copy(), col, color) for df, col, color in series_list])
-            for label, series_list in self.line_groups
         ]
 
     def _get_yearly_stacked_data(self, series: List[Tuple[pd.DataFrame, str, str]]) -> dict:
@@ -101,16 +103,15 @@ class MultiBarChart(Chart):
         return yearly
 
     def create_bar_chart(self, ax):
-        """Draw stacked bars with overlay lines — fixed x-alignment"""
+        """Draw stacked bars with underlay lines (behind) and overlay lines (on top)"""
         if not self.groups:
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
 
         ax.clear()
 
-        # === 1. Collect data ===
+        # Collect bar data
         group_data = []
-        line_data = []
         all_years = set()
 
         for group_label, series_list in self.groups:
@@ -119,19 +120,13 @@ class MultiBarChart(Chart):
             for year in yearly:
                 all_years.add(year)
 
-        for group_label, series_list in self.line_groups:
-            yearly = self._get_yearly_line_data(series_list)
-            line_data.append((group_label, yearly))
-            for year in yearly:
-                all_years.add(year)
-
         years = sorted(y for y in all_years if 1971 <= y <= 2024)
         if not years:
             ax.text(0.5, 0.5, "No valid yearly data", ha='center', va='center', fontsize=14)
             return
 
-        x = np.arange(len(years))  # ← Bar positions
-        year_to_idx = {year: i for i, year in enumerate(years)}  # ← Mapping for lines
+        x = np.arange(len(years))
+        year_to_idx = {year: i for i, year in enumerate(years)}
 
         n_groups = len(self.groups)
         group_width = 0.78 / n_groups if n_groups > 0 else 0.6
@@ -139,7 +134,10 @@ class MultiBarChart(Chart):
 
         max_height = 0.0
 
-        # === 2. Plot Bars ===
+        # 1. UNDERLAY LINES (behind bars)
+        self._plot_lines(ax, self.underlay_lines, year_to_idx, zorder=1, linewidth=2.8, alpha=0.85)
+
+        # 2. BARS
         for g_idx, (_, yearly_data) in enumerate(group_data):
             bar_positions = x - 0.4 + (g_idx + 0.5) * group_width
 
@@ -149,64 +147,27 @@ class MultiBarChart(Chart):
                     height = val / self.value_divisor
                     ax.bar(bar_positions[i], height, width=group_width - spacing,
                            bottom=bottom, color=color, edgecolor='white',
-                           linewidth=0.8, label=label)
+                           linewidth=0.8, label=label, zorder=5)
                     bottom += height
                     max_height = max(max_height, bottom)
 
                 total = sum(v[0] for v in yearly_data.get(year, [])) / self.value_divisor
                 if total > 1:
                     ax.text(bar_positions[i], total + 0.12, f"{total:.1f}",
-                            ha='center', va='bottom', fontsize=8.5, fontweight='bold')
+                            ha='center', va='bottom', fontsize=8.5, fontweight='bold', zorder=6)
 
-        # === 3. Plot Lines (aligned to bar x-positions) ===
-        if line_data:
-            for _, yearly_line_data in line_data:
-                series_dict = defaultdict(lambda: {'x': [], 'y': [], 'color': None})
+        # 3. OVERLAY LINES (on top of bars)
+        self._plot_lines(ax, self.overlay_lines, year_to_idx, zorder=12, linewidth=3.2, alpha=0.95)
 
-                for year, items in yearly_line_data.items():
-                    if year not in year_to_idx:
-                        continue
-                    idx = year_to_idx[year]
+        # Final formatting
+        ax.set_ylim(0, max_height * 1.13 if max_height > 0 else 20)
 
-                    for val, label, color in items:
-                        series_dict[label]['x'].append(idx)
-                        series_dict[label]['y'].append(val / self.value_divisor)
-                        if series_dict[label]['color'] is None:
-                            series_dict[label]['color'] = color
-
-                for label, data in series_dict.items():
-                    if len(data['x']) == 0:
-                        continue
-
-                    # Sort just in case
-                    sorted_idx = np.argsort(data['x'])
-                    plot_x = np.array(data['x'])[sorted_idx]
-                    plot_y = np.array(data['y'])[sorted_idx]
-
-                    max_height = max(max_height, plot_y.max() if len(plot_y) > 0 else 0)
-
-                    ax.plot(plot_x, plot_y,
-                            color=data['color'],
-                            linewidth=3.0,
-                            marker='o',
-                            markersize=7,
-                            markeredgecolor='white',
-                            markeredgewidth=1.5,
-                            label=label,
-                            zorder=15,
-                            alpha=0.95)
-
-        # === 4. Final scaling ===
-        ax.set_ylim(0, max_height * 1.12 if max_height > 0 else 20)
-
-        # === Legend ===
         handles, labels = ax.get_legend_handles_labels()
         unique_legend = dict(zip(labels, handles))
         ax.legend(unique_legend.values(), unique_legend.keys(),
                   loc='upper left', fontsize=9.5, frameon=True,
                   ncol=2, title="Components", title_fontsize=10)
 
-        # Formatting
         ax.set_xlim(x[0] - 0.55, x[-1] + 0.55)
         ax.set_xticks(x)
         ax.set_xticklabels([str(y) for y in years], rotation=45, ha='right', fontsize=10)
@@ -216,11 +177,58 @@ class MultiBarChart(Chart):
         ax.set_title(f"{self.title or 'Annual Comparison'} — 1971 to 2024",
                      fontsize=15, fontweight='bold', pad=20)
 
-        ax.grid(axis='y', linestyle='--', alpha=0.35)
+        ax.grid(axis='y', linestyle='--', alpha=0.35, zorder=0)
 
-        # Annotations
         for ann in self.annotations:
             self.add_total_annotations(ann)
+
+    def _plot_lines(self, ax, line_list, year_to_idx, zorder=10, linewidth=3.0, alpha=0.95):
+        """Plot lines supporting optional configuration dictionary"""
+        if not line_list:
+            return
+
+        series_dict = defaultdict(lambda: {'x': [], 'y': [], 'color': None, 'options': {}})
+
+        for item in line_list:
+            if len(item) == 4:
+                df, col, color, options = item
+            else:
+                df, col, color = item
+                options = {}
+
+            yearly = self._get_yearly_line_data([(df, col, color)])
+            for year, items in yearly.items():
+                if year not in year_to_idx:
+                    continue
+                idx = year_to_idx[year]
+                for val, default_label, c in items:
+                    label = options.get('label', default_label)
+                    series_dict[label]['x'].append(idx)
+                    series_dict[label]['y'].append(val / self.value_divisor)
+                    series_dict[label]['color'] = c or color
+                    series_dict[label]['options'] = options
+
+        for label, data in series_dict.items():
+            if not data['x']:
+                continue
+
+            sorted_idx = np.argsort(data['x'])
+            plot_x = np.array(data['x'])[sorted_idx]
+            plot_y = np.array(data['y'])[sorted_idx]
+
+            opts = data['options']
+
+            ax.plot(plot_x, plot_y,
+                    color=data['color'],
+                    linewidth=opts.get('linewidth', linewidth),
+                    linestyle=opts.get('linestyle', opts.get('ls', '-')),
+                    marker=opts.get('marker', 'o'),
+                    markersize=opts.get('markersize', 7),
+                    markeredgecolor=opts.get('markeredgecolor', 'white'),
+                    markeredgewidth=opts.get('markeredgewidth', 1.5),
+                    label=label,
+                    zorder=zorder,
+                    alpha=alpha)
 
     def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
         if width_inch is not None:
