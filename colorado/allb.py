@@ -41,6 +41,7 @@ III_D = "III(d)"
 
 EVAP_TOTAL = 'Evap Total'
 COLORADO_RIVER_TOTAL = 'Total'
+DEMAND = 'Demand'
 
 # Data colors
 LIGHT_RED_BG = 'fff0f0'

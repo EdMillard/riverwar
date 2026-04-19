@@ -265,13 +265,13 @@ def read_year_value_pairs(
 
 
 
-def lf_natural_flow_from_excel(df: pd.DataFrame, start_row=62):
+def lf_natural_flow_from_excel(df: pd.DataFrame, start_row:int=62, column_name:str=ub.NATURAL_LEES_FERRY):
     wb = openpyxl.load_workbook('data/Colorado_River/LFnatFlow1906-2024.2024.9.12.xlsx', data_only=True)
     ws = wb['Calendar Year']
     # ws = wb['AnnualCYTotalNaturalFlow']
     # ws = wb['TotalNaturalFlow']   # Monthly
     data_start_row = start_row # 1964
-    data_end_row = 122  # 2020
+    data_end_row = 122  # 2024
     year_column_index = 1
     for column_index in range(ws.min_column, max_used_column(ws) + 1):
         # gage = ws.cell(row=gage_row, column=column_index).value
@@ -280,7 +280,7 @@ def lf_natural_flow_from_excel(df: pd.DataFrame, start_row=62):
 
         if column_index == 2: # Lees Ferry
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row)
-            df.loc[0: 0 + len(values) - 1, ub.NATURAL_LEES_FERRY] = values
+            df.loc[0: 0 + len(values) - 1, column_name] = values
 
 def natural_flow_from_excel(df:pd.DataFrame):
     wb = openpyxl.load_workbook('data/Colorado_River/NaturalFlows1906-2020_20221215.xlsx', data_only=True)
@@ -471,8 +471,12 @@ def create_month_year_df(years: List[int]) -> pd.DataFrame:
         'Total': 0
     })
 
-def upper_basin_cul_from_excel(df:pd.DataFrame, row_offset:int=7, divisor=1_000_000):
-    wb = openpyxl.load_workbook('data/Colorado_River/V24.5_CUL_ResultsCU_CY.xlsx', data_only=True)
+def upper_basin_cul_from_excel(df:pd.DataFrame, row_offset:int=7, path:str='', divisor=1_000_000):
+    if not path:
+        # path = 'data/Colorado_River/v24.5_UB_CU_WY_Annual.xlsx'
+        path = 'data/Colorado_River/v24.5_CUL_ResultsCU_CY.xlsx'
+    wb = openpyxl.load_workbook(path, data_only=True)
+    # ws = wb['WY_Pivot']
     ws = wb['CY Pivot']
     header_row = 2
     unit_row = 3
@@ -486,9 +490,9 @@ def upper_basin_cul_from_excel(df:pd.DataFrame, row_offset:int=7, divisor=1_000_
         if units == 'Calendar Year':
             year_column_index = column_index
 
-        if header == 'Grand Total':
+        if header == 'Total Result' or header == 'Grand Total':
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
-            df.loc[row_offset: row_offset + len(values) - 1, ub.III_A_UB] = values
+            df.loc[row_offset: row_offset + len(values) - 1, ub.UB_TOTAL] = values
         if header == 'Colorado':
             pairs, values = read_year_value_pairs(ws, year_column_index, column_index, data_start_row, data_end_row, divisor=divisor)
             df.loc[row_offset: row_offset + len(values) - 1, ub.CU_CO] = values

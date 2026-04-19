@@ -107,7 +107,7 @@ class PieChartFrame(ChartFrame):
                 self.toolbar_status.SetLabel(f"Year: {self.current_year}")
 
     def load_charts(self):
-        headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU,
+        headers = [ub.UB_TOTAL, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU,
                    ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                    ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY]
 
@@ -244,16 +244,16 @@ class PieChartFrame(ChartFrame):
             lb_mainstream_cul.df, lb.LB_TOTAL)
 
         df_utils.add_columns_across_dfs([
-            (df_ub_cul, ub.III_A_UB),
+            (df_ub_cul, ub.UB_TOTAL),
             (lb_mainstream_cul.df, lb.LB_TOTAL),
             (lb_mainstream_cul.df, lb.MEXICO)],
-            lb_mainstream_cul.df, all_b.COLORADO_RIVER_TOTAL)
+            lb_mainstream_cul.df, all_b.DEMAND)
 
         totals = (0.0, 0.99, [
             ("Lower Basin", (lb_mainstream_cul.df, lb.LB_TOTAL)),
-            ("Upper Basin", (df_ub_cul, ub.III_A_UB)),
+            ("Upper Basin", (df_ub_cul, ub.UB_TOTAL)),
             ("Mexico", (lb_mainstream_cul.df, lb.MEXICO)),
-            ("Total", (lb_mainstream_cul.df, all_b.COLORADO_RIVER_TOTAL))
+            ("Demand", (lb_mainstream_cul.df, all_b.DEMAND))
         ])
 
         lb_totals = (0.9, 0.99, [
@@ -261,7 +261,7 @@ class PieChartFrame(ChartFrame):
             ("AZ", (lb_mainstream_cul.df, lb.AZ_TOTAL)),
             ("NV", (lb_mainstream_cul.df, lb.NV_TOTAL)),
             ("LB Evap", (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP)),
-            ("Total", (lb_mainstream_cul.df, lb.LB_TOTAL))
+            ("LB Demand", (lb_mainstream_cul.df, lb.LB_TOTAL))
         ])
 
         evap_totals = (0.0, 0.05, [
@@ -274,34 +274,33 @@ class PieChartFrame(ChartFrame):
         # ====================== CREATE PIE CHART ======================
         self.pie_chart = PieChart(
             pie_wedges,
-            title='Colorado River Consumptive Use Losses',
+            title='Colorado River Supply and Demand',
             year=self.current_year,
             annotations=[totals, lb_totals, evap_totals]
         )
         # self.charts.append(self.pie_chart)
 
-        df_natural_flow: pd.DataFrame = df_utils.create_df(1964, self.end_year, [ub.NATURAL_LEES_FERRY])
-        sheet.lf_natural_flow_from_excel(df_natural_flow)
-        df_natural_flow[ub.NATURAL_LEES_FERRY] = df_natural_flow[ub.NATURAL_LEES_FERRY] * 1_000_000
+        df_natural_flow: pd.DataFrame = df_utils.create_df(1964, self.end_year, [ub.SUPPLY])
+        sheet.lf_natural_flow_from_excel(df_natural_flow, column_name=ub.SUPPLY)
+        df_natural_flow[ub.SUPPLY] = df_natural_flow[ub.SUPPLY] * 1_000_000
 
-        natural_flow = [
-            (df_natural_flow, ub.NATURAL_LEES_FERRY, 'green'),
-        ]
-        series = [
-            (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
-            (df_ub_cul, ub.III_A_UB, 'royalblue'),
-            (lb_mainstream_cul.df, lb.CA_TOTAL, '#c040c0'),
-            (lb_mainstream_cul.df, lb.AZ_TOTAL, '#ff0000'),
-            (lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'),
-        ]
-        self.dual_bar_chart = MultiBarChart(
-            left_series=natural_flow,
-            right_series=series,
-            title="Water Supply vs Demand",
-            left_label="Supply",
-            right_label="Demand"
+        line_groups = [("Demand", [(lb_mainstream_cul.df, all_b.DEMAND, 'black')])
+]
+        bar_groups = [
+            ('Supply', [(df_natural_flow, ub.SUPPLY, 'green')])]
+        a = [('Demand', [
+                (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
+                (lb_mainstream_cul.df, lb.CA_TOTAL, '#c040c0'),
+                (df_ub_cul, ub.UB_TOTAL, 'royalblue'),
+                (lb_mainstream_cul.df, lb.AZ_TOTAL, '#ff0000'),
+                (lb_mainstream_cul.df, lb.NV_TOTAL, 'orange')])
+            ]
+        self.multi_bar_chart = MultiBarChart(
+            groups=bar_groups,
+            line_groups=line_groups,
+            title="Colorado River Supply vs Demand",
         )
-        self.charts.append(self.dual_bar_chart)
+        self.charts.append(self.multi_bar_chart)
 
         self._add_simple_toolbar()
 
