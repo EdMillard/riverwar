@@ -37,13 +37,10 @@ import colorado.allb as all_b
 from api import df_utils
 
 class PieChartFrame(ChartFrame):
-    def __init__(self, reservoir_list: List[Reservoir], date_time: date,
-                 report_list: List[str] | None = None,
-                 title: str = "Colorado River War"):
+    def __init__(self, title: str = "Colorado River War"):
         self.start_year = 1971
-        self.end_year = 2025
-        super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
-
+        self.end_year = 2024
+        super().__init__(title=title, page_name='Pie Chart')
 
     def load_charts(self):
         headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU,

@@ -8,8 +8,7 @@ to use, copy, modify, merge, publish, distribute copies of the Software, and
 to permit persons to whom the Software is furnished to do so, subject to the
 following conditions:
 
-The above copyright notice and this permission notice shall be included in allimport pandas as pd
-
+The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -27,7 +26,10 @@ import pandas as pd
 from datetime import date
 import os
 import wx.lib.buttons as buttons
-from typing import List
+from typing import List, Optional
+
+from Xlib.Xcursorfont import top_tee
+
 from reservoirs.reservoir import Reservoir
 from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
@@ -55,19 +57,22 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 # ==================== MAIN FRAME ====================
 
 class ChartFrame(wx.Frame):
-    def __init__(self, reservoir_list: List[Reservoir], date_time: date,
-                 report_list: List[str] | None = None,
-                 title: str = "Colorado River War", page_name:str = 'Chart'):
-
+    def __init__(
+            self,
+            reservoirs: Optional[List[Reservoir]] = None,
+            reports: List[str] | None = None,
+            title: str = "Colorado River War",
+            page_name: str = "Chart"
+    ):
         screen_w, screen_h = wx.DisplaySize()
-        window_height = screen_h - 64
-        window_width = min(1580, screen_w - 40)
+        window_height:int = screen_h - 64
+        window_width:int = min(1580, screen_w - 40)
 
         super().__init__(None, title=title, size=wx.Size(window_width, window_height))
 
-        self.reservoirs = reservoir_list
-        self.report_list = report_list
-        self.report_path = ''
+        self.reservoirs:List[Reservoir] = reservoirs
+        self.reports:List[str] = reports
+        self.report_path:str = ''
 
         self.charts:List[Chart] = []
 
@@ -83,15 +88,20 @@ class ChartFrame(wx.Frame):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # ======================== TOP TOOLBAR ====================
-        top_toolbar = self._init_toolbar(reservoir_list, report_list)
+        top_toolbar:wx.Panel|None = None
+        if self.reports:
+            top_toolbar = self._init_toolbar(self.reservoirs, self.reports)
 
         # ======================== RESERVOIRS ====================
-        self.current_time_from_usbr = self.load_reservoirs()
+        self.current_time_from_usbr = None
+        if self.reservoirs is not None:
+            self.current_time_from_usbr = self.load_reservoirs()
 
         # ========================= CHARTS ========================
         self.load_charts()
 
-        self.set_report(self.report_path)
+        if self.report_path:
+            self.set_report(self.report_path)
 
         # ==================== NOTEBOOK / CHARTS ==================
         self.notebook = wx.Notebook(self.panel)
@@ -133,7 +143,8 @@ class ChartFrame(wx.Frame):
         self.notebook.AddPage(self.combined_panel, page_name)
 
         # Main sizer
-        main_sizer.Add(top_toolbar, 0, wx.EXPAND)
+        if top_toolbar is not None:
+            main_sizer.Add(top_toolbar, 0, wx.EXPAND)
         main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=4)
 
         self.panel.SetSizer(main_sizer)
@@ -216,21 +227,21 @@ class ChartFrame(wx.Frame):
                 date_time_as_date = pd.Timestamp(reservoir.date_time)
         return date_time_as_date
 
-    def _init_toolbar(self, reservoir_list:List[Reservoir], report_list:List[str])->wx.Panel:
+    def _init_toolbar(self, reservoirs:List[Reservoir], reports:List[str])->wx.Panel:
         top_toolbar = wx.Panel(self.panel, style=wx.BORDER_NONE)
         top_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))
 
         tb_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.status_text = wx.StaticText(top_toolbar, label=f"Displaying {len(reservoir_list)} reservoirs")
+        self.status_text = wx.StaticText(top_toolbar, label=f"Displaying {len(reservoirs)} reservoirs")
         tb_sizer.Add(self.status_text, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, border=15)
         tb_sizer.AddStretchSpacer(1)
 
         # Report selector
-        if report_list and len(report_list) > 0:
-            dir_names = [Path(p).name for p in report_list]
+        if reports and len(reports) > 0:
+            dir_names = [Path(p).name for p in reports]
             self.report_choice = wx.Choice(top_toolbar, choices=dir_names)
-            last_report = report_list[-1]
+            last_report = reports[-1]
             self.report_choice.SetSelection(len(dir_names) - 1 )
             self.report_path = last_report
             self.report_choice.SetToolTip("Select report directory")
@@ -327,7 +338,7 @@ class ChartFrame(wx.Frame):
 
 
         idx = self.report_choice.GetSelection()
-        self.set_report(self.report_list[idx])
+        self.set_report(self.reports[idx])
 
         print(f"Selected report: {Path(self.report_path).name}")
         self.load_reservoirs()

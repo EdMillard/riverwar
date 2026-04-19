@@ -20,18 +20,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from datetime import date
-from typing import List
+from typing import List, Optional
 from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
 from chart.chart_frame import ChartFrame
 
 class ReservoirChartFrame(ChartFrame):
-    def __init__(self, reservoir_list: List[Reservoir], date_time: date,
-                 report_list: List[str] | None = None,
+    def __init__(self,
+                 reservoirs: Optional[List[Reservoir] | None] = None,
+                 reports: List[str] | None = None,
                  title: str = "Colorado River War"):
-        super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
+        super().__init__(reservoirs=reservoirs, reports=reports, title=title, page_name='Reservoirs')
 
     def load_charts(self):
         start = self.start_nav.current_date

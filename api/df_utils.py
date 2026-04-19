@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from datetime import date
 import numpy as np
-from typing import List, Union, Dict, Optional
+from typing import List, Union, Dict
 import pandas as pd
 
 
@@ -499,3 +499,125 @@ def copy_column(
         print(f"Warning: {missing} rows in target could not be matched on '{key_column}'")
 
     return target
+
+def add_constant_daily_delta(
+        df: pd.DataFrame,
+        column_name: str,
+        start_date: date | str | pd.Timestamp,
+        end_date: date | str | pd.Timestamp,
+        constant: float,
+        date_column: str = "Date"
+) -> None:
+    """Modifies df in place. Very defensive version."""
+
+    print(f"DEBUG: Original df shape: {df.shape}")
+    print(f"DEBUG: Date column dtype: {df[date_column].dtype}")
+    print(f"DEBUG: First 3 dates: {df[date_column].head(3).tolist()}")
+    print(f"DEBUG: Type of first date: {type(df[date_column].iloc[0])}")
+
+    # --- Convert start/end to Python date ---
+    if isinstance(start_date, str):
+        start_date = date.fromisoformat(start_date.replace("T00:00:00", ""))
+    elif isinstance(start_date, pd.Timestamp):
+        start_date = start_date.date()
+    # else assume it's already date
+
+    if isinstance(end_date, str):
+        end_date = date.fromisoformat(end_date.replace("T00:00:00", ""))
+    elif isinstance(end_date, pd.Timestamp):
+        end_date = end_date.date()
+
+    print(f"DEBUG: Target range: {start_date} to {end_date}")
+
+    # --- Force Date column to Python date objects ---
+    if pd.api.types.is_datetime64_any_dtype(df[date_column]):
+        df[date_column] = df[date_column].dt.date
+    else:
+        # If it's already object, make sure they're date objects
+        df[date_column] = pd.to_datetime(df[date_column]).dt.date
+
+    # Create column
+    df[column_name] = 0.0
+
+    # Calculate daily value
+    num_days = (end_date - start_date).days + 1
+    if num_days <= 0:
+        print("DEBUG: Invalid date range")
+        return
+
+    daily_value = constant / num_days
+    print(f"DEBUG: Daily value = {daily_value:,.4f}")
+
+    # Final mask
+    mask = (df[date_column] >= start_date) & (df[date_column] <= end_date)
+    print(f"DEBUG: Rows matched = {mask.sum()}")
+
+    df.loc[mask, column_name] = daily_value
+
+    # Final check
+    print(f"DEBUG: Non-zero values in {column_name}: {(df[column_name] != 0).sum()}")
+
+
+def add_cumulative_daily_delta(
+        df: pd.DataFrame,
+        column_name: str,
+        start_date: date | str | pd.Timestamp,
+        end_date: date | str | pd.Timestamp,
+        total_constant: float,
+        date_column: str = "Date"
+) -> None:
+    """
+    Modifies df IN PLACE.
+
+    - From start_date to end_date: adds daily portion cumulatively
+    - After end_date: holds the final value (total_constant) flat
+
+    Example:
+        total_constant = 1_500_000 over 10 days
+        → Day1:   150k
+        → Day5:   750k
+        → Day10:  1,500k
+        → Day11+: 1,500k  (stays flat)
+    """
+    if df.empty:
+        return
+
+    # Convert dates to Python date
+    if isinstance(start_date, str):
+        start_date = date.fromisoformat(start_date.replace("T00:00:00", ""))
+    elif isinstance(start_date, pd.Timestamp):
+        start_date = start_date.date()
+
+    if isinstance(end_date, str):
+        end_date = date.fromisoformat(end_date.replace("T00:00:00", ""))
+    elif isinstance(end_date, pd.Timestamp):
+        end_date = end_date.date()
+
+    # Ensure df[date_column] is Python date objects
+    if pd.api.types.is_datetime64_any_dtype(df[date_column]):
+        df[date_column] = df[date_column].dt.date
+    else:
+        df[date_column] = pd.to_datetime(df[date_column]).dt.date
+
+    # Create column
+    df[column_name] = 0.0
+
+    num_days = (end_date - start_date).days + 1
+    if num_days <= 0:
+        return
+
+    daily_amount = total_constant / num_days
+
+    # Mask for ramp-up period
+    ramp_mask = (df[date_column] >= start_date) & (df[date_column] <= end_date)
+
+    # Build cumulative during ramp-up
+    ramp_days = ramp_mask.sum()
+    if ramp_days > 0:
+        cumulative = [i * daily_amount for i in range(1, ramp_days + 1)]
+        df.loc[ramp_mask, column_name] = cumulative
+
+    # Fill forward the final value after end_date
+    final_value = total_constant
+    fill_mask = df[date_column] > end_date
+    df.loc[fill_mask, column_name] = final_value

@@ -569,7 +569,7 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
 
         # Now safely check length and update
         if len(values) != len(df[title]):
-            insert_values_from_year(df, title, start_year, values, offset=offset)
+            insert_values_from_year(df, title, start_year, values, end_year=end_year, offset=offset)
         else:
             df[title] = values
 
@@ -1119,30 +1119,31 @@ def merge_annual_column(
         df[column_name] = df_merged[inp_column_name].fillna(df[column_name])
 
     return df
+
 def insert_values_from_year(
         df: pd.DataFrame,
         target_column: str,
         start_year: int,
-        values: list,
-        offset = 0
+        values: List,
+        offset: int = 0,
+        end_year: Optional[int] = None
 ) -> pd.DataFrame:
     """
     Inserts a list of values into an existing column of a DataFrame,
-    starting from the row where 'Year' matches start_year and continuing
-    downward for each subsequent value.
+    starting from the row where 'Year' matches start_year (plus optional offset),
+    and optionally stopping at end_year (inclusive).
 
     Parameters:
     - df: pandas DataFrame with a 'Year' column
-    - target_column: name of the existing column to update
-    - start_year: integer year when insertion begins
-    - values: list of values to insert (len(values) determines how many rows are updated)
+    - target_column: name of the column to update
+    - start_year: year where insertion begins
+    - values: list of values to insert
+    - offset: number of rows to skip after the start_year row (default 0)
+    - end_year: optional year to stop insertion (inclusive).
+                If None, inserts as many values as possible from start_year onward.
 
     Returns:
-    - The modified DataFrame (in-place changes are also applied)
-
-    Raises:
-    - ValueError if target_column doesn't exist or 'Year' column missing
-    - LookupError if start_year not found
+    - The modified DataFrame
     """
     if 'Year' not in df.columns:
         raise ValueError("DataFrame must have a 'Year' column")
@@ -1152,20 +1153,34 @@ def insert_values_from_year(
     # Ensure Year is integer for reliable matching
     df['Year'] = pd.to_numeric(df['Year'], errors='coerce').astype('Int64')
 
-    # Find the starting row index
-    matching_rows = df[df['Year'] == start_year]
-    if matching_rows.empty:
-        raise LookupError(f"Year {start_year} not found in DataFrame")
+    # Find starting index
+    matching_start = df[df['Year'] == start_year]
+    if matching_start.empty:
+        raise LookupError(f"Start year {start_year} not found in DataFrame")
 
-    start_idx = matching_rows.index[0] + offset
+    start_idx = matching_start.index[0] + offset
 
-    # Check if there are enough rows after start_idx
-    required_rows = len(values)
-    available_rows = len(df) - start_idx
-    if required_rows > available_rows:
-        print(f"Warning: Only {available_rows} rows available after year {start_year}. "
-              f"Inserting {available_rows} values and truncating the rest.")
-        values = values[:available_rows]
+    # Determine ending index if end_year is provided
+    if end_year is not None:
+        matching_end = df[df['Year'] == end_year]
+        if matching_end.empty:
+            raise LookupError(f"End year {end_year} not found in DataFrame")
+
+        end_idx = matching_end.index[0]
+
+        if end_idx < start_idx:
+            raise ValueError(f"end_year ({end_year}) is before start_year ({start_year}) after applying offset")
+
+        max_possible = end_idx - start_idx + 1
+    else:
+        max_possible = len(df) - start_idx
+
+    # Limit values to available rows
+    if len(values) > max_possible:
+        print(f"Warning: Only {max_possible} rows available from year {start_year} "
+              f"to {end_year if end_year else 'end of data'}. "
+              f"Truncating values list.")
+        values = values[:max_possible]
 
     # Insert the values
     df.loc[start_idx: start_idx + len(values) - 1, target_column] = values

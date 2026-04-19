@@ -27,9 +27,18 @@ import wx
 import matplotlib
 import os
 from typing import List
-# from colorado.pie_chart_frame import PieChartFrame
-# from colorado.reservoir_chart_frame import ReservoirChartFrame
+from colorado.pie_chart_frame import PieChartFrame
+from colorado.reservoir_chart_frame import ReservoirChartFrame
 from colorado.time_series_chart_frame import TimeSeriesChartFrame
+from reservoirs.imperial import Imperial
+from reservoirs.lake_havasu import LakeHavasu
+from reservoirs.lake_mohave import LakeMohave
+from reservoirs.aquifers import Aquifers
+from reservoirs.lake_mead import LakeMead
+from reservoirs.lake_powell import LakePowell
+from reservoirs.flaming_gorge import FlamingGorge
+from reservoirs.blue_mesa import BlueMesa
+from reservoirs.navajo import Navajo
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -81,18 +90,22 @@ def filter_and_sort_usbr_reports(paths):
     # Then sort chronologically
     return sorted(filtered, key=get_sort_key)
 
-# ==================== RUN ====================
-if __name__ == "__main__":
-    from reservoirs.imperial import Imperial
-    from reservoirs.lake_havasu import LakeHavasu
-    from reservoirs.lake_mohave import LakeMohave
-    from reservoirs.aquifers import Aquifers
-    from reservoirs.lake_mead import LakeMead
-    from reservoirs.lake_powell import LakePowell
-    from reservoirs.flaming_gorge import FlamingGorge
-    from reservoirs.blue_mesa import BlueMesa
-    from reservoirs.navajo import Navajo
+def time_series_chart():
+    reports = find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
+    flaming_gorge = FlamingGorge()
+    lake_powell = LakePowell(upstream=[flaming_gorge])
+    lake_mead = LakeMead(upstream=[lake_powell])
+
+    reservoirs = [
+        flaming_gorge,
+        lake_powell,
+        lake_mead,
+    ]
+    frame = TimeSeriesChartFrame(reservoirs, lake_powell.date_time, reports)
+    frame.Show()
+
+def reservoir_chart():
     reports = find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
     flaming_gorge = FlamingGorge()
@@ -110,18 +123,20 @@ if __name__ == "__main__":
         lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
     ]
 
+    frame = ReservoirChartFrame(reservoirs=reservoirs, reports=reports)
+    frame.Show()
+
+def pie_chart():
+    frame = PieChartFrame()
+    frame.Show()
+
+# ==================== RUN ====================
+if __name__ == "__main__":
+
     app = wx.App(False)
 
-    # frame = ReservoirChartFrame(reservoirs, lake_powell.date_time, reports)
-    # frame.Show()
-
-    # frame = PieChartFrame(reservoirs, lake_powell.date_time, reports)
-    # frame.Show()
-
-    reservoirs = [
-        lake_mead, lake_powell, flaming_gorge
-    ]
-    frame = TimeSeriesChartFrame(reservoirs, lake_powell.date_time, reports)
-    frame.Show()
+    # pie_chart()
+    # reservoir_chart()
+    time_series_chart()
 
     app.MainLoop()

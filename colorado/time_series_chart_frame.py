@@ -86,26 +86,43 @@ class ReservoirChartFrame(ChartFrame):
         self.charts.append(inflow_chart)
 
 class TimeSeriesChartFrame(ChartFrame):
-    def __init__(self, reservoir_list: List[Reservoir], date_time: date,
-                 report_list: List[str] | None = None,
+    def __init__(self, reservoirs: List[Reservoir], date_time: date,
+                 reports: List[str] | None = None,
                  title: str = "Colorado River War"):
-        super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
+        super().__init__(reservoirs=reservoirs, reports=reports, title=title, page_name='Reservoirs')
 
     def load_charts(self):
+        powell_df = None
+        fg_df = None
+        start_mod_date = date(2026, 5, 1)
+        end_powell_mod_date = date(2026, 9, 30)
+        end_fg_mod_date = date(2027, 4, 1)
         time_series = []
         for reservoir in self.reservoirs:
             if reservoir.name == 'Lake Powell':
+                #  Apply 1.5 MAF cut in release to Powell storage level
+                powell_df = reservoir.df_daily
+                df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 1_480_000)
+                # df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 0)
+                reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + powell_df['Cut Powell Release']
+                reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + fg_df['Flaming Gorge DROA']
+
                 time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
                 time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
                 prev_path = previous_month_path(Path(reservoir.report_path))
                 df_24_month_prev, df_24_wy_prev = prev = reservoir.load_24_month(prev_path, reservoir.name)
                 reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
-                time_series.append((reservoir.df_daily, 'Powell Most MAR26', '#6060ff'))
+                # time_series.append((reservoir.df_daily, 'Powell Most MAR26', '#6060ff'))
                 df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
             elif reservoir.name == 'Lake Mead':
+                reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
+
                 time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
                 time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
             elif reservoir.name == 'Flaming Gorge':
+                fg_df = reservoir.df_daily
+                df_utils.add_cumulative_daily_delta(fg_df, 'Flaming Gorge DROA', start_mod_date, end_fg_mod_date, 1_000_000)
+                reservoir.df_daily[ub.FLAMING_GORGE_MOST] = reservoir.df_daily[ub.FLAMING_GORGE_MOST] - fg_df['Flaming Gorge DROA']
                 time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050'))
                 time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
         line_chart = LineChart(
@@ -113,17 +130,23 @@ class TimeSeriesChartFrame(ChartFrame):
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
             show_x_labels = False
         )
+        line_chart.set_end_date(date(2027, 5, 1))
         self.charts.append(line_chart)
 
         time_series = []
         for reservoir in self.reservoirs:
             if reservoir.name == 'Lake Powell':
                 if reservoir.report_path is not None:
-                    time_series.append((reservoir.df_daily, 'Diff', 'maroon'))
+                    #time_series.append((reservoir.df_daily, 'Diff', 'maroon'))
+                    pass
+        time_series.append((powell_df, 'Cut Powell Release', 'gold'))
+        time_series.append((fg_df, 'Flaming Gorge DROA', 'green'))
+
         line_chart = LineChart(
             time_series, title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date
         )
+        line_chart.set_end_date(date(2027, 5, 1))
         self.charts.append(line_chart)
 
 

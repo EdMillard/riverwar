@@ -29,7 +29,6 @@ from datetime import date
 from typing import List, Optional, Tuple
 from chart.chart import Chart
 
-
 class LineChart(Chart):
     """
     Line chart for multiple time series with Month-Year X-axis.
@@ -43,7 +42,7 @@ class LineChart(Chart):
                  reservoirs: List[Reservoir] | None = None,
                  show_x_labels: bool = True,
                  y_label: str = 'Volume (Million Acre-Feet)',
-                 y_divisor: float = 1_000_000):           # ← New option
+                 y_divisor: float = 1_000_000):
 
         super().__init__(reservoirs or [], start_date, current_date, end_date)
 
@@ -62,6 +61,20 @@ class LineChart(Chart):
             if 'Date' in df.columns:
                 df['Date'] = pd.to_datetime(df['Date'])
                 self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
+
+    # ==================== NEW SETTER METHODS ====================
+    def set_start_date(self, start_date: date | None):
+        """Set the start date and update parent Chart"""
+        self.start_date = start_date
+
+    def set_end_date(self, end_date: date | None):
+        """Set the end date and update parent Chart"""
+        self.end_date = end_date
+
+    # Optional: Also add this if you want to update current_date easily
+    def set_current_date(self, current_date: date | None):
+        """Set the current/reference date"""
+        self.current_date = current_date
 
     def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
         if width_inch is not None:
@@ -83,16 +96,28 @@ class LineChart(Chart):
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
 
+        # === Collect all dates and plot lines ===
+        all_dates = []
         for df, col, color in self.data_series:
             if df.empty or col not in df.columns:
                 continue
-
             df[col] = pd.to_numeric(df[col], errors='coerce')
+            all_dates.extend(df['Date'])
 
             ax.plot(df['Date'], df[col],
                     label=col.replace('_', ' '),
                     linewidth=2.2,
                     color=color)
+
+        if not all_dates:
+            return
+
+        data_min = min(all_dates)
+        data_max = max(all_dates)
+
+        # === Use user-set start/end dates if provided, otherwise use data range ===
+        x_start = self.start_date if self.start_date is not None else data_min
+        x_end = self.end_date if self.end_date is not None else data_max
 
         # ==================== FORMATTING ====================
         ax.set_ylabel(self.y_label, fontsize=12, fontweight='bold')
@@ -100,7 +125,9 @@ class LineChart(Chart):
         if self.title and str(self.title).strip():
             ax.set_title(self.title, fontsize=14, fontweight='bold', pad=15)
 
-        # === X-AXIS ===
+        # === X-AXIS: Respect set_start_date / set_end_date ===
+        ax.set_xlim(x_start, x_end)
+
         ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
 
@@ -108,7 +135,7 @@ class LineChart(Chart):
             ax.set_xticklabels([])
             ax.tick_params(axis='x', which='major', length=0)
 
-        # === Y-AXIS: Scaled by y_divisor ===
+        # === Y-AXIS ===
         def scaled_formatter(x, pos):
             if self.y_divisor == 1:
                 return f'{x:,.0f}'
@@ -119,18 +146,16 @@ class LineChart(Chart):
         ax.yaxis.set_major_locator(ticker.AutoLocator())
         ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
 
-        # === TIGHTER BOTTOM MARGIN WHEN X LABELS ARE HIDDEN ===
+        # Bottom margin
         fig = ax.get_figure()
         if not self.show_x_labels:
-            fig.subplots_adjust(bottom=0.08)   # Much tighter bottom
+            fig.subplots_adjust(bottom=0.08)
         else:
-            fig.subplots_adjust(bottom=0.15)   # Normal spacing with labels
+            fig.subplots_adjust(bottom=0.15)
 
         fig.autofmt_xdate(rotation=45, ha='right')
 
         ax.grid(True, linestyle='--', alpha=0.7)
-
-        # Bold Y=0 origin line
         ax.axhline(y=0, color='black', linewidth=2.5, linestyle='-', alpha=0.9, zorder=3)
 
         ax.legend(fontsize=10.5, loc='best')
