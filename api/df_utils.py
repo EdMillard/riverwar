@@ -441,6 +441,38 @@ def rename_column(
 
     return df_copy
 
+def moving_average(
+    df: pd.DataFrame,
+    source_col: str,
+    new_col: str,
+    window: int = 10,
+    min_periods: Optional[int] = None,
+    center: bool = False,
+    inplace: bool = True
+) -> pd.DataFrame:
+    """
+    Adds a moving average column to the DataFrame (truly in-place by default).
+    """
+    if source_col not in df.columns:
+        raise ValueError(f"Source column '{source_col}' not found. "
+                        f"Available columns: {list(df.columns)}")
+
+    if not inplace:
+        df = df.copy()
+
+    # Sort by Year **in place** if the column exists
+    if 'Year' in df.columns:
+        df.sort_values('Year', inplace=True)
+
+    # Calculate and add the moving average column (this is always in-place on df)
+    df[new_col] = df[source_col].rolling(
+        window=window,
+        min_periods=min_periods,
+        center=center
+    ).mean()
+
+    return df
+
 def copy_column(
         source_df: pd.DataFrame,
         target_df: pd.DataFrame,

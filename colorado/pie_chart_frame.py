@@ -285,13 +285,14 @@ class PieChartFrame(ChartFrame):
             annotations=[totals, lb_totals, evap_totals]
         )
         # self.charts.append(self.pie_chart)
-
         df_natural_flow: pd.DataFrame = df_utils.create_df(1964, self.end_year, [ub.SUPPLY])
         sheet.lf_natural_flow_from_excel(df_natural_flow, column_name=ub.SUPPLY)
         df_natural_flow[ub.SUPPLY] = df_natural_flow[ub.SUPPLY] * 1_000_000
+        df_utils.moving_average(df_natural_flow, ub.SUPPLY, '10 yr avg')
 
         overlay_lines = [
             (lb_mainstream_cul.df, all_b.DEMAND, 'darkred'),
+            (df_natural_flow, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
         ]
 
         underlay_lines = [
