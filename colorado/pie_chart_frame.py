@@ -43,6 +43,68 @@ class PieChartFrame(ChartFrame):
 
         super().__init__(title=title, page_name='Pie Chart')
 
+    def _add_simple_toolbar(self):
+        if not hasattr(self, 'notebook') or self.notebook.GetPageCount() == 0:
+            wx.CallAfter(self._add_simple_toolbar)
+            return
+
+        page = self.notebook.GetPage(0)
+
+        toolbar = wx.Panel(page, style=wx.BORDER_NONE)
+        toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Button
+        self.play_btn = wx.Button(toolbar, label="▶ Start Animation")
+        self.play_btn.Bind(wx.EVT_BUTTON, self.on_play_pause)
+        sizer.Add(self.play_btn, 0, wx.ALL | wx.CENTER, border=8)
+
+        # Slider
+        self.year_slider = wx.Slider(toolbar, value=self.current_year,
+                                     minValue=self.start_year,
+                                     maxValue=self.end_year,
+                                     style=wx.SL_HORIZONTAL | wx.SL_LABELS)
+
+        self.year_slider.SetMinSize(wx.Size(420, 24))
+
+        self.year_slider.SetForegroundColour(wx.WHITE)
+        self.year_slider.SetBackgroundColour(wx.Colour(80, 80, 80))
+
+        self.year_slider.Bind(wx.EVT_SLIDER, self.on_slider_changed)
+        sizer.Add(self.year_slider, 1, wx.ALL | wx.CENTER | wx.EXPAND, border=1)
+
+        # Status
+        self.toolbar_status = wx.StaticText(toolbar, label=f"Year: {self.current_year}")
+        self.toolbar_status.SetForegroundColour(wx.WHITE)
+        sizer.Add(self.toolbar_status, 0, wx.ALL | wx.CENTER, border=1)
+
+        toolbar.SetSizer(sizer)
+
+        # Insert at top
+        page_sizer = page.GetSizer()
+        if page_sizer:
+            page_sizer.Insert(0, toolbar, 0, wx.EXPAND | wx.ALL, border=1)
+            page.Layout()
+
+    def on_play_pause(self, event):
+        """Toggle animation"""
+        if self.timer is None or not self.timer.IsRunning():
+            self.start_animation()
+            self.play_btn.SetLabel("⏸ Pause")
+        else:
+            self.stop_animation()
+            self.play_btn.SetLabel("▶ Start Animation")
+
+    def on_slider_changed(self, event):
+        """Jump to selected year"""
+        new_year = self.year_slider.GetValue()
+        if new_year != self.current_year:
+            self.current_year = new_year
+            self.pie_chart.update_for_year(self.current_year)
+            if hasattr(self, 'toolbar_status'):
+                self.toolbar_status.SetLabel(f"Year: {self.current_year}")
+
     def load_charts(self):
         headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU,
                    ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
@@ -217,8 +279,10 @@ class PieChartFrame(ChartFrame):
         )
         self.charts.append(self.pie_chart)
 
+        self._add_simple_toolbar()
+
         # ====================== START 1-SECOND ANIMATION ======================
-        self.start_animation()
+        # self.start_animation()
 
     def start_animation(self):
         if self.timer is None:
