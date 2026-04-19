@@ -19,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
 from reservoirs.reservoir import Reservoir
 from matplotlib.figure import Figure
 import pandas as pd
@@ -40,7 +39,7 @@ class PieChart(Chart):
                  reservoirs: List[Reservoir] | None = None,
                  value_divisor: float = 1_000_000,
                  outer_annotations: List[Tuple[str, float, Tuple[pd.DataFrame, str]]] | None = None,
-                 annotations: List[ Tuple[float, float, List[ Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
+                 annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
     ):
 
         super().__init__(reservoirs or [], start_date, current_date, end_date)
@@ -49,20 +48,19 @@ class PieChart(Chart):
         self.title = title
         self.value_divisor = value_divisor
         self.year = year
-        self.outer_annotations = outer_annotations or []   # (name, degrees, (df, col))
-        self.annotations = annotations or []   # (name, (df, col))
+        self.outer_annotations = outer_annotations or []
+        self.annotations = annotations or []
 
         self.height_inch = 7.5
         self.width_inch = 8.5
+        self.ax = None
+        self.fig = None
 
-        # Normalize main data series
-        for i, (df, col, color) in enumerate(self.data_series):
-            if 'Date' in df.columns:
-                df['Date'] = pd.to_datetime(df['Date'])
-                self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
+        # Store original full DataFrames (important for animation)
+        self.original_data_series = [ (df.copy(), col, color) for df, col, color in data_series ]
 
     def create_pie_chart(self, ax):
-        """Pie chart with closer wedge labels + outer annotations"""
+        """Core pie drawing logic - used by both initial creation and updates"""
         if not self.data_series:
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
@@ -75,17 +73,17 @@ class PieChart(Chart):
             if df.empty or col not in df.columns:
                 continue
 
-            matching = df['Year'] == self.year
-            if matching.any():
-                row_idx = matching.idxmax()
-                val = pd.to_numeric(df[col].iloc[row_idx], errors='coerce')
+            # Find value for current year
+            matching = df[df['Year'] == self.year]
+            if not matching.empty:
+                val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
                 if pd.notna(val) and val > 0:
                     values.append(val)
                     labels.append(col.replace('_', ' '))
                     colors.append(color)
 
         if not values:
-            ax.text(0.5, 0.5, "No valid data", ha='center', va='center', fontsize=14)
+            ax.text(0.5, 0.5, "No valid data for this year", ha='center', va='center', fontsize=14)
             return
 
         total = sum(values)
@@ -95,7 +93,8 @@ class PieChart(Chart):
             absolute = (pct * total / 100) / self.value_divisor
             return f'{pct:.1f}%\n{absolute:,.2f}'
 
-        # Create the pie
+        ax.clear()   # ← Important for redraw
+
         wedges, texts, autotexts = ax.pie(
             values,
             labels=labels,
@@ -103,7 +102,7 @@ class PieChart(Chart):
             autopct=autopct_format,
             startangle=90,
             pctdistance=0.75,
-            labeldistance=1.02,          # ← Only change I made (wedge labels closer)
+            labeldistance=1.02,
             textprops={'fontsize': 10},
             wedgeprops=dict(linewidth=1.5, edgecolor='white')
         )
@@ -112,61 +111,36 @@ class PieChart(Chart):
             autotext.set_fontweight('bold')
             autotext.set_color('black')
 
-        for text in texts:               # wedge labels styling
+        for text in texts:
             text.set_fontsize(9.5)
             text.set_fontweight('semibold')
 
-        # ==================== TITLE + SUBTITLE ====================
         main_title = self.title or "Distribution"
-        main_title += f"  {self.year}"
-        ax.set_title(main_title, fontsize=15, fontweight='bold', pad=10)
-
+        ax.set_title(f"{main_title} — {self.year}", fontsize=15, fontweight='bold', pad=15)
         ax.axis('equal')
 
-        # ====================== ANNOTATIONS ======================
-        for annotations in self.annotations:
-            self.add_total_annotations(annotations)
+        # Annotations
+        for ann in self.annotations:
+            self.add_total_annotations(ann)
 
+        # Outer annotations (if any)
         if self.outer_annotations:
             radius = 1.25
+            for name, degrees, (df, col) in self.outer_annotations:
+                matching = df[df['Year'] == self.year]
+                if not matching.empty:
+                    val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
+                    if pd.notna(val) and val > 0:
+                        percentage = (val / total * 100) if total > 0 else 0
+                        formatted = f"{val / self.value_divisor:,.2f}"
+                        rad = np.deg2rad(degrees)
+                        x = radius * np.cos(rad)
+                        y = radius * np.sin(rad)
+                        ha = 'left' if -90 < (degrees % 360) < 90 else 'right'
 
-            for name, degrees, data_tuple in self.outer_annotations:
-                df_ann, col_ann = data_tuple
-
-                val = None
-                if not df_ann.empty and col_ann in df_ann.columns:
-                    matching = df_ann['Year'] == self.year
-                    if matching.any():
-                        row_idx = matching.idxmax()
-                        val = pd.to_numeric(df_ann[col_ann].iloc[row_idx], errors='coerce')
-
-                if pd.isna(val) or val <= 0:
-                    continue
-
-                percentage = (val / total * 100) if total > 0 else 0
-                formatted_value = f"{val / self.value_divisor:,.2f}"
-
-                rad = np.deg2rad(degrees)
-                x = radius * np.cos(rad)
-                y = radius * np.sin(rad)
-
-                ha = 'left' if -90 < (degrees % 360) < 90 else 'right'
-                va = 'center'
-
-                annotation_text = f"{name}\n{formatted_value} MAF   {percentage:.1f}%"
-
-                ax.text(
-                    x, y,
-                    annotation_text,
-                    ha=ha,
-                    va=va,
-                    fontsize=9.5,
-                    fontweight='bold',
-                    bbox=dict(boxstyle="round,pad=0.45",
-                              facecolor="white",
-                              alpha=0.9,
-                              edgecolor='gray')
-                )
+                        ax.text(x, y, f"{name}\n{formatted} MAF   {percentage:.1f}%",
+                                ha=ha, va='center', fontsize=9.5, fontweight='bold',
+                                bbox=dict(boxstyle="round,pad=0.45", facecolor="white", alpha=0.9))
 
     def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
         if width_inch is not None:
@@ -183,62 +157,40 @@ class PieChart(Chart):
         self.fig = fig
         return fig
 
-    # update_for_year and update_data methods remain unchanged...
-    def update_for_year(self, year: int) -> bool:
-        updated = False
-        for i, (df, col, color) in enumerate(self.data_series):
-            if df.empty or col not in df.columns:
-                continue
+    def update_for_year(self, year: int):
+        """This is the method called by the timer — now fully working"""
+        self.year = year
 
-            if 'Date' in df.columns:
-                df['Year'] = pd.to_datetime(df['Date']).dt.year
-                row = df[df['Year'] == year]
-            elif 'Year' in df.columns:
-                row = df[df['Year'] == year]
-            else:
-                continue
+        if self.ax is None:
+            return
 
-            if not row.empty:
-                self.data_series[i] = (row.copy(), col, color)
-                updated = True
+        self.create_pie_chart(self.ax)        # Redraw everything
 
-        return updated
+        # Refresh the canvas if it exists (wx + matplotlib)
+        if hasattr(self, 'canvas') and self.canvas is not None:
+            self.canvas.draw()
+            self.canvas.Refresh()
 
     def add_total_annotations(self, annotations, divisor=1_000_000):
+        """Your existing annotation method (unchanged)"""
         lines = []
         x = annotations[0]
         y = annotations[1]
         annotations_list = annotations[2]
-        for label, (df, col) in annotations_list:
-            matching = df['Year'] == self.year
-            if matching.any():
-                row_idx = matching.idxmax()
-                value = pd.to_numeric(df[col].iloc[row_idx], errors='coerce')
-                value /= divisor
-            else:
-                value = 0.0
 
-            # Value first + fixed width for perfect column alignment
+        for label, (df, col) in annotations_list:
+            matching = df[df['Year'] == self.year]
+            value = pd.to_numeric(matching[col].iloc[0], errors='coerce') / divisor if not matching.empty else 0.0
             lines.append(f"{value:7.2f} MAF {label}")
 
         text_block = "\n".join(lines)
 
         self.ax.text(
-            x=x,
-            y=y,
-            s=text_block,
+            x=x, y=y, s=text_block,
             transform=self.ax.transAxes,
             fontsize=11,
-            fontfamily='monospace',  # Very important for alignment
+            fontfamily='monospace',
             fontweight='semibold',
-            ha='left',
-            va='top',
-            # bbox=dict(
-            #     boxstyle="round,pad=0.8",
-            #     facecolor="white",
-            #     edgecolor="#1f4e79",
-            #     linewidth=1.2,
-            #     alpha=0.97
-            # ),
+            ha='left', va='top',
             zorder=15
         )

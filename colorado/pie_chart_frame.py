@@ -6,11 +6,9 @@ of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute copies of the Software, and
 to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:from api import df_utils
-
+following conditions:
 
 The above copyright notice and this permission notice shall be included in all
-
 copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
@@ -21,14 +19,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from datetime import date
+import wx
 import pandas as pd
-from typing import List, Optional
 from sheet import sheet
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
 from colorado.lb_tributary_cul import LBTributaryCUL
-from reservoirs.reservoir import Reservoir
 from chart.chart_frame import ChartFrame
 from chart.pie_chart import PieChart
 import colorado.lb as lb
@@ -40,33 +36,39 @@ class PieChartFrame(ChartFrame):
     def __init__(self, title: str = "Colorado River War"):
         self.start_year = 1971
         self.end_year = 2024
+        self.current_year = self.start_year
+
+        self.timer = None
+        self.animation_interval = 1000  # 1000 ms = 1 second per year
+
         super().__init__(title=title, page_name='Pie Chart')
 
     def load_charts(self):
         headers = [ub.III_A_UB, ub.CU_CO, ub.CU_UT, ub.CU_WY, ub.CU_NM, ub.AZ_CU,
                    ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                    ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY]
+
         df_ub_cul: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, headers)
         show_tributaries = False
 
         pie_wedges = []
 
-        # Upper Basin
-        #
+        # ====================== UPPER BASIN ======================
         sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=0, divisor=1)
         pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
         pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
         pie_wedges.append((df_ub_cul, ub.CU_WY, '#a0a0ff'))
         pie_wedges.append((df_ub_cul, ub.CU_NM, '#c0c0ff'))
+
         df_utils.add_column_sum(df_ub_cul,
                                 [ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                                  ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY],
                                 ub.UB_RESERVOIR_EVAP)
         pie_wedges.append((df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'))
 
-        # Lower Basin
-        #
+        # ====================== LOWER BASIN ======================
         df_empty = pd.DataFrame()
+
         lb_mainstream_cul = LBMainstreamCUL(all_b.LB_MAINSTEM_CUL_SHEET)
         lb_mainstream_cul.load_df(df_empty)
 
@@ -79,10 +81,7 @@ class PieChartFrame(ChartFrame):
                                 lb.LB_RESERVOIR_EVAP)
         pie_wedges.append((lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP, 'gold'))
 
-        # California
-        #
-        # Imperial Valley
-        #
+        # California - Imperial Valley
         sheet.usgs_annuals(lb_mainstream_cul.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER, divisor=1)
         sheet.usgs_annuals(lb_mainstream_cul.df, '10255550', self.start_year, self.end_year, title=lb.NEW_RIVER, divisor=1)
         sheet.usgs_annuals(lb_mainstream_cul.df, '10259540', self.start_year, self.end_year, title=lb.WHITEWATER, divisor=1)
@@ -105,13 +104,11 @@ class PieChartFrame(ChartFrame):
         pie_wedges.append((lb_mainstream_cul.df, lb.SALTON_INFLOW, 'gold'))
 
         # Mexico
-        #
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
         sheet.merge_annual_column(lb_mainstream_cul.df, df_mx, lb.MEXICO, divisor=1)
         pie_wedges.append((lb_mainstream_cul.df, lb.MEXICO, '#40a040'))
 
-        # California
-        #
+        # California continued
         pie_wedges.append((lb_mainstream_cul.df, lb.IMPERIAL_VALLEY_CU, '#c040c0'))
         pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#e080e0'))
         pie_wedges.append((lb_mainstream_cul.df, lb.CA_MAINSTEM, '#ffa0ff'))
@@ -119,8 +116,8 @@ class PieChartFrame(ChartFrame):
         df_utils.add_column_sum(lb_mainstream_cul.df,
                                 [lb.CA_OUTSIDE_SYSTEM, lb.CA_MAINSTEM, lb.SALTON_INFLOW, lb.IMPERIAL_VALLEY_CU],
                                 lb.CA_TOTAL)
+
         # Nevada
-        #
         lb_tributary_cul = None
         if show_tributaries:
             lb_tributary_cul = LBTributaryCUL(all_b.LB_TRIBUTARY_CUL_SHEET)
@@ -142,16 +139,14 @@ class PieChartFrame(ChartFrame):
         pie_wedges.append((lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'))
 
         # Arizona Mainstem
-        #
         df_utils.add_column_sum(lb_mainstream_cul.df, [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_MAINSTEM)
         df_utils.rename_column(lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, lb.AZ_CAP, inplace=True)
         df_utils.add_column_sum(lb_mainstream_cul.df, [lb.AZ_CAP, lb.AZ_MAINSTEM], lb.AZ_COLORADO_RIVER_TOTAL)
 
         pie_wedges.append((lb_mainstream_cul.df, lb.AZ_MAINSTEM, '#ffa0a0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_CAP,  '#ff8080'))
+        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_CAP, '#ff8080'))
 
         # Arizona Tributary
-        #
         if show_tributaries:
             pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
             df_utils.add_column_sum(lb_tributary_cul.df,
@@ -171,6 +166,7 @@ class PieChartFrame(ChartFrame):
                 (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL)],
                 lb_mainstream_cul.df, lb.AZ_TOTAL)
 
+        # Final totals
         df_utils.add_columns_across_dfs([
             (df_ub_cul, ub.UB_RESERVOIR_EVAP),
             (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP),
@@ -189,6 +185,7 @@ class PieChartFrame(ChartFrame):
             (lb_mainstream_cul.df, lb.LB_TOTAL),
             (lb_mainstream_cul.df, lb.MEXICO)],
             lb_mainstream_cul.df, all_b.COLORADO_RIVER_TOTAL)
+
         totals = (0.0, 0.99, [
             ("Lower Basin", (lb_mainstream_cul.df, lb.LB_TOTAL)),
             ("Upper Basin", (df_ub_cul, ub.III_A_UB)),
@@ -211,10 +208,34 @@ class PieChartFrame(ChartFrame):
             ("Total", (lb_mainstream_cul.df, all_b.EVAP_TOTAL))
         ])
 
-        pie_chart = PieChart(
+        # ====================== CREATE PIE CHART ======================
+        self.pie_chart = PieChart(
             pie_wedges,
             title='Colorado River Consumptive Use Losses',
-            year=2018,
+            year=self.current_year,
             annotations=[totals, lb_totals, evap_totals]
         )
-        self.charts.append(pie_chart)
+        self.charts.append(self.pie_chart)
+
+        # ====================== START 1-SECOND ANIMATION ======================
+        self.start_animation()
+
+    def start_animation(self):
+        if self.timer is None:
+            self.timer = wx.Timer(self)
+            self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
+            self.timer.Start(self.animation_interval)
+
+    def stop_animation(self):
+        if self.timer is not None:
+            self.timer.Stop()
+            self.timer = None
+
+    def on_timer(self, event: wx.TimerEvent):
+        """Called every 1 second to advance the year"""
+        if self.current_year > self.end_year:
+            self.stop_animation()
+            return
+
+        self.pie_chart.update_for_year(self.current_year)
+        self.current_year += 1
