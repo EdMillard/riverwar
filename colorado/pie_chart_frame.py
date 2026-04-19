@@ -22,6 +22,7 @@ SOFTWARE.
 import wx
 import pandas as pd
 from sheet import sheet
+from chart.multi_bar_chart import MultiBarChart
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
 from colorado.lb_tributary_cul import LBTributaryCUL
@@ -277,7 +278,30 @@ class PieChartFrame(ChartFrame):
             year=self.current_year,
             annotations=[totals, lb_totals, evap_totals]
         )
-        self.charts.append(self.pie_chart)
+        # self.charts.append(self.pie_chart)
+
+        df_natural_flow: pd.DataFrame = df_utils.create_df(1964, self.end_year, [ub.NATURAL_LEES_FERRY])
+        sheet.lf_natural_flow_from_excel(df_natural_flow)
+        df_natural_flow[ub.NATURAL_LEES_FERRY] = df_natural_flow[ub.NATURAL_LEES_FERRY] * 1_000_000
+
+        natural_flow = [
+            (df_natural_flow, ub.NATURAL_LEES_FERRY, 'green'),
+        ]
+        series = [
+            (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
+            (df_ub_cul, ub.III_A_UB, 'royalblue'),
+            (lb_mainstream_cul.df, lb.CA_TOTAL, '#c040c0'),
+            (lb_mainstream_cul.df, lb.AZ_TOTAL, '#ff0000'),
+            (lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'),
+        ]
+        self.dual_bar_chart = MultiBarChart(
+            left_series=natural_flow,
+            right_series=series,
+            title="Water Supply vs Demand",
+            left_label="Supply",
+            right_label="Demand"
+        )
+        self.charts.append(self.dual_bar_chart)
 
         self._add_simple_toolbar()
 
