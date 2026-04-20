@@ -54,9 +54,7 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 
     return sorted(set(matching_dirs))
 
-# ==================== MAIN FRAME ====================
-
-class ChartFrame(wx.Frame):
+class Notebook(wx.Frame):
     def __init__(
             self,
             reservoirs: Optional[List[Reservoir]] = None,
@@ -69,6 +67,34 @@ class ChartFrame(wx.Frame):
         window_width:int = min(1580, screen_w - 40)
 
         super().__init__(None, title=title, size=wx.Size(window_width, window_height))
+
+        self.panel = wx.Panel(self)
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.notebook = wx.Notebook(self.panel)
+
+        self.sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=1)
+
+        self.panel.SetSizer(self.sizer)
+        self.SetMinSize(wx.Size(1100, 900))
+        self.Centre()
+
+# ==================== MAIN FRAME ====================
+
+class ChartFrame(wx.Panel):
+    def __init__(
+            self,
+            notebook: Notebook,
+            reservoirs: Optional[List[Reservoir]] = None,
+            reports: List[str] | None = None,
+            title: str = "Colorado River War",
+            page_name: str = "Chart"
+    ):
+        screen_w, screen_h = wx.DisplaySize()
+        window_height:int = screen_h - 64
+        window_width:int = min(1580, screen_w - 40)
+        self.notebook = notebook
+
+        super().__init__(self.notebook.notebook, size=wx.Size(window_width, window_height))
 
         self.reservoirs:List[Reservoir] = reservoirs
         self.reports:List[str] = reports
@@ -83,13 +109,6 @@ class ChartFrame(wx.Frame):
         self.pdf_pages: List[Image.Image] = []
         self.gif_filename: str | None = None
         self.pdf_filename: str | None = None
-
-        self.panel = wx.Panel(self)
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-
-        # ==================== NOTEBOOK / CHARTS ==================
-        self.notebook = wx.Notebook(self.panel)
-        self.combined_panel = wx.Panel(self.notebook)
 
         # ======================== TOP TOOLBAR ====================
         top_toolbar:wx.Panel|None = None
@@ -109,7 +128,7 @@ class ChartFrame(wx.Frame):
 
         if len(self.charts) == 2:
             # === 2 CHARTS: Use Splitter (draggable) ===
-            self.splitter = wx.SplitterWindow(self.combined_panel,
+            self.splitter = wx.SplitterWindow(self,
                                               style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
             self.splitter.SetMinimumPaneSize(200)
 
@@ -121,65 +140,54 @@ class ChartFrame(wx.Frame):
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=1)
-            self.combined_panel.SetSizer(sizer)
+            self.SetSizer(sizer)
 
         elif len(self.charts) == 1:
             # === Single chart ===
-            self.charts[0].create_panel(self.combined_panel)
+            self.charts[0].create_panel(self)
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(self.charts[0].panel, 1, wx.EXPAND | wx.ALL, border=5)
-            self.combined_panel.SetSizer(sizer)
+            self.SetSizer(sizer)
 
         else:
             # === 3 or more charts: Manual layout ===
             for chart in self.charts:
-                chart.create_panel(self.combined_panel)
+                chart.create_panel(self)
 
-            self.combined_panel.Bind(wx.EVT_SIZE, self.on_combined_panel_resize)
+            self.Bind(wx.EVT_SIZE, self.on_panel_resize)
             self.do_manual_chart_layout()  # initial layout
 
         # Add page to notebook
-        self.notebook.AddPage(self.combined_panel, page_name)
+        self.notebook.notebook.AddPage(self, page_name)
 
-        # Put nav toolbar in combined panel sizer
+        # Put nav toolbar in panel sizer
         if top_toolbar:
-            page_sizer = self.combined_panel.GetSizer()
+            page_sizer = self.GetSizer()
             if page_sizer:
                 page_sizer.Insert(0, top_toolbar, 0, wx.EXPAND | wx.ALL, border=1)
-                self.combined_panel.Layout()
-
-        # Put notebook in main sizer
-        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=1)
-
-        self.panel.SetSizer(main_sizer)
-        self.SetMinSize(wx.Size(1100, 900))
-        self.Centre()
-
-        # wx.CallAfter(self.final_layout_pass)
-        # self.final_layout_pass()
+                self.Layout()
 
     def final_layout_pass(self):
         """One last strong layout pass after everything is visible"""
         if len(self.charts) > 2:
             self.do_manual_chart_layout()
-        self.combined_panel.Layout()
-        self.notebook.Layout()
-        self.panel.Layout()
+        self.Layout()
+        self.notebook.notebook.Layout()
         self.Layout()
         self.Refresh()
 
-    def on_combined_panel_resize(self, event):
-        """Called whenever the combined_panel is resized"""
+    def on_panel_resize(self, event):
+        """Called whenever the panel is resized"""
         event.Skip()  # Important: allow normal processing
         wx.CallAfter(self.do_manual_chart_layout)  # Do layout after resize completes
 
     def do_manual_chart_layout(self):
         """Manually position and size each chart equally + force matplotlib resize"""
-        if len(self.charts) == 0 or not self.combined_panel:
+        if len(self.charts) == 0:
             return
 
-        client_size = self.combined_panel.GetClientSize()
+        client_size = self.GetClientSize()
         width = client_size.width
         height = client_size.height
 
@@ -233,7 +241,7 @@ class ChartFrame(wx.Frame):
         return date_time_as_date
 
     def _init_toolbar(self, reservoirs:List[Reservoir], reports:List[str])->wx.Panel:
-        top_toolbar = wx.Panel(self.combined_panel, style=wx.BORDER_NONE)
+        top_toolbar = wx.Panel(self, style=wx.BORDER_NONE)
         top_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))
 
         tb_sizer = wx.BoxSizer(wx.HORIZONTAL)

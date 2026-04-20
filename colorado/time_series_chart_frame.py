@@ -31,7 +31,7 @@ from typing import List
 from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
-from chart.chart_frame import ChartFrame
+from chart.chart_frame import ChartFrame, Notebook
 from chart.line_chart import LineChart
 import colorado.lb as lb
 import colorado.ub as ub
@@ -47,49 +47,15 @@ arrow_fg = wx.Colour(150, 150, 150)
 GIF_FRAME_DELAY_MS = 750
 GIF_LOOP_ENABLED = False
 
-def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
-    """Return list of directories containing the given filename."""
-    root = Path(root_dir)
-    if not root.exists():
-        raise FileNotFoundError(f"Directory not found: {root_dir}")
-
-    matching_dirs = []
-    for dir_path in root.rglob("*"):
-        if dir_path.is_dir():
-            if (dir_path / filename).is_file():
-                matching_dirs.append(str(dir_path.resolve()))
-
-    return sorted(set(matching_dirs))
-
-
 # ==================== MAIN FRAME ====================
 
-class ReservoirChartFrame(ChartFrame):
-    def __init__(self, reservoir_list: List[Reservoir], date_time: date,
-                 report_list: List[str] | None = None,
-                 title: str = "Colorado River War"):
-        super().__init__(reservoir_list, date_time, report_list, title, page_name='Reservoirs')
-
-    def load_charts(self):
-        start = self.start_nav.current_date
-        current = self.current_nav.current_date
-        end = self.end_nav.current_date
-
-        reservoir_chart = ReservoirChart(
-            self.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end
-        )
-        self.charts.append(reservoir_chart)
-
-        inflow_chart = InflowOutflowChart(
-            self.reservoirs, start_date=start, current_date=current, end_date=end
-        )
-        self.charts.append(inflow_chart)
-
 class TimeSeriesChartFrame(ChartFrame):
-    def __init__(self, reservoirs: List[Reservoir], date_time: date,
+    def __init__(self,
+                 notebook: Notebook,
+                 reservoirs: List[Reservoir], date_time: date,
                  reports: List[str] | None = None,
                  title: str = "Colorado River War"):
-        super().__init__(reservoirs=reservoirs, reports=reports, title=title, page_name='Reservoirs')
+        super().__init__(notebook, reservoirs=reservoirs, reports=reports, title=title, page_name='APR26 24-Month')
 
     def load_charts(self):
         powell_df = None

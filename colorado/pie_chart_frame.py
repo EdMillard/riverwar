@@ -26,7 +26,7 @@ from chart.multi_bar_chart import MultiBarChart
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
 from colorado.lb_tributary_cul import LBTributaryCUL
-from chart.chart_frame import ChartFrame
+from chart.chart_frame import ChartFrame, Notebook
 from chart.pie_chart import PieChart
 import colorado.lb as lb
 import colorado.ub as ub
@@ -34,7 +34,7 @@ import colorado.allb as all_b
 from api import df_utils
 
 class PieChartFrame(ChartFrame):
-    def __init__(self, title: str = "Colorado River War"):
+    def __init__(self, notebook:Notebook, title: str = "Colorado River War"):
         self.start_year = 1971
         self.end_year = 2024
         self.current_year = self.start_year
@@ -42,14 +42,14 @@ class PieChartFrame(ChartFrame):
         self.timer = None
         self.animation_interval = 1000  # 1000 ms = 1 second per year
 
-        super().__init__(title=title, page_name='Pie Chart')
+        super().__init__(notebook, title=title, page_name='Pie Chart')
 
     def _add_simple_toolbar(self):
-        if not hasattr(self, 'notebook') or self.notebook.GetPageCount() == 0:
+        if not hasattr(self, 'notebook') or self.notebook.notebook.GetPageCount() == 0:
             wx.CallAfter(self._add_simple_toolbar)
             return
 
-        page = self.notebook.GetPage(0)
+        page = self.notebook.notebook.GetPage(0)
 
         toolbar = wx.Panel(page, style=wx.BORDER_NONE)
         toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))

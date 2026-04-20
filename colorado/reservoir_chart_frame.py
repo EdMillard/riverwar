@@ -24,14 +24,15 @@ from typing import List, Optional
 from reservoirs.reservoir import Reservoir
 from colorado.graph_inflow_outflow import InflowOutflowChart
 from colorado.graph_reservoirs import ReservoirChart
-from chart.chart_frame import ChartFrame
+from chart.chart_frame import ChartFrame, Notebook
 
 class ReservoirChartFrame(ChartFrame):
     def __init__(self,
+                 notebook: Notebook,
                  reservoirs: Optional[List[Reservoir] | None] = None,
                  reports: List[str] | None = None,
                  title: str = "Colorado River War"):
-        super().__init__(reservoirs=reservoirs, reports=reports, title=title, page_name='Reservoirs')
+        super().__init__(notebook, reservoirs=reservoirs, reports=reports, title=title, page_name='Reservoirs')
 
     def load_charts(self):
         start = self.start_nav.current_date

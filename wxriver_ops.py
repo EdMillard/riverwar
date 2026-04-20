@@ -27,6 +27,7 @@ import wx
 import matplotlib
 import os
 from typing import List
+from chart.chart_frame import Notebook
 from colorado.pie_chart_frame import PieChartFrame
 from colorado.reservoir_chart_frame import ReservoirChartFrame
 from colorado.time_series_chart_frame import TimeSeriesChartFrame
@@ -90,7 +91,7 @@ def filter_and_sort_usbr_reports(paths):
     # Then sort chronologically
     return sorted(filtered, key=get_sort_key)
 
-def time_series_chart():
+def time_series_chart(notebook:Notebook):
     reports = find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
     flaming_gorge = FlamingGorge()
@@ -102,10 +103,10 @@ def time_series_chart():
         lake_powell,
         lake_mead,
     ]
-    frame = TimeSeriesChartFrame(reservoirs, lake_powell.date_time, reports)
+    frame = TimeSeriesChartFrame(notebook, reservoirs, lake_powell.date_time, reports)
     frame.Show()
 
-def reservoir_chart():
+def reservoir_chart(notebook:Notebook):
     reports = find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
     flaming_gorge = FlamingGorge()
@@ -123,11 +124,11 @@ def reservoir_chart():
         lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
     ]
 
-    frame = ReservoirChartFrame(reservoirs=reservoirs, reports=reports)
+    frame = ReservoirChartFrame(notebook, reservoirs=reservoirs, reports=reports)
     frame.Show()
 
-def pie_chart():
-    frame = PieChartFrame()
+def pie_chart(notebook:Notebook):
+    frame = PieChartFrame(notebook)
     frame.Show()
 
 # ==================== RUN ====================
@@ -135,8 +136,11 @@ if __name__ == "__main__":
 
     app = wx.App(False)
 
-    # pie_chart()
-    # reservoir_chart()
-    time_series_chart()
+    nb = Notebook()
 
+    pie_chart(nb)
+    reservoir_chart(nb)
+    time_series_chart(nb)
+
+    nb.Show()
     app.MainLoop()
