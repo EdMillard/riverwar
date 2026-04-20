@@ -135,8 +135,8 @@ if __name__ == "__main__":
 
     app = wx.App(False)
 
-    pie_chart()
+    # pie_chart()
     # reservoir_chart()
-    # time_series_chart()
+    time_series_chart()
 
     app.MainLoop()

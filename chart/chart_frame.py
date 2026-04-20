@@ -87,6 +87,10 @@ class ChartFrame(wx.Frame):
         self.panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
+        # ==================== NOTEBOOK / CHARTS ==================
+        self.notebook = wx.Notebook(self.panel)
+        self.combined_panel = wx.Panel(self.notebook)
+
         # ======================== TOP TOOLBAR ====================
         top_toolbar:wx.Panel|None = None
         if self.reports:
@@ -102,10 +106,6 @@ class ChartFrame(wx.Frame):
 
         if self.report_path:
             self.set_report(self.report_path)
-
-        # ==================== NOTEBOOK / CHARTS ==================
-        self.notebook = wx.Notebook(self.panel)
-        self.combined_panel = wx.Panel(self.notebook)
 
         if len(self.charts) == 2:
             # === 2 CHARTS: Use Splitter (draggable) ===
@@ -142,10 +142,15 @@ class ChartFrame(wx.Frame):
         # Add page to notebook
         self.notebook.AddPage(self.combined_panel, page_name)
 
-        # Main sizer
-        if top_toolbar is not None:
-            main_sizer.Add(top_toolbar, 0, wx.EXPAND)
-        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=4)
+        # Put nav toolbar in combined panel sizer
+        if top_toolbar:
+            page_sizer = self.combined_panel.GetSizer()
+            if page_sizer:
+                page_sizer.Insert(0, top_toolbar, 0, wx.EXPAND | wx.ALL, border=1)
+                self.combined_panel.Layout()
+
+        # Put notebook in main sizer
+        main_sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=1)
 
         self.panel.SetSizer(main_sizer)
         self.SetMinSize(wx.Size(1100, 900))
@@ -228,7 +233,7 @@ class ChartFrame(wx.Frame):
         return date_time_as_date
 
     def _init_toolbar(self, reservoirs:List[Reservoir], reports:List[str])->wx.Panel:
-        top_toolbar = wx.Panel(self.panel, style=wx.BORDER_NONE)
+        top_toolbar = wx.Panel(self.combined_panel, style=wx.BORDER_NONE)
         top_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))
 
         tb_sizer = wx.BoxSizer(wx.HORIZONTAL)

@@ -114,26 +114,34 @@ class PieChartFrame(ChartFrame):
         df_ub_cul: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, headers)
         show_tributaries = False
 
-        pie_wedges = []
-
         # ====================== UPPER BASIN ======================
         sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=0, divisor=1)
-        pie_wedges.append((df_ub_cul, ub.CU_CO, '#6060ff'))
-        pie_wedges.append((df_ub_cul, ub.CU_UT, '#8080ff'))
-        pie_wedges.append((df_ub_cul, ub.CU_WY, '#a0a0ff'))
-        pie_wedges.append((df_ub_cul, ub.CU_NM, '#c0c0ff'))
+
 
         df_utils.add_column_sum(df_ub_cul,
                                 [ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                                  ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY],
                                 ub.UB_RESERVOIR_EVAP)
-        pie_wedges.append((df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'))
 
         # ====================== LAKE POWELL ======================
-        df_powell: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, [ub.POWELL])
+        df_powell: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year,
+                                                     [ub.POWELL, ub.GLEN_CANYON_RELEASE_WY, ub.POWELL_EVAPORATION, ub.INFLOW])
+
+        usbr_lake_powell_release_total_af = 4354
+        sheet.usbr_annuals(df_powell, usbr_lake_powell_release_total_af, self.start_year, self.end_year, month=all_b.WY,
+                           title=ub.GLEN_CANYON_RELEASE_WY, divisor=1)
+
         usbr_lake_powell_storage_af = 509
         sheet.usbr_last_value(df_powell, usbr_lake_powell_storage_af, self.start_year, self.end_year, month=all_b.WY,
                               title=ub.POWELL, divisor=1)
+
+        usbr_lake_powell_evap_af = 510
+        sheet.usbr_annuals(df_powell, usbr_lake_powell_evap_af, self.start_year, self.end_year, month=all_b.WY,
+                           title=ub.POWELL_EVAPORATION, divisor=1)
+
+        usbr_lake_powell_regulated_inflow_af = 4288
+        sheet.usbr_annuals(df_powell, usbr_lake_powell_regulated_inflow_af, self.start_year, self.end_year, month=all_b.WY,
+                           title=ub.INFLOW, divisor=1)
 
         # ====================== LOWER BASIN ======================
         df_empty = pd.DataFrame()
@@ -148,7 +156,6 @@ class PieChartFrame(ChartFrame):
                                 [lb.LAKE_MEAD_CUL, lb.LAKE_MOHAVE_CUL, lb.LAKE_HAVASU_CUL,
                                  lb.SENATOR_WASH_CUL, lb.DIVERSION_DAMS_CUL],
                                 lb.LB_RESERVOIR_EVAP)
-        pie_wedges.append((lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP, 'gold'))
 
         # California - Imperial Valley
         sheet.usgs_annuals(lb_mainstream_cul.df, '10254730', self.start_year, self.end_year, title=lb.ALAMO_RIVER, divisor=1)
@@ -170,18 +177,12 @@ class PieChartFrame(ChartFrame):
 
         df_utils.subtract_column(lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, lb.IMPERIAL_VALLEY_CU, lb.CA_OUTSIDE_SYSTEM)
         df_utils.subtract_column(lb_mainstream_cul.df, lb.IMPERIAL_VALLEY_CU, lb.SALTON_INFLOW, lb.IMPERIAL_VALLEY_CU)
-        pie_wedges.append((lb_mainstream_cul.df, lb.SALTON_INFLOW, 'gold'))
 
         # Mexico
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
         sheet.merge_annual_column(lb_mainstream_cul.df, df_mx, lb.MEXICO, divisor=1)
-        pie_wedges.append((lb_mainstream_cul.df, lb.MEXICO, '#40a040'))
 
         # California continued
-        pie_wedges.append((lb_mainstream_cul.df, lb.IMPERIAL_VALLEY_CU, '#c040c0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#e080e0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.CA_MAINSTEM, '#ffa0ff'))
-
         df_utils.add_column_sum(lb_mainstream_cul.df,
                                 [lb.CA_OUTSIDE_SYSTEM, lb.CA_MAINSTEM, lb.SALTON_INFLOW, lb.IMPERIAL_VALLEY_CU],
                                 lb.CA_TOTAL)
@@ -205,26 +206,20 @@ class PieChartFrame(ChartFrame):
             df_utils.add_columns_across_dfs([(lb_mainstream_cul.df, lb.NV_TOTAL),
                                              (lb_tributary_cul.df, lb.NV_TRIBUTARY_CUL)],
                                             lb_mainstream_cul.df, lb.NV_TOTAL)
-        pie_wedges.append((lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'))
 
         # Arizona Mainstem
         df_utils.add_column_sum(lb_mainstream_cul.df, [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_MAINSTEM)
         df_utils.rename_column(lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, lb.AZ_CAP, inplace=True)
         df_utils.add_column_sum(lb_mainstream_cul.df, [lb.AZ_CAP, lb.AZ_MAINSTEM], lb.AZ_COLORADO_RIVER_TOTAL)
 
-        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_MAINSTEM, '#ffa0a0'))
-        pie_wedges.append((lb_mainstream_cul.df, lb.AZ_CAP, '#ff8080'))
-
         # Arizona Tributary
         if show_tributaries:
-            pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
             df_utils.add_column_sum(lb_tributary_cul.df,
                                     [lb.AZ_LITTLE_COLORADO_CUL,
                                      lb.AZ_VIRGIN_CUL,
                                      lb.AZ_BILL_WILLIAMS_CUL,
                                      lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL],
                                     lb.AZ_TRIBUTARY_CUL)
-            pie_wedges.append((lb_tributary_cul.df, lb.AZ_TRIBUTARY_CUL, '#ff4040'))
             df_utils.add_columns_across_dfs([
                 (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL),
                 (lb_tributary_cul.df, lb.AZ_GILA_CUL),
@@ -255,6 +250,7 @@ class PieChartFrame(ChartFrame):
             (lb_mainstream_cul.df, lb.MEXICO)],
             lb_mainstream_cul.df, all_b.DEMAND)
 
+        # ====================== DEMAND PIE CHART ======================
         totals = (0.0, 0.99, [
             ("Lower Basin", (lb_mainstream_cul.df, lb.LB_TOTAL)),
             ("Upper Basin", (df_ub_cul, ub.UB_TOTAL)),
@@ -277,29 +273,51 @@ class PieChartFrame(ChartFrame):
             ("Total", (lb_mainstream_cul.df, all_b.EVAP_TOTAL))
         ])
 
-        # ====================== CREATE PIE CHART ======================
-        self.pie_chart = PieChart(
+        pie_wedges = [
+            (df_ub_cul, ub.CU_CO, '#6060ff'),
+            (df_ub_cul, ub.CU_UT, '#8080ff'),
+            (df_ub_cul, ub.CU_WY, '#a0a0ff'),
+            (df_ub_cul, ub.CU_NM, '#c0c0ff'),
+            (df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'),
+            (lb_reservoirs_cul.df, lb.LB_RESERVOIR_EVAP, 'gold'),
+            (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
+            (lb_mainstream_cul.df, lb.SALTON_INFLOW, 'gold'),
+            (lb_mainstream_cul.df, lb.IMPERIAL_VALLEY_CU, '#c040c0'),
+            (lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, '#e080e0'),
+            (lb_mainstream_cul.df, lb.CA_MAINSTEM, '#ffa0ff'),
+            (lb_mainstream_cul.df, lb.NV_TOTAL, 'orange'),
+            (lb_mainstream_cul.df, lb.AZ_MAINSTEM, '#ffa0a0'),
+            (lb_mainstream_cul.df, lb.AZ_CAP, '#ff8080')
+        ]
+        if show_tributaries:
+            pie_wedges.append((lb_tributary_cul.df, lb.AZ_GILA_CUL, '#ff4040'))
+            pie_wedges.append((lb_tributary_cul.df, lb.AZ_TRIBUTARY_CUL, '#ff4040'))
+
+        demand_pie_chart = PieChart(
             pie_wedges,
             title='Colorado River Supply and Demand',
             year=self.current_year,
             annotations=[totals, lb_totals, evap_totals]
         )
-        # self.charts.append(self.pie_chart)
+        # self.charts.append(demand_pie_chart)
+
+        # ====================== SUPPLY PIE CHART ======================
+        # Natural Flow
         df_natural_flow: pd.DataFrame = df_utils.create_df(1964, self.end_year, [ub.SUPPLY])
         sheet.lf_natural_flow_from_excel(df_natural_flow, column_name=ub.SUPPLY)
         df_natural_flow[ub.SUPPLY] = df_natural_flow[ub.SUPPLY] * 1_000_000
-        df_utils.moving_average(df_natural_flow, ub.SUPPLY, '10 yr avg')
+        df_utils.moving_average(df_natural_flow, ub.SUPPLY, 'Supply 10 yr avg')
 
         overlay_lines = [
             (lb_mainstream_cul.df, all_b.DEMAND, 'darkred'),
-            (df_natural_flow, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
+            # (df_natural_flow, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
         ]
-
         underlay_lines = [
             (df_powell, ub.POWELL, 'darkblue',  {"linestyle": "dotted", "marker": "", "linewidth": 2.0, "label": "Lake Powell"}),
         ]
         bar_groups = [
             ('Supply', [(df_natural_flow, ub.SUPPLY, 'royalblue')])]
+
         a = [('Demand', [
                 (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
                 (lb_mainstream_cul.df, lb.CA_TOTAL, '#c040c0'),
@@ -307,18 +325,39 @@ class PieChartFrame(ChartFrame):
                 (lb_mainstream_cul.df, lb.AZ_TOTAL, '#ff0000'),
                 (lb_mainstream_cul.df, lb.NV_TOTAL, 'orange')])
             ]
-        self.multi_bar_chart = MultiBarChart(
+        supply_demand = MultiBarChart(
             groups=bar_groups,
             underlay_lines=underlay_lines,
             overlay_lines=overlay_lines,
             title="Colorado River Supply vs Demand",
+            start_year = self.start_year,
+            end_year=self.end_year,
+            y_max=25.0
         )
-        self.charts.append(self.multi_bar_chart)
+        self.charts.append(supply_demand)
+
+        # ============= POWELL INFLOW OUTFLOW BAR CHART ==============
+        bar_groups = [
+            ('Release', [
+                (df_powell, ub.GLEN_CANYON_RELEASE_WY, 'darkred')
+            ]),
+            ('Inflow', [
+                (df_powell, ub.INFLOW, 'royalblue')
+            ]),
+        ]
+        powell_inflow_outflow = MultiBarChart(
+            groups=bar_groups,
+            # underlay_lines=underlay_lines,
+            # overlay_lines=overlay_lines,
+            title="Powell Inflow Outflow",
+            start_year=self.start_year,
+            end_year=self.end_year,
+            x_min=1999,
+            y_max=16.0
+        )
+        self.charts.append(powell_inflow_outflow)
 
         self._add_simple_toolbar()
-
-        # ====================== START 1-SECOND ANIMATION ======================
-        # self.start_animation()
 
     def start_animation(self):
         if self.timer is None:
