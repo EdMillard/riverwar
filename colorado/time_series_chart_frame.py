@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 import wx
 import matplotlib
 from datetime import date
@@ -29,9 +29,7 @@ import os
 import api.df_utils as df_utils
 from typing import List
 from reservoirs.reservoir import Reservoir
-from colorado.graph_inflow_outflow import InflowOutflowChart
-from colorado.graph_reservoirs import ReservoirChart
-from chart.chart_frame import ChartFrame, Notebook
+from chart.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
 import colorado.lb as lb
 import colorado.ub as ub
@@ -51,11 +49,11 @@ GIF_LOOP_ENABLED = False
 
 class TimeSeriesChartFrame(ChartFrame):
     def __init__(self,
-                 notebook: Notebook,
+                 notebook_frame: NotebookFrame,
                  reservoirs: List[Reservoir], date_time: date,
                  reports: List[str] | None = None,
                  title: str = "Colorado River War"):
-        super().__init__(notebook, reservoirs=reservoirs, reports=reports, title=title, page_name='APR26 24-Month')
+        super().__init__(notebook_frame, reservoirs=reservoirs, reports=reports,page_name='APR26 24-Month')
 
     def load_charts(self):
         powell_df = None

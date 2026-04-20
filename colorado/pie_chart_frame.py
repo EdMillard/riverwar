@@ -26,7 +26,7 @@ from chart.multi_bar_chart import MultiBarChart
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
 from colorado.lb_tributary_cul import LBTributaryCUL
-from chart.chart_frame import ChartFrame, Notebook
+from chart.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
 import colorado.lb as lb
 import colorado.ub as ub
@@ -34,35 +34,25 @@ import colorado.allb as all_b
 from api import df_utils
 
 class PieChartFrame(ChartFrame):
-    def __init__(self, notebook:Notebook, title: str = "Colorado River War"):
+    def __init__(self, notebook_frame: NotebookFrame):
         self.start_year = 1971
         self.end_year = 2024
         self.current_year = self.start_year
-
         self.timer = None
-        self.animation_interval = 1000  # 1000 ms = 1 second per year
+        self.animation_interval = 1000
 
-        super().__init__(notebook, title=title, page_name='Pie Chart')
+        super().__init__(notebook_frame, page_name='Pie Chart')
 
-    def _add_simple_toolbar(self):
-        if not hasattr(self, 'notebook') or self.notebook.notebook.GetPageCount() == 0:
-            wx.CallAfter(self._add_simple_toolbar)
-            return
+    def create_toolbar(self):
+        super().create_toolbar()
 
-        page = self.notebook.notebook.GetPage(0)
-
-        toolbar = wx.Panel(page, style=wx.BORDER_NONE)
-        toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        # Button
-        self.play_btn = wx.Button(toolbar, label="▶ Start Animation")
+        sizer = self.toolbar.GetSizer()
+        self.play_btn = wx.Button(self.toolbar, label="▶ Start Animation")
         self.play_btn.Bind(wx.EVT_BUTTON, self.on_play_pause)
         sizer.Add(self.play_btn, 0, wx.ALL | wx.CENTER, border=8)
 
         # Slider
-        self.year_slider = wx.Slider(toolbar, value=self.current_year,
+        self.year_slider = wx.Slider(self.toolbar, value=self.current_year,
                                      minValue=self.start_year,
                                      maxValue=self.end_year,
                                      style=wx.SL_HORIZONTAL | wx.SL_LABELS)
@@ -76,17 +66,9 @@ class PieChartFrame(ChartFrame):
         sizer.Add(self.year_slider, 1, wx.ALL | wx.CENTER | wx.EXPAND, border=1)
 
         # Status
-        self.toolbar_status = wx.StaticText(toolbar, label=f"Year: {self.current_year}")
+        self.toolbar_status = wx.StaticText(self.toolbar, label=f"Year: {self.current_year}")
         self.toolbar_status.SetForegroundColour(wx.WHITE)
         sizer.Add(self.toolbar_status, 0, wx.ALL | wx.CENTER, border=1)
-
-        toolbar.SetSizer(sizer)
-
-        # Insert at top
-        page_sizer = page.GetSizer()
-        if page_sizer:
-            page_sizer.Insert(0, toolbar, 0, wx.EXPAND | wx.ALL, border=1)
-            page.Layout()
 
     def on_play_pause(self, event):
         """Toggle animation"""
@@ -356,8 +338,6 @@ class PieChartFrame(ChartFrame):
             y_max=16.0
         )
         self.charts.append(powell_inflow_outflow)
-
-        self._add_simple_toolbar()
 
     def start_animation(self):
         if self.timer is None:

@@ -24,12 +24,14 @@ import copy
 import csv
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import importlib
+import inspect
 from pathlib import Path
 import pandas as pd
 from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
 from datetime import date
-from typing import List, Tuple, Literal, Optional
+from typing import List, Tuple, Literal, Optional, Dict, Any, Type
 from sheet import sheet
 from source import usbr_rise
 import colorado.allb as all_b
@@ -823,3 +825,82 @@ class Reservoir:
                 df_wy.insert(0, 'Source', parent_name)
 
         return df_monthly, df_wy, {}
+
+class ReservoirRegistry:
+    def __init__(self, directory: str = "reservoirs"):
+        self.directory = Path(directory)
+        self.registry: Dict[str, Dict[str, Any]] = {}  # 'Lake Powell' -> {constructor, instance, ...}
+
+        self._load_all_reservoirs()
+
+    def get(self, name)-> Reservoir:
+        reservoir_registry = self.registry[name]
+        instance:Reservoir = reservoir_registry["instance"]
+        if instance is None:
+            constructor = reservoir_registry["constructor"]
+            if constructor is not None:
+                instance = constructor()
+        return instance
+
+    def _load_all_reservoirs(self):
+        """Dynamically load all reservoir classes from the directory"""
+        if not self.directory.exists():
+            print(f"Warning: Reservoir directory not found: {self.directory}")
+            return
+
+        for file in sorted(self.directory.glob("*.py")):
+            if file.name == 'reservoir.py':
+                continue
+            if file.name.startswith("__"):
+                continue
+
+            module_name = file.stem
+
+            try:
+                # === Proper way to import dynamically ===
+                spec = importlib.util.spec_from_file_location(module_name, str(file))
+                if spec is None or spec.loader is None:
+                    continue
+
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+
+                # Find the main class (most likely class whose name matches the file)
+                for _, obj in inspect.getmembers(module, inspect.isclass):
+                    if (obj.__module__ == module_name and
+                            not obj.__name__.startswith('_')):  # Main public class
+
+                        nice_name = self._make_nice_name(module_name)
+
+                        self.registry[nice_name] = {
+                            "constructor": obj,  # Class itself
+                            "instance": None,  # Instantiated object
+                            "module": module,
+                            "filepath": str(file)
+                        }
+                        print(f"✓ Loaded reservoir: {nice_name}")
+                        break
+                else:
+                    print(f"⚠ No suitable class found in {file.name}")
+
+            except Exception as e:
+                print(f"✗ Failed to load {file.name}: {e}")
+
+    def _make_nice_name(self, filename: str) -> str:
+        """lake_powell → Lake Powell"""
+        return filename.replace("_", " ").replace("-", " ").title()
+
+    # ====================== Convenience Methods ======================
+    def get(self, name: str) -> Optional[Dict[str, Any]]:
+        return self.registry.get(name)
+
+    def get_instance(self, name: str) -> Optional[Any]:
+        entry = self.registry.get(name)
+        return entry["instance"] if entry else None
+
+    def get_constructor(self, name: str) -> Optional[Type]:
+        entry = self.registry.get(name)
+        return entry["constructor"] if entry else None
+
+    def list_all(self) -> list[str]:
+        return sorted(self.registry.keys())

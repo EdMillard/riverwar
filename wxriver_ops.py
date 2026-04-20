@@ -27,10 +27,12 @@ import wx
 import matplotlib
 import os
 from typing import List
-from chart.chart_frame import Notebook
+from chart.chart_frame import NotebookFrame
 from colorado.pie_chart_frame import PieChartFrame
 from colorado.reservoir_chart_frame import ReservoirChartFrame
+from colorado.reservoirs_chart_frame import ReservoirsChartFrame
 from colorado.time_series_chart_frame import TimeSeriesChartFrame
+from reservoirs.reservoir import ReservoirRegistry
 from reservoirs.imperial import Imperial
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
@@ -91,7 +93,7 @@ def filter_and_sort_usbr_reports(paths):
     # Then sort chronologically
     return sorted(filtered, key=get_sort_key)
 
-def time_series_chart(notebook:Notebook):
+def time_series_chart(notebook_frame:NotebookFrame):
     reports = find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
     flaming_gorge = FlamingGorge()
@@ -103,10 +105,14 @@ def time_series_chart(notebook:Notebook):
         lake_powell,
         lake_mead,
     ]
-    frame = TimeSeriesChartFrame(notebook, reservoirs, lake_powell.date_time, reports)
+    frame = TimeSeriesChartFrame(notebook_frame, reservoirs, lake_powell.date_time, reports)
     frame.Show()
 
-def reservoir_chart(notebook:Notebook):
+def reservoir_chart(notebook_frame:NotebookFrame):
+    frame = ReservoirChartFrame(notebook_frame)
+    frame.Show()
+
+def reservoirs_chart(notebook_frame:NotebookFrame):
     reports = find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
     flaming_gorge = FlamingGorge()
@@ -124,23 +130,38 @@ def reservoir_chart(notebook:Notebook):
         lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
     ]
 
-    frame = ReservoirChartFrame(notebook, reservoirs=reservoirs, reports=reports)
+    frame = ReservoirsChartFrame(notebook_frame, reservoirs=reservoirs, reports=reports)
     frame.Show()
 
-def pie_chart(notebook:Notebook):
-    frame = PieChartFrame(notebook)
+def pie_chart(notebook_frame:NotebookFrame):
+    frame = PieChartFrame(notebook_frame)
     frame.Show()
 
 # ==================== RUN ====================
 if __name__ == "__main__":
 
+    callables = [
+        ("Reservoir", reservoir_chart),
+        ("Reservoirs", reservoirs_chart),
+        ("Demand", pie_chart),
+        ("Inflow Outflow", time_series_chart),
+    ]
+
+    registry = ReservoirRegistry(directory="reservoirs")  # ← change path if needed
+
+    # print("\nLoaded Reservoirs:")
+    # for name in registry.list_all():
+    #     print(f"   • {name}")
+    registry.get("Lake Powell")
+
     app = wx.App(False)
 
-    nb = Notebook()
+    nb = NotebookFrame(callables)
 
-    pie_chart(nb)
     reservoir_chart(nb)
-    time_series_chart(nb)
+    # pie_chart(nb)
+    # reservoirs_chart(nb)
+    # time_series_chart(nb)
 
     nb.Show()
     app.MainLoop()

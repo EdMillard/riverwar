@@ -26,10 +26,8 @@ import pandas as pd
 from datetime import date
 import os
 import wx.lib.buttons as buttons
-from typing import List, Optional
-
-from Xlib.Xcursorfont import top_tee
-
+from typing import List, Optional, Callable, Tuple
+from wx.lib.agw import aui
 from reservoirs.reservoir import Reservoir
 from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
@@ -54,14 +52,9 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 
     return sorted(set(matching_dirs))
 
-class Notebook(wx.Frame):
-    def __init__(
-            self,
-            reservoirs: Optional[List[Reservoir]] = None,
-            reports: List[str] | None = None,
-            title: str = "Colorado River War",
-            page_name: str = "Chart"
-    ):
+class NotebookFrame(wx.Frame):
+    def __init__(self, callables:List[Tuple[str, Callable]], title: str = "Colorado River War"):
+        self.callables:List[Tuple[str, Callable]] = callables
         screen_w, screen_h = wx.DisplaySize()
         window_height:int = screen_h - 64
         window_width:int = min(1580, screen_w - 40)
@@ -81,26 +74,27 @@ class Notebook(wx.Frame):
 # ==================== MAIN FRAME ====================
 
 class ChartFrame(wx.Panel):
-    def __init__(
-            self,
-            notebook: Notebook,
-            reservoirs: Optional[List[Reservoir]] = None,
-            reports: List[str] | None = None,
-            title: str = "Colorado River War",
-            page_name: str = "Chart"
+    def __init__(self,
+                 notebook_frame: NotebookFrame,
+                 reservoirs: Optional[List[Reservoir]] = None,
+                 reports: List[str] | None = None,
+                 page_name: str = "Chart"
     ):
         screen_w, screen_h = wx.DisplaySize()
         window_height:int = screen_h - 64
         window_width:int = min(1580, screen_w - 40)
-        self.notebook = notebook
+        self.notebook_frame = notebook_frame
+        self.notebook = notebook_frame.notebook
 
-        super().__init__(self.notebook.notebook, size=wx.Size(window_width, window_height))
+        super().__init__(self.notebook, size=wx.Size(window_width, window_height))
 
         self.reservoirs:List[Reservoir] = reservoirs
         self.reports:List[str] = reports
         self.report_path:str = ''
 
         self.charts:List[Chart] = []
+
+        self.toolbar: Optional[wx.ToolBar] = None
 
         # ====================== RECORDING STATE ==================
         self.saving_pdf = False
@@ -123,16 +117,15 @@ class ChartFrame(wx.Panel):
         # ========================= CHARTS ========================
         self.load_charts()
 
+
         if self.report_path:
             self.set_report(self.report_path)
 
         if len(self.charts) == 2:
             # === 2 CHARTS: Use Splitter (draggable) ===
-            self.splitter = wx.SplitterWindow(self,
-                                              style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
+            self.splitter = wx.SplitterWindow(self, style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
             self.splitter.SetMinimumPaneSize(200)
 
-            # Important: Create panels with splitter as parent
             for chart in self.charts:
                 chart.create_panel(self.splitter)
 
@@ -158,8 +151,10 @@ class ChartFrame(wx.Panel):
             self.Bind(wx.EVT_SIZE, self.on_panel_resize)
             self.do_manual_chart_layout()  # initial layout
 
+        self.create_toolbar()
+
         # Add page to notebook
-        self.notebook.notebook.AddPage(self, page_name)
+        self.notebook.AddPage(self, page_name)
 
         # Put nav toolbar in panel sizer
         if top_toolbar:
@@ -173,7 +168,7 @@ class ChartFrame(wx.Panel):
         if len(self.charts) > 2:
             self.do_manual_chart_layout()
         self.Layout()
-        self.notebook.notebook.Layout()
+        self.notebook.Layout()
         self.Layout()
         self.Refresh()
 
@@ -239,6 +234,88 @@ class ChartFrame(wx.Panel):
             if reservoir.name == 'Lake Powell':
                 date_time_as_date = pd.Timestamp(reservoir.date_time)
         return date_time_as_date
+
+    @staticmethod
+    def add_options_menu_to_toolbar(toolbar: wx.ToolBar,
+                                    notebook: wx.Notebook,
+                                    items: list[tuple[str, Callable]],
+                                    menu_label: str = "Charts",
+                                    icon: wx.Bitmap = None):
+        """Recommended: Add dropdown menu directly to toolbar"""
+
+        if icon is None:
+            icon = wx.ArtProvider.GetBitmap(wx.ART_LIST_VIEW, wx.ART_TOOLBAR, wx.Size(16, 16))
+
+        menu = wx.Menu()
+
+        for label, func in items:
+            item = menu.Append(wx.ID_ANY, label)
+
+            def make_handler(f):
+                return lambda evt: f(notebook)
+
+            menu.Bind(wx.EVT_MENU, make_handler(func), item)
+
+        # Add dropdown tool to toolbar
+        tool_id = wx.NewIdRef()
+        tool = toolbar.AddTool(tool_id, menu_label, icon, shortHelp=f"{menu_label} Options")
+
+        def on_menu_click(event):
+            # Show menu just below the tool
+            rect = toolbar.GetToolRect(tool_id)
+            toolbar.PopupMenu(menu, rect.GetBottomLeft())
+
+        toolbar.Bind(wx.EVT_TOOL, on_menu_click, tool)
+        toolbar.Realize()
+
+        return menu
+
+    # ====================== HELPER METHOD ======================
+    def _create_chart_menu(self):
+        """Create the Charts menu and return it"""
+        menu = wx.Menu()
+
+        for label, func in self.notebook_frame.callables:
+            item = menu.Append(wx.ID_ANY, label)
+
+            def make_handler(f):
+                return lambda event: f(self.notebook_frame)  # pass notebook to your chart function
+
+            menu.Bind(wx.EVT_MENU, make_handler(func), item)
+
+        return menu
+
+    # ====================== MODIFIED TOOLBAR ======================
+    def create_toolbar(self):
+        self.toolbar = wx.Panel(self, style=wx.BORDER_NONE)
+        self.toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # ==================== CHARTS MENU (FIRST ON LEFT) ====================
+        self.charts_btn = wx.Button(self.toolbar, label="Charts ▼", style=wx.BU_EXACTFIT)
+        self.charts_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        self.charts_btn.Bind(wx.EVT_BUTTON, self.on_charts_menu)
+
+        sizer.Add(self.charts_btn, 0, wx.ALL | wx.CENTER, border=8)
+
+        self.toolbar.SetSizer(sizer)
+
+        # Insert at top
+        page_sizer = self.GetSizer()
+        if page_sizer:
+            page_sizer.Insert(0, self.toolbar, 0, wx.EXPAND | wx.ALL, border=1)
+            self.Layout()
+
+    # ====================== MENU HANDLER ======================
+    def on_charts_menu(self, event):
+        """Show the charts dropdown menu"""
+        menu = self._create_chart_menu()
+        # Show menu below the button
+        pos = self.charts_btn.GetPosition()
+        pos.y += self.charts_btn.GetSize().height + 2
+        self.charts_btn.GetParent().PopupMenu(menu, pos)
+        menu.Destroy()  # Clean up to prevent memory leak
 
     def _init_toolbar(self, reservoirs:List[Reservoir], reports:List[str])->wx.Panel:
         top_toolbar = wx.Panel(self, style=wx.BORDER_NONE)
