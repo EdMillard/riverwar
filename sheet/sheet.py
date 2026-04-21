@@ -608,7 +608,7 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
 
     return values
 
-def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=1)-> float:
+def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=1)-> Tuple[np.datetime64, float]:
     if month != 1:
         ts = pd.Timestamp(f'{year-1}-{month}-01 00:00:00')
     else:
@@ -621,7 +621,11 @@ def usbr_get_last_value(gage_id, year, cfs_to_af=False, month=1)-> float:
     else:
         info, daily_af = usbr_rise.load(gage_id, water_year_info=water_year_info)
 
-    af = daily_af[-1]
+    if len(daily_af):
+        af = daily_af[-1]
+    else:
+        print(f"USBR RISE No Data: {year} {gage_id}")
+        af = (0, 0)
     return af
 
 def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False, month=1, divisor=1_000_000):
@@ -629,10 +633,10 @@ def usbr_last_value(df, gage_id, start_year, end_year, title='', cfs_to_af=False
     annuals = []
     values = []
     for year in range(start_year, end_year+1):
-        af:float = usbr_get_last_value(gage_id, year, cfs_to_af=cfs_to_af, month=month)
+        dt_af = usbr_get_last_value(gage_id, year, cfs_to_af=cfs_to_af, month=month)
         years.append(year + 1)
-        values.append(af[1] / divisor)
-        annuals.append(af)
+        values.append(dt_af[1] / divisor)
+        annuals.append(dt_af)
 
     # if title:
     #    print(title)

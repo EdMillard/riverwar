@@ -91,9 +91,11 @@ class Chart:
         sizer.Add(self.canvas, 1, wx.EXPAND | wx.ALL, border=2)
         self.panel.SetSizer(sizer)
 
-    def update_canvas(self):
-        w = max(8.0, self.panel.GetClientSize().GetWidth() / 100.0)
-        h = max(4.0, self.panel.GetClientSize().GetHeight() / 100.0)
+    def update_canvas(self, w: Optional[float] = None, h: Optional[float] = None):
+        if w is None:
+            w = max(8.0, self.panel.GetClientSize().GetWidth() / 100.0)
+        if h is None:
+            h = max(4.0, self.panel.GetClientSize().GetHeight() / 100.0)
         new_fig = self.get_figure(w, h)
         self.canvas.figure = new_fig
         self.canvas.draw()

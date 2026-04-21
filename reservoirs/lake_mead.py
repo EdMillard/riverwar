@@ -22,10 +22,14 @@ SOFTWARE.
 from pathlib import Path
 import copy
 from datetime import date
+import pandas as pd
 from reservoirs.reservoir import Reservoir
 import colorado.lb as lb
+import colorado.allb as all_b
 from api import df_utils
 from typing import List, Optional
+from sheet import sheet
+
 
 # HDB SDI's
 # Reservoir water surface elevation (end of period, primary)
@@ -45,8 +49,8 @@ class LakeMead(Reservoir):
                              lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION,
                              lb.MEAD_RELEASE, lb.MEAD_RELEASE_CFS]
         super().__init__('Lake Mead', headers, upstream=upstream, month=month)
-
-        self.usbr_rise_elevation_ft_id = 6123 # 1937
+        self.start_year = 1937
+        self.usbr_rise_elevation_ft_id = 6123
         self.usbr_rise_storage_af_id = 6124
         # self.usbr_rise_inflow_af_id = 0
         # self.usbr_rise_evap_af_id = 0
@@ -155,6 +159,15 @@ class LakeMead(Reservoir):
         self.reserved_parts = [("CA", 1661832, lb.CA_COLOR),
                                ("NV", 954013, lb.NV_COLOR),
                                ("AZ", 710589, lb.AZ_COLOR)]
+
+    def load_data_annual(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
+        df = super().load_data_annual(start_year=start_year, end_year=end_year)
+
+        # Lees Ferry is fallback before Diuamond Creek,  Need to add side inflow constant as a hack
+        sheet.usgs_annuals(df, '09380000', self.start_year, 2006, title=all_b.INFLOW, divisor=1)
+        # Diamond Creek
+        sheet.usgs_annuals(df, '09404200', 2007, self.end_year,  title=all_b.INFLOW, divisor=1)
+        return df
 
     def copy(self):
         return copy.copy(self)

@@ -30,7 +30,7 @@ class LakeHavasu(Reservoir):
         headers:List[str] = [lb.HAVASU, lb.HAVASU_ELEVATION, lb.HAVASU_INFLOW,
                              lb.HAVASU_RELEASE, lb.HAVASU_RELEASE_CFS, lb.HAVASU_EVAPORATION]
         super().__init__('Lake Havasu', headers, upstream=upstream)
-
+        self.start_year = 1939
         self.usbr_rise_elevation_ft_id = 6128
         self.usbr_rise_storage_af_id = 6129
         # self.usbr_rise_inflow_af_id = 0

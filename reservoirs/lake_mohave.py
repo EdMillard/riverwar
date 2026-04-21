@@ -30,7 +30,7 @@ class LakeMohave(Reservoir):
         headers:List[str] = [lb.MOHAVE,  lb.MOHAVE_ELEVATION, lb.MOHAVE_INFLOW,
                              lb.MOHAVE_RELEASE, lb.MOHAVE_RELEASE_CFS, lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
         super().__init__('Lake Mohave', headers, upstream=upstream)
-
+        self.start_year = 1949
         self.usbr_rise_elevation_ft_id = 6133
         self.usbr_rise_storage_af_id = 6134
         # self.usbr_rise_inflow_af_id = 0

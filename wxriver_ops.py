@@ -147,16 +147,16 @@ if __name__ == "__main__":
         ("Inflow Outflow", time_series_chart),
     ]
 
-    registry = ReservoirRegistry(directory="reservoirs")  # ← change path if needed
+    reservoir_registry = ReservoirRegistry(directory="reservoirs")  # ← change path if needed
 
     # print("\nLoaded Reservoirs:")
-    # for name in registry.list_all():
+    # for name in reservoir_registry.list_all():
     #     print(f"   • {name}")
-    registry.get("Lake Powell")
+    reservoir_registry.get("Lake Powell")
 
     app = wx.App(False)
 
-    nb = NotebookFrame(callables)
+    nb = NotebookFrame(callables, reservoir_registry)
 
     reservoir_chart(nb)
     # pie_chart(nb)

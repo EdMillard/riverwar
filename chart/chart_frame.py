@@ -28,7 +28,7 @@ import os
 import wx.lib.buttons as buttons
 from typing import List, Optional, Callable, Tuple
 from wx.lib.agw import aui
-from reservoirs.reservoir import Reservoir
+from reservoirs.reservoir import Reservoir, ReservoirRegistry
 from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
 
@@ -53,8 +53,13 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
     return sorted(set(matching_dirs))
 
 class NotebookFrame(wx.Frame):
-    def __init__(self, callables:List[Tuple[str, Callable]], title: str = "Colorado River War"):
+    def __init__(self,
+                 callables:List[Tuple[str, Callable]],
+                 reservoir_registry:ReservoirRegistry,
+                 title: str = "Colorado River War"):
         self.callables:List[Tuple[str, Callable]] = callables
+        self.reservoir_registry = reservoir_registry
+
         screen_w, screen_h = wx.DisplaySize()
         window_height:int = screen_h - 64
         window_width:int = min(1580, screen_w - 40)
@@ -95,6 +100,7 @@ class ChartFrame(wx.Panel):
         self.charts:List[Chart] = []
 
         self.toolbar: Optional[wx.ToolBar] = None
+        self.charts_btn:Optional[wx.Button] = None
 
         # ====================== RECORDING STATE ==================
         self.saving_pdf = False
@@ -116,11 +122,20 @@ class ChartFrame(wx.Panel):
 
         # ========================= CHARTS ========================
         self.load_charts()
+        self.layout_charts()
 
 
-        if self.report_path:
-            self.set_report(self.report_path)
+        # Add page to notebook
+        self.notebook.AddPage(self, page_name)
 
+        # Put nav toolbar in panel sizer
+        if top_toolbar:
+            page_sizer = self.GetSizer()
+            if page_sizer:
+                page_sizer.Insert(0, top_toolbar, 0, wx.EXPAND | wx.ALL, border=1)
+                self.Layout()
+
+    def layout_charts(self):
         if len(self.charts) == 2:
             # === 2 CHARTS: Use Splitter (draggable) ===
             self.splitter = wx.SplitterWindow(self, style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
@@ -151,17 +166,10 @@ class ChartFrame(wx.Panel):
             self.Bind(wx.EVT_SIZE, self.on_panel_resize)
             self.do_manual_chart_layout()  # initial layout
 
-        self.create_toolbar()
-
-        # Add page to notebook
-        self.notebook.AddPage(self, page_name)
-
-        # Put nav toolbar in panel sizer
-        if top_toolbar:
-            page_sizer = self.GetSizer()
-            if page_sizer:
-                page_sizer.Insert(0, top_toolbar, 0, wx.EXPAND | wx.ALL, border=1)
-                self.Layout()
+        if self.toolbar is None:
+            self.create_toolbar()
+        else:
+            self.insert_toolbar()
 
     def final_layout_pass(self):
         """One last strong layout pass after everything is visible"""
@@ -287,20 +295,23 @@ class ChartFrame(wx.Panel):
 
     # ====================== MODIFIED TOOLBAR ======================
     def create_toolbar(self):
-        self.toolbar = wx.Panel(self, style=wx.BORDER_NONE)
-        self.toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        if self.toolbar is None:
+            self.toolbar = wx.Panel(self, style=wx.BORDER_NONE)
+            self.toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
 
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # ==================== CHARTS MENU (FIRST ON LEFT) ====================
-        self.charts_btn = wx.Button(self.toolbar, label="Charts ▼", style=wx.BU_EXACTFIT)
-        self.charts_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-        self.charts_btn.Bind(wx.EVT_BUTTON, self.on_charts_menu)
+            # ==================== CHARTS MENU (FIRST ON LEFT) ====================
+            self.charts_btn = wx.Button(self.toolbar, label="Charts ▼", style=wx.BU_EXACTFIT)
+            self.charts_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+            self.charts_btn.Bind(wx.EVT_BUTTON, self.on_charts_menu)
 
-        sizer.Add(self.charts_btn, 0, wx.ALL | wx.CENTER, border=8)
+            sizer.Add(self.charts_btn, 0, wx.ALL | wx.CENTER, border=8)
 
-        self.toolbar.SetSizer(sizer)
+            self.toolbar.SetSizer(sizer)
+        self.insert_toolbar()
 
+    def insert_toolbar(self):
         # Insert at top
         page_sizer = self.GetSizer()
         if page_sizer:

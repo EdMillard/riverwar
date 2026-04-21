@@ -20,63 +20,81 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import wx
-import pandas as pd
-from sheet import sheet
+from typing import Optional
+from reservoirs.reservoir import ReservoirRegistry, Reservoir
 from chart.multi_bar_chart import MultiBarChart
 from chart.chart_frame import ChartFrame, NotebookFrame
-import colorado.ub as ub
 import colorado.allb as all_b
-from api import df_utils
 
 class ReservoirChartFrame(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         self.start_year = 1971
         self.end_year = 2024
-
+        self.multi_bar_chart: Optional[MultiBarChart] = None
         super().__init__(notebook_frame, page_name='Pie Chart')
 
     def create_toolbar(self):
         super().create_toolbar()
 
+        reservoir_names = self.notebook_frame.reservoir_registry.list_all()
+        self.reservoir_choice = wx.Choice(self.toolbar, choices=reservoir_names)
+
+        if reservoir_names:
+            self.reservoir_choice.SetSelection(0)  # Select first item by default
+
+        self.reservoir_choice.SetMinSize(wx.Size(180, -1))
+        self.reservoir_choice.Bind(wx.EVT_CHOICE, self.on_reservoir_selected)
+        self.toolbar.GetSizer().Add(self.reservoir_choice, 0, wx.ALL | wx.CENTER, border=8)
+
+    def on_reservoir_selected(self, event):
+        """Called when user chooses a reservoir from the option menu"""
+        selection = self.reservoir_choice.GetStringSelection()
+        if not selection:
+            return
+
+        reservoir = self.notebook_frame.reservoir_registry.get(selection)
+
+        if reservoir:
+            self.load_reservoir(reservoir)
+            self.layout_charts()
+            for chart in self.charts:
+                chart.update_canvas(chart.width_inch, chart.height_inch)
+            self.layout_charts()
+
+            # Optional: Show a small status message
+            #self.toolbar_status.SetLabel(f"Year: {self.current_year} | {selection}")
+        else:
+            wx.MessageBox(f"Failed to load {selection}", "Error", wx.ICON_ERROR)
+
     def load_charts(self):
+        reservoir:Reservoir = self.notebook_frame.reservoir_registry.get('Lake Powell')
+        self.load_reservoir(reservoir)
 
-        # ====================== LAKE POWELL ======================
-        df_powell: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year,
-                                                     [ub.POWELL, ub.GLEN_CANYON_RELEASE_WY, ub.POWELL_EVAPORATION, ub.INFLOW])
+    def load_reservoir(self, reservoir:Reservoir) -> None:
+        df = reservoir.load_data_annual()
 
-        usbr_lake_powell_release_total_af = 4354
-        sheet.usbr_annuals(df_powell, usbr_lake_powell_release_total_af, self.start_year, self.end_year, month=all_b.WY,
-                           title=ub.GLEN_CANYON_RELEASE_WY, divisor=1)
-
-        usbr_lake_powell_storage_af = 509
-        sheet.usbr_last_value(df_powell, usbr_lake_powell_storage_af, self.start_year, self.end_year, month=all_b.WY,
-                              title=ub.POWELL, divisor=1)
-
-        usbr_lake_powell_evap_af = 510
-        sheet.usbr_annuals(df_powell, usbr_lake_powell_evap_af, self.start_year, self.end_year, month=all_b.WY,
-                           title=ub.POWELL_EVAPORATION, divisor=1)
-
-        usbr_lake_powell_regulated_inflow_af = 4288
-        sheet.usbr_annuals(df_powell, usbr_lake_powell_regulated_inflow_af, self.start_year, self.end_year, month=all_b.WY,
-                           title=ub.INFLOW, divisor=1)
-
-        # ============= POWELL INFLOW OUTFLOW BAR CHART ==============
+        # ============= INFLOW OUTFLOW BAR CHART ==============
         bar_groups = [
             ('Release', [
-                (df_powell, ub.GLEN_CANYON_RELEASE_WY, 'darkred')
+                (df, all_b.RELEASE, 'darkred'),
+                (df, all_b.EVAPORATION, 'goldenrod')
             ]),
             ('Inflow', [
-                (df_powell, ub.INFLOW, 'royalblue')
+                (df, all_b.INFLOW, 'royalblue')
             ]),
         ]
-        powell_inflow_outflow = MultiBarChart(
-            groups=bar_groups,
-            # underlay_lines=underlay_lines,
-            # overlay_lines=overlay_lines,
-            title="Powell Inflow Outflow",
-            start_year=self.start_year,
-            end_year=self.end_year,
-            x_min=1999,
-            y_max=16.0
-        )
-        self.charts.append(powell_inflow_outflow)
+        if  self.multi_bar_chart is None:
+            self.multi_bar_chart = MultiBarChart(
+                groups=bar_groups,
+                # underlay_lines=underlay_lines,
+                # overlay_lines=overlay_lines,
+                title=f"{reservoir.name} Inflow Outflow",
+                start_year=self.start_year,
+                end_year=self.end_year,
+                # x_min=1999,
+                # y_max=16.0
+            )
+            self.charts.append(self.multi_bar_chart)
+        else:
+            self.multi_bar_chart.groups = bar_groups
+            self.multi_bar_chart.title = f"{reservoir.name} Inflow Outflow"

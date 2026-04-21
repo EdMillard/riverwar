@@ -49,7 +49,6 @@ POWELL_RELEASE_CFS = 'Powell Release CFS'
 
 GLEN_CANYON = 'Glen Canyon '
 LEES_FERRY_USGS = 'Lees Ferry USGS'
-INFLOW = 'Inflow'
 INFLOW_UNREGULATED = 'Inflow Unregulated'
 
 GLEN_CANYON_WY = 'Glen Canyon WY'

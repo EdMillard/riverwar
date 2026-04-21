@@ -21,6 +21,14 @@ SOFTWARE.
 """
 WY = 10
 CY = 1
+
+INFLOW = 'Inflow'
+EVAPORATION = 'Evaporation'
+RELEASE = 'Release'
+STORAGE = 'Storage'
+STORAGE_DELTA = 'Storage Δ'
+ELEVATION = 'Elevation'
+
 # Worksheet Names
 OPERATIONS = 'Operations'
 COMPACT_SHEET = 'Compact'

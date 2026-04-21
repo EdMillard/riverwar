@@ -45,6 +45,7 @@ class MultiBarChart(Chart):
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
+                 show_totals: bool = False,
                  value_divisor: float = 1_000_000,
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
     ):
@@ -54,6 +55,7 @@ class MultiBarChart(Chart):
         self.groups = groups
         self.underlay_lines = underlay_lines or []
         self.overlay_lines = overlay_lines or []
+        self.show_totals = show_totals
 
         self.title = title
         if start_year is None:
@@ -135,10 +137,11 @@ class MultiBarChart(Chart):
                     bottom += height
                     max_height = max(max_height, bottom)
 
-                total = sum(v[0] for v in yearly_data.get(year, [])) / self.value_divisor
-                if total > 1:
-                    ax.text(bar_positions[i], total + 0.12, f"{total:.1f}",
-                            ha='center', va='bottom', fontsize=8.5, fontweight='bold', zorder=6)
+                if self.show_totals:
+                    total = sum(v[0] for v in yearly_data.get(year, [])) / self.value_divisor
+                    if total > 1:
+                        ax.text(bar_positions[i], total + 0.12, f"{total:.1f}",
+                                ha='center', va='bottom', fontsize=8.5, fontweight='bold', zorder=6)
 
         # Overlay Lines
         #

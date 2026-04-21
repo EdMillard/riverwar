@@ -77,17 +77,24 @@ class Reservoir:
         self.upstream = upstream
         self.water_year_month = month
         start_year = self.water_year = 2026
+        self.start_year_data = 0
         self.water_year_info = self.get_water_year_info(start_year, month=month)
 
         # DataFrames
         self.headers = headers
         self.df: Optional[pd.DataFrame] = df_utils.create_df(self.water_year, self.water_year, self.headers)
         self.df_daily: Optional[pd.DataFrame] = None
+        self.df_annual: Optional[pd.DataFrame] = None
 
         self.report_path: Optional[str|None] = ''
         self.df_24_month: Optional[pd.DataFrame] = None
         self.df_24_wy: Optional[pd.DataFrame] = None
         self.date_time:TimeStamp = TimeStamp(1970, 1, 1)
+
+        # Annual Range
+        #
+        self.start_year:Optional[int] = None
+        self.end_year:Optional[int] = None
 
         # Month Year Range
         #
@@ -188,7 +195,34 @@ class Reservoir:
             self.df_daily = df_utils.create_daily_df(self.start_date, self.end_date, self.headers)
             self.report_start_date = self.start_date
             self.report_end_date = self.end_date
-        
+
+    def load_data_annual(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
+        if start_year is None or start_year < self.start_year:
+            start_year = self.start_year
+        if end_year is None:
+            end_year = date.today().year
+        if self.df_annual is None or start_year != self.start_year or self.end_year != end_year:
+            self.start_year = start_year
+            self.end_year = end_year
+            self.df_annual: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year,
+                                                         [all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE, all_b.EVAPORATION, all_b.INFLOW])
+            if self.usbr_rise_storage_af_id:
+                sheet.usbr_last_value(self.df_annual, self.usbr_rise_storage_af_id, self.start_year, self.end_year, month=all_b.WY,
+                                      title=all_b.STORAGE, divisor=1)
+            if self.usbr_rise_elevation_ft_id:
+                sheet.usbr_last_value(self.df_annual, self.usbr_rise_elevation_ft_id, self.start_year, self.end_year, month=all_b.WY,
+                                      title=all_b.ELEVATION, divisor=1)
+            if self.usbr_rise_release_af_id:
+                sheet.usbr_annuals(self.df_annual,self.usbr_rise_release_af_id, self.start_year, self.end_year, month=all_b.WY,
+                                   title=all_b.RELEASE, divisor=1)
+            if  self.usbr_rise_evap_af_id:
+                sheet.usbr_annuals(self.df_annual, self.usbr_rise_evap_af_id, self.start_year, self.end_year, month=all_b.WY,
+                                   title=all_b.EVAPORATION, divisor=1)
+            if self.usbr_rise_inflow_af_id:
+                sheet.usbr_annuals(self.df_annual, self.usbr_rise_inflow_af_id, self.start_year, self.end_year, month=all_b.WY,
+                                   title=all_b.INFLOW, divisor=1)
+        return self.df_annual
+
     def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
         pass
 
@@ -833,15 +867,6 @@ class ReservoirRegistry:
 
         self._load_all_reservoirs()
 
-    def get(self, name)-> Reservoir:
-        reservoir_registry = self.registry[name]
-        instance:Reservoir = reservoir_registry["instance"]
-        if instance is None:
-            constructor = reservoir_registry["constructor"]
-            if constructor is not None:
-                instance = constructor()
-        return instance
-
     def _load_all_reservoirs(self):
         """Dynamically load all reservoir classes from the directory"""
         if not self.directory.exists():
@@ -891,8 +916,17 @@ class ReservoirRegistry:
         return filename.replace("_", " ").replace("-", " ").title()
 
     # ====================== Convenience Methods ======================
-    def get(self, name: str) -> Optional[Dict[str, Any]]:
-        return self.registry.get(name)
+    def get(self, name)-> Optional[Reservoir]:
+        instance: Optional[Reservoir] = None
+        reservoir_registry = self.registry[name]
+        if reservoir_registry is not None:
+            instance = reservoir_registry["instance"]
+            if instance is None:
+                constructor = reservoir_registry["constructor"]
+                if constructor is not None:
+                    instance = constructor()
+                    reservoir_registry["instance"] = instance
+        return instance
 
     def get_instance(self, name: str) -> Optional[Any]:
         entry = self.registry.get(name)

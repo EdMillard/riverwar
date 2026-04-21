@@ -45,6 +45,7 @@ class LakePowell(Reservoir):
                              ub.POWELL_RELEASE, ub.POWELL_RELEASE_CFS]
         super().__init__('Lake Powell', headers, upstream=upstream)
 
+        self.start_year = 1964
         self.usgs_release_gage_id:str = '09380000'
 
         self.usbr_rise_elevation_ft_id = 508 # 1964
@@ -129,19 +130,6 @@ class LakePowell(Reservoir):
         df_utils.subtract_constant(self.df_daily, ub.POWELL_WY, ub.POWELL_ABOVE_3500, self.power_head_min_af)
         self.get_projection(self.df_24_month, ub.POWELL_MOST)
 
-        # self.evap_actual_af = self.get_evaporation(510, ub.POWELL_EVAPORATION_WY)
-        # self.evap_actual_af = self.get_sum_end_of_month(510)
-
-        # Inflow
-        # usbr_lake_powell_regulated_inflow_af = 4288 # 1964
-        # sheet.usbr_annuals(self.df, usbr_lake_powell_regulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_WY, month=all_b.WY, divisor=1)
-
-        # sheet.usbr_annuals(self.df, usbr_lake_powell_unregulated_inflow_af, self.water_year, self.water_year, title=ub.INFLOW_UNREGULATED_WY, month=all_b.WY, divisor=1)
-        # self.inflow_actual_af = self.get_value_by_year(self.water_year, ub.INFLOW_UNREGULATED_WY)
-
-        # Outflow
-        # sheet.usbr_annuals(self.df, usbr_lake_powell_release_total_af, self.water_year, self.water_year, title=ub.GLEN_CANYON_WY, month=all_b.WY, divisor=1)
-        # self.outflow_actual_af = self.get_value_by_year(self.water_year, ub.GLEN_CANYON_WY)
 
     def af_for_elevation(self, feet:float|int):
         return LakePowell.get_capacity(feet, elev_col='Elevation_ft_NAVD88', cap_col='Capacity_acrefeet') - self.dead_pool_af

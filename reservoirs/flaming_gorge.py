@@ -36,6 +36,7 @@ class FlamingGorge(Reservoir):
                              ub.FLAMING_GORGE_RELEASE, ub.FLAMING_GORGE_RELEASE_CFS, ub.FLAMING_GORGE_EVAPORATION_WY]
         super().__init__('Flaming Gorge', headers, upstream=upstream)
 
+        self.start_year = 1963
         self.usbr_rise_elevation_ft_id = 341
         self.usbr_rise_storage_af_id = 337
         self.end_of_month_storage_str = 'Live Storage'
