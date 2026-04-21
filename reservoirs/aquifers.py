@@ -63,6 +63,7 @@ class Aquifers(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [lb.AQUIFER, lb.AQUIFER_INFLOW, lb.AQUIFER_RELEASE]
         super().__init__('AZ Aquifers', headers, upstream=upstream)
+        self.catalog_id = 0
         self.start_year = 1989
         self.end_year = 2023
         self.years: List[int] = list(range(self.start_year, self.end_year+1))

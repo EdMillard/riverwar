@@ -46,7 +46,7 @@ class LakePleasant(Reservoir):
         headers:List[str] = [lb.MOHAVE,  lb.MOHAVE_ELEVATION, lb.MOHAVE_INFLOW,
                              lb.MOHAVE_RELEASE,lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
         super().__init__('Lake Pleasant', headers, upstream=upstream)
-
+        self.catalog_id = 0
         self.get_lake_pleasant_data()
 
         # USGS 09426650 — Central Arizona Project Canal at Havasu Pumping Plant (near Parker, AZ)

@@ -34,19 +34,9 @@ class FlamingGorge(Reservoir):
                              ub.FLAMING_GORGE_INFLOW, ub.FLAMING_GORGE_INFLOW_CFS,
                              ub.FLAMING_GORGE_INFLOW_UNREGULATED, ub.FLAMING_GORGE_INFLOW_UNREGULATED_CFS,
                              ub.FLAMING_GORGE_RELEASE, ub.FLAMING_GORGE_RELEASE_CFS, ub.FLAMING_GORGE_EVAPORATION_WY]
-        super().__init__('Flaming Gorge', headers, upstream=upstream)
-
+        super().__init__('Flaming Gorge', headers, catalog_id=2300, upstream=upstream)
         self.start_year = 1963
-        self.usbr_rise_elevation_ft_id = 341
-        self.usbr_rise_storage_af_id = 337
         self.end_of_month_storage_str = 'Live Storage'
-        self.usbr_rise_inflow_af_id = 4287
-        self.usbr_rise_inflow_cfs_id = 339
-        self.usbr_rise_inflow_unregulated_af_id = 4300
-        self.usbr_rise_inflow_unregulated_cfs_id = 338
-        self.usbr_rise_evap_af_id = 342
-        self.usbr_rise_release_af_id = 4353
-        self.usbr_rise_release_cfs_id = 4314
 
         # Elevations
         #

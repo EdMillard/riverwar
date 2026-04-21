@@ -26,6 +26,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import importlib
 import inspect
+import json
 from pathlib import Path
 import pandas as pd
 from ruamel.yaml.timestamp import TimeStamp
@@ -72,13 +73,61 @@ class Reservoir:
     salton_actual_color = '#FFEA00'  # Yellow, same as evap
     salton_projected_color = '#FFDD33'
 
-    def __init__(self, name:str, headers:List[str], upstream:Optional[List[Reservoir]]=None, month=10):
+    def __init__(self, name:str, headers:List[str], catalog_id:int=0, upstream:Optional[List[Reservoir]]=None, month=10):
         self.name:str = name
+        self.catalog_id = catalog_id
         self.upstream = upstream
         self.water_year_month = month
         start_year = self.water_year = 2026
         self.start_year_data = 0
         self.water_year_info = self.get_water_year_info(start_year, month=month)
+
+        # USBR RISE ID's
+        #
+        self.usbr_rise_elevation_ft_id = 0
+        self.usbr_rise_storage_af_id = 0
+        self.end_of_month_storage_str = 'End Of Month Storage'
+        self.usbr_rise_inflow_af_id = 0
+        self.usbr_rise_evap_af_id = 0
+        self.usbr_rise_release_af_id = 0
+        self.usbr_rise_release_cfs_id = 0
+
+        self.usbr_item_ids = {}
+        if self.catalog_id:
+            path = Path(f'data/USBR_RISE/catalog/{self.name_as_file_name()}.json')
+            if path.exists():
+                f = path.open(mode='r')
+                self.usbr_item_ids = json.load(f)
+            else:
+                data = usbr_rise.load_catalog(Path(f'data/USBR_RISE/catalog/{self.catalog_id}'), f'{self.catalog_id}')
+                relationships = data.get('relationships', None)
+                if relationships is not None:
+                    location = relationships.get('location', None)
+                    catalog_items = relationships.get('catalogItems', None)
+                    catalog_data = catalog_items.get('data', None)
+                    for item in catalog_data:
+                        id = item.get('id', None)
+                        if id:
+                            name, item_id = usbr_rise.request_catalog_item(id)
+                            self.usbr_item_ids[name] = item_id
+
+                    f = path.open(mode='w')
+                    json_str = json.dumps(self.usbr_item_ids, indent=4)
+                    f.write(json_str)
+                    f.close()
+
+            if self.usbr_item_ids:
+                self.usbr_rise_elevation_ft_id1 = self.usbr_item_ids.get('elevation_ft', 0)
+                self.usbr_rise_storage_af_id = self.usbr_item_ids.get('storage_af', 0)
+                self.usbr_change_in_storage_af_id = self.usbr_item_ids.get('change_in_storage_af', 0)
+                self.usbr_rise_inflow_af_id = self.usbr_item_ids.get('inflow_af', 0)
+                self.usbr_rise_inflow_cfs_id = self.usbr_item_ids.get('inflow_cfs', 0)
+                self.usbr_rise_inflow_unregulated_af_id = 0
+                self.usbr_rise_inflow_unregulated_cfs_id = 0
+                self.usbr_rise_evap_af_id = self.usbr_item_ids.get('evaporation_af', 0)
+                self.usbr_rise_release_af_id = self.usbr_item_ids.get('release_total_af', 0)
+                self.usbr_rise_release_cfs_id = self.usbr_item_ids.get('release_total_cfs', 0)
+                self.usbr_rise_area_acres_id = self.usbr_item_ids.get('area_acres', 0)
 
         # DataFrames
         self.headers = headers
@@ -110,16 +159,6 @@ class Reservoir:
         self.end_month_year_actual = "Mar 2026"
         self.start_month_year_projected = "Apr 2026"
         self.emd_month_year_projected = "Sep 2026"
-
-        # USBR RISE ID's
-        #
-        self.usbr_rise_elevation_ft_id = 0
-        self.usbr_rise_storage_af_id = 0
-        self.end_of_month_storage_str = 'End Of Month Storage'
-        self.usbr_rise_inflow_af_id = 0
-        self.usbr_rise_evap_af_id = 0
-        self.usbr_rise_release_af_id = 0
-        self.usbr_rise_release_cfs_id = 0
 
         # Elevations
         #
@@ -161,6 +200,9 @@ class Reservoir:
 
         # Reserve (i.e. ICS)
         self.reserved_parts:List[tuple] = []
+
+    def name_as_file_name(self) -> str:
+        return self.name.replace(' ', '_')
 
     @staticmethod
     def get_end_of_month(d: date) -> date:

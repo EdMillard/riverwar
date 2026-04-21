@@ -43,20 +43,14 @@ class LakePowell(Reservoir):
                              ub.POWELL_INFLOW, ub.POWELL_INFLOW_CFS,
                              ub.POWELL_INFLOW_UNREGULATED, ub.POWELL_INFLOW_UNREGULATED_CFS,
                              ub.POWELL_RELEASE, ub.POWELL_RELEASE_CFS]
-        super().__init__('Lake Powell', headers, upstream=upstream)
+        super().__init__('Lake Powell', headers, catalog_id = 2362, upstream=upstream)
+
 
         self.start_year = 1964
         self.usgs_release_gage_id:str = '09380000'
 
-        self.usbr_rise_elevation_ft_id = 508 # 1964
-        self.usbr_rise_storage_af_id = 509
-        self.usbr_rise_inflow_af_id = 4288
-        self.usbr_rise_inflow_cfs_id = 511
-        self.usbr_rise_inflow_unregulated_af_id = 4301
-        self.usbr_rise_inflow_unregulated_cfs_id = 512
-        self.usbr_rise_evap_af_id = 510
-        self.usbr_rise_release_af_id = 4354
-        self.usbr_rise_release_cfs_id = 4315
+        self.usbr_rise_inflow_unregulated_af_id = self.usbr_item_ids.get('inflow_volume_unregulated_af', 0)
+        self.usbr_rise_inflow_unregulated_cfs_id = self.usbr_item_ids.get('inflow_unregulated_cfs', 0)
 
         # Elevations
         #

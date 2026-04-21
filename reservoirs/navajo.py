@@ -30,18 +30,9 @@ class Navajo(Reservoir):
         headers:List[str] = [ub.NAVAJO_WY,  ub.NAVAJO_ELEVATION_WY,
                              ub.NAVAJO_INFLOW, ub.NAVAJO_INFLOW_CFS,
                              ub.NAVAJO_RELEASE, ub.NAVAJO_RELEASE_CFS, ub.NAVAJO_EVAPORATION_WY]
-        super().__init__('Navajo', headers, upstream=upstream)
+        super().__init__('Navajo', headers, catalog_id=2392, upstream=upstream)
         self.start_year = 1962
-        self.usbr_rise_elevation_ft_id = 612
-        self.usbr_rise_storage_af_id = 613
         self.end_of_month_storage_str = 'Live Storage'
-        self.usbr_rise_inflow_af_id = 4289
-        self.usbr_rise_inflow_cfs_id = 615
-        self.usbr_rise_evap_af_id = 617
-        self.usbr_rise_release_af_id = 4290
-        self.usbr_rise_release_cfs_id = 616
-        self.usbr_rise_power_release_af_id = 4290
-        self.usbr_rise_power_release_cfs_id = 4316
 
         # Elevations
         #

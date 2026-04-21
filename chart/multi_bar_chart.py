@@ -149,7 +149,7 @@ class MultiBarChart(Chart):
 
         # Y limits
         ax.set_ylim(self.y_min if self.y_min is not None else 0.0,
-                    self.y_max if self.y_max is not None else max(max_height * 1.13, 5))
+                    self.y_max if self.y_max is not None else max(max_height * 1.13, 0.1))
 
         # X limits
         x_left = x[0] - 0.55

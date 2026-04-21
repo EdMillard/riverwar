@@ -27,7 +27,7 @@ import pandas as pd
 import requests
 from pathlib import Path
 from source.water_year_info import WaterYearInfo
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Tuple
 
 debug = True
 
@@ -336,21 +336,21 @@ def load_catalog(catalog_path, unified_region_id, theme_id=0):
     return records
 
 
-def request_catalog(catalog_path, unified_region_id, theme_id=0):
+def request_catalog(catalog_path, id, theme_id=0)->Dict:
     records = {}
     page_no = 1
     num_items = 0
     total_items = 100
     while num_items < total_items:
-        url = 'https://data.usbr.gov/rise/api/catalog-record'
+        url = f'https://data.usbr.gov/rise/api/catalog-record/{id}'
 
-        url += '?page='
-        url += str(page_no)
-        url += '&itemsPerPage=100'
+        # url += '?page='
+        # url += str(page_no)
+        # url += '&itemsPerPage=100'
 
-        unified_region_id_str = str(unified_region_id)
-        url += '&unifiedRegionId='
-        url += unified_region_id_str
+        # unified_region_id_str = str(unified_region_id)
+        # url += '&unifiedRegionId='
+        # url += unified_region_id_str
 
         if theme_id > 0:
             theme_id_str = str(theme_id)
@@ -369,17 +369,18 @@ def request_catalog(catalog_path, unified_region_id, theme_id=0):
 
                 dictionary = json.loads(r.content.decode("utf-8"))
                 data = dictionary['data']
-                if page_no == 1:
-                    records = data
-                else:
-                    records.extend(data)
+                return data
+                # if page_no == 1:
+                #     records = data
+                # else:
+                #     records.extend(data)
 
-                meta = dictionary['meta']
+                # meta = dictionary['meta']
                 # print(meta)
-                total_items = meta['totalItems']
-                num_items += meta['itemsPerPage']
-                current_page = meta['currentPage']
-                page_no = current_page + 1
+                # total_items = meta['totalItems']
+                # num_items += meta['itemsPerPage']
+                # current_page = meta['currentPage']
+                # page_no = current_page + 1
             except FileNotFoundError:
                 print("usbr request catalog file open error: ", catalog_path)
             except KeyError:
@@ -387,7 +388,7 @@ def request_catalog(catalog_path, unified_region_id, theme_id=0):
         else:
             print('usbr request catalog failed with response: ', r.status_code, ' ', r.reason)
             break
-    return records
+    return {}
 
 
 def load_catalog_items(catalog_record, prefix=''):
@@ -404,7 +405,7 @@ def load_catalog_items(catalog_record, prefix=''):
         return {}
 
 
-def request_catalog_item(catalog_item_id_str, prefix=''):
+def request_catalog_item(catalog_item_id_str)->Tuple[str, int]:
     catalog_item = {}
     url = 'https://data.usbr.gov'
     url += catalog_item_id_str
@@ -423,15 +424,15 @@ def request_catalog_item(catalog_item_id_str, prefix=''):
             # parameter_name += '_' + attributes['parameterTimestep']
             parameter_name += '_' + attributes['parameterUnit']
             parameter_name = parameter_name.lower()
-            parameter_name = prefix + '_' + parameter_name
 
             print('\t', parameter_name, '=', attributes['_id'])
             # attributes['temporalStartDate'], attributes['temporalEndDate'])
+            return parameter_name, int(attributes['_id'])
         except KeyError:
             print("usbr request catalog item key error: ", catalog_item_id_str)
     else:
         print('usbr request catalog item failed with response: ', r.status_code, ' ', r.reason)
-    return catalog_item
+    return '', 0
 
 
 def load_json(file_path):

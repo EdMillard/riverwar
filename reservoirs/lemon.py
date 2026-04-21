@@ -17,7 +17,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+SOFTWARE.1
 """
 from pathlib import Path
 from datetime import date
@@ -25,22 +25,15 @@ from reservoirs.reservoir import Reservoir
 import colorado.ub as ub
 from typing import List, Optional
 
-class Strawberry(Reservoir):
+class Lemon(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Strawberry', headers, catalog_id = 488, upstream=upstream)
-        self.start_year = 1975
-        self.usbr_rise_elevation_ft_id = 782
-        self.usbr_rise_storage_af_id = 779
-        self.usbr_rise_inflow_af_id = 4485
-        self.usbr_rise_inflow_cfs_id = 780
-        self.usbr_rise_evap_af_id = 783
-        self.usbr_rise_release_af_id = 4484
-        self.usbr_rise_release_cfs_id = 4345
+        super().__init__('Lemon', headers, catalog_id=2364, upstream=upstream)
+        self.start_year = 1963
 
         # Elevations
         #
-        # Must be called first
+        # Must be called first1
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 

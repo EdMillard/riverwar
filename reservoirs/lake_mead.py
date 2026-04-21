@@ -48,14 +48,8 @@ class LakeMead(Reservoir):
         headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.MEAD_ABOVE_1000, lb.MEAD_MOST,
                              lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION,
                              lb.MEAD_RELEASE, lb.MEAD_RELEASE_CFS]
-        super().__init__('Lake Mead', headers, upstream=upstream, month=month)
+        super().__init__('Lake Mead', headers, catalog_id= 4370, upstream=upstream, month=month)
         self.start_year = 1937
-        self.usbr_rise_elevation_ft_id = 6123
-        self.usbr_rise_storage_af_id = 6124
-        # self.usbr_rise_inflow_af_id = 0
-        # self.usbr_rise_evap_af_id = 0
-        self.usbr_rise_release_af_id = 6122
-        self.usbr_rise_release_cfs_id = 6125
 
         # Elevations
         #

@@ -25,18 +25,11 @@ from reservoirs.reservoir import Reservoir
 import colorado.ub as ub
 from typing import List, Optional
 
-class Strawberry(Reservoir):
+class McPhee(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Strawberry', headers, catalog_id = 488, upstream=upstream)
-        self.start_year = 1975
-        self.usbr_rise_elevation_ft_id = 782
-        self.usbr_rise_storage_af_id = 779
-        self.usbr_rise_inflow_af_id = 4485
-        self.usbr_rise_inflow_cfs_id = 780
-        self.usbr_rise_evap_af_id = 783
-        self.usbr_rise_release_af_id = 4484
-        self.usbr_rise_release_cfs_id = 4345
+        super().__init__('McPhee',headers,  catalog_id= 2379, upstream=upstream)
+        self.start_year = 1984
 
         # Elevations
         #
@@ -72,14 +65,3 @@ class Strawberry(Reservoir):
         # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.BLUE_MESA_INFLOW)
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.BLUE_MESA_RELEASE_CFS)
         # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.BLUE_MESA_RELEASE)
-
-        # usbr_blue_mesa_storage_af = 76
-        # sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.water_year, self.water_year,
-        #                        title=ub.BLUE_MESA_WY, month=all_b.WY, divisor=1)
-        # self.active_capacity_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_WY)
-
-        # 24 Month
-        #
-        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")
-        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
-        self.evap_parts = self.get_24_month_evap(self.df_24_month)

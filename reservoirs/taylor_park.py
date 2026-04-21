@@ -22,25 +22,23 @@ SOFTWARE.
 from pathlib import Path
 from datetime import date
 from reservoirs.reservoir import Reservoir
-import colorado.lb as lb
+import colorado.ub as ub
 from typing import List, Optional
 
-class LakeMohave(Reservoir):
+class TaylorPark(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
-        headers:List[str] = [lb.MOHAVE,  lb.MOHAVE_ELEVATION, lb.MOHAVE_INFLOW,
-                             lb.MOHAVE_RELEASE, lb.MOHAVE_RELEASE_CFS, lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
-        super().__init__('Lake Mohave', headers, catalog_id=4369, upstream=upstream)
-        self.start_year = 1950
+        headers:List[str] = []
+        super().__init__('Taylor Park', headers, catalog_id=2459, upstream=upstream)
+        self.start_year = 1959
 
         # Elevations
         #
         # Must be called first
-        self.dead_pool_feet = 7358.0
+        self.dead_pool_feet = 0
         self.dead_pool_af = 0
-        # Bottom 5586.00
 
-        self.full_feet =  647
-        self.full_af = 1_810_000
+        self.full_feet = 0
+        self.full_af = 0
 
         # Critical
         self.power_head_target_feet = 0
@@ -59,32 +57,22 @@ class LakeMohave(Reservoir):
 
         # Current
         #
-        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.MOHAVE_ELEVATION)
-        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.MOHAVE)
-        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, lb.MOHAVE_RELEASE_CFS)
-        self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, lb.MOHAVE_RELEASE)
+        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
+        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.BLUE_MESA_WY)
 
-        # usbr_lake_mohave_storage_af = 6134
-        # sheet.usbr_last_value(self.df, usbr_lake_mohave_storage_af, self.water_year, self.water_year, title=lb.MOHAVE, month=all_b.CY, divisor=1)
-        # self.active_capacity_af = self.get_value_by_year(self.water_year, lb.MOHAVE)
+        self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.BLUE_MESA_EVAPORATION_WY)
+        self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.BLUE_MESA_INFLOW_CFS)
+        # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.BLUE_MESA_INFLOW)
+        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.BLUE_MESA_RELEASE_CFS)
+        # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.BLUE_MESA_RELEASE)
+
+        # usbr_blue_mesa_storage_af = 76
+        # sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.water_year, self.water_year,
+        #                        title=ub.BLUE_MESA_WY, month=all_b.WY, divisor=1)
+        # self.active_capacity_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_WY)
 
         # 24 Month
         #
-        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Hoover Release", side="Side Inflow")
+        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")
         self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
         self.evap_parts = self.get_24_month_evap(self.df_24_month)
-
-        # usbr_lake_mohave_release_total_af = 6131
-        # sheet.usbr_annuals(self.df, usbr_lake_mohave_release_total_af, self.water_year, self.water_year, title=lb.MOHAVE_RELEASE, month=all_b.WY, divisor=1)
-
-        # usbr_blue_mesa_evaporation_af = 79
-        # sheet.usbr_annuals(self.df, usbr_blue_mesa_evaporation_af, self.water_year, self.water_year,  title=lb.MOHAVE_EVAPORATION, month=all_b.CY, divisor=1)
-
-        # usbr_lake_mohave_water_temperature_degf = 6132
-        # usbr_lake_mohave_release_total_cfs = 6135
-
-        # Inflow
-        # self.inflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_INFLOW)
-
-        # Outflow
-        # self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_RELEASE)

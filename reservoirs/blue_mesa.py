@@ -30,16 +30,9 @@ class BlueMesa(Reservoir):
         headers:List[str] = [ub.BLUE_MESA_WY,  ub.BLUE_MESA_ELEVATION_WY,
                              ub.BLUE_MESA_INFLOW, ub.BLUE_MESA_INFLOW_CFS,
                              ub.BLUE_MESA_RELEASE, ub.BLUE_MESA_RELEASE_CFS, ub.BLUE_MESA_EVAPORATION_WY]
-        super().__init__('Blue Mesa', headers, upstream=upstream)
+        super().__init__('Blue Mesa', headers, catalog_id=2249, upstream=upstream)
         self.start_year = 1966
-        self.usbr_rise_elevation_ft_id = 78
-        self.usbr_rise_storage_af_id = 76
         self.end_of_month_storage_str = 'Live Storage'
-        self.usbr_rise_inflow_af_id = 4283
-        self.usbr_rise_inflow_cfs_id = 4279
-        self.usbr_rise_evap_af_id = 79
-        self.usbr_rise_release_af_id = 4349
-        self.usbr_rise_release_cfs_id = 4310
 
         # Elevations
         #
