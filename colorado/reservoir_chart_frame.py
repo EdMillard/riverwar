@@ -92,7 +92,7 @@ class ReservoirChartFrame(ChartFrame):
             ]),
         ]
         self.multi_bar_chart = MultiBarChart(
-            percentage=0.5,
+            percentage=0.30,
             groups=bar_groups,
             # underlay_lines=underlay_lines,
             # overlay_lines=overlay_lines,
@@ -111,7 +111,7 @@ class ReservoirChartFrame(ChartFrame):
         ]
         line_chart = LineChart(
             time_series, title='',
-            percentage=0.2,
+            percentage=0.25,
             start_date=reservoir.start_date,
             current_date=date_today,
             end_date=date_today,
@@ -126,7 +126,7 @@ class ReservoirChartFrame(ChartFrame):
         ]
         line_chart = LineChart(
             time_series, title='',
-            percentage=0.2,
+            percentage=0.25,
             start_date=reservoir.start_date,
             current_date=date_today,
             end_date=date_today,
@@ -141,7 +141,7 @@ class ReservoirChartFrame(ChartFrame):
         ]
         line_chart = LineChart(
             time_series, title='',
-            percentage=0.3,
+            percentage=0.25,
             start_date=reservoir.start_date,
             current_date=date_today,
             end_date=date_today,

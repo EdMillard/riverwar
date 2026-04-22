@@ -86,6 +86,30 @@ class MultiBarChart(Chart):
             for label, series_list in groups
         ]
 
+    def setup_year_xaxis(self, ax, years: List[int], max_ticks: int = 25, fontsize: int = 10):
+        """Standalone reusable X-axis setup for year-based charts."""
+        if not years:
+            return
+
+        n_years = len(years)
+
+        if n_years > max_ticks * 2:
+            step = max(1, n_years // max_ticks)
+            tick_positions = np.arange(0, n_years, step)
+            tick_labels = [f"{y % 100:02d}" for y in years[::step]]
+            fontsize = max(8, fontsize - 1)
+        elif n_years > max_ticks:
+            step = 2
+            tick_positions = np.arange(0, n_years, step)
+            tick_labels = [f"{y % 100:02d}" for y in years[::step]]
+            fontsize = max(9, fontsize - 0.5)
+        else:
+            tick_positions = np.arange(n_years)
+            tick_labels = [f"{y % 100:02d}" for y in years]
+
+        ax.set_xticks(tick_positions)
+        ax.set_xticklabels(tick_labels, rotation=0, ha='center', fontsize=fontsize)
+
     def create_bar_chart(self, ax):
         if not self.groups:
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
@@ -117,11 +141,9 @@ class MultiBarChart(Chart):
         max_height = 0.0
 
         # Underlay lines
-        #
         self._plot_lines(ax, self.underlay_lines, year_to_idx, zorder=1, linewidth=2.8, alpha=0.85)
 
         # Bars
-        #
         for g_idx, (_, yearly_data) in enumerate(group_data):
             bar_positions = x - 0.4 + (g_idx + 0.5) * group_width
             for i, year in enumerate(years):
@@ -145,7 +167,6 @@ class MultiBarChart(Chart):
                                 ha='center', va='bottom', fontsize=8.5, fontweight='bold', zorder=6)
 
         # Overlay Lines
-        #
         self._plot_lines(ax, self.overlay_lines, year_to_idx, zorder=12, linewidth=3.2, alpha=0.95)
 
         # Y limits
@@ -157,32 +178,29 @@ class MultiBarChart(Chart):
         x_right = x[-1] + 0.55
 
         if self.x_min is not None:
-            if self.x_min >= self.start_year-1:  # year
+            if self.x_min >= self.start_year - 1:
                 x_left = year_to_idx.get(int(self.x_min), x[0]) - 0.6
             else:
                 x_left = float(self.x_min)
 
         if self.x_max is not None:
-            if self.x_max >= self.start_year-1:  # year
+            if self.x_max >= self.start_year - 1:
                 x_right = year_to_idx.get(int(self.x_max), x[-1]) + 1.2
             else:
                 x_right = float(self.x_max)
 
-        # Legend & labels
-        #
+        ax.set_xlim(x_left, x_right)
+
+        # X-axis labels - tight to bottom
+        self.setup_year_xaxis(ax, years, max_ticks=20, fontsize=10)
+
+        # Legend
         handles, labels = ax.get_legend_handles_labels()
         unique_legend = dict(zip(labels, handles))
         ax.legend(unique_legend.values(), unique_legend.keys(),
-                  loc='upper left', fontsize=9, frameon=True, ncol=2,
-                  # title="Components", title_fontsize=10
-                  )
-
-        ax.set_xticks(x)
-        ax.set_xticklabels([str(y) for y in years], rotation=45, ha='right', fontsize=10)
-        ax.set_xlim(x_left, x_right)
+                  loc='upper left', fontsize=9, frameon=True, ncol=2)
 
         ax.set_ylabel("Value (MAF)", fontsize=11.5)
-        ax.set_xlabel("Year", fontsize=11.5)
         ax.set_title(f"{self.title or ''}", fontsize=13.5, fontweight='bold', pad=12)
 
         ax.grid(axis='y', linestyle='--', alpha=0.35, zorder=0)
@@ -250,8 +268,9 @@ class MultiBarChart(Chart):
 
         self.create_bar_chart(self.ax)
 
-        fig.tight_layout(pad=1.8)
-        fig.subplots_adjust(left=0.09, right=0.96, bottom=0.15, top=0.87)
+        # Tighter layout to push x-labels right to the bottom edge
+        fig.tight_layout(pad=1.2)
+        fig.subplots_adjust(left=0.09, right=0.96, bottom=0.085, top=0.87)
 
         self.fig = fig
         return fig

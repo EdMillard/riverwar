@@ -29,9 +29,10 @@ from datetime import date
 from typing import List, Optional, Tuple
 from chart.chart import Chart
 
+
 class LineChart(Chart):
     """
-    Line chart for multiple time series with Month-Year X-axis.
+    Line chart for multiple time series with short two-digit year X-axis.
     """
     def __init__(self,
                  data_series: List[Tuple[pd.DataFrame, str, str]],
@@ -63,18 +64,13 @@ class LineChart(Chart):
                 df['Date'] = pd.to_datetime(df['Date'])
                 self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
 
-    # ==================== NEW SETTER METHODS ====================
     def set_start_date(self, start_date: date | None):
-        """Set the start date and update parent Chart"""
         self.start_date = start_date
 
     def set_end_date(self, end_date: date | None):
-        """Set the end date and update parent Chart"""
         self.end_date = end_date
 
-    # Optional: Also add this if you want to update current_date easily
     def set_current_date(self, current_date: date | None):
-        """Set the current/reference date"""
         self.current_date = current_date
 
     def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
@@ -88,7 +84,13 @@ class LineChart(Chart):
 
         self.create_line_chart(ax)
 
-        fig.tight_layout(pad=2.0)
+        # Dynamic top margin
+        has_title = bool(self.title and str(self.title).strip())
+        top_margin = 0.88 if has_title else 0.96
+
+        fig.tight_layout(pad=1.3)
+        fig.subplots_adjust(left=0.08, right=0.95, bottom=0.085, top=top_margin)
+
         self.fig = fig
         return fig
 
@@ -97,7 +99,7 @@ class LineChart(Chart):
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
 
-        # === Collect all dates and plot lines ===
+        # === Plot lines ===
         all_dates = []
         for df, col, color in self.data_series:
             if df.empty or col not in df.columns:
@@ -116,21 +118,18 @@ class LineChart(Chart):
         data_min = min(all_dates)
         data_max = max(all_dates)
 
-        # === Use user-set start/end dates if provided, otherwise use data range ===
         x_start = self.start_date if self.start_date is not None else data_min
         x_end = self.end_date if self.end_date is not None else data_max
 
-        # ==================== FORMATTING ====================
         ax.set_ylabel(self.y_label, fontsize=12, fontweight='bold')
 
         if self.title and str(self.title).strip():
             ax.set_title(self.title, fontsize=14, fontweight='bold', pad=15)
 
-        # === X-AXIS: Respect set_start_date / set_end_date ===
+        # === X-AXIS: Short two-digit years, no slant ===
         ax.set_xlim(x_start, x_end)
-
-        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
+        ax.xaxis.set_major_locator(mdates.YearLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))   # '75, '80, etc.
 
         if not self.show_x_labels:
             ax.set_xticklabels([])
@@ -146,15 +145,6 @@ class LineChart(Chart):
         ax.yaxis.set_major_formatter(ticker.FuncFormatter(scaled_formatter))
         ax.yaxis.set_major_locator(ticker.AutoLocator())
         ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-
-        # Bottom margin
-        fig = ax.get_figure()
-        if not self.show_x_labels:
-            fig.subplots_adjust(bottom=0.08)
-        else:
-            fig.subplots_adjust(bottom=0.15)
-
-        fig.autofmt_xdate(rotation=45, ha='right')
 
         ax.grid(True, linestyle='--', alpha=0.7)
         ax.axhline(y=0, color='black', linewidth=2.5, linestyle='-', alpha=0.9, zorder=3)
