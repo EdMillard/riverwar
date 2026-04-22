@@ -35,6 +35,7 @@ class LineChart(Chart):
     """
     def __init__(self,
                  data_series: List[Tuple[pd.DataFrame, str, str]],
+                 percentage: float = 0.0,
                  title: str = "",
                  start_date: date | None = None,
                  current_date: date | None = None,
@@ -44,7 +45,7 @@ class LineChart(Chart):
                  y_label: str = 'Volume (Million Acre-Feet)',
                  y_divisor: float = 1_000_000):
 
-        super().__init__(reservoirs or [], start_date, current_date, end_date)
+        super().__init__(reservoirs or [], start_date, current_date, end_date, percentage=percentage)
 
         self.data_series = data_series
         self.title = title

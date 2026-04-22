@@ -36,6 +36,7 @@ class MultiBarChart(Chart):
                  overlay_lines: List[Tuple[pd.DataFrame, str, str] |
                                    Tuple[pd.DataFrame, str, str, Dict[str, Any]]] | None = None,
                  title: str = "",
+                 percentage: float = 0.0,
                  start_year: Optional[int] = None,
                  end_year: Optional[int] = None,
                  y_max: Optional[float] = None,
@@ -50,7 +51,7 @@ class MultiBarChart(Chart):
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
     ):
 
-        super().__init__([], start_date, current_date, end_date)
+        super().__init__([], start_date, current_date, end_date, percentage=percentage)
 
         self.groups = groups
         self.underlay_lines = underlay_lines or []

@@ -70,14 +70,13 @@ class NotebookFrame(wx.Frame):
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.notebook = wx.Notebook(self.panel)
 
-        self.sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=1)
+        self.sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=0)
 
         self.panel.SetSizer(self.sizer)
         self.SetMinSize(wx.Size(1100, 900))
         self.Centre()
 
 # ==================== MAIN FRAME ====================
-
 class ChartFrame(wx.Panel):
     def __init__(self,
                  notebook_frame: NotebookFrame,
@@ -85,24 +84,17 @@ class ChartFrame(wx.Panel):
                  reports: List[str] | None = None,
                  page_name: str = "Chart"
     ):
-        screen_w, screen_h = wx.DisplaySize()
-        window_height:int = screen_h - 64
-        window_width:int = min(1580, screen_w - 40)
         self.notebook_frame = notebook_frame
-        self.notebook = notebook_frame.notebook
+        self.reservoirs: List[Reservoir] = reservoirs or []
+        self.reports: List[str] = reports or []
+        self.report_path: str = ''
 
-        super().__init__(self.notebook, size=wx.Size(window_width, window_height))
+        self.charts: List[Chart] = []
+        self.toolbar: Optional[wx.Panel] = None
+        self.chart_panel: Optional[wx.Panel] = None
+        self.charts_btn: Optional[wx.Button] = None
 
-        self.reservoirs:List[Reservoir] = reservoirs
-        self.reports:List[str] = reports
-        self.report_path:str = ''
-
-        self.charts:List[Chart] = []
-
-        self.toolbar: Optional[wx.ToolBar] = None
-        self.charts_btn:Optional[wx.Button] = None
-
-        # ====================== RECORDING STATE ==================
+        # Recording state
         self.saving_pdf = False
         self.saving_gif = False
         self.gif_frames: List[Image.Image] = []
@@ -110,254 +102,149 @@ class ChartFrame(wx.Panel):
         self.gif_filename: str | None = None
         self.pdf_filename: str | None = None
 
-        # ======================== TOP TOOLBAR ====================
-        top_toolbar:wx.Panel|None = None
-        if self.reports:
-            top_toolbar = self._init_toolbar(self.reservoirs, self.reports)
+        self._layout_pending = False
 
-        # ======================== RESERVOIRS ====================
+        screen_w, screen_h = wx.DisplaySize()
+        window_height: int = screen_h - 64
+        window_width: int = min(1580, screen_w - 40)
+
+        super().__init__(self.notebook_frame.notebook,
+                        size=wx.Size(window_width, window_height),
+                        style=wx.TAB_TRAVERSAL)
+
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.SetSizer(self.main_sizer)
+
+        if self.reports:
+            self.toolbar = self._init_toolbar(self.reservoirs, self.reports)
+            self.main_sizer.Add(self.toolbar, 0, wx.EXPAND | wx.ALL, border=2)
+        else:
+            self.create_toolbar()
+
+        self.chart_panel = wx.Panel(self, style=wx.BORDER_NONE)
+        self.chart_panel.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        self.main_sizer.Add(self.chart_panel, 1, wx.EXPAND | wx.ALL, border=2)
+
+        self.chart_panel.Bind(wx.EVT_SIZE, self.on_chart_panel_resize)
+
         self.current_time_from_usbr = None
-        if self.reservoirs is not None:
+        if self.reservoirs:
             self.current_time_from_usbr = self.load_reservoirs()
 
-        # ========================= CHARTS ========================
         self.load_charts()
         self.layout_charts()
 
+        wx.CallAfter(self.final_full_layout)
 
-        # Add page to notebook
-        self.notebook.AddPage(self, page_name)
-
-        # Put nav toolbar in panel sizer
-        if top_toolbar:
-            page_sizer = self.GetSizer()
-            if page_sizer:
-                page_sizer.Insert(0, top_toolbar, 0, wx.EXPAND | wx.ALL, border=1)
-                self.Layout()
+        self.notebook_frame.notebook.AddPage(self, page_name)
 
     def layout_charts(self):
-        if len(self.charts) == 2:
-            # === 2 CHARTS: Use Splitter (draggable) ===
-            self.splitter = wx.SplitterWindow(self, style=wx.SP_THIN_SASH | wx.SP_LIVE_UPDATE | wx.SP_NOBORDER)
-            self.splitter.SetMinimumPaneSize(200)
+        self.rebuild_chart_layout()
 
-            for chart in self.charts:
-                chart.create_panel(self.splitter)
+    def rebuild_chart_layout(self):
+        self.chart_panel.DestroyChildren()
 
-            self.splitter.SplitHorizontally(self.charts[0].panel, self.charts[1].panel)
+        if not self.charts:
+            self.chart_panel.Layout()
+            return
 
-            sizer = wx.BoxSizer(wx.VERTICAL)
-            sizer.Add(self.splitter, 1, wx.EXPAND | wx.ALL, border=1)
-            self.SetSizer(sizer)
+        for chart in self.charts:
+            chart.create_panel(self.chart_panel)
 
-        elif len(self.charts) == 1:
-            # === Single chart ===
-            self.charts[0].create_panel(self)
-
-            sizer = wx.BoxSizer(wx.VERTICAL)
-            sizer.Add(self.charts[0].panel, 1, wx.EXPAND | wx.ALL, border=5)
-            self.SetSizer(sizer)
-
-        else:
-            # === 3 or more charts: Manual layout ===
-            for chart in self.charts:
-                chart.create_panel(self)
-
-            self.Bind(wx.EVT_SIZE, self.on_panel_resize)
-            self.do_manual_chart_layout()  # initial layout
-
-        if self.toolbar is None:
-            self.create_toolbar()
-        else:
-            self.insert_toolbar()
-
-    def final_layout_pass(self):
-        """One last strong layout pass after everything is visible"""
-        if len(self.charts) > 2:
-            self.do_manual_chart_layout()
-        self.Layout()
-        self.notebook.Layout()
-        self.Layout()
-        self.Refresh()
-
-    def on_panel_resize(self, event):
-        """Called whenever the panel is resized"""
-        event.Skip()  # Important: allow normal processing
-        wx.CallAfter(self.do_manual_chart_layout)  # Do layout after resize completes
+        self.do_manual_chart_layout()
 
     def do_manual_chart_layout(self):
-        """Manually position and size each chart equally + force matplotlib resize"""
-        if len(self.charts) == 0:
+        if self._layout_pending or not self.charts or not self.chart_panel:
             return
 
-        client_size = self.GetClientSize()
-        width = client_size.width
-        height = client_size.height
+        self._layout_pending = True
+        try:
+            client_size = self.chart_panel.GetClientSize()
+            if client_size.width < 300 or client_size.height < 200:
+                return
 
-        if width < 300 or height < 200:
-            return
+            n = len(self.charts)
+            border = 0
+            available_h = max(150, client_size.height - border * (n + 1))
 
-        n = len(self.charts)
-        border = 6
-        total_borders = border * (n + 1)
-        available_height = max(150, height - total_borders)  # reduced minimum
+            # Collect percentages from each chart
+            percentages = []
+            for chart in self.charts:
+                pct = getattr(chart, 'percentage', 0.0)
+                if pct <= 0:
+                    pct = 1.0 / n          # default equal share
+                percentages.append(pct)
 
-        chart_height = available_height // n
+            # Normalize so they sum to 1.0
+            total = sum(percentages)
+            if total > 0:
+                percentages = [p / total for p in percentages]
+            else:
+                percentages = [1.0 / n] * n
 
-        y_offset = border
-        for chart in self.charts:
-            if hasattr(chart, 'panel') and chart.panel:
-                # Set new size
-                new_width = width - 2 * border
-                new_height = chart_height
+            y = border
+            for i, chart in enumerate(self.charts):
+                if hasattr(chart, 'panel') and chart.panel:
+                    pct = percentages[i]
+                    chart_h = int(available_h * pct)
 
-                chart.panel.SetSize(border, y_offset, new_width, new_height)
-                chart.panel.Refresh()
+                    w = client_size.width - 2 * border
+                    chart.panel.SetSize(border, y, w, chart_h)
+                    chart.panel.Refresh()
 
-                # === CRITICAL: Force matplotlib canvas to resize ===
-                if hasattr(chart, 'canvas') and chart.canvas:
-                    # Resize the canvas widget itself
-                    chart.canvas.SetSize(new_width, new_height)
+                    if hasattr(chart, 'canvas') and chart.canvas and hasattr(chart, 'fig'):
+                        chart.canvas.SetSize(w, chart_h)
+                        dpi = chart.fig.dpi
+                        chart.fig.set_size_inches(w / dpi, chart_h / dpi)
+                        chart.canvas.draw_idle()
 
-                    # Resize the figure to match new dimensions
-                    dpi = chart.fig.dpi
-                    chart.fig.set_size_inches(new_width / dpi, new_height / dpi)
+                    y += chart_h + border
 
-                    # Redraw
-                    chart.canvas.draw_idle()
-                    chart.canvas.Refresh()
-
-                y_offset += chart_height + border
-
-    def load_charts(self):
-        pass
-
-    def load_reservoirs(self)->date|None:
-        date_time_as_date = None
-        start = self.start_nav.current_date
-        current = self.current_nav.current_date
-        end = self.end_nav.current_date
-        for reservoir in self.reservoirs:
-            reservoir.load_data(Path(self.report_path), start, current, end)
-            if reservoir.name == 'Lake Powell':
-                date_time_as_date = pd.Timestamp(reservoir.date_time)
-        return date_time_as_date
-
-    @staticmethod
-    def add_options_menu_to_toolbar(toolbar: wx.ToolBar,
-                                    notebook: wx.Notebook,
-                                    items: list[tuple[str, Callable]],
-                                    menu_label: str = "Charts",
-                                    icon: wx.Bitmap = None):
-        """Recommended: Add dropdown menu directly to toolbar"""
-
-        if icon is None:
-            icon = wx.ArtProvider.GetBitmap(wx.ART_LIST_VIEW, wx.ART_TOOLBAR, wx.Size(16, 16))
-
-        menu = wx.Menu()
-
-        for label, func in items:
-            item = menu.Append(wx.ID_ANY, label)
-
-            def make_handler(f):
-                return lambda evt: f(notebook)
-
-            menu.Bind(wx.EVT_MENU, make_handler(func), item)
-
-        # Add dropdown tool to toolbar
-        tool_id = wx.NewIdRef()
-        tool = toolbar.AddTool(tool_id, menu_label, icon, shortHelp=f"{menu_label} Options")
-
-        def on_menu_click(event):
-            # Show menu just below the tool
-            rect = toolbar.GetToolRect(tool_id)
-            toolbar.PopupMenu(menu, rect.GetBottomLeft())
-
-        toolbar.Bind(wx.EVT_TOOL, on_menu_click, tool)
-        toolbar.Realize()
-
-        return menu
-
-    # ====================== HELPER METHOD ======================
-    def _create_chart_menu(self):
-        """Create the Charts menu and return it"""
-        menu = wx.Menu()
-
-        for label, func in self.notebook_frame.callables:
-            item = menu.Append(wx.ID_ANY, label)
-
-            def make_handler(f):
-                return lambda event: f(self.notebook_frame)  # pass notebook to your chart function
-
-            menu.Bind(wx.EVT_MENU, make_handler(func), item)
-
-        return menu
-
-    # ====================== MODIFIED TOOLBAR ======================
-    def create_toolbar(self):
-        if self.toolbar is None:
-            self.toolbar = wx.Panel(self, style=wx.BORDER_NONE)
-            self.toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
-
-            sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-            # ==================== CHARTS MENU (FIRST ON LEFT) ====================
-            self.charts_btn = wx.Button(self.toolbar, label="Charts ▼", style=wx.BU_EXACTFIT)
-            self.charts_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-            self.charts_btn.Bind(wx.EVT_BUTTON, self.on_charts_menu)
-
-            sizer.Add(self.charts_btn, 0, wx.ALL | wx.CENTER, border=8)
-
-            self.toolbar.SetSizer(sizer)
-        self.insert_toolbar()
-
-    def insert_toolbar(self):
-        # Insert at top
-        page_sizer = self.GetSizer()
-        if page_sizer:
-            page_sizer.Insert(0, self.toolbar, 0, wx.EXPAND | wx.ALL, border=1)
+            self.chart_panel.Layout()
             self.Layout()
+        finally:
+            self._layout_pending = False
 
-    # ====================== MENU HANDLER ======================
-    def on_charts_menu(self, event):
-        """Show the charts dropdown menu"""
-        menu = self._create_chart_menu()
-        # Show menu below the button
-        pos = self.charts_btn.GetPosition()
-        pos.y += self.charts_btn.GetSize().height + 2
-        self.charts_btn.GetParent().PopupMenu(menu, pos)
-        menu.Destroy()  # Clean up to prevent memory leak
+    def on_chart_panel_resize(self, event):
+        event.Skip()
+        if not self._layout_pending:
+            wx.CallAfter(self.do_manual_chart_layout)
 
-    def _init_toolbar(self, reservoirs:List[Reservoir], reports:List[str])->wx.Panel:
+    def final_full_layout(self):
+        self.Layout()
+        self.chart_panel.Layout()
+        if self.GetParent():
+            self.GetParent().Layout()
+        if self.notebook_frame:
+            self.notebook_frame.Layout()
+        self.do_manual_chart_layout()
+        self.Refresh()
+
+    def _init_toolbar(self, reservoirs: List[Reservoir], reports: List[str]) -> wx.Panel:
         top_toolbar = wx.Panel(self, style=wx.BORDER_NONE)
         top_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))
 
         tb_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.status_text = wx.StaticText(top_toolbar, label=f"Displaying {len(reservoirs)} reservoirs")
-        tb_sizer.Add(self.status_text, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, border=15)
+        tb_sizer.Add(self.status_text, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, border=0)
         tb_sizer.AddStretchSpacer(1)
 
-        # Report selector
         if reports and len(reports) > 0:
             dir_names = [Path(p).name for p in reports]
             self.report_choice = wx.Choice(top_toolbar, choices=dir_names)
             last_report = reports[-1]
-            self.report_choice.SetSelection(len(dir_names) - 1 )
+            self.report_choice.SetSelection(len(dir_names) - 1)
             self.report_path = last_report
             self.report_choice.SetToolTip("Select report directory")
             self.report_choice.Bind(wx.EVT_CHOICE, self.on_report_selected)
-            tb_sizer.Add(self.report_choice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
-        else:
-            self.report_choice = None
+            tb_sizer.Add(self.report_choice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=0)
 
-        # Date navigators
         self.current_nav = MonthYearNavigator(top_toolbar, date(2026, 4, 1), self.on_date_changed, name="current")
         tb_sizer.Add(self.current_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
         separator = wx.StaticText(top_toolbar, label="[")
         separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
-        # separator.SetForegroundColour(wx.Colour(100, 100, 100))  # Dark gray
         tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
 
         self.start_nav = MonthYearNavigator(top_toolbar, date(2025, 10, 1), self.on_date_changed, name="start")
@@ -367,17 +254,13 @@ class ChartFrame(wx.Panel):
         separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
 
-        self.end_nav = MonthYearNavigator(top_toolbar, Chart.last_day_of_month(2026, 9), self.on_date_changed,
-                                          name="end")
+        self.end_nav = MonthYearNavigator(top_toolbar, Chart.last_day_of_month(2026, 9), self.on_date_changed, name="end")
         tb_sizer.Add(self.end_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
         separator = wx.StaticText(top_toolbar, label="]")
         separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
 
-        # tb_sizer.AddSpacer(25)
-
-        # Global arrows
         global_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.global_left = buttons.GenButton(top_toolbar, label="◀◀", size=wx.Size(38, 32))
         self.global_left.SetFont(wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
@@ -405,7 +288,6 @@ class ChartFrame(wx.Panel):
 
         tb_sizer.AddStretchSpacer(1)
 
-        # Recording buttons
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.save_pdf_btn = wx.ToggleButton(top_toolbar, label="PDF Record", size=wx.Size(-1, 28))
         self.save_pdf_btn.Bind(wx.EVT_TOGGLEBUTTON, self.on_toggle_pdf)
@@ -420,15 +302,70 @@ class ChartFrame(wx.Panel):
         self.stop_btn.Enable(False)
         btn_sizer.Add(self.stop_btn, 0)
 
-        tb_sizer.Add(btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=15)
+        tb_sizer.Add(btn_sizer, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=0)
 
         top_toolbar.SetSizer(tb_sizer)
-        top_toolbar.SetMinSize(wx.Size(-1, 42))
+        top_toolbar.SetMinSize(wx.Size(-1, 48))
 
         return top_toolbar
 
-    # ==================== EVENT HANDLERS ====================
-    def set_report(self, report_str:str):
+    def create_toolbar(self):
+        if self.toolbar is None:
+            self.toolbar = wx.Panel(self, style=wx.BORDER_NONE)
+            self.toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+
+            sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+            self.charts_btn = wx.Button(self.toolbar, label="Charts ▼", style=wx.BU_EXACTFIT)
+            self.charts_btn.SetFont(wx.Font(10, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+            self.charts_btn.Bind(wx.EVT_BUTTON, self.on_charts_menu)
+
+            sizer.Add(self.charts_btn, 0, wx.ALL | wx.CENTER, border=0)
+
+            self.toolbar.SetSizer(sizer)
+
+        self.insert_toolbar()
+
+    def insert_toolbar(self):
+        if self.toolbar and self.main_sizer:
+            if self.main_sizer.GetItem(self.toolbar):
+                self.main_sizer.Remove(self.toolbar)
+            self.main_sizer.Insert(0, self.toolbar, 0, wx.EXPAND | wx.ALL, border=0)
+            self.Layout()
+
+    def _create_chart_menu(self):
+        menu = wx.Menu()
+        for label, func in self.notebook_frame.callables:
+            item = menu.Append(wx.ID_ANY, label)
+
+            def make_handler(f):
+                return lambda event: f(self.notebook_frame)
+            menu.Bind(wx.EVT_MENU, make_handler(func), item)
+        return menu
+
+    def on_charts_menu(self, event):
+        menu = self._create_chart_menu()
+        pos = self.charts_btn.GetPosition()
+        pos.y += self.charts_btn.GetSize().height + 2
+        self.charts_btn.GetParent().PopupMenu(menu, pos)
+        menu.Destroy()
+
+    def load_reservoirs(self) -> Optional[date]:
+        date_time_as_date = None
+        start = self.start_nav.current_date
+        current = self.current_nav.current_date
+        end = self.end_nav.current_date
+
+        for reservoir in self.reservoirs:
+            reservoir.load_data(Path(self.report_path), start, current, end)
+            if reservoir.name == 'Lake Powell':
+                date_time_as_date = pd.Timestamp(reservoir.date_time)
+        return date_time_as_date
+
+    def load_charts(self):
+        pass
+
+    def set_report(self, report_str: str):
         self.report_path = report_str
         for chart in self.charts:
             chart.update_report(Path(self.report_path).name)
@@ -436,19 +373,20 @@ class ChartFrame(wx.Panel):
     def on_report_selected(self, _):
         if self.report_choice is None:
             return
-
-
         idx = self.report_choice.GetSelection()
         self.set_report(self.reports[idx])
 
         print(f"Selected report: {Path(self.report_path).name}")
         self.load_reservoirs()
+
         for chart in self.charts:
             chart.update_dates(start_date=self.start_nav.current_date,
-                                              current_date=self.current_nav.current_date,
-                                              end_date=self.end_nav.current_date)
+                               current_date=self.current_nav.current_date,
+                               end_date=self.end_nav.current_date)
             chart.update_canvas()
+
         self._take_snapshot()
+        wx.CallAfter(self.final_full_layout)
 
     def on_date_changed(self, which: str, date_val: date):
         self.load_reservoirs()
@@ -467,15 +405,19 @@ class ChartFrame(wx.Panel):
             chart.update_canvas()
 
         self._take_snapshot()
+        wx.CallAfter(self.final_full_layout)
 
     def _on_global_change(self, delta: int):
         for nav in (self.start_nav, self.current_nav, self.end_nav):
             month = nav.current_date.month + delta
             year = nav.current_date.year
             if delta < 0:
-                if month < 1: month, year = 12, year - 1
+                if month < 1:
+                    month, year = 12, year - 1
             else:
-                if month > 12: month, year = 1, year + 1
+                if month > 12:
+                    month, year = 1, year + 1
+
             if nav == self.end_nav:
                 nav.current_date = Chart.last_day_of_month(year, month)
             else:
@@ -485,18 +427,17 @@ class ChartFrame(wx.Panel):
         self.load_reservoirs()
         for chart in self.charts:
             chart.update_dates(start_date=self.start_nav.current_date,
-                                       current_date=self.current_nav.current_date,
-                                       end_date=self.end_nav.current_date)
+                               current_date=self.current_nav.current_date,
+                               end_date=self.end_nav.current_date)
             chart.update_canvas()
         self._take_snapshot()
+        wx.CallAfter(self.final_full_layout)
 
     def _on_global_left(self, _):
         self._on_global_change(-1)
 
     def _on_global_right(self, _):
         self._on_global_change(1)
-
-    # ==================== RECORDING ====================
 
     def on_toggle_pdf(self, _):
         if self.save_pdf_btn.GetValue():
@@ -572,13 +513,12 @@ class ChartFrame(wx.Panel):
         if not (self.saving_pdf or self.saving_gif):
             return
         try:
-            images:List[Image] = []
+            images: List[Image.Image] = []
             for chart in self.charts:
                 images.append(chart.save_figure())
+
             if images:
-                total_h = 0
-                for image in images:
-                    total_h += image.height
+                total_h = sum(img.height for img in images)
                 combined = Image.new('RGB', (images[0].width, total_h), (255, 255, 255))
                 y = 0
                 for image in images:
@@ -589,25 +529,24 @@ class ChartFrame(wx.Panel):
                     self.pdf_pages.append(combined.copy())
                 if self.saving_gif:
                     self.gif_frames.append(combined.copy())
-
         except Exception as e:
             print(f"[Snapshot Error] {e}")
 
     def _save_pdf_final(self):
-        if not self.pdf_pages: return
+        if not self.pdf_pages:
+            return
         self.pdf_pages[0].save(self.pdf_filename, "PDF", resolution=200,
                                save_all=True, append_images=self.pdf_pages[1:])
 
     def _save_gif_final(self):
         if not self.gif_frames:
             return
-
         self.gif_frames[0].save(
             self.gif_filename,
             "GIF",
             save_all=True,
             append_images=self.gif_frames[1:],
             duration=GIF_FRAME_DELAY_MS,
-            loop=0 if not GIF_LOOP_ENABLED else 0,   # 0 = infinite loop in PIL
+            loop=0 if not GIF_LOOP_ENABLED else 0,
             optimize=True
         )

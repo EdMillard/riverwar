@@ -532,6 +532,58 @@ def copy_column(
 
     return target
 
+
+import pandas as pd
+
+
+def compute_delta(
+        df: pd.DataFrame,
+        value_col: str,
+        delta_col: str,
+        inplace: bool = True
+) -> pd.DataFrame:
+    """
+    Computes the delta (difference between consecutive values) for a column
+    and stores it in another column.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        The DataFrame containing the data.
+    value_col : str
+        Name of the column to compute differences on.
+    delta_col : str
+        Name of the new column to store the deltas.
+    inplace : bool, default True
+        If True, modifies the original DataFrame.
+        If False, returns a copy with the new column.
+
+    Returns:
+    --------
+    pandas.DataFrame
+        The DataFrame with the delta column added.
+
+    Example:
+    --------
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'storage': [1000, 1050, 1070, 1040]})
+    >>> compute_delta(df, 'storage', 'storage_delta')
+    >>> print(df)
+       storage  storage_delta
+    0     1000            NaN
+    1     1050           50.0
+    2     1070           20.0
+    3     1040          -30.0
+    """
+    if inplace:
+        target_df = df
+    else:
+        target_df = df.copy()
+
+    target_df[delta_col] = target_df[value_col].diff()
+
+    return target_df
+
 def add_constant_daily_delta(
         df: pd.DataFrame,
         column_name: str,

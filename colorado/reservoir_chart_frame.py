@@ -21,7 +21,11 @@ SOFTWARE.
 """
 import wx
 from typing import Optional
-from reservoirs.reservoir import ReservoirRegistry, Reservoir
+
+from dateutil.utils import today
+
+from reservoirs.reservoir import Reservoir
+from chart.line_chart import LineChart
 from chart.multi_bar_chart import MultiBarChart
 from chart.chart_frame import ChartFrame, NotebookFrame
 import colorado.allb as all_b
@@ -53,24 +57,28 @@ class ReservoirChartFrame(ChartFrame):
             return
 
         reservoir = self.notebook_frame.reservoir_registry.get(selection)
-
-        if reservoir:
-            self.load_reservoir(reservoir)
-            self.layout_charts()
-            for chart in self.charts:
-                chart.update_canvas(chart.width_inch, chart.height_inch)
-            self.layout_charts()
-
-            # Optional: Show a small status message
-            #self.toolbar_status.SetLabel(f"Year: {self.current_year} | {selection}")
-        else:
+        if not reservoir:
             wx.MessageBox(f"Failed to load {selection}", "Error", wx.ICON_ERROR)
+            return
+
+        # Just load it — let your existing method do the work
+        self.load_reservoir(reservoir)
+
+        # Then rebuild the visual layout
+        self.rebuild_chart_layout()
+
+        # Final refresh
+        wx.CallAfter(self.final_full_layout)
+
+        print(f"Switched to reservoir: {selection}")
 
     def load_charts(self):
         reservoir:Reservoir = self.notebook_frame.reservoir_registry.get('Lake Powell')
         self.load_reservoir(reservoir)
 
     def load_reservoir(self, reservoir:Reservoir) -> None:
+
+        self.charts.clear()
         df = reservoir.load_data_annual()
 
         # ============= INFLOW OUTFLOW BAR CHART ==============
@@ -83,18 +91,59 @@ class ReservoirChartFrame(ChartFrame):
                 (df, all_b.INFLOW, 'royalblue')
             ]),
         ]
-        if  self.multi_bar_chart is None:
-            self.multi_bar_chart = MultiBarChart(
-                groups=bar_groups,
-                # underlay_lines=underlay_lines,
-                # overlay_lines=overlay_lines,
-                title=f"{reservoir.name} Inflow Outflow",
-                start_year=self.start_year,
-                end_year=self.end_year,
-                # x_min=1999,
-                # y_max=16.0
-            )
-            self.charts.append(self.multi_bar_chart)
-        else:
-            self.multi_bar_chart.groups = bar_groups
-            self.multi_bar_chart.title = f"{reservoir.name} Inflow Outflow"
+        self.multi_bar_chart = MultiBarChart(
+            percentage=0.5,
+            groups=bar_groups,
+            # underlay_lines=underlay_lines,
+            # overlay_lines=overlay_lines,
+            title=f"{reservoir.name} Inflow Outflow",
+            start_year=self.start_year,
+            end_year=self.end_year,
+            # x_min=1999,
+            # y_max=16.0
+        )
+        self.charts.append(self.multi_bar_chart)
+
+        date_today = today()
+        df_daily = reservoir.load_data_daily(start_year=2021, end_year=2026)
+        time_series = [
+            (df_daily, all_b.STORAGE, 'royalblue')
+        ]
+        line_chart = LineChart(
+            time_series, title='',
+            percentage=0.2,
+            start_date=reservoir.start_date,
+            current_date=date_today,
+            end_date=date_today,
+            show_x_labels=False
+        )
+        self.charts.append(line_chart)
+
+        time_series = [
+            (df_daily, all_b.RELEASE, 'darkred'),
+            (df_daily, all_b.INFLOW, 'royalblue'),
+            (df_daily, all_b.EVAPORATION, 'goldenrod')
+        ]
+        line_chart = LineChart(
+            time_series, title='',
+            percentage=0.2,
+            start_date=reservoir.start_date,
+            current_date=date_today,
+            end_date=date_today,
+            show_x_labels=False
+        )
+        self.charts.append(line_chart)
+
+        time_series = [
+            (df_daily, all_b.STORAGE_DELTA, 'royalblue'),
+            # (df_daily, all_b.INFLOW, 'royalblue'),
+            # (df_daily, all_b.EVAPORATION, 'goldenrod')
+        ]
+        line_chart = LineChart(
+            time_series, title='',
+            percentage=0.3,
+            start_date=reservoir.start_date,
+            current_date=date_today,
+            end_date=date_today,
+        )
+        self.charts.append(line_chart)

@@ -33,6 +33,7 @@ class PieChart(Chart):
                  data_series: List[Tuple[pd.DataFrame, str, str]],
                  year: int = 2024,
                  title: str = "",
+                 percentage:float = 0.0,
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
@@ -42,7 +43,7 @@ class PieChart(Chart):
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
     ):
 
-        super().__init__(reservoirs or [], start_date, current_date, end_date)
+        super().__init__(reservoirs or [], start_date, current_date, end_date, percentage=percentage)
 
         self.data_series = data_series
         self.title = title

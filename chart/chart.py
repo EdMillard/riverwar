@@ -37,9 +37,10 @@ class Chart:
                  reservoirs: List[Reservoir],
                  start_date: date | None = None,
                  current_date: date | None = None,
-                 end_date: date | None = None
+                 end_date: date | None = None,
+                 percentage: float = 0.0
                  ):
-
+        self.percentage = percentage
         self.canvas = None
         self.panel = None
 

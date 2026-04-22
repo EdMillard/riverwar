@@ -265,6 +265,27 @@ class Reservoir:
                                    title=all_b.INFLOW, divisor=1)
         return self.df_annual
 
+    def load_data_daily(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
+        water_year_info = self.water_year_info
+        if self.df_daily is None or water_year_info.start_date != self.start_date or water_year_info.end_date != self.end_date:
+            self.start_date = date(start_year-1, 10, 1)
+            self.end_date = date(end_year, 9, 30)
+            self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date,
+                                                         [all_b.STORAGE, all_b.STORAGE_DELTA, all_b.ELEVATION,
+                                                          all_b.RELEASE, all_b.EVAPORATION, all_b.INFLOW])
+            if self.usbr_rise_storage_af_id:
+                self.usbr_rise_load_daily(self.usbr_rise_storage_af_id, all_b.STORAGE, start_year=start_year, end_year=end_year)
+                df_utils.compute_delta(self.df_daily, all_b.STORAGE, all_b.STORAGE_DELTA)
+            if self.usbr_rise_elevation_ft_id:
+                self.usbr_rise_load_daily(self.usbr_rise_elevation_ft_id, all_b.ELEVATION, start_year=start_year, end_year=end_year)
+            if self.usbr_rise_release_af_id:
+                self.usbr_rise_load_daily(self.usbr_rise_release_af_id, all_b.RELEASE, start_year=start_year, end_year=end_year)
+            if  self.usbr_rise_evap_af_id:
+                self.usbr_rise_load_daily(self.usbr_rise_evap_af_id, all_b.EVAPORATION, start_year=start_year, end_year=end_year)
+            if self.usbr_rise_inflow_af_id:
+                self.usbr_rise_load_daily(self.usbr_rise_inflow_af_id, all_b.INFLOW, start_year=start_year, end_year=end_year)
+        return self.df_daily
+
     def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
         pass
 
@@ -285,21 +306,19 @@ class Reservoir:
 
         return string
 
-    def usbr_rise_load_daily(self, usbr_rise_id:int, column_name:str):
-
+    def usbr_rise_load_daily(self, usbr_rise_id:int, column_name:str, start_year:int=0, end_year:int=0):
         daily = 0
-        start_year = self.report_start_date.year
-        end_year = self.report_end_date.year
-        if end_year > date.today().year:
+        if self.report_start_date is not None:
+            start_year = self.report_start_date.year
+        if self.report_end_date is not None:
+            end_year = self.report_end_date.year
+        if not end_year or end_year > date.today().year:
             end_year = date.today().year
+
         for year in range(start_year, end_year+1):
             self.water_year_info = self.get_water_year_info(year, month=self.water_year_month)
-
-            info, daily = usbr_rise.load(usbr_rise_id,
-                                                      water_year_info=self.water_year_info,
-                                                      alias=column_name)
-            df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date',
-                                                value_column_name=column_name)
+            info, daily = usbr_rise.load(usbr_rise_id, water_year_info=self.water_year_info, alias=column_name)
+            df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=column_name)
         return daily
 
     def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:
