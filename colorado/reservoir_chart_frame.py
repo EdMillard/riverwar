@@ -21,9 +21,7 @@ SOFTWARE.
 """
 import wx
 from typing import Optional
-
 from dateutil.utils import today
-
 from reservoirs.reservoir import Reservoir
 from chart.line_chart import LineChart
 from chart.multi_bar_chart import MultiBarChart
@@ -122,11 +120,12 @@ class ReservoirChartFrame(ChartFrame):
         time_series = [
             (df_daily, all_b.RELEASE, 'darkred'),
             (df_daily, all_b.INFLOW, 'royalblue'),
-            (df_daily, all_b.EVAPORATION, 'goldenrod')
+            # (df_daily, all_b.EVAPORATION, 'goldenrod')
         ]
         line_chart = LineChart(
             time_series, title='',
             percentage=0.25,
+            y_units='CFS',
             start_date=reservoir.start_date,
             current_date=date_today,
             end_date=date_today,

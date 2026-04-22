@@ -24,13 +24,12 @@ import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
-import matplotlib.dates
 import numpy as np
-import pandas as pd
 from PIL import Image
 import io
 from datetime import date, timedelta
-from typing import List, Optional
+from typing import List, Optional, Literal
+
 
 class Chart:
     def __init__(self,
@@ -38,17 +37,19 @@ class Chart:
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
-                 percentage: float = 0.0
-                 ):
+                 percentage: float = 0.0,
+                 y_label: str = "",
+                 y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
+                 y_divisor: float | None = None):
+
         self.percentage = percentage
         self.canvas = None
         self.panel = None
 
         self.reservoirs = reservoirs
-
         self.report_name = ''
 
-        # Default values
+        # Dates
         self.start_date = start_date or date(2025, 10, 1)
         self.current_date = current_date or date(2026, 4, 1)
         self.end_date = end_date or date(2026, 9, 30)
@@ -57,12 +58,45 @@ class Chart:
         self.height_inch = 6.5
         self.fig = None
 
+        # Y-axis configuration
+        self.y_label = y_label.strip()
+        self.y_units = y_units
+
+        # Set divisor - use provided value or auto from units
+        if y_divisor is not None:
+            self.y_divisor = y_divisor
+        else:
+            self.y_divisor = self._get_divisor_for_units(y_units)
+
         self.y_max = 10.0
 
-    def create_chart(self, ax:Axes, title:str):
+    @staticmethod
+    def _get_divisor_for_units(units: str) -> float:
+        """Centralized divisor logic"""
+        if units == 'MAF':
+            return 1_000_000
+        elif units == 'TAF':
+            return 1_000
+        elif units in ['AF', 'FT', 'CFS']:
+            return 1.0
+        return 1_000_000  # safe fallback
+
+    def setup_yaxis(self, ax):
+        """Y-axis setup - label is just the units (MAF, TAF, etc.)"""
+        ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')
+
+        def scaled_formatter(x, _):
+            if self.y_divisor <= 1:
+                return f'{x:,.0f}'
+            else:
+                return f'{x / self.y_divisor:,.2f}'
+
+        ax.yaxis.set_major_formatter(scaled_formatter)
+
+    def create_chart(self, ax: Axes, title: str):
         pass
 
-    def final_layout(self, ax, title:str, names:List[str], x_pos:np.ndarray):
+    def final_layout(self, ax, title: str, names: List[str], x_pos: np.ndarray):
         pass
 
     def create_figure(
@@ -75,20 +109,20 @@ class Chart:
     def get_figure(self, width_inch=None, height_inch=None):
         return self.create_figure(width_inch, height_inch)
 
-    def save_figure(self)->Image.Image:
+    def save_figure(self) -> Image.Image:
         buffer = io.BytesIO()
         self.canvas.figure.savefig(buffer, dpi=180, bbox_inches='tight', format='png')
         buffer.seek(0)
         image = Image.open(buffer)
         return image
 
-    def update_report(self, report_name:str):
+    def update_report(self, report_name: str):
         self.report_name = report_name
 
-    def create_panel(self, parent:wx.SplitterWindow|wx.Panel):
+    def create_panel(self, parent: wx.SplitterWindow | wx.Panel):
         self.panel = wx.Panel(parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        self.canvas = FigureCanvas(self.panel, -1,  self.get_figure(None, None))
+        self.canvas = FigureCanvas(self.panel, -1, self.get_figure(None, None))
         sizer.Add(self.canvas, 1, wx.EXPAND | wx.ALL, border=2)
         self.panel.SetSizer(sizer)
 
@@ -104,16 +138,17 @@ class Chart:
 
     def update_dates(self, start_date=None,
                      current_date=None,
-                     end_date=None) ->None:
-        if start_date is not None: self.start_date = start_date
-        if current_date is not None: self.current_date = current_date
-        if end_date is not None: self.end_date = end_date
-
+                     end_date=None) -> None:
+        if start_date is not None:
+            self.start_date = start_date
+        if current_date is not None:
+            self.current_date = current_date
+        if end_date is not None:
+            self.end_date = end_date
 
     @staticmethod
     def last_day_of_month(year: int, month: int) -> date:
         """Return a date object set to the last day of the given month/year."""
-        # Start with first day of next month, then subtract 1 day
         if month == 12:
             next_month = 1
             next_year = year + 1
@@ -126,7 +161,7 @@ class Chart:
         return last_day
 
     @staticmethod
-    def date_to_string(date_in:date)->str:
+    def date_to_string(date_in: date) -> str:
         return f"{Chart.month_to_short_name(date_in.month)} {date_in.day} {date_in.year}"
 
     @staticmethod
@@ -134,7 +169,6 @@ class Chart:
         if not 1 <= month <= 12:
             return "???"
         return date(2026, month, 1).strftime("%b")
-
 class BarChart(Chart):
     def __init__(self,
                  reservoirs: List[Reservoir],

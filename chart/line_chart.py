@@ -23,12 +23,10 @@ SOFTWARE.
 from reservoirs.reservoir import Reservoir
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
-import matplotlib.ticker as ticker
 import pandas as pd
 from datetime import date
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Literal
 from chart.chart import Chart
-
 
 class LineChart(Chart):
     """
@@ -43,16 +41,23 @@ class LineChart(Chart):
                  end_date: date | None = None,
                  reservoirs: List[Reservoir] | None = None,
                  show_x_labels: bool = True,
-                 y_label: str = 'Volume (Million Acre-Feet)',
-                 y_divisor: float = 1_000_000):
+                 y_label: str = "",                    # kept for future flexibility
+                 y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
+                 y_divisor: float | None = None):
 
-        super().__init__(reservoirs or [], start_date, current_date, end_date, percentage=percentage)
+        super().__init__(reservoirs or [], start_date, current_date, end_date, y_divisor=y_divisor, y_units=y_units, percentage=percentage)
 
         self.data_series = data_series
         self.title = title
         self.show_x_labels = show_x_labels
-        self.y_divisor = y_divisor
-        self.y_label = y_label
+        self.y_label = y_label.strip()
+        self.y_units = y_units
+
+        # Auto-determine divisor
+        if y_divisor is not None:
+            self.y_divisor = y_divisor
+        else:
+            self.y_divisor = self._get_divisor_for_units(y_units)
 
         self.height_inch = 5.5
         self.width_inch = 10.5
@@ -64,6 +69,7 @@ class LineChart(Chart):
                 df['Date'] = pd.to_datetime(df['Date'])
                 self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
 
+    # ==================== SETTERS ====================
     def set_start_date(self, start_date: date | None):
         self.start_date = start_date
 
@@ -84,7 +90,6 @@ class LineChart(Chart):
 
         self.create_line_chart(ax)
 
-        # Dynamic top margin
         has_title = bool(self.title and str(self.title).strip())
         top_margin = 0.88 if has_title else 0.96
 
@@ -99,7 +104,6 @@ class LineChart(Chart):
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
 
-        # === Plot lines ===
         all_dates = []
         for df, col, color in self.data_series:
             if df.empty or col not in df.columns:
@@ -121,30 +125,20 @@ class LineChart(Chart):
         x_start = self.start_date if self.start_date is not None else data_min
         x_end = self.end_date if self.end_date is not None else data_max
 
-        ax.set_ylabel(self.y_label, fontsize=12, fontweight='bold')
-
         if self.title and str(self.title).strip():
             ax.set_title(self.title, fontsize=14, fontweight='bold', pad=15)
 
-        # === X-AXIS: Short two-digit years, no slant ===
+        # X-AXIS
         ax.set_xlim(x_start, x_end)
         ax.xaxis.set_major_locator(mdates.YearLocator())
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))   # '75, '80, etc.
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
 
         if not self.show_x_labels:
             ax.set_xticklabels([])
             ax.tick_params(axis='x', which='major', length=0)
 
-        # === Y-AXIS ===
-        def scaled_formatter(x, pos):
-            if self.y_divisor == 1:
-                return f'{x:,.0f}'
-            else:
-                return f'{x / self.y_divisor:,.2f}'
-
-        ax.yaxis.set_major_formatter(ticker.FuncFormatter(scaled_formatter))
-        ax.yaxis.set_major_locator(ticker.AutoLocator())
-        ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+        # Y-AXIS (just units now)
+        self.setup_yaxis(ax)
 
         ax.grid(True, linestyle='--', alpha=0.7)
         ax.axhline(y=0, color='black', linewidth=2.5, linestyle='-', alpha=0.9, zorder=3)

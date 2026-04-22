@@ -23,7 +23,7 @@ from matplotlib.figure import Figure
 import pandas as pd
 import numpy as np
 from datetime import date
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Literal
 from chart.chart import Chart
 from collections import defaultdict
 
@@ -47,11 +47,13 @@ class MultiBarChart(Chart):
                  current_date: date | None = None,
                  end_date: date | None = None,
                  show_totals: bool = False,
-                 value_divisor: float = 1_000_000,
+                 y_label: str = "",                    # kept for future flexibility
+                 y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
+                 y_divisor: float | None = None,
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
     ):
 
-        super().__init__([], start_date, current_date, end_date, percentage=percentage)
+        super().__init__([], start_date, current_date, end_date, y_label=y_label, y_units=y_units, y_divisor=y_divisor, percentage=percentage)
 
         self.groups = groups
         self.underlay_lines = underlay_lines or []
@@ -59,6 +61,12 @@ class MultiBarChart(Chart):
         self.show_totals = show_totals
 
         self.title = title
+        self.y_units = y_units
+        self.y_max = y_max
+        self.y_min = y_min
+        self.x_max = x_max
+        self.x_min = x_min
+
         if start_year is None:
             self.start_year = 1971
         else:
@@ -67,12 +75,7 @@ class MultiBarChart(Chart):
             self.end_year = 2026
         else:
             self.end_year = end_year
-        self.y_max = y_max
-        self.y_min = y_min
-        self.x_max = x_max
-        self.x_min = x_min
 
-        self.value_divisor = value_divisor
         self.annotations = annotations or []
 
         self.height_inch = 6.2
@@ -153,7 +156,7 @@ class MultiBarChart(Chart):
                     continue
                 bottom = 0.0
                 for val, label, color in yearly_data.get(year, []):
-                    height = val / self.value_divisor
+                    height = val / self.y_divisor
                     ax.bar(bar_positions[i], height, width=group_width - spacing,
                            bottom=bottom, color=color, edgecolor='white',
                            linewidth=0.8, label=label, zorder=5)
@@ -161,7 +164,7 @@ class MultiBarChart(Chart):
                     max_height = max(max_height, bottom)
 
                 if self.show_totals:
-                    total = sum(v[0] for v in yearly_data.get(year, [])) / self.value_divisor
+                    total = sum(v[0] for v in yearly_data.get(year, [])) / self.y_divisor
                     if total > 1:
                         ax.text(bar_positions[i], total + 0.12, f"{total:.1f}",
                                 ha='center', va='bottom', fontsize=8.5, fontweight='bold', zorder=6)
@@ -191,7 +194,7 @@ class MultiBarChart(Chart):
 
         ax.set_xlim(x_left, x_right)
 
-        # X-axis labels - tight to bottom
+        # X-axis labels
         self.setup_year_xaxis(ax, years, max_ticks=20, fontsize=10)
 
         # Legend
@@ -200,7 +203,9 @@ class MultiBarChart(Chart):
         ax.legend(unique_legend.values(), unique_legend.keys(),
                   loc='upper left', fontsize=9, frameon=True, ncol=2)
 
-        ax.set_ylabel("Value (MAF)", fontsize=11.5)
+        # === Y-AXIS (now using shared function) ===
+        self.setup_yaxis(ax)
+
         ax.set_title(f"{self.title or ''}", fontsize=13.5, fontweight='bold', pad=12)
 
         ax.grid(axis='y', linestyle='--', alpha=0.35, zorder=0)
@@ -208,7 +213,9 @@ class MultiBarChart(Chart):
         for ann in self.annotations:
             self.add_total_annotations(ann)
 
+    # ... rest of the class unchanged (_plot_lines, create_figure, add_total_annotations, etc.)
     def _plot_lines(self, ax, line_list, year_to_idx, zorder=10, linewidth=3.0, alpha=0.95):
+        # (unchanged - omitted for brevity, copy from your previous version)
         if not line_list:
             return
 
@@ -229,7 +236,7 @@ class MultiBarChart(Chart):
                 for val, default_label, c in items:
                     label = options.get('label', default_label)
                     series_dict[label]['x'].append(idx)
-                    series_dict[label]['y'].append(val / self.value_divisor)
+                    series_dict[label]['y'].append(val / self.y_divisor)
                     series_dict[label]['color'] = c or color
                     series_dict[label]['options'] = options
 
@@ -268,14 +275,15 @@ class MultiBarChart(Chart):
 
         self.create_bar_chart(self.ax)
 
-        # Tighter layout to push x-labels right to the bottom edge
         fig.tight_layout(pad=1.2)
         fig.subplots_adjust(left=0.09, right=0.96, bottom=0.085, top=0.87)
 
         self.fig = fig
         return fig
 
+    # add_total_annotations and static methods remain unchanged
     def add_total_annotations(self, annotations, divisor: float = 1_000_000):
+        # (unchanged)
         x = annotations[0]
         y = annotations[1]
         annotations_list = annotations[2]
@@ -299,6 +307,7 @@ class MultiBarChart(Chart):
 
     @staticmethod
     def _get_yearly_stacked_data(series: List[Tuple[pd.DataFrame, str, str]]) -> dict:
+        # (unchanged - copy from your original)
         yearly = {}
         for df, col, color in series:
             if df.empty or 'Year' not in df.columns or col not in df.columns:
@@ -317,6 +326,7 @@ class MultiBarChart(Chart):
 
     @staticmethod
     def _get_yearly_line_data(series: List[Tuple[pd.DataFrame, str, str]]) -> dict:
+        # (unchanged)
         yearly = {}
         for df, col, color in series:
             if df.empty or 'Year' not in df.columns or col not in df.columns:
