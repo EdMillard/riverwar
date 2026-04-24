@@ -26,42 +26,6 @@ import pandas as pd
 from sheet import sheet
 from sheet.sheet import Sheet, sheets
 
-'''
-    usbr_flaming_gorge_storage_af = 337
-    # usbr_flaming_gorge_inflow_unregulated_cfs = 338
-    usbr_flaming_gorge_inflow_cfs = 339
-    # usbr_flaming_gorge_elevation_ft = 341
-    usbr_flaming_gorge_evaporation_af = 342
-    # usbr_flaming_gorge_bank_storage_af = 4275
-    # usbr_flaming_gorge_inflow_af = 4287
-    # usbr_flaming_gorge_inflow_volume_unregulated_af = 4300
-    # usbr_flaming_gorge_release_powerplant_cfs = 4306
-    usbr_flaming_gorge_release_total_cfs = 4314
-    # usbr_flaming_gorge_release_total_af = 4353
-    # usbr_flaming_gorge_release_powerplant_af = 4360
-    # usbr_flaming_gorge_release_spillway_cfs = 4371
-    # usbr_flaming_gorge_release_bypass_cfs = 4390
-    # usbr_flaming_gorge_change_in_storage_af = 4402
-    # usbr_flaming_gorge_area_acres = 4782
-    
-    usbr_blue_mesa_storage_af = 76
-    # usbr_blue_mesa_elevation_ft = 78
-    usbr_blue_mesa_evaporation_af = 79
-    usbr_blue_mesa_inflow_cfs = 4279
-    # usbr_blue_mesa_inflow_af = 4283
-    # usbr_blue_mesa_inflow_unregulated_cfs = 4295
-    # usbr_blue_mesa_inflow_volume_unregulated_af = 4297
-    # usbr_blue_mesa_release_powerplant_cfs = 4302
-    usbr_blue_mesa_release_total_cfs = 4310
-    # usbr_blue_mesa_release_total_af = 4349
-    # usbr_blue_mesa_release_powerplant_af = 4361
-    # usbr_blue_mesa_release_spillway_cfs = 4380
-    # usbr_blue_mesa_release_bypass_cfs = 4381
-    # usbr_blue_mesa_release_bypass_af = 4382
-    # usbr_blue_mesa_change_in_storage_af = 4398
-    # usbr_blue_mesa_area_acres = 4773
-'''
-
 class Reservoirs(Sheet):
     def __init__(self, name:str):
         headers = [lb.HAVASU, lb.MEAD, ub.POWELL, ub.FLAMING_GORGE, ub.BLUE_MESA,

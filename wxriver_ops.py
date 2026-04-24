@@ -28,6 +28,7 @@ import matplotlib
 import os
 from typing import List
 from chart.chart_frame import NotebookFrame
+from data_sets.data_set import DataSetRegistry
 from colorado.pie_chart_frame import PieChartFrame
 from colorado.reservoir_chart_frame import ReservoirChartFrame
 from colorado.reservoirs_chart_frame import ReservoirsChartFrame
@@ -147,7 +148,8 @@ if __name__ == "__main__":
         ("Inflow Outflow", time_series_chart),
     ]
 
-    reservoir_registry = ReservoirRegistry(directory="reservoirs")  # ← change path if needed
+    reservoir_registry = ReservoirRegistry("reservoirs")
+    dataset_registry = DataSetRegistry("data_sets")
 
     # print("\nLoaded Reservoirs:")
     # for name in reservoir_registry.list_all():
@@ -156,10 +158,10 @@ if __name__ == "__main__":
 
     app = wx.App(False)
 
-    nb = NotebookFrame(callables, reservoir_registry)
+    nb = NotebookFrame(callables, reservoir_registry, dataset_registry)
 
-    reservoir_chart(nb)
-    # pie_chart(nb)
+    # reservoir_chart(nb)
+    pie_chart(nb)
     # reservoirs_chart(nb)
     # time_series_chart(nb)
 

@@ -177,6 +177,38 @@ def subtract_dataframes(
 
     return result
 
+def subtract_columns_by_year(
+        main_df: pd.DataFrame,
+        main_col: str,
+        new_col: str,
+        subtract_list: list[tuple[pd.DataFrame, str]]
+) -> None:
+    year_col = main_df.columns[0]  # 'Year'
+    result = main_df[main_col].copy()
+
+    for other_df, other_col in subtract_list:
+        if other_col not in other_df.columns:
+            continue
+
+        other_year_col = other_df.columns[0]
+
+        # Merge on Year (this is very robust)
+        merged = main_df[[year_col]].merge(
+            other_df[[other_year_col, other_col]],
+            left_on=year_col,
+            right_on=other_year_col,
+            how='left'
+        )
+
+        # Subtract only where we have a match
+        has_value = merged[other_col].notna()
+
+        print(f"→ {other_col}: subtracting in {has_value.sum()} years")
+
+        result.loc[has_value] = result.loc[has_value] - merged.loc[has_value, other_col]
+
+    main_df[new_col] = result
+
 def fill_df_from_structured_array(
     df: pd.DataFrame,
     arr: np.ndarray,

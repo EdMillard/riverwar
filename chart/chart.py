@@ -24,6 +24,7 @@ import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+import matplotlib.ticker as ticker
 import numpy as np
 from PIL import Image
 import io
@@ -81,17 +82,17 @@ class Chart:
             return 1.0
         return 1_000_000  # safe fallback
 
+    def scaled_formatter(self, x, pos):
+        if self.y_divisor <= 1:
+            return f'{x:,.0f}'
+        else:
+            return f'{x / self.y_divisor:,.2f}'
+
     def setup_yaxis(self, ax):
         """Y-axis setup - label is just the units (MAF, TAF, etc.)"""
         ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')
-
-        def scaled_formatter(x, _):
-            if self.y_divisor <= 1:
-                return f'{x:,.0f}'
-            else:
-                return f'{x / self.y_divisor:,.2f}'
-
-        ax.yaxis.set_major_formatter(scaled_formatter)
+        formatter = ticker.FuncFormatter(self.scaled_formatter)
+        ax.yaxis.set_major_formatter(formatter)
 
     def create_chart(self, ax: Axes, title: str):
         pass

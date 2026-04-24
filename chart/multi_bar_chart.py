@@ -281,6 +281,13 @@ class MultiBarChart(Chart):
         self.fig = fig
         return fig
 
+    def scaled_formatter(self, x, pos):
+        if self.y_divisor <= 1:
+            return f'{x:,.0f}'
+        else:
+            # return f'{x / self.y_divisor:,.2f}'
+            return f'{x:,.2f}'
+
     # add_total_annotations and static methods remain unchanged
     def add_total_annotations(self, annotations, divisor: float = 1_000_000):
         # (unchanged)

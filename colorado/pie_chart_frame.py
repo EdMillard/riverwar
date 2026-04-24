@@ -99,31 +99,14 @@ class PieChartFrame(ChartFrame):
         # ====================== UPPER BASIN ======================
         sheet.upper_basin_cul_from_excel(df_ub_cul, row_offset=0, divisor=1)
 
-
         df_utils.add_column_sum(df_ub_cul,
                                 [ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                                  ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY],
                                 ub.UB_RESERVOIR_EVAP)
 
         # ====================== LAKE POWELL ======================
-        df_powell: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year,
-                                                     [ub.POWELL, ub.GLEN_CANYON_RELEASE_WY, ub.POWELL_EVAPORATION, ub.INFLOW])
-
-        usbr_lake_powell_release_total_af = 4354
-        sheet.usbr_annuals(df_powell, usbr_lake_powell_release_total_af, self.start_year, self.end_year, month=all_b.WY,
-                           title=ub.GLEN_CANYON_RELEASE_WY, divisor=1)
-
-        usbr_lake_powell_storage_af = 509
-        sheet.usbr_last_value(df_powell, usbr_lake_powell_storage_af, self.start_year, self.end_year, month=all_b.WY,
-                              title=ub.POWELL, divisor=1)
-
-        usbr_lake_powell_evap_af = 510
-        sheet.usbr_annuals(df_powell, usbr_lake_powell_evap_af, self.start_year, self.end_year, month=all_b.WY,
-                           title=ub.POWELL_EVAPORATION, divisor=1)
-
-        usbr_lake_powell_regulated_inflow_af = 4288
-        sheet.usbr_annuals(df_powell, usbr_lake_powell_regulated_inflow_af, self.start_year, self.end_year, month=all_b.WY,
-                           title=ub.INFLOW, divisor=1)
+        powell = self.notebook_frame.reservoir_registry.get('Lake Powell')
+        powell.load_data_annual(self.start_year, self.end_year)
 
         # ====================== LOWER BASIN ======================
         df_empty = pd.DataFrame()
@@ -283,22 +266,20 @@ class PieChartFrame(ChartFrame):
         )
         # self.charts.append(demand_pie_chart)
 
-        # ====================== SUPPLY PIE CHART ======================
+        # ====================== SUPPLY BAR CHART ======================
         # Natural Flow
-        df_natural_flow: pd.DataFrame = df_utils.create_df(1964, self.end_year, [ub.SUPPLY])
-        sheet.lf_natural_flow_from_excel(df_natural_flow, column_name=ub.SUPPLY)
-        df_natural_flow[ub.SUPPLY] = df_natural_flow[ub.SUPPLY] * 1_000_000
-        df_utils.moving_average(df_natural_flow, ub.SUPPLY, 'Supply 10 yr avg')
+        natural_flow_data = self.notebook_frame.dataset_registry.get('Natural Flow')
+        df_utils.moving_average(natural_flow_data.df, ub.SUPPLY, 'Supply 10 yr avg')
 
         overlay_lines = [
             (lb_mainstream_cul.df, all_b.DEMAND, 'darkred'),
-            # (df_natural_flow, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
+            (natural_flow_data.df, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
         ]
         underlay_lines = [
-            (df_powell, ub.POWELL, 'darkblue',  {"linestyle": "dotted", "marker": "", "linewidth": 2.0, "label": "Lake Powell"}),
+            (powell.df_annual, all_b.STORAGE, 'darkblue',  {"linestyle": "dotted", "marker": "", "linewidth": 2.0, "label": "Lake Powell"}),
         ]
         bar_groups = [
-            ('Supply', [(df_natural_flow, ub.SUPPLY, 'royalblue')])]
+            ('Supply', [(natural_flow_data.df, ub.SUPPLY, 'royalblue')])]
 
         a = [('Demand', [
                 (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
@@ -312,30 +293,51 @@ class PieChartFrame(ChartFrame):
             underlay_lines=underlay_lines,
             overlay_lines=overlay_lines,
             title="Colorado River Supply vs Demand",
-            start_year = self.start_year,
+            start_year = 1906,
+            # start_year=self.start_year,
             end_year=self.end_year,
-            y_max=25.0
+            # y_max=25.0,
+        )
+        self.charts.append(supply_demand)
+
+        # ====================== NATURAL FLOW BAR CHART ======================
+        df_maf = powell.df_annual
+
+        overlay_lines = [
+            (natural_flow_data.df, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
+        ]
+        df_utils.subtract_columns_by_year(natural_flow_data.df, ub.SUPPLY, 'Lost', [(df_ub_cul, ub.UB_TOTAL), (df_maf, all_b.INFLOW)])
+        bar_groups = [
+            ('UB CUL', [(df_ub_cul, ub.UB_TOTAL, 'darkred')]),
+            ('Inflow', [ (df_maf, all_b.INFLOW, 'royalblue')]),
+            ('Supply', [(natural_flow_data.df, 'Surplus', 'darkgreen')])]
+        supply_demand = MultiBarChart(
+            groups=bar_groups,
+            underlay_lines=underlay_lines,
+            overlay_lines=overlay_lines,
+            title="",
+            start_year = 1964,
+            # start_year=self.start_year,
+            end_year=self.end_year,
+            # y_max=25.0,
         )
         self.charts.append(supply_demand)
 
         # ============= POWELL INFLOW OUTFLOW BAR CHART ==============
         bar_groups = [
-            ('Release', [
-                (df_powell, ub.GLEN_CANYON_RELEASE_WY, 'darkred')
-            ]),
-            ('Inflow', [
-                (df_powell, ub.INFLOW, 'royalblue')
-            ]),
+            ('Release', [(df_maf, all_b.RELEASE, 'darkred')]),
+            ('Inflow', [(df_maf, all_b.INFLOW, 'royalblue')]),
         ]
         powell_inflow_outflow = MultiBarChart(
             groups=bar_groups,
             # underlay_lines=underlay_lines,
-            # overlay_lines=overlay_lines,
+            # overlay_lines=overlay_lines,1
             title="Powell Inflow Outflow",
             start_year=self.start_year,
             end_year=self.end_year,
-            x_min=1999,
-            y_max=16.0
+            # x_min=1999,
+            # y_max=16.0,
+            # y_units='MAF'
         )
         self.charts.append(powell_inflow_outflow)
 

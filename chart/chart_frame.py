@@ -27,8 +27,8 @@ from datetime import date
 import os
 import wx.lib.buttons as buttons
 from typing import List, Optional, Callable, Tuple
-from wx.lib.agw import aui
 from reservoirs.reservoir import Reservoir, ReservoirRegistry
+from data_sets.data_set import DataSetRegistry
 from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
 
@@ -56,9 +56,11 @@ class NotebookFrame(wx.Frame):
     def __init__(self,
                  callables:List[Tuple[str, Callable]],
                  reservoir_registry:ReservoirRegistry,
+                 dataset_registry:DataSetRegistry,
                  title: str = "Colorado River War"):
         self.callables:List[Tuple[str, Callable]] = callables
         self.reservoir_registry = reservoir_registry
+        self.dataset_registry = dataset_registry
 
         screen_w, screen_h = wx.DisplaySize()
         window_height:int = screen_h - 64
@@ -329,7 +331,7 @@ class ChartFrame(wx.Panel):
     def insert_toolbar(self):
         if self.toolbar and self.main_sizer:
             if self.main_sizer.GetItem(self.toolbar):
-                self.main_sizer.Remove(self.toolbar)
+                self.main_sizer.Remove(self.toolbar.GetSizer())
             self.main_sizer.Insert(0, self.toolbar, 0, wx.EXPAND | wx.ALL, border=0)
             self.Layout()
 
@@ -343,7 +345,7 @@ class ChartFrame(wx.Panel):
             menu.Bind(wx.EVT_MENU, make_handler(func), item)
         return menu
 
-    def on_charts_menu(self, event):
+    def on_charts_menu(self, _):
         menu = self._create_chart_menu()
         pos = self.charts_btn.GetPosition()
         pos.y += self.charts_btn.GetSize().height + 2

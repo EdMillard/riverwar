@@ -24,15 +24,14 @@ import copy
 import csv
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import importlib
-import inspect
+from api.registry import Registry
 import json
 from pathlib import Path
 import pandas as pd
 from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
 from datetime import date
-from typing import List, Tuple, Literal, Optional, Dict, Any, Type
+from typing import List, Tuple, Literal, Optional
 from sheet import sheet
 from source import usbr_rise
 import colorado.allb as all_b
@@ -117,7 +116,7 @@ class Reservoir:
                     f.close()
 
             if self.usbr_item_ids:
-                self.usbr_rise_elevation_ft_id1 = self.usbr_item_ids.get('elevation_ft', 0)
+                self.usbr_rise_elevation_ft_id = self.usbr_item_ids.get('elevation_ft', 0)
                 self.usbr_rise_storage_af_id = self.usbr_item_ids.get('storage_af', 0)
                 self.usbr_change_in_storage_af_id = self.usbr_item_ids.get('change_in_storage_af', 0)
                 self.usbr_rise_inflow_af_id = self.usbr_item_ids.get('inflow_af', 0)
@@ -237,6 +236,13 @@ class Reservoir:
             self.df_daily = df_utils.create_daily_df(self.start_date, self.end_date, self.headers)
             self.report_start_date = self.start_date
             self.report_end_date = self.end_date
+
+    def annual_maf(self)->pd.DataFrame:
+        df = self.df_annual.copy()
+        exclude_cols = ['Year', all_b.ELEVATION]
+        cols_to_scale = [col for col in df.columns if col not in exclude_cols]
+        df[cols_to_scale] = df[cols_to_scale] / 1_000_000
+        return df
 
     def load_data_annual(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
         if start_year is None or start_year < self.start_year:
@@ -921,62 +927,10 @@ class Reservoir:
 
         return df_monthly, df_wy, {}
 
-class ReservoirRegistry:
-    def __init__(self, directory: str = "reservoirs"):
-        self.directory = Path(directory)
-        self.registry: Dict[str, Dict[str, Any]] = {}  # 'Lake Powell' -> {constructor, instance, ...}
+class ReservoirRegistry(Registry):
+    def __init__(self, name: str = "reservoirs"):
+        super().__init__(name)
 
-        self._load_all_reservoirs()
-
-    def _load_all_reservoirs(self):
-        """Dynamically load all reservoir classes from the directory"""
-        if not self.directory.exists():
-            print(f"Warning: Reservoir directory not found: {self.directory}")
-            return
-
-        for file in sorted(self.directory.glob("*.py")):
-            if file.name == 'reservoir.py':
-                continue
-            if file.name.startswith("__"):
-                continue
-
-            module_name = file.stem
-
-            try:
-                # === Proper way to import dynamically ===
-                spec = importlib.util.spec_from_file_location(module_name, str(file))
-                if spec is None or spec.loader is None:
-                    continue
-
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                # Find the main class (most likely class whose name matches the file)
-                for _, obj in inspect.getmembers(module, inspect.isclass):
-                    if (obj.__module__ == module_name and
-                            not obj.__name__.startswith('_')):  # Main public class
-
-                        nice_name = self._make_nice_name(module_name)
-
-                        self.registry[nice_name] = {
-                            "constructor": obj,  # Class itself
-                            "instance": None,  # Instantiated object
-                            "module": module,
-                            "filepath": str(file)
-                        }
-                        print(f"✓ Loaded reservoir: {nice_name}")
-                        break
-                else:
-                    print(f"⚠ No suitable class found in {file.name}")
-
-            except Exception as e:
-                print(f"✗ Failed to load {file.name}: {e}")
-
-    def _make_nice_name(self, filename: str) -> str:
-        """lake_powell → Lake Powell"""
-        return filename.replace("_", " ").replace("-", " ").title()
-
-    # ====================== Convenience Methods ======================
     def get(self, name)-> Optional[Reservoir]:
         instance: Optional[Reservoir] = None
         reservoir_registry = self.registry[name]
@@ -985,17 +939,6 @@ class ReservoirRegistry:
             if instance is None:
                 constructor = reservoir_registry["constructor"]
                 if constructor is not None:
-                    instance = constructor()
+                    instance = constructor(name)
                     reservoir_registry["instance"] = instance
         return instance
-
-    def get_instance(self, name: str) -> Optional[Any]:
-        entry = self.registry.get(name)
-        return entry["instance"] if entry else None
-
-    def get_constructor(self, name: str) -> Optional[Type]:
-        entry = self.registry.get(name)
-        return entry["constructor"] if entry else None
-
-    def list_all(self) -> list[str]:
-        return sorted(self.registry.keys())
