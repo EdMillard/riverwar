@@ -195,7 +195,7 @@ def read_year_value_pairs(
         value_col: int,
         start_row: int,
         end_row: int,
-        divisor=1_000_000
+        divisor: float = 1_000_000
 ) -> Tuple[List[Any], List[Any]]:
     """
     Reads year and value pairs from an openpyxl worksheet.
@@ -230,7 +230,6 @@ def read_year_value_pairs(
     values = []
 
     for row in range(start_row, end_row + 1):
-        # Get cells (1-based indexing in openpyxl)
         year_cell = ws.cell(row=row, column=year_col)
         value_cell = ws.cell(row=row, column=value_col)
 
@@ -242,7 +241,7 @@ def read_year_value_pairs(
             try:
                 year = int(year)
             except (ValueError, TypeError):
-                pass  # keep as is (str or None)
+                pass
 
         # Try to convert value to float/int
         if value is not None:
@@ -256,14 +255,11 @@ def read_year_value_pairs(
             except (ValueError, TypeError):
                 value = str(value).strip() if value is not None else None
 
-        # Only append if we have a year (skip completely empty rows)
         if year is not None:
             pairs.append((year, value / divisor))
             values.append(value / divisor)
 
     return pairs, values
-
-
 
 def lf_natural_flow_from_excel(df: pd.DataFrame, start_row:int=62, column_name:str=ub.NATURAL_LEES_FERRY):
     wb = openpyxl.load_workbook('data/Colorado_River/LFnatFlow1906-2024.2024.9.12.xlsx', data_only=True)
@@ -693,6 +689,8 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
     #        print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
 
     if title:
+        if title not in df.columns:
+            df[title] = np.nan
         if len(values) != len(df[title]):
             insert_values_from_year(df, title, start_year, values, offset=offset)
         else:

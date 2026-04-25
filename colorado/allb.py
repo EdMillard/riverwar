@@ -23,6 +23,7 @@ WY = 10
 CY = 1
 
 INFLOW = 'Inflow'
+INFLOW_UNREGULATED = "Inflow Unregulated"
 EVAPORATION = 'Evaporation'
 RELEASE = 'Release'
 STORAGE = 'Storage'

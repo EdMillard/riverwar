@@ -253,7 +253,8 @@ class Reservoir:
             self.start_year = start_year
             self.end_year = end_year
             self.df_annual: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year,
-                                                         [all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE, all_b.EVAPORATION, all_b.INFLOW])
+                                                         [all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE, all_b.EVAPORATION,
+                                                          all_b.INFLOW])
             if self.usbr_rise_storage_af_id:
                 sheet.usbr_last_value(self.df_annual, self.usbr_rise_storage_af_id, self.start_year, self.end_year, month=all_b.WY,
                                       title=all_b.STORAGE, divisor=1)
@@ -269,6 +270,9 @@ class Reservoir:
             if self.usbr_rise_inflow_af_id:
                 sheet.usbr_annuals(self.df_annual, self.usbr_rise_inflow_af_id, self.start_year, self.end_year, month=all_b.WY,
                                    title=all_b.INFLOW, divisor=1)
+            if self.usbr_rise_inflow_unregulated_af_id:
+                sheet.usbr_annuals(self.df_annual, self.usbr_rise_inflow_unregulated_af_id, self.start_year, self.end_year, month=all_b.WY,
+                                   title=all_b.INFLOW_UNREGULATED, divisor=1)
         return self.df_annual
 
     def load_data_daily(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:

@@ -21,6 +21,7 @@ SOFTWARE.
 """
 from typing import Optional
 from api.registry import Registry
+from pathlib import Path
 import pandas as pd
 
 class DataSet:
@@ -28,6 +29,37 @@ class DataSet:
         self.name:str = name
         self.month:int = month
         self.df:Optional[pd.DataFrame]=None
+
+    def load(self)->Optional[pd.DataFrame]:
+        return None
+
+    @staticmethod
+    def to_csv(path:Path, df:pd.DataFrame):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(
+            path,
+            index=False,            # Don't write the row index
+            # float_format='%.6g',  # Clean floats (removes most trailing zeros)
+            encoding='utf-8',
+            na_rep='',              # Empty for NaN
+            # date_format='%Y-%m-%d'  # if you have any date columns
+        )
+
+    def from_csv(self, filename:str)->pd.DataFrame:
+        df:Optional[pd.DataFrame] = None
+        base_path:Path = Path('data/riverwar')
+        path = Path(base_path) / filename
+        path = path.with_suffix('.csv')
+        if path.exists():
+            df = pd.read_csv(
+                path,
+                dtype={'Year': 'Int64'},  # Best for years
+                float_precision='high'
+            )
+        else:
+            df = self.load()
+            DataSet.to_csv(path, df)
+        return df
 
 class DataSetRegistry(Registry):
     def __init__(self, name: str = "datasets"):

@@ -31,6 +31,7 @@ from reservoirs.reservoir import Reservoir, ReservoirRegistry
 from data_sets.data_set import DataSetRegistry
 from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
+from colorado.river_war import RiverWar
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -55,12 +56,10 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 class NotebookFrame(wx.Frame):
     def __init__(self,
                  callables:List[Tuple[str, Callable]],
-                 reservoir_registry:ReservoirRegistry,
-                 dataset_registry:DataSetRegistry,
+                 river_war:RiverWar,
                  title: str = "Colorado River War"):
         self.callables:List[Tuple[str, Callable]] = callables
-        self.reservoir_registry = reservoir_registry
-        self.dataset_registry = dataset_registry
+        self.river_war = river_war
 
         screen_w, screen_h = wx.DisplaySize()
         window_height:int = screen_h - 64

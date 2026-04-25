@@ -23,6 +23,7 @@ import wx
 import pandas as pd
 from sheet import sheet
 from chart.multi_bar_chart import MultiBarChart
+from colorado.river_war import RiverWar
 from colorado.lb_mainstream_cul import LBMainstreamCUL
 from colorado.lb_reservoir_cul import LBReservoirCUL
 from colorado.lb_tributary_cul import LBTributaryCUL
@@ -93,6 +94,7 @@ class PieChartFrame(ChartFrame):
                    ub.POWELL_EVAPORATION, ub.FLAMING_GORGE_EVAPORATION_WY,
                    ub.BLUE_MESA_EVAPORATION_WY, ub.MORROW_EVAPORATION_WY]
 
+        river_war = self.notebook_frame.river_war
         df_ub_cul: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year, headers)
         show_tributaries = False
 
@@ -105,7 +107,7 @@ class PieChartFrame(ChartFrame):
                                 ub.UB_RESERVOIR_EVAP)
 
         # ====================== LAKE POWELL ======================
-        powell = self.notebook_frame.reservoir_registry.get('Lake Powell')
+        powell = river_war.reservoir_registry.get('Lake Powell')
         powell.load_data_annual(self.start_year, self.end_year)
 
         # ====================== LOWER BASIN ======================
@@ -268,8 +270,8 @@ class PieChartFrame(ChartFrame):
 
         # ====================== SUPPLY BAR CHART ======================
         # Natural Flow
-        natural_flow_data = self.notebook_frame.dataset_registry.get('Natural Flow')
-        df_utils.moving_average(natural_flow_data.df, ub.SUPPLY, 'Supply 10 yr avg')
+        natural_flow_data = river_war.dataset_registry.get('Natural Flow')
+        df_utils.moving_average(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'Supply 10 yr avg')
 
         overlay_lines = [
             (lb_mainstream_cul.df, all_b.DEMAND, 'darkred'),
@@ -279,7 +281,7 @@ class PieChartFrame(ChartFrame):
             (powell.df_annual, all_b.STORAGE, 'darkblue',  {"linestyle": "dotted", "marker": "", "linewidth": 2.0, "label": "Lake Powell"}),
         ]
         bar_groups = [
-            ('Supply', [(natural_flow_data.df, ub.SUPPLY, 'royalblue')])]
+            ('Natural Flow', [(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'royalblue')])]
 
         a = [('Demand', [
                 (lb_mainstream_cul.df, lb.MEXICO, '#40a040'),
@@ -298,7 +300,7 @@ class PieChartFrame(ChartFrame):
             end_year=self.end_year,
             # y_max=25.0,
         )
-        self.charts.append(supply_demand)
+        # self.charts.append(supply_demand)
 
         # ====================== NATURAL FLOW BAR CHART ======================
         df_maf = powell.df_annual
@@ -306,20 +308,21 @@ class PieChartFrame(ChartFrame):
         overlay_lines = [
             (natural_flow_data.df, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
         ]
-        df_utils.subtract_columns_by_year(natural_flow_data.df, ub.SUPPLY, 'Lost', [(df_ub_cul, ub.UB_TOTAL), (df_maf, all_b.INFLOW)])
+        df_utils.subtract_columns_by_year(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'Lost', [(df_ub_cul, ub.UB_TOTAL), (df_maf, all_b.INFLOW_UNREGULATED)])
         bar_groups = [
-            ('UB CUL', [(df_ub_cul, ub.UB_TOTAL, 'darkred')]),
-            ('Inflow', [ (df_maf, all_b.INFLOW, 'royalblue')]),
-            ('Supply', [(natural_flow_data.df, 'Surplus', 'darkgreen')])]
+            ('Natural', [(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'green')]),
+            # ('Actual', [(df_ub_cul, ub.UB_TOTAL, 'darkred'), (df_maf, all_b.INFLOW, 'royalblue')]),
+            ('Actual', [(df_ub_cul, ub.UB_TOTAL, 'darkred'), (df_maf, all_b.INFLOW_UNREGULATED, 'royalblue')]),
+        ]
         supply_demand = MultiBarChart(
             groups=bar_groups,
             underlay_lines=underlay_lines,
             overlay_lines=overlay_lines,
             title="",
-            start_year = 1964,
+            start_year = 1999,
             # start_year=self.start_year,
             end_year=self.end_year,
-            # y_max=25.0,
+            # y_min=1999,
         )
         self.charts.append(supply_demand)
 
@@ -339,7 +342,7 @@ class PieChartFrame(ChartFrame):
             # y_max=16.0,
             # y_units='MAF'
         )
-        self.charts.append(powell_inflow_outflow)
+        # self.charts.append(powell_inflow_outflow)
 
     def start_animation(self):
         if self.timer is None:

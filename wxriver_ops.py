@@ -28,6 +28,7 @@ import matplotlib
 import os
 from typing import List
 from chart.chart_frame import NotebookFrame
+from colorado.river_war import RiverWar
 from data_sets.data_set import DataSetRegistry
 from colorado.pie_chart_frame import PieChartFrame
 from colorado.reservoir_chart_frame import ReservoirChartFrame
@@ -158,7 +159,8 @@ if __name__ == "__main__":
 
     app = wx.App(False)
 
-    nb = NotebookFrame(callables, reservoir_registry, dataset_registry)
+    river_war = RiverWar(reservoir_registry, dataset_registry)
+    nb = NotebookFrame(callables, river_war)
 
     # reservoir_chart(nb)
     pie_chart(nb)
