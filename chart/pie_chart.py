@@ -33,15 +33,16 @@ class PieChart(Chart):
                  data_series: List[Tuple[pd.DataFrame, str, str]],
                  year: int = 2024,
                  title: str = "",
-                 percentage:float = 0.0,
+                 percentage: float = 0.0,
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
                  reservoirs: List[Reservoir] | None = None,
                  value_divisor: float = 1_000_000,
                  outer_annotations: List[Tuple[str, float, Tuple[pd.DataFrame, str]]] | None = None,
-                 annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
-    ):
+                 annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None,
+                 left_bar_series: List[Tuple[pd.DataFrame, str, str]] | None = None,
+                 left_bar_ymax: float | None = None):          # ← Control bar height
 
         super().__init__(reservoirs or [], start_date, current_date, end_date, percentage=percentage)
 
@@ -52,16 +53,117 @@ class PieChart(Chart):
         self.outer_annotations = outer_annotations or []
         self.annotations = annotations or []
 
+        # Left bar settings
+        self.left_bar_series = left_bar_series or []
+        self.left_bar_ymax = left_bar_ymax
+
         self.height_inch = 7.5
-        self.width_inch = 8.5
+        self.width_inch = 9.8
+
         self.ax = None
+        self.ax_bar = None
+        self.ax_pie = None
         self.fig = None
 
-        # Store original full DataFrames (important for animation)
-        self.original_data_series = [ (df.copy(), col, color) for df, col, color in data_series ]
+        self.original_data_series = [(df.copy(), col, color) for df, col, color in data_series]
 
-    def create_pie_chart(self, ax):
-        """Core pie drawing logic - used by both initial creation and updates"""
+    def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
+        if width_inch is not None:
+            self.width_inch = width_inch
+        if height_inch is not None:
+            self.height_inch = height_inch
+
+        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=120)
+
+        if self.left_bar_series:
+            # Very skinny left bar (≈1/4 width)
+            gs = fig.add_gridspec(1, 2, width_ratios=[0.22, 4.5], wspace=0.12)
+            self.ax_bar = fig.add_subplot(gs[0])
+            self.ax_pie = fig.add_subplot(gs[1])
+            self.ax = self.ax_pie
+        else:
+            self.ax_bar = None
+            self.ax_pie = None
+            self.ax = fig.add_subplot(111)
+
+        self._create_chart()          # ← This method now exists
+        fig.tight_layout(pad=2.8)
+        self.fig = fig
+        return fig
+
+    def _create_chart(self):
+        """Internal method to draw everything"""
+        if self.ax_bar is not None:
+            self._create_left_bar(self.ax_bar)
+        if self.ax_pie is not None:
+            self._create_pie(self.ax_pie)
+        elif self.ax is not None:
+            self._create_pie(self.ax)
+
+    def _create_left_bar(self, ax):
+        """Tall skinny bar with legend positioned ABOVE the entire graph"""
+        ax.clear()
+        values, labels, colors = [], [], []
+
+        for df, col, color in self.left_bar_series:
+            matching = df[df['Year'] == self.year]
+            if not matching.empty:
+                val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
+                if pd.notna(val) and val > 0:
+                    values.append(val / self.value_divisor)
+                    labels.append(col.replace('_', ' '))
+                    colors.append(color)
+
+        if not values:
+            ax.text(0.5, 0.5, "No data", ha='center', va='center', fontsize=10)
+            return
+
+        bars = ax.bar(labels, values, color=colors, width=0.55, edgecolor='white')
+
+        # Y limits
+        if self.left_bar_ymax is not None:
+            ymax = self.left_bar_ymax
+        else:
+            ymax = max(values) * 1.12
+        ax.set_ylim(0, ymax)
+
+        ax.set_ylabel("MAF", fontsize=10)
+        ax.set_xticks([])        # no x-axis labels
+        ax.set_xlabel("")
+
+        # === Legend ABOVE the top of the graph ===
+        legend_labels = [lab.replace('_', ' ') for lab in labels]
+
+        ax.legend(bars, legend_labels,
+                  loc='lower center',           # important
+                  bbox_to_anchor=(0.5, 1.08),   # 1.08 = ~1 font height above top
+                  fontsize=9.2,
+                  frameon=True,
+                  fancybox=True,
+                  shadow=False,
+                  handlelength=1.1,
+                  handletextpad=0.5,
+                  borderaxespad=0)
+
+        # Value labels on bars
+        for bar in bars:
+            height = bar.get_height()
+            x = bar.get_x() + bar.get_width() / 2.
+
+            if height >= ymax * 0.94:
+                label_y = ymax * 0.92
+                va = 'top'
+            else:
+                label_y = height * 1.01
+                va = 'bottom'
+
+            ax.text(x, label_y, f'{height:,.1f}',
+                    ha='center', va=va, fontsize=9.5, fontweight='bold')
+
+        ax.grid(axis='y', linestyle='--', alpha=0.3)
+
+    def _create_pie(self, ax):
+        """Original pie chart logic"""
         if not self.data_series:
             ax.text(0.5, 0.5, "No data to plot", ha='center', va='center', fontsize=14)
             return
@@ -73,8 +175,6 @@ class PieChart(Chart):
         for df, col, color in self.data_series:
             if df.empty or col not in df.columns:
                 continue
-
-            # Find value for current year
             matching = df[df['Year'] == self.year]
             if not matching.empty:
                 val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
@@ -88,43 +188,32 @@ class PieChart(Chart):
             return
 
         total = sum(values)
-        total_maf = total / self.value_divisor
 
         def autopct_format(pct):
             absolute = (pct * total / 100) / self.value_divisor
             return f'{pct:.1f}%\n{absolute:,.2f}'
 
-        ax.clear()   # ← Important for redraw
-
+        ax.clear()
         wedges, texts, autotexts = ax.pie(
-            values,
-            labels=labels,
-            colors=colors,
-            autopct=autopct_format,
-            startangle=90,
-            pctdistance=0.75,
-            labeldistance=1.02,
+            values, labels=labels, colors=colors,
+            autopct=autopct_format, startangle=90,
+            pctdistance=0.75, labeldistance=1.02,
             textprops={'fontsize': 10},
             wedgeprops=dict(linewidth=1.5, edgecolor='white')
         )
 
         for autotext in autotexts:
             autotext.set_fontweight('bold')
-            autotext.set_color('black')
-
         for text in texts:
             text.set_fontsize(9.5)
-            text.set_fontweight('semibold')
 
-        main_title = self.title or "Distribution"
-        ax.set_title(f"{main_title} — {self.year}", fontsize=15, fontweight='bold', pad=15)
+        ax.set_title(f"{self.title or 'Distribution'} — {self.year}",
+                     fontsize=15, fontweight='bold', pad=15)
         ax.axis('equal')
 
-        # Annotations
         for ann in self.annotations:
             self.add_total_annotations(ann)
 
-        # Outer annotations (if any)
         if self.outer_annotations:
             radius = 1.25
             for name, degrees, (df, col) in self.outer_annotations:
@@ -138,42 +227,19 @@ class PieChart(Chart):
                         x = radius * np.cos(rad)
                         y = radius * np.sin(rad)
                         ha = 'left' if -90 < (degrees % 360) < 90 else 'right'
-
                         ax.text(x, y, f"{name}\n{formatted} MAF   {percentage:.1f}%",
                                 ha=ha, va='center', fontsize=9.5, fontweight='bold',
                                 bbox=dict(boxstyle="round,pad=0.45", facecolor="white", alpha=0.9))
 
-    def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
-        if width_inch is not None:
-            self.width_inch = width_inch
-        if height_inch is not None:
-            self.height_inch = height_inch
-
-        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=120)
-        self.ax = fig.add_subplot(111)
-
-        self.create_pie_chart(self.ax)
-
-        fig.tight_layout(pad=2.5)
-        self.fig = fig
-        return fig
-
     def update_for_year(self, year: int):
-        """This is the method called by the timer — now fully working"""
         self.year = year
-
-        if self.ax is None:
-            return
-
-        self.create_pie_chart(self.ax)        # Redraw everything
-
-        # Refresh the canvas if it exists (wx + matplotlib)
+        self._create_chart()
         if hasattr(self, 'canvas') and self.canvas is not None:
             self.canvas.draw()
             self.canvas.Refresh()
 
     def add_total_annotations(self, annotations, divisor=1_000_000):
-        """Your existing annotation method (unchanged)"""
+        """Your original annotation method"""
         lines = []
         x = annotations[0]
         y = annotations[1]

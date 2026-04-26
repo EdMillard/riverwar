@@ -99,6 +99,10 @@ class PieChartFrame(ChartFrame):
         lb_cul = river_war.dataset.get('Lower Basin Cul')
         df_lb_cul = lb_cul.df
 
+        # ====================== NATURAL FLOW ======================
+        natural_flow_data = river_war.dataset.get('Natural Flow')
+        df_utils.moving_average(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'Supply 10 yr avg')
+
         # Final totals
         df_utils.add_columns_across_dfs([
             (df_ub_cul, ub.UB_RESERVOIR_EVAP),
@@ -162,18 +166,23 @@ class PieChartFrame(ChartFrame):
             pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, '#ff4040'))
             pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, '#ff4040'))
 
+        left_bar_series = [
+            (df_lb_cul, all_b.DEMAND, 'maroon'),
+            (natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'green'),
+        ]
+
         self.demand_pie_chart = PieChart(
             pie_wedges,
             title='Colorado River Supply and Demand',
             year=self.current_year,
-            annotations=[totals, lb_totals, evap_totals]
+            annotations=[totals, lb_totals, evap_totals],
+            left_bar_series=left_bar_series,
+            left_bar_ymax=20.0
         )
         self.charts.append(self.demand_pie_chart)
 
         # ====================== SUPPLY BAR CHART ======================
-        # Natural Flow
-        natural_flow_data = river_war.dataset.get('Natural Flow')
-        df_utils.moving_average(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'Supply 10 yr avg')
+
 
         overlay_lines = [
             (df_lb_cul, all_b.DEMAND, 'darkred'),
