@@ -505,6 +505,56 @@ def moving_average(
 
     return df
 
+
+def copy_rows_by_year(
+        target_df: pd.DataFrame,
+        source_df: pd.DataFrame,
+        columns: list[str] = None,
+        year_col: str = None
+) -> None:
+    """
+    Copy columns from source_df into target_df by matching on Year.
+    - Adds NEW columns to target_df (in place)
+    - Warns on name collisions
+    """
+    if target_df.empty or source_df.empty:
+        return
+
+    # Determine year column (defaults to first column)
+    y_col = year_col or target_df.columns[0]
+
+    if y_col not in source_df.columns:
+        print(f"Warning: Year column '{y_col}' not found in source_df")
+        return
+
+    # Determine which columns to copy
+    if columns is None:
+        # Copy all columns except the year column
+        columns_to_copy = [col for col in source_df.columns if col != y_col]
+    else:
+        columns_to_copy = [col for col in columns if col in source_df.columns]
+
+    if not columns_to_copy:
+        print("No columns to copy")
+        return
+
+    # Check for name collisions
+    existing_cols = set(target_df.columns)
+    collisions = [col for col in columns_to_copy if col in existing_cols]
+
+    if collisions:
+        print(f"⚠️  WARNING: Following columns already exist in target and will be overwritten: {collisions}")
+
+    # Build year → values mapping from source
+    source_map = source_df.set_index(y_col)[columns_to_copy]
+
+    # Add / overwrite columns in target by year match
+    for col in columns_to_copy:
+        target_df[col] = target_df[y_col].map(source_map[col])
+
+    print(f"✅ Copied {len(columns_to_copy)} columns from source into target by Year match")
+
+
 def copy_column(
         source_df: pd.DataFrame,
         target_df: pd.DataFrame,

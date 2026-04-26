@@ -54,7 +54,7 @@ class ReservoirChartFrame(ChartFrame):
         if not selection:
             return
 
-        reservoir = self.notebook_frame.reservoir_registry.get(selection)
+        reservoir = self.notebook_frame.river_war.reservoir.get(selection)
         if not reservoir:
             wx.MessageBox(f"Failed to load {selection}", "Error", wx.ICON_ERROR)
             return
@@ -71,7 +71,7 @@ class ReservoirChartFrame(ChartFrame):
         print(f"Switched to reservoir: {selection}")
 
     def load_charts(self):
-        reservoir:Reservoir = self.notebook_frame.reservoir_registry.get('Lake Powell')
+        reservoir:Reservoir = self.notebook_frame.river_war.reservoir.get('Lake Powell')
         self.load_reservoir(reservoir)
 
     def load_reservoir(self, reservoir:Reservoir) -> None:

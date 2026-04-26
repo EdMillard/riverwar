@@ -71,7 +71,7 @@ class Registry:
                             "module": module,
                             "filepath": str(file)
                         }
-                        print(f"✓ Loaded: {nice_name}")
+                        # print(f"✓ Loaded: {module_name}")
                         break
                 else:
                     print(f"⚠ No suitable class found in {file.name}")
@@ -82,6 +82,10 @@ class Registry:
     @staticmethod
     def _make_nice_name(filename: str) -> str:
         return filename.replace("_", " ").replace("-", " ").title()
+
+    @staticmethod
+    def make_nodule_name(filename: str) -> str:
+        return filename.replace(" ", "_").lower()
 
     # ====================== Convenience Methods ======================
 

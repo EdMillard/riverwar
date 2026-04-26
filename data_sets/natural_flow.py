@@ -33,7 +33,7 @@ from typing import Optional
 class NaturalFlowDataSet(DataSet):
     def __init__(self, name:str, month:int=10):
         super().__init__(name, month=month)
-        self.df = self.from_csv('natural_flow')
+        self.df = self.from_csv(name)
 
     def load(self) -> Optional[pd.DataFrame]:
         start_year = 1906

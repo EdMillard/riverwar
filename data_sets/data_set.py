@@ -46,6 +46,7 @@ class DataSet:
         )
 
     def from_csv(self, filename:str)->pd.DataFrame:
+        filename = Registry.make_nodule_name(filename)
         df:Optional[pd.DataFrame] = None
         base_path:Path = Path('data/riverwar')
         path = Path(base_path) / filename
@@ -67,12 +68,12 @@ class DataSetRegistry(Registry):
 
     def get(self, name) -> Optional[DataSet]:
         instance: Optional[DataSet] = None
-        reservoir_registry = self.registry[name]
-        if reservoir_registry is not None:
-            instance = reservoir_registry["instance"]
+        dataset_registry = self.registry[name]
+        if dataset_registry is not None:
+            instance = dataset_registry["instance"]
             if instance is None:
-                constructor = reservoir_registry["constructor"]
+                constructor = dataset_registry["constructor"]
                 if constructor is not None:
                     instance = constructor(name)
-                    reservoir_registry["instance"] = instance
+                    dataset_registry["instance"] = instance
         return instance

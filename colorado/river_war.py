@@ -25,7 +25,7 @@ from reservoirs.reservoir import ReservoirRegistry
 class RiverWar():
     def __init__(self, reservoir_registry:ReservoirRegistry, dataset_registry:DataSetRegistry):
         super().__init__()
-        self.reservoir_registry:ReservoirRegistry = reservoir_registry
-        self.dataset_registry:DataSetRegistry = dataset_registry
+        self.reservoir:ReservoirRegistry = reservoir_registry
+        self.dataset:DataSetRegistry = dataset_registry
 
 
