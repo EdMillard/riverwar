@@ -398,6 +398,66 @@ def add_columns_across_dfs(
 
     return target
 
+
+import pandas as pd
+from typing import List, Tuple, Optional
+
+
+def subtract_columns_across_dfs(
+        target_df: pd.DataFrame,
+        from_column: str,  # ← Column to subtract FROM
+        sources: List[Tuple[pd.DataFrame, str]],
+        result_column: str = 'Stored',
+        key_column: Optional[str] = None,
+        inplace: bool = True,
+        fill_value: float = 0.0
+) -> pd.DataFrame:
+    """
+    Subtract multiple columns (from same or different DataFrames)
+    from `from_column`, aligned by key_column (usually 'Year').
+    """
+    if not isinstance(target_df, pd.DataFrame):
+        raise TypeError("target_df must be a pandas DataFrame")
+
+    target = target_df if inplace else target_df.copy()
+
+    # Auto-detect key column
+    if key_column is None:
+        for candidate in ['Year', 'Date', 'year', 'date']:
+            if candidate in target.columns:
+                key_column = candidate
+                break
+        else:
+            raise ValueError("Could not auto-detect key_column. Please specify it.")
+
+    if key_column not in target.columns:
+        raise ValueError(f"Key column '{key_column}' not found in target_df")
+    if from_column not in target.columns:
+        raise ValueError(f"from_column '{from_column}' not found in target_df")
+
+    # Normalize key for alignment
+    target_key = target[key_column].astype(str).str.strip()
+
+    # Initialize result with the from_column
+    target[result_column] = pd.to_numeric(
+        target[from_column], errors='coerce'
+    ).fillna(fill_value)
+
+    # Subtract each source column
+    for src_df, col_name in sources:
+        if col_name not in src_df.columns:
+            raise ValueError(f"Column '{col_name}' not found in source DataFrame")
+
+        src_key = src_df[key_column].astype(str).str.strip()
+        src_values = pd.to_numeric(src_df[col_name], errors='coerce').fillna(fill_value)
+
+        src_map = pd.Series(src_values.values, index=src_key)
+        mapped = target_key.map(src_map).fillna(fill_value)
+
+        target[result_column] = target[result_column] - mapped
+
+    return target
+
 def subtract_column(
         df: pd.DataFrame,
         col1: str,

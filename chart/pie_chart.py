@@ -41,6 +41,7 @@ class PieChart(Chart):
                  value_divisor: float = 1_000_000,
                  outer_annotations: List[Tuple[str, float, Tuple[pd.DataFrame, str]]] | None = None,
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None,
+                 radial_lines: List[Tuple[pd.DataFrame, str, str]] | None = None,
                  left_bar_series: List[Tuple[pd.DataFrame, str, str]] | None = None,
                  left_bar_ymax: float | None = None,
                  left_bar_ymin: float | None = None):
@@ -69,6 +70,8 @@ class PieChart(Chart):
         self.year = year
         self.outer_annotations = outer_annotations or []
         self.annotations = annotations or []
+
+        self.radial_lines = radial_lines or []
 
         # Left bar settings
         self.left_bar_series = left_bar_series or []
@@ -215,7 +218,8 @@ class PieChart(Chart):
 
         def autopct_format(pct):
             absolute = (pct * total / 100) / self.value_divisor
-            return f'{pct:.1f}%\n{absolute:,.2f}'
+            return f'{absolute:,.2f}'
+            # return f'{pct:.1f}%\n{absolute:,.2f}'
 
         ax.clear()
 
@@ -228,7 +232,7 @@ class PieChart(Chart):
             pctdistance=0.75,
             labeldistance=1.02,
             textprops={'fontsize': 10},
-            wedgeprops=dict(linewidth=1.5, edgecolor='white')
+            # wedgeprops=dict(linewidth=1.5, edgecolor='white')
         )
 
         # Apply properties carefully
@@ -255,6 +259,22 @@ class PieChart(Chart):
                      fontsize=15, fontweight='bold', pad=15)
         ax.axis('equal')
 
+        # === Dynamic Radial Lines (cumulative) ===
+        if self.radial_lines:
+            cumulative = 0.0
+            for df, col, color in self.radial_lines:
+                matching = df[df['Year'] == self.year]
+                if not matching.empty:
+                    val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
+                    if pd.notna(val) and val > 0:
+                        cumulative += val
+                        self.draw_radial_line(
+                            ax,
+                            value=cumulative,
+                            color=color,
+                            linestyle='-',
+                            linewidth=2.5
+                        )
         for ann in self.annotations:
             self.add_total_annotations(ann)
 
@@ -275,7 +295,8 @@ class PieChart(Chart):
                                 ha=ha, va='center', fontsize=9.5, fontweight='bold',
                                 bbox=dict(boxstyle="round,pad=0.45", facecolor="white", alpha=0.9))
 
-        # self.draw_radial_line_by_angle(ax, angle_deg=45.0, color='black', linestyle='-', linewidth=3.5)
+
+
 
     def draw_radial_line(self, ax, value: float,
                          color: str = 'black',
@@ -344,8 +365,10 @@ class PieChart(Chart):
             self.canvas.Refresh()
 
     def add_total_annotations(self, annotations, divisor=1_000_000):
-        """Tight format: percentage right after MAF with only one space"""
-        lines = []
+        """Draw annotation table with a nice bordered box (like legend)"""
+        if not annotations or len(annotations) < 3:
+            return
+
         x = annotations[0]
         y = annotations[1]
         annotations_list = annotations[2]
@@ -353,6 +376,7 @@ class PieChart(Chart):
         if not annotations_list:
             return
 
+        lines = []
         # Get total value (last item)
         _, (total_df, total_col) = annotations_list[-1]
         matching_total = total_df[total_df['Year'] == self.year]
@@ -366,12 +390,13 @@ class PieChart(Chart):
 
             if total_value > 0:
                 percentage = (value / total_value) * 100
-                lines.append(f"{maf:7.2f} MAF {percentage:5.1f}% {label}")
+                lines.append(f"{maf:5.2f} MAF {percentage:5.1f}% {label}")
             else:
-                lines.append(f"{maf:7.2f} MAF {label}")
+                lines.append(f"{maf:5.2f} MAF {label}")
 
         text_block = "\n".join(lines)
 
+        # === Clean box around the annotation (no separator) ===
         self.ax.text(
             x=x, y=y, s=text_block,
             transform=self.ax.transAxes,
@@ -379,5 +404,12 @@ class PieChart(Chart):
             fontfamily='monospace',
             fontweight='semibold',
             ha='left', va='top',
-            zorder=15
+            zorder=15,
+            bbox=dict(
+                boxstyle="round,pad=0.6",
+                facecolor="white",
+                edgecolor="#aaaaaa",      # light gray, matches typical legend border
+                alpha=0.95,
+                linewidth=1.1
+            )
         )

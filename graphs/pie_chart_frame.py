@@ -101,6 +101,9 @@ class PieChartFrame(ChartFrame):
         # ====================== NATURAL FLOW ======================
         natural_flow_data = river_war.dataset.get('Natural Flow')
 
+        # ====================== AZ Aquifter ======================
+        az_ltsc_data = river_war.dataset.get('Az Ltsc')
+
         # Final totals
         df_utils.add_columns_across_dfs([
             (df_ub_cul, ub.UB_RESERVOIR_EVAP),
@@ -161,6 +164,8 @@ class PieChartFrame(ChartFrame):
             ("Total", (df_lb_cul, all_b.EVAP_TOTAL))
         ])
 
+        ltsc_df = az_ltsc_data.df
+        df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_CAP, [(ltsc_df, 'Stored')], result_column=lb.AZ_CAP)
         pie_wedges = [
             (df_ub_cul, ub.CU_CO, '#6060ff'),
             (df_ub_cul, ub.CU_UT, '#8080ff'),
@@ -172,15 +177,22 @@ class PieChartFrame(ChartFrame):
             (df_lb_cul, lb.LB_RESERVOIR_EVAP, 'gold'),
             (df_lb_cul, lb.SALTON_INFLOW, 'gold', {'hatch': '-','hatch_color': '#c040c0'}),
             (df_lb_cul, lb.IMPERIAL_VALLEY_CU, '#c040c0', {'label': 'Imperial Valley'}),
-            (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, '#e080e0', {'label': 'Metropolitan', 'edgecolor': '#e080e0'}),
+            (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, '#e080e0', {'label': 'Metropolitan'}),
             (df_lb_cul, lb.CA_MAINSTEM, '#ffa0ff'),
             (df_lb_cul, lb.NV_TOTAL, 'orange', {'label': 'NV'}),
-            (df_lb_cul, lb.AZ_CAP, '#ff8080'),
+            (df_lb_cul, lb.AZ_CAP, '#ff8080', {'label': 'CAP'}),
+            (ltsc_df, 'Stored', 'gold', {'label': 'CAP Aquifer Store', 'hatch': '|','hatch_color': '#ff8080'}),
             (df_lb_cul, lb.AZ_MAINSTEM, '#ff4040'),
         ]
         if show_tributaries:
             pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, '#c02020', {'label': 'AZ Gila'}))
             pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, 'maroon', {'label': 'AZ Trib'}))
+
+        radial_lines = [
+            (df_lb_cul, lb.LB_TOTAL, 'white'),
+            (df_lb_cul, lb.MEXICO, 'white'),
+            (df_ub_cul, ub.UB_TOTAL, 'white'),
+        ]
 
         left_bar_series = [
             (df_lb_cul, all_b.DEMAND, 'maroon'),
@@ -192,6 +204,7 @@ class PieChartFrame(ChartFrame):
             title='Colorado River Supply and Demand',
             year=self.current_year,
             annotations=[totals, lb_totals, evap_totals],
+            radial_lines=radial_lines,
             left_bar_series=left_bar_series,
             left_bar_ymax=27.0,
             left_bar_ymin=10.0

@@ -54,9 +54,23 @@ class DataSet:
         if path.exists():
             df = pd.read_csv(
                 path,
-                dtype={'Year': 'Int64'},  # Best for years
+                dtype={'Year': 'object'},  # Read as string to avoid parsing error
                 float_precision='high'
             )
+            # Only drop rows where Year is not numeric
+            df['Year_numeric'] = pd.to_numeric(df['Year'], errors='coerce')
+
+            # Drop bad rows (like "Total") if any exist
+            bad_rows = df['Year_numeric'].isna()
+            if bad_rows.any():
+                print(f"Dropped {bad_rows.sum()} row(s) with non-numeric Year values")
+                df = df[~bad_rows].copy()
+
+            # Now safely convert to Int64
+            df['Year'] = df['Year_numeric'].astype('Int64')
+
+            # Clean up
+            df = df.drop(columns=['Year_numeric']).reset_index(drop=True)
         else:
             df = self.load()
             DataSet.to_csv(path, df)
