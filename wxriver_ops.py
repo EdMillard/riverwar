@@ -30,11 +30,11 @@ from typing import List
 from chart.chart_frame import NotebookFrame
 from colorado.river_war import RiverWar
 from data_sets.data_set import DataSetRegistry
-from colorado.flow_chart_frame import FlowChartFrame
-from colorado.pie_chart_frame import PieChartFrame
-from colorado.reservoir_chart_frame import ReservoirChartFrame
-from colorado.reservoirs_chart_frame import ReservoirsChartFrame
-from colorado.time_series_chart_frame import TimeSeriesChartFrame
+from graphs.flow_chart_frame import FlowChartFrame
+from graphs.pie_chart_frame import PieChartFrame
+from graphs.reservoir_chart_frame import ReservoirChartFrame
+from graphs.reservoirs_chart_frame import ReservoirsChartFrame
+from graphs.time_series_chart_frame import TimeSeriesChartFrame
 from reservoirs.reservoir import ReservoirRegistry
 from reservoirs.imperial import Imperial
 from reservoirs.lake_havasu import LakeHavasu
