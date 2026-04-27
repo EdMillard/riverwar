@@ -30,6 +30,7 @@ from typing import List
 from chart.chart_frame import NotebookFrame
 from colorado.river_war import RiverWar
 from data_sets.data_set import DataSetRegistry
+from colorado.flow_chart_frame import FlowChartFrame
 from colorado.pie_chart_frame import PieChartFrame
 from colorado.reservoir_chart_frame import ReservoirChartFrame
 from colorado.reservoirs_chart_frame import ReservoirsChartFrame
@@ -139,6 +140,10 @@ def pie_chart(notebook_frame:NotebookFrame):
     frame = PieChartFrame(notebook_frame)
     frame.Show()
 
+def flow_chart(notebook_frame:NotebookFrame):
+    frame = FlowChartFrame(notebook_frame)
+    frame.Show()
+
 # ==================== RUN ====================
 if __name__ == "__main__":
 
@@ -146,6 +151,7 @@ if __name__ == "__main__":
         ("Reservoir", reservoir_chart),
         ("Reservoirs", reservoirs_chart),
         ("Demand", pie_chart),
+        ("Flow", flow_chart),
         ("Inflow Outflow", time_series_chart),
     ]
 

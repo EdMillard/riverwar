@@ -474,34 +474,53 @@ def rename_column(
     return df_copy
 
 def moving_average(
-    df: pd.DataFrame,
-    source_col: str,
-    new_col: str,
-    window: int = 10,
-    min_periods: Optional[int] = None,
-    center: bool = False,
-    inplace: bool = True
+        df: pd.DataFrame,
+        source_col: str,
+        new_col: str,
+        window: int = 10,
+        min_periods: Optional[int] = None,
+        center: bool = False,
+        inplace: bool = True
 ) -> pd.DataFrame:
     """
-    Adds a moving average column to the DataFrame (truly in-place by default).
+    Adds a moving average column.
+
+    Behavior:
+        - First row:     uses current value (1-year)
+        - Second row:    2-year average
+        - ...
+        - Up to `window`th row: uses expanding average
+        - After that:    standard rolling average of `window` years
     """
     if source_col not in df.columns:
         raise ValueError(f"Source column '{source_col}' not found. "
-                        f"Available columns: {list(df.columns)}")
+                         f"Available columns: {list(df.columns)}")
 
     if not inplace:
         df = df.copy()
 
-    # Sort by Year **in place** if the column exists
+    # Ensure data is sorted by Year
     if 'Year' in df.columns:
         df.sort_values('Year', inplace=True)
 
-    # Calculate and add the moving average column (this is always in-place on df)
-    df[new_col] = df[source_col].rolling(
-        window=window,
-        min_periods=min_periods,
-        center=center
-    ).mean()
+    # Calculate the progressive average at the beginning
+    series = df[source_col]
+
+    # Create the result series
+    result = pd.Series(index=series.index, dtype=float)
+
+    for i in range(len(series)):
+        if pd.isna(series.iloc[i]):
+            result.iloc[i] = np.nan
+            continue
+
+        # Use expanding window up to the requested 'window' size
+        current_window = min(i + 1, window)
+        start_idx = i - current_window + 1
+
+        result.iloc[i] = series.iloc[start_idx:i + 1].mean()
+
+    df[new_col] = result
 
     return df
 

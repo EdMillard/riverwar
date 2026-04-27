@@ -50,6 +50,8 @@ III_D = "III(d)"
 
 EVAP_TOTAL = 'Evap Total'
 COLORADO_RIVER_TOTAL = 'Total'
+SUPPLY = 'Supply'
+SUPPLY_3_YEAR_AVG = 'Supply 3 yr avg'
 DEMAND = 'Demand'
 
 # Data colors

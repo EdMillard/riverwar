@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import wx
+from chart.multi_bar_chart import MultiBarChart
 from chart.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
 import colorado.lb as lb
@@ -27,7 +28,7 @@ import colorado.ub as ub
 import colorado.allb as all_b
 from api import df_utils
 
-class PieChartFrame(ChartFrame):
+class FlowChartFrame(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         self.start_year = 1971
         self.end_year = 2024
@@ -100,6 +101,7 @@ class PieChartFrame(ChartFrame):
 
         # ====================== NATURAL FLOW ======================
         natural_flow_data = river_war.dataset.get('Natural Flow')
+        df_utils.moving_average(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'Supply 10 yr avg')
 
         # Final totals
         df_utils.add_columns_across_dfs([
@@ -126,16 +128,6 @@ class PieChartFrame(ChartFrame):
             (df_lb_cul, lb.NM_TRIBUTARY_CUL)],
             df_lb_cul, "UB State Tributaries in LB")
 
-        df_utils.add_columns_across_dfs([
-            (natural_flow_data.df, ub.NATURAL_LEES_FERRY)],
-            natural_flow_data.df, all_b.SUPPLY)
-
-        if show_tributaries:
-            df_utils.add_columns_across_dfs([
-                (df_lb_cul, lb.GILA_CUL)],
-                natural_flow_data.df, all_b.SUPPLY)
-            df_utils.moving_average(natural_flow_data.df, ub.SUPPLY, all_b.SUPPLY_3_YEAR_AVG, window=3)
-
         # ====================== DEMAND PIE CHART ======================
         totals = (0.0, 0.99, [
             ("Lower Basin", (df_lb_cul, lb.LB_TOTAL)),
@@ -144,7 +136,7 @@ class PieChartFrame(ChartFrame):
             ("Demand", (df_lb_cul, all_b.DEMAND))
         ])
 
-        lb_totals = (0.85, 0.99, [
+        lb_totals = (0.9, 0.99, [
             ("CA", (df_lb_cul, lb.CA_TOTAL)),
             ("AZ", (df_lb_cul, lb.AZ_TOTAL)),
             ("NV", (df_lb_cul, lb.NV_TOTAL)),
@@ -170,33 +162,89 @@ class PieChartFrame(ChartFrame):
             (df_lb_cul, lb.MEXICO, '#40a040'),
             (df_lb_cul, "UB State Tributaries in LB", 'darkblue'),
             (df_lb_cul, lb.LB_RESERVOIR_EVAP, 'gold'),
-            (df_lb_cul, lb.SALTON_INFLOW, 'gold', {'hatch': '-','hatch_color': '#c040c0'}),
-            (df_lb_cul, lb.IMPERIAL_VALLEY_CU, '#c040c0', {'label': 'Imperial Valley'}),
-            (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, '#e080e0', {'label': 'Metropolitan', 'edgecolor': '#e080e0'}),
+            (df_lb_cul, lb.SALTON_INFLOW, 'gold'),
+            (df_lb_cul, lb.IMPERIAL_VALLEY_CU, '#c040c0'),
+            (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, '#e080e0'),
             (df_lb_cul, lb.CA_MAINSTEM, '#ffa0ff'),
-            (df_lb_cul, lb.NV_TOTAL, 'orange', {'label': 'NV'}),
+            (df_lb_cul, lb.NV_TOTAL, 'orange'),
             (df_lb_cul, lb.AZ_CAP, '#ff8080'),
             (df_lb_cul, lb.AZ_MAINSTEM, '#ff4040'),
         ]
         if show_tributaries:
-            pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, '#c02020', {'label': 'AZ Gila'}))
-            pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, 'maroon', {'label': 'AZ Trib'}))
+            pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, '#c02020'))
+            pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, 'maroon'))
 
-        left_bar_series = [
-            (df_lb_cul, all_b.DEMAND, 'maroon'),
-            (natural_flow_data.df, all_b.SUPPLY_3_YEAR_AVG, 'green'),
+        # ====================== SUPPLY BAR CHART ======================
+        overlay_lines = [
+            (df_lb_cul, all_b.DEMAND, 'darkred'),
+            (natural_flow_data.df, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
         ]
+        underlay_lines = [
+            (powell.df_annual, all_b.STORAGE, 'darkblue',  {"linestyle": "dotted", "marker": "", "linewidth": 2.0, "label": "Lake Powell"}),
+        ]
+        bar_groups = [
+            ('Natural Flow', [(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'royalblue')])]
 
-        self.demand_pie_chart = PieChart(
-            pie_wedges,
-            title='Colorado River Supply and Demand',
-            year=self.current_year,
-            annotations=[totals, lb_totals, evap_totals],
-            left_bar_series=left_bar_series,
-            left_bar_ymax=27.0,
-            left_bar_ymin=10.0
+        a = [('Demand', [
+                (df_lb_cul, lb.MEXICO, '#40a040'),
+                (df_lb_cul, lb.CA_TOTAL, '#c040c0'),
+                (df_ub_cul, ub.UB_TOTAL, 'royalblue'),
+                (df_lb_cul, lb.AZ_TOTAL, '#ff0000'),
+                (df_lb_cul, lb.NV_TOTAL, 'orange')])
+            ]
+        supply_demand = MultiBarChart(
+            groups=bar_groups,
+            underlay_lines=underlay_lines,
+            overlay_lines=overlay_lines,
+            title="Colorado River Supply vs Demand",
+            start_year = 1906,
+            # start_year=self.start_year,
+            end_year=self.end_year,
+            # y_max=25.0,
         )
-        self.charts.append(self.demand_pie_chart)
+        self.charts.append(supply_demand)
+
+        # ====================== NATURAL FLOW BAR CHART ======================
+        df_maf = powell.df_annual
+
+        overlay_lines = [
+            (natural_flow_data.df, 'Supply 10 yr avg', 'goldenrod', {"marker": "", "linewidth": 2.0}),
+        ]
+        df_utils.subtract_columns_by_year(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'Lost', [(df_ub_cul, ub.UB_TOTAL), (df_maf, all_b.INFLOW_UNREGULATED)])
+        bar_groups = [
+            ('Natural', [(natural_flow_data.df, ub.NATURAL_LEES_FERRY, 'green')]),
+            # ('Actual', [(df_ub_cul, ub.UB_TOTAL, 'darkred'), (df_maf, all_b.INFLOW, 'royalblue')]),
+            ('Actual', [(df_ub_cul, ub.UB_TOTAL, 'darkred'), (df_maf, all_b.INFLOW_UNREGULATED, 'royalblue')]),
+        ]
+        supply_demand = MultiBarChart(
+            groups=bar_groups,
+            underlay_lines=underlay_lines,
+            overlay_lines=overlay_lines,
+            title="",
+            start_year = 1999,
+            # start_year=self.start_year,
+            end_year=self.end_year,
+            # y_min=1999,
+        )
+        # self.charts.append(supply_demand)
+
+        # ============= POWELL INFLOW OUTFLOW BAR CHART ==============
+        bar_groups = [
+            ('Release', [(df_maf, all_b.RELEASE, 'darkred')]),
+            ('Inflow', [(df_maf, all_b.INFLOW, 'royalblue')]),
+        ]
+        powell_inflow_outflow = MultiBarChart(
+            groups=bar_groups,
+            # underlay_lines=underlay_lines,
+            # overlay_lines=overlay_lines,1
+            title="Powell Inflow Outflow",
+            start_year=self.start_year,
+            end_year=self.end_year,
+            # x_min=1999,
+            # y_max=16.0,
+            # y_units='MAF'
+        )
+        # self.charts.append(powell_inflow_outflow)
 
     def start_animation(self):
         if self.timer is None:

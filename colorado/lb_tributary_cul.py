@@ -49,7 +49,7 @@ class LBTributaryCUL(Sheet):
         super().__init__(name, headers, start_year=1971, end_year=2024)
         self.years: List[int] = list(range(self.start_year, self.end_year+1))
 
-        # lower_basin_cul_from_excel(self.path, self.years)
+        lower_basin_cul_from_excel(self.path, self.years)
         # generate_cul_totals(self.path)
 
         sheets.append(self)
