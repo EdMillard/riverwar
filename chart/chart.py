@@ -180,7 +180,7 @@ class BarChart(Chart):
         super().__init__(reservoirs, start_date, current_date, end_date)
 
     def final_layout(self, ax, title:str, names:List[str], x_pos:np.ndarray):
-        ax.set_ylabel('Volume (Million Acre-Feet)', fontsize=11.5, fontweight='bold')
+        ax.set_ylabel('Million Acre-Feet', fontsize=11.5, fontweight='bold')
         ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)

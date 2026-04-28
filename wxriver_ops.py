@@ -37,6 +37,8 @@ from graphs.reservoirs_chart_frame import ReservoirsChartFrame
 from graphs.time_series_chart_frame import TimeSeriesChartFrame
 from reservoirs.reservoir import ReservoirRegistry
 from reservoirs.imperial import Imperial
+from reservoirs.roosevelt import Roosevelt
+from reservoirs.lake_pleasant import LakePleasant
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
 from reservoirs.aquifers import Aquifers
@@ -126,10 +128,12 @@ def reservoirs_chart(notebook_frame:NotebookFrame):
     lake_mohave = LakeMohave(upstream=[lake_mead])
     lake_havasu = LakeHavasu(upstream=[lake_mohave])
     imperial = Imperial(upstream=[lake_havasu])
+    lake_pleasant = LakePleasant(upstream=[])
+    roosevelt = Roosevelt(upstream=[])
     aquifers = Aquifers(upstream=[])
 
     reservoirs = [
-        imperial, aquifers, lake_havasu, lake_mohave,
+        imperial, aquifers, roosevelt, lake_pleasant, lake_havasu, lake_mohave,
         lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
     ]
 

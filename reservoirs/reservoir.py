@@ -40,6 +40,8 @@ import calendar
 from pandas.tseries.offsets import MonthEnd
 from api import df_utils
 
+# Head and tail USBR JSON Files for verification
+# find . -name '*2026.json' -type f -printf '%T@ %p\0' | sort -zn | cut -zd' ' -f2- | xargs -0 -I {} sh -c 'echo "=== {} ==="; head -n 10 "{}"; echo "..."; tail -n 8 "{}"; echo "────────────────────────────────────────"'
 class Reservoir:
     high_power_pool_color = "lightblue"
     low_power_pool_color = "cornflowerblue"

@@ -34,11 +34,11 @@ class Roosevelt(Reservoir):
         # Elevations
         #
         # Must be called first
-        self.dead_pool_feet = 0
-        self.dead_pool_af = 0
+        self.dead_pool_feet = 1910  # range is 1900-1920
+        self.dead_pool_af = 18500   # range is 17000-20000
 
-        self.full_feet = 0
-        self.full_af = 0
+        self.full_feet = 2_151
+        self.full_af = 1_653_043
 
         # Critical
         self.power_head_target_feet = 0
@@ -53,26 +53,10 @@ class Roosevelt(Reservoir):
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
-        self.load_date(report_path, start_date, current_date, end_date)
+        # self.load_date(report_path, start_date, current_date, end_date)
 
         # Current
         #
-        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
-        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.BLUE_MESA_WY)
-
-        self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.BLUE_MESA_EVAPORATION_WY)
-        self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.BLUE_MESA_INFLOW_CFS)
-        # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.BLUE_MESA_INFLOW)
-        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.BLUE_MESA_RELEASE_CFS)
-        # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.BLUE_MESA_RELEASE)
-
-        # usbr_blue_mesa_storage_af = 76
-        # sheet.usbr_last_value(self.df, usbr_blue_mesa_storage_af, self.water_year, self.water_year,
-        #                        title=ub.BLUE_MESA_WY, month=all_b.WY, divisor=1)
-        # self.active_capacity_af = self.get_value_by_year(self.water_year, ub.BLUE_MESA_WY)
-
-        # 24 Month
-        #
-        self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")
-        self.outflow_parts = self.get_24_month_outflow(self.df_24_month)
-        self.evap_parts = self.get_24_month_evap(self.df_24_month)
+        # self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
+        self.elevation_feet =  2_098.76
+        self.active_capacity_af = 734_034

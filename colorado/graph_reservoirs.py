@@ -49,7 +49,7 @@ class ReservoirChart(BarChart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None):
         super().__init__(reservoirs, start_date, current_date, end_date)
         self.power_head_zones = [
-            ('#ffffff', 'Available Head'),
+            ('#ffffff', 'Available Capacity'),
             (Reservoir.high_power_pool_color, 'Normal Power Head'),
             (Reservoir.low_power_pool_color, 'Low Power Head'),
             (Reservoir.non_power_pool_color, 'Limited Access')
@@ -66,15 +66,21 @@ class ReservoirChart(BarChart):
     def create_figure(self, width_inch=None, height_inch=None):
         if width_inch is not None and width_inch > 0:
             self.width_inch = width_inch
+        if height_inch is not None:
+            self.height_inch = height_inch
 
-        title = f'Colorado River Storage - {self.month_to_short_name(self.current_date.month)} {self.current_date.day}, {self.current_date.year} '
+        title = f'Colorado River Storage - {self.month_to_short_name(self.current_date.month)} ' \
+                f'{self.current_date.day}, {self.current_date.year}'
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
         ax = fig.add_subplot(111)
+
         self.create_reservoir_chart(ax, title)
 
-        fig.tight_layout(pad=1.2)
-        fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.89)
+        # Tighter top margin + title moved up
+        fig.tight_layout(pad=0.8)
+        fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.96)   # ← Higher title
+
         self.fig = fig
         return fig
 
@@ -99,7 +105,7 @@ class ReservoirChart(BarChart):
                 total_reserved_af = sum(amount for _, amount, _ in reserved_parts)
                 total_reserved_maf = total_reserved_af / 1_000_000
                 main_bar_maf = current_maf[i]
-                reserved_bottom = main_bar_maf - total_reserved_maf  # ← this is the key value
+                reserved_bottom = main_bar_maf - total_reserved_maf
 
                 current_bottom = reserved_bottom
                 for owner, amount, color in reserved_parts:
@@ -119,42 +125,56 @@ class ReservoirChart(BarChart):
                                     ha='center', va='center', fontsize=8.5, fontweight='bold', color='black')
                         current_bottom += amount_maf
 
-                # === Dashed vertical line + annotation in the middle ===
+                # === Find nearest critical elevation below the reserved zone ===
+                dash_to_y = 0.0
+                crit_points = getattr(r, 'critical_elevations_feet', [])
+
+                if crit_points:
+                    for item in crit_points:
+                        if isinstance(item, (list, tuple)) and len(item) >= 3:
+                            cap_maf = item[2] / 1_000_000
+                            if cap_maf <= reserved_bottom and cap_maf > dash_to_y:
+                                dash_to_y = cap_maf
+
+                # === Dashed vertical line + annotation ===
                 if total_reserved_maf > 0:
                     reserved_x = x_pos[i] - (main_width / 2) - (reserved_width / 2)
 
-                    # Dashed vertical line - dark red
+                    # Dashed line from bottom of reserved to nearest critical (or 0)
                     ax.plot([reserved_x, reserved_x],
-                            [reserved_bottom, 0],
+                            [reserved_bottom, dash_to_y],
                             color='darkred',
                             linestyle='--',
                             linewidth=1.4,
                             alpha=0.85,
                             zorder=5)
 
-                    mid_y = reserved_bottom / 2
+                    mid_y = (reserved_bottom + dash_to_y) / 2
 
-                    # Draw white background first (slightly oversized)
+                    # Value to display = reserved water sitting above the critical elevation
+                    displayed_value = reserved_bottom - dash_to_y
+
+                    # White background
                     ax.add_patch(mpatches.Rectangle(
                         (reserved_x - 0.115, mid_y - 0.115),
-                        0.23, 0.23,  # wide enough for the number
+                        0.23, 0.23,
                         facecolor='white',
                         edgecolor='none',
                         zorder=6
                     ))
 
-                    # Then draw the black text on top
+                    # Annotation showing reserved amount above the critical elevation
                     ax.annotate(
-                        f'{reserved_bottom:.3f}',
+                        f'{displayed_value:.3f}',
                         xy=(reserved_x, mid_y),
-                        ha='center',
-                        va='center',
+                        ha='center', va='center',
                         fontsize=9.5,
                         fontweight='bold',
                         color='black',
                         zorder=7
                     )
 
+                # Original total reserved annotation at top (unchanged)
                 ax.annotate(f'{total_reserved_maf:.3f}',
                             xy=(x_pos[i] - (main_width/2) - (reserved_width/2), main_bar_maf),
                             xytext=(0, 3), textcoords="offset points",
@@ -291,21 +311,61 @@ class ReservoirChart(BarChart):
                                 xy=(x_pos[i] + main_width*0.52 + 0.04, cap_maf),
                                 ha='left', va='center', fontsize=9.5, fontweight='bold', color='black')
 
+        # ==================== FINAL ANNOTATIONS ====================
         for i in range(len(names)):
-            # Active storage total on top of bar (lowered)
-            ax.annotate(f'{current_maf[i]:.3f}',
-                        xy=(x_pos[i], current_maf[i]),
-                        xytext=(0, 0.6),           # lowered
-                        textcoords="offset points",
-                        ha='center', va='bottom', fontsize=10.5, fontweight='bold', color='black')
+            r = reservoirs[i]
+            current_maf_val = current_maf[i]
 
-            # Current elevation on the right
+            # Calculate practical available
+            crit_points = getattr(r, 'critical_elevations_feet', None)
+            has_critical = False
+            practical_available_maf = current_maf_val   # fallback
+
+            if crit_points:
+                valid_caps = [item[2] for item in crit_points
+                              if isinstance(item, (list, tuple)) and len(item) >= 3 and item[2] > 0]
+                if valid_caps:
+                    has_critical = True
+                    lowest_crit_af = min(valid_caps)
+                    practical_available_af = getattr(r, 'active_capacity_af', 0) - lowest_crit_af
+                    if practical_available_af > 0:
+                        practical_available_maf = practical_available_af / 1_000_000
+
+            # === Two-line annotation with " of" ===
+            if has_critical and abs(practical_available_maf - current_maf_val) > 0.001:
+                top_line = f'{practical_available_maf:.3f} of'
+                bottom_line = f'{current_maf_val:.3f}'
+
+                ax.annotate(f'{top_line}\n{bottom_line}',
+                            xy=(x_pos[i], current_maf_val),
+                            xytext=(0, 1.0),           # adjust height if needed
+                            textcoords="offset points",
+                            ha='center',
+                            va='bottom',
+                            fontsize=9.8,
+                            fontweight='bold',
+                            color='black',
+                            linespacing=1.08)
+            else:
+                # Single line fallback
+                ax.annotate(f'{current_maf_val:.3f}',
+                            xy=(x_pos[i], current_maf_val),
+                            xytext=(0, 0.6),
+                            textcoords="offset points",
+                            ha='center', va='bottom',
+                            fontsize=10.5, fontweight='bold', color='black')
+
+            # === Current elevation on the right (always shown) ===
             if elevations_feet[i]:
                 ax.annotate(f'{elevations_feet[i]:,.2f}\'',
-                            xy=(x_pos[i] + main_width * 0.52, current_maf[i]),
-                            ha='left', va='center', fontsize=9.5, color='darkgreen', fontweight='bold',
-                            bbox=dict(boxstyle="round,pad=0.25", facecolor="lightyellow", alpha=0.9))
-
+                            xy=(x_pos[i] + main_width * 0.52, current_maf_val),
+                            ha='left', va='center',
+                            fontsize=9.5,
+                            color='darkgreen',
+                            fontweight='bold',
+                            bbox=dict(boxstyle="round,pad=0.25",
+                                      facecolor="lightyellow",
+                                      alpha=0.9))
         # ==================== ANNOTATIONS ====================
         if self.power_head_zones:
             power_patches = []
@@ -352,5 +412,10 @@ class ReservoirChart(BarChart):
         ax.legend(handles=aquifer_patches, title="AZ Aquifer LTSC 2023 EOY",
                   loc='upper left', bbox_to_anchor=(0.15, 1.0),
                   fontsize=9, title_fontsize=10, framealpha=0.95)
+
+        ax.set_xlim(-0.65, len(names) - 0.35)
+
+        # Title
+        ax.set_title(title, fontsize=14.5, fontweight='bold', pad=10)
 
         self.final_layout(ax, title, names, x_pos)
