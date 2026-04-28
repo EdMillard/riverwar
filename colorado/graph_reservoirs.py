@@ -99,7 +99,7 @@ class ReservoirChart(BarChart):
                 total_reserved_af = sum(amount for _, amount, _ in reserved_parts)
                 total_reserved_maf = total_reserved_af / 1_000_000
                 main_bar_maf = current_maf[i]
-                reserved_bottom = main_bar_maf - total_reserved_maf
+                reserved_bottom = main_bar_maf - total_reserved_maf  # ← this is the key value
 
                 current_bottom = reserved_bottom
                 for owner, amount, color in reserved_parts:
@@ -112,12 +112,48 @@ class ReservoirChart(BarChart):
 
                         if amount_maf >= 0.45:
                             ax.annotate(owner[:8],
-                                        xy=(bar.get_x() + bar.get_width()/2, current_bottom + amount_maf/2 + 0.13),
+                                        xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2 + 0.13),
                                         ha='center', va='center', fontsize=8, fontweight='bold', color='black')
                         ax.annotate(f'{amount_maf:.3f}',
-                                    xy=(bar.get_x() + bar.get_width()/2, current_bottom + amount_maf/2 - 0.11),
+                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2 - 0.11),
                                     ha='center', va='center', fontsize=8.5, fontweight='bold', color='black')
                         current_bottom += amount_maf
+
+                # === Dashed vertical line + annotation in the middle ===
+                if total_reserved_maf > 0:
+                    reserved_x = x_pos[i] - (main_width / 2) - (reserved_width / 2)
+
+                    # Dashed vertical line - dark red
+                    ax.plot([reserved_x, reserved_x],
+                            [reserved_bottom, 0],
+                            color='darkred',
+                            linestyle='--',
+                            linewidth=1.4,
+                            alpha=0.85,
+                            zorder=5)
+
+                    mid_y = reserved_bottom / 2
+
+                    # Draw white background first (slightly oversized)
+                    ax.add_patch(mpatches.Rectangle(
+                        (reserved_x - 0.115, mid_y - 0.115),
+                        0.23, 0.23,  # wide enough for the number
+                        facecolor='white',
+                        edgecolor='none',
+                        zorder=6
+                    ))
+
+                    # Then draw the black text on top
+                    ax.annotate(
+                        f'{reserved_bottom:.3f}',
+                        xy=(reserved_x, mid_y),
+                        ha='center',
+                        va='center',
+                        fontsize=9.5,
+                        fontweight='bold',
+                        color='black',
+                        zorder=7
+                    )
 
                 ax.annotate(f'{total_reserved_maf:.3f}',
                             xy=(x_pos[i] - (main_width/2) - (reserved_width/2), main_bar_maf),

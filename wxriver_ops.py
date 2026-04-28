@@ -169,8 +169,8 @@ if __name__ == "__main__":
     nb = NotebookFrame(callables, river_war)
 
     # reservoir_chart(nb)
-    pie_chart(nb)
-    # reservoirs_chart(nb)
+    # pie_chart(nb)
+    reservoirs_chart(nb)
     # time_series_chart(nb)
 
     nb.Show()

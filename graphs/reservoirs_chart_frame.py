@@ -42,7 +42,7 @@ class ReservoirsChartFrame(ChartFrame):
         )
         self.charts.append(reservoir_chart)
 
-        inflow_chart = InflowOutflowChart(
-            self.reservoirs, start_date=start, current_date=current, end_date=end
-        )
-        self.charts.append(inflow_chart)
+        # inflow_chart = InflowOutflowChart(
+        #    self.reservoirs, start_date=start, current_date=current, end_date=end
+        # )
+        # self.charts.append(inflow_chart)
