@@ -214,6 +214,10 @@ COACHELLA_RETURN = 'Coachella Return'
 
 IMPERIAL_VALLEY_CU = 'Imperial Valley CU'
 
+PALO_VERDE_CU  = 'Palo Verde CU'
+AZ_CRIT_CU  = 'AZ CRIT CU'
+WELLTON_MOHAWK_CU  = 'Wellton Mohawk CU'
+
 METROPOLITAN_CU = 'Metropolitan CU'
 METROPOLITAN_DIVERSION = 'Metropolitan Diversion'
 METROPOLITAN_RETURN = 'Metropolitan Return'

@@ -73,6 +73,15 @@ class LowerBasinCULDataSet(DataSet):
         df_cu = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_metropolitan_consumptive_use.csv', sep='\s+')
         sheet.merge_annual_column(lb_mainstream_cul.df, df_cu, lb.METROPOLITAN_CU, divisor=1)
 
+        df_cu = sheet.read_csv('data/USBR_Reports/ca/usbr_ca_palo_verde_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_cu, lb.PALO_VERDE_CU, divisor=1)
+
+        df_cu = sheet.read_csv('data/USBR_Reports/az/usbr_az_crit_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_cu, lb.AZ_CRIT_CU, divisor=1)
+
+        df_cu = sheet.read_csv('data/USBR_Reports/az/usbr_az_wellton_mohawk_consumptive_use.csv', sep='\s+')
+        sheet.merge_annual_column(lb_mainstream_cul.df, df_cu, lb.WELLTON_MOHAWK_CU, divisor=1)
+
         df_utils.add_column_sum(lb_mainstream_cul.df, [lb.CA_M_I_OTHER, lb.CA_AGRICULTURE], lb.CA_MAINSTEM)
 
         df_utils.subtract_column(lb_mainstream_cul.df, lb.CA_OUTSIDE_SYSTEM, lb.IMPERIAL_VALLEY_CU,

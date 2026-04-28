@@ -157,7 +157,7 @@ class PieChartFrame(ChartFrame):
             ("LB Demand", (df_lb_cul, lb.LB_TOTAL))
         ])
 
-        evap_totals = (0.0, 0.05, [
+        evap_totals = (0.0, 0.02, [
             ("UB Evap", (df_ub_cul, ub.UB_RESERVOIR_EVAP)),
             ("LB Evap", (df_lb_cul, lb.LB_RESERVOIR_EVAP)),
             ("Salton Evap", (df_lb_cul, lb.SALTON_INFLOW)),
@@ -165,7 +165,9 @@ class PieChartFrame(ChartFrame):
         ])
 
         ltsc_df = az_ltsc_data.df
+        df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_MAINSTEM, [(df_lb_cul, lb.AZ_CRIT_CU), (df_lb_cul, lb.WELLTON_MOHAWK_CU)], result_column=lb.AZ_MAINSTEM)
         df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_CAP, [(ltsc_df, 'Stored')], result_column=lb.AZ_CAP)
+        df_utils.subtract_columns_across_dfs(df_lb_cul, lb.CA_MAINSTEM, [(df_lb_cul, lb.PALO_VERDE_CU)], result_column=lb.CA_MAINSTEM)
         pie_wedges = [
             (df_ub_cul, ub.CU_CO, '#6060ff'),
             (df_ub_cul, ub.CU_UT, '#8080ff'),
@@ -173,23 +175,31 @@ class PieChartFrame(ChartFrame):
             (df_ub_cul, ub.CU_NM, '#c0c0ff'),
             (df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'),
             (df_lb_cul, lb.MEXICO, '#40a040'),
-            (df_lb_cul, "UB State Tributaries in LB", 'darkblue'),
             (df_lb_cul, lb.LB_RESERVOIR_EVAP, 'gold'),
             (df_lb_cul, lb.SALTON_INFLOW, 'gold', {'hatch': '-','hatch_color': '#c040c0'}),
             (df_lb_cul, lb.IMPERIAL_VALLEY_CU, '#c040c0', {'label': 'Imperial Valley'}),
             (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, '#e080e0', {'label': 'Metropolitan'}),
-            (df_lb_cul, lb.CA_MAINSTEM, '#ffa0ff'),
+            (df_lb_cul, lb.CA_MAINSTEM, '#f070f0'),
+            (df_lb_cul, lb.PALO_VERDE_CU, '#ffa0ff', {'label': 'Palo Verde'}),
             (df_lb_cul, lb.NV_TOTAL, 'orange', {'label': 'NV'}),
+            (ltsc_df, 'Stored', 'gold', {'label': 'CAP Aquifer Store', 'hatch': '|', 'hatch_color': '#ff8080'}),
             (df_lb_cul, lb.AZ_CAP, '#ff8080', {'label': 'CAP'}),
-            (ltsc_df, 'Stored', 'gold', {'label': 'CAP Aquifer Store', 'hatch': '|','hatch_color': '#ff8080'}),
-            (df_lb_cul, lb.AZ_MAINSTEM, '#ff4040'),
+            (df_lb_cul, lb.AZ_CRIT_CU, '#ff6060', {'label': 'CRIT'}),
+            (df_lb_cul, lb.WELLTON_MOHAWK_CU, '#ff4040', {'label': 'Wellton Mohawk'}),
+            (df_lb_cul, lb.AZ_MAINSTEM, '#ef0000'),
         ]
         if show_tributaries:
+            pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, '#d03030', {'label': 'AZ Trib'}))
             pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, '#c02020', {'label': 'AZ Gila'}))
-            pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, 'maroon', {'label': 'AZ Trib'}))
+            pie_wedges.append((df_lb_cul, "UB State Tributaries in LB", 'darkblue'))
 
+            df_utils.add_columns_across_dfs([
+                (df_lb_cul, "UB State Tributaries in LB"),
+                (df_lb_cul, lb.LB_TOTAL)
+            ],
+                df_lb_cul, 'LB Total with UB Tributaries')
         radial_lines = [
-            (df_lb_cul, lb.LB_TOTAL, 'white'),
+            (df_lb_cul, 'LB Total with UB Tributaries', 'white'),
             (df_lb_cul, lb.MEXICO, 'white'),
             (df_ub_cul, ub.UB_TOTAL, 'white'),
         ]
@@ -201,7 +211,7 @@ class PieChartFrame(ChartFrame):
 
         self.demand_pie_chart = PieChart(
             pie_wedges,
-            title='Colorado River Supply and Demand',
+            title='Colorado River Supply v Demand',
             year=self.current_year,
             annotations=[totals, lb_totals, evap_totals],
             radial_lines=radial_lines,

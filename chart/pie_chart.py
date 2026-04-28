@@ -139,18 +139,24 @@ class PieChart(Chart):
 
         bars = ax.bar(labels, values, color=colors, width=0.55, edgecolor='white')
 
-        # Y limits
+        # === Y limits - now respects both ymin and ymax ===
         if self.left_bar_ymax is not None:
             ymax = self.left_bar_ymax
         else:
             ymax = max(values) * 1.12
-        ax.set_ylim(0, ymax)
+
+        if self.left_bar_ymin is not None:
+            ymin = self.left_bar_ymin
+        else:
+            ymin = 0.0
+
+        ax.set_ylim(ymin, ymax)
 
         ax.set_ylabel("MAF", fontsize=10)
         ax.set_xticks([])
         ax.set_xlabel("")
 
-        # === LEGEND MOVED DOWN (approx 3 text lines) ===
+        # === LEGEND MOVED DOWN ===
         legend_labels = [lab.replace('_', ' ') for lab in labels]
 
         ax.legend(bars, legend_labels,
@@ -218,8 +224,11 @@ class PieChart(Chart):
 
         def autopct_format(pct):
             absolute = (pct * total / 100) / self.value_divisor
-            return f'{absolute:,.2f}'
-            # return f'{pct:.1f}%\n{absolute:,.2f}'
+            if absolute < 0.17:
+                return ''
+            else:
+                return f'{absolute:,.2f}'
+                # return f'{pct:.1f}%\n{absolute:,.2f}'
 
         ax.clear()
 
