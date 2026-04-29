@@ -43,16 +43,10 @@ selenium_driver = None
 
 class LakePleasant(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
-        headers:List[str] = [lb.MOHAVE,  lb.MOHAVE_ELEVATION, lb.MOHAVE_INFLOW,
-                             lb.MOHAVE_RELEASE,lb.MOHAVE_ELEVATION, lb.MOHAVE_EVAPORATION]
+        headers:List[str] = []
         super().__init__('Lake Pleasant', headers, upstream=upstream)
         self.catalog_id = 0
         self.get_lake_pleasant_data()
-
-        # USGS 09426650 — Central Arizona Project Canal at Havasu Pumping Plant (near Parker, AZ)
-        # USGS 09426700 — CAP Canal at MP 7.9 near Parker Dam, AZ
-        # USGS 09427100 — CAP Canal at MP 162.3 at 7th St at Phoenix, AZ
-        # USGS 09427300 — CAP Canal above Brady Pump Plant near Coolidge, AZ (further downstream, south of Phoenix toward Tucson).
 
         # Elevations
         #
@@ -75,18 +69,6 @@ class LakePleasant(Reservoir):
         self.turbine_intake_af = 0
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
-
-        # Current
-        #
-        # self.elevation_feet = self.get_elevation(self.water_year)[1]
-        # self.active_capacity_af = 0
-
-        # usbr_lake_mohave_water_temperature_degf = 6132
-        # usbr_lake_mohave_release_total_cfs = 6135
-
-        # Inflow
-        # usbr_blue_mesa_inflow_cfs = 4279
-        # sheet.usbr_annuals(self.df, usbr_blue_mesa_inflow_cfs, self.water_year, self.water_year,  title=ub.BLUE_MESA_INFLOW_WY, month=all_b.WY, divisor=1)
 
         # self.inflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_INFLOW)
         self.inflow_actual_af = 0

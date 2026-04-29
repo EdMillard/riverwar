@@ -12,3 +12,4 @@ plyvel
 pytz
 pycel
 numexpr
+schedule

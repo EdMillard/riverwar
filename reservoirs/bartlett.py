@@ -27,22 +27,22 @@ from typing import List, Optional
 import pandas as pd
 import colorado.allb as all_b
 
-class Roosevelt(Reservoir):
+class Bartlett(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Roosevelt', headers, catalog_id=0, upstream=upstream)
-        self.start_year = 1910
+        super().__init__('Bartlett', headers, catalog_id=0, upstream=upstream)
+        self.start_year = 0
 
         self.df_daily:pd.DataFrame = SRP.from_srp_csv(self.name)
 
         # Elevations
         #
         # Must be called first
-        self.dead_pool_feet = 1910  # range is 1900-1920
-        self.dead_pool_af = 18500   # range is 17000-20000
+        self.dead_pool_feet = 0
+        self.dead_pool_af = 0
 
-        self.full_feet = 2_151
-        self.full_af = 1_653_043
+        self.full_feet = 0
+        self.full_af = 0
 
         # Critical
         self.power_head_target_feet = 0

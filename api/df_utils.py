@@ -21,8 +21,9 @@ SOFTWARE.
 """
 from datetime import date
 import numpy as np
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Any
 import pandas as pd
+from datetime import datetime
 
 
 def create_df(min_year: int, max_year: int, headers: List[str], zero=False):
@@ -457,6 +458,49 @@ def subtract_columns_across_dfs(
         target[result_column] = target[result_column] - mapped
 
     return target
+
+
+def set_value_at_datetime(
+        df: pd.DataFrame,
+        dt: datetime | str | pd.Timestamp,
+        column: str,
+        value: Any,
+        datetime_col: str = "Date"
+) -> None:
+    """
+    Sets value for a specific date (date-only match).
+    Forces consistent naive datetime dtype to prevent pandas dtype fights.
+    Modifies DataFrame in place.
+    """
+    dt_ts = pd.Timestamp(dt)
+    if dt_ts.tz is not None:
+        dt_ts = dt_ts.tz_localize(None)  # make naive
+
+    target_date = dt_ts.date()
+
+    if datetime_col not in df.columns:
+        raise ValueError(f"Column '{datetime_col}' not found.")
+
+    # Force consistent naive datetime dtype (only once)
+    if not pd.api.types.is_datetime64_any_dtype(df[datetime_col]) or df[datetime_col].dtype == 'object':
+        df[datetime_col] = pd.to_datetime(df[datetime_col], errors='coerce').dt.tz_localize(None)
+
+    # Date-only match
+    mask = df[datetime_col].dt.date == target_date
+
+    if mask.any():
+        idx = df.index[mask][0]
+        df.loc[idx, column] = value
+        df.loc[idx, datetime_col] = dt_ts
+    else:
+        new_row = pd.DataFrame({datetime_col: [dt_ts], column: [value]})
+
+        for col in df.columns:
+            if col not in new_row.columns:
+                new_row[col] = pd.NA
+
+        new_row = new_row[df.columns]
+        df.loc[len(df)] = new_row.iloc[0]
 
 def subtract_column(
         df: pd.DataFrame,
