@@ -25,7 +25,7 @@ from reservoirs.reservoir import Reservoir
 from source import usbr_rise
 import colorado.lb as lb
 from api import df_utils
-from typing import List, Optional
+from typing import List, Optional, Dict
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
@@ -37,7 +37,13 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
-from datetime import datetime
+import datetime
+import pytz
+from data_sets.data_set import DataSet
+import colorado.allb as all_b
+import pandas as pd
+from api.registry import Registry
+
 
 selenium_driver = None
 
@@ -45,8 +51,11 @@ class LakePleasant(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Lake Pleasant', headers, upstream=upstream)
+
+        self.df_daily:pd.DataFrame = LakePleasant.from_adwr_csv(self.name)
+
         self.catalog_id = 0
-        self.get_lake_pleasant_data()
+        # self.get_lake_pleasant_data()
 
         # Elevations
         #
@@ -85,15 +94,64 @@ class LakePleasant(Reservoir):
 
         # self.reserved_parts = reserved_parts or []
 
-    def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
-        self.load_date(None, start_date, current_date, end_date)
-
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_lake_mohave_elevation_ft = 6133
         info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft, water_year_info=self.water_year_info,
                                                   alias=lb.MOHAVE_ELEVATION)
         df_utils.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.MOHAVE_ELEVATION)
         return daily_elevation_ft[-1]
+
+    def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
+        # self.load_date(report_path, start_date, current_date, end_date)
+
+        # self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
+        if self.df_daily is not None:
+            self.elevation_feet = self.df_daily[all_b.ELEVATION].iloc[-1]
+            self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
+
+    @staticmethod
+    def receive_data(name: str, df: pd.DataFrame, dt: datetime.datetime, data: Dict):
+        active_capacity_af = data.get('storage_acre_feet', 0)
+        if active_capacity_af:
+            df_utils.set_value_at_datetime(df, dt, all_b.STORAGE, active_capacity_af)
+        elevation_feet = data.get('elevation_ft', 0)
+        if elevation_feet:
+            df_utils.set_value_at_datetime(df, dt, all_b.ELEVATION, elevation_feet)
+
+        LakePleasant.to_adwr_csv(name, df)
+
+    @staticmethod
+    def to_adwr_csv(name: str, df: pd.DataFrame):
+        mt_tz = pytz.timezone("US/Mountain")
+        dt = datetime.datetime.now(mt_tz)
+        name_year = Registry.make_nodule_name(name) + '_' + str(dt.year)
+        path = Path('data/ADWR') / name_year
+        path = path.with_suffix('.csv')
+        DataSet.to_csv(path, df)
+
+    @staticmethod
+    def from_adwr_csv(name: str, ) -> Optional[pd.DataFrame]:
+        mt_tz = pytz.timezone("US/Mountain")
+        dt = datetime.datetime.now(mt_tz)
+        name_year = Registry.make_nodule_name(name) + '_' + str(dt.year)
+        path = Path('data/ADWR') / name_year
+        path = path.with_suffix('.csv')
+        if path.exists():
+            df = pd.read_csv(
+                path,
+                dtype={'Year': 'object'},  # Read as string to avoid parsing error
+                float_precision='high'
+            )
+            return df
+        else:
+            mt_tz = pytz.timezone("US/Mountain")
+            dt = datetime.datetime.now(mt_tz)
+            df: pd.DataFrame = df_utils.create_daily_df(dt, dt,
+                                                        [all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE,
+                                                         all_b.EVAPORATION,
+                                                         all_b.INFLOW])
+            return df
+
 
     def get_lake_pleasant_data(self):
         import os
@@ -150,7 +208,7 @@ class LakePleasant(Reservoir):
                         driver.switch_to.default_content()
 
             data = {
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "elevation_ft": None,
                 "storage_acre_feet": None,
                 "surface_area_acres": None,
@@ -205,6 +263,9 @@ class LakePleasant(Reservoir):
             else:
                 print("Percent: Not found")
 
+            mt_tz = pytz.timezone("US/Mountain")
+            now_mt = datetime.datetime.now(mt_tz)
+            self.receive_data(self.name, self.df_daily, now_mt, data)
             return data
 
         except TimeoutException:

@@ -6,12 +6,6 @@ from typing import Optional
 # Scrapers
 from reservoirs.srp import SRP
 from reservoirs import lake_pleasant
-from reservoirs.bartlett import Bartlett
-from reservoirs.roosevelt import Roosevelt
-from reservoirs.horseshoe import Horseshoe
-from reservoirs.saguaro import Saguaro
-from reservoirs.canyon import Canyon
-from reservoirs.apache import Apache
 
 import matplotlib
 import os
@@ -20,8 +14,8 @@ os.environ['MPLBACKEND'] = 'Agg'
 matplotlib.use('Agg')
 os.environ['QT_SILENT'] = '1'
 
-_srp_reservoirs = [Bartlett(), Roosevelt(), Horseshoe(), Saguaro(), Apache(), Canyon()]
 _lake_pleasant:Optional[lake_pleasant.LakePleasant] = None
+_srp:SRP = SRP()
 
 def run_daily_tasks():
     global _lake_pleasant
@@ -35,7 +29,7 @@ def run_daily_tasks():
         # === AZ Salt River Project(SRP) Reservoir Scraper ===
         #
         print("Fetching reservoir data...")
-        SRP.chronos(_srp_reservoirs)
+        _srp.chronos()
 
         # === AZ Lake Pleasant(CAP) Reservoir Scraper ===
         #

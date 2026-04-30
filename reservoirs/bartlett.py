@@ -19,21 +19,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from pathlib import Path
-from datetime import date
-from reservoirs.reservoir import Reservoir
-from reservoirs.srp import SRP
+from reservoirs.reservoir import Reservoir, SRPReservoir
 from typing import List, Optional
 import pandas as pd
-import colorado.allb as all_b
 
-class Bartlett(Reservoir):
+class Bartlett(SRPReservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Bartlett', headers, catalog_id=0, upstream=upstream)
         self.start_year = 0
 
-        self.df_daily:pd.DataFrame = SRP.from_srp_csv(self.name)
+        self.df_daily:pd.DataFrame = SRPReservoir.from_srp_csv(self.name)
 
         # Elevations
         #
@@ -56,10 +52,3 @@ class Bartlett(Reservoir):
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
-    def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
-        # self.load_date(report_path, start_date, current_date, end_date)
-
-        # self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
-        if self.df_daily is not None:
-            self.elevation_feet = self.df_daily[all_b.ELEVATION].iloc[-1]
-            self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]

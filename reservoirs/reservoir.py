@@ -31,7 +31,7 @@ import pandas as pd
 from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
 from datetime import date
-from typing import List, Tuple, Literal, Optional
+from typing import List, Tuple, Literal, Optional, Dict
 from sheet import sheet
 from source import usbr_rise
 import colorado.allb as all_b
@@ -39,6 +39,9 @@ from graph.water import WaterGraph
 import calendar
 from pandas.tseries.offsets import MonthEnd
 from api import df_utils
+import datetime
+import pytz
+from data_sets.data_set import DataSet
 
 # Head and tail USBR JSON Files for verification
 # find . -name '*2026.json' -type f -printf '%T@ %p\0' | sort -zn | cut -zd' ' -f2- | xargs -0 -I {} sh -c 'echo "=== {} ==="; head -n 10 "{}"; echo "..."; tail -n 8 "{}"; echo "────────────────────────────────────────"'
@@ -948,3 +951,59 @@ class ReservoirRegistry(Registry):
                     instance = constructor(name)
                     reservoir_registry["instance"] = instance
         return instance
+
+class SRPReservoir(Reservoir):
+    def __init__(self, name: str, headers: List[str], catalog_id: int = 0, upstream: Optional[List[Reservoir]] = None,
+                 month=10):
+        super().__init__(name, headers)
+
+    def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
+        # self.load_date(report_path, start_date, current_date, end_date)
+
+        # self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
+        if self.df_daily is not None:
+            self.elevation_feet = self.df_daily[all_b.ELEVATION].iloc[-1]
+            self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
+
+    @staticmethod
+    def receive_data(name: str, df: pd.DataFrame, dt: datetime.datetime, data: Dict):
+        active_capacity_af = data.get('current_storage_af', 0)
+        if active_capacity_af:
+            df_utils.set_value_at_datetime(df, dt, all_b.STORAGE, active_capacity_af)
+        elevation_feet = data.get('current_elevation_ft', 0)
+        if elevation_feet:
+            df_utils.set_value_at_datetime(df, dt, all_b.ELEVATION, elevation_feet)
+
+        SRPReservoir.to_srp_csv(name, df)
+
+    @staticmethod
+    def to_srp_csv(name: str, df: pd.DataFrame):
+        mt_tz = pytz.timezone("US/Mountain")
+        dt = datetime.datetime.now(mt_tz)
+        name_year = Registry.make_nodule_name(name) + '_' + str(dt.year)
+        path = Path('data/SRP') / name_year
+        path = path.with_suffix('.csv')
+        DataSet.to_csv(path, df)
+
+    @staticmethod
+    def from_srp_csv(name: str, ) -> Optional[pd.DataFrame]:
+        mt_tz = pytz.timezone("US/Mountain")
+        dt = datetime.datetime.now(mt_tz)
+        name_year = Registry.make_nodule_name(name) + '_' + str(dt.year)
+        path = Path('data/SRP') / name_year
+        path = path.with_suffix('.csv')
+        if path.exists():
+            df = pd.read_csv(
+                path,
+                dtype={'Year': 'object'},  # Read as string to avoid parsing error
+                float_precision='high'
+            )
+            return df
+        else:
+            mt_tz = pytz.timezone("US/Mountain")
+            dt = datetime.datetime.now(mt_tz)
+            df: pd.DataFrame = df_utils.create_daily_df(dt, dt,
+                                                        [all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE,
+                                                         all_b.EVAPORATION,
+                                                         all_b.INFLOW])
+            return df

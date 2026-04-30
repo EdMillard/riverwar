@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from pathlib import Path
 from datetime import date
-from reservoirs.reservoir import Reservoir
+from reservoirs.reservoir import Reservoir, SRPReservoir
 from source import usbr_rise
 import colorado.lb as lb
 from api import df_utils
@@ -31,17 +31,21 @@ from bs4 import BeautifulSoup
 from typing import Dict
 import datetime
 import pytz
-import pandas as pd
-from data_sets.data_set import DataSet
-from api.registry import Registry
-import colorado.allb as all_b
+from reservoirs.bartlett import Bartlett
+from reservoirs.roosevelt import Roosevelt
+from reservoirs.horseshoe import Horseshoe
+from reservoirs.saguaro import Saguaro
+from reservoirs.canyon import Canyon
+from reservoirs.apache import Apache
 
 class SRP(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('SRP', headers, upstream=upstream)
         self.catalog_id = 0
-        data = get_reservoir_data()
+
+        self.reservoirs:List[SRPReservoir] = [Bartlett(), Roosevelt(), Horseshoe(), Saguaro(), Apache(), Canyon()]
+        # data = get_reservoir_data()
 
         # Elevations
         #
@@ -88,61 +92,17 @@ class SRP(Reservoir):
         df_utils.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.MOHAVE_ELEVATION)
         return daily_elevation_ft[-1]
 
-    @staticmethod
-    def chronos(reservoirs:List[Reservoir]):
+    def chronos(self):
         mt_tz = pytz.timezone("US/Mountain")
         now_mt = datetime.datetime.now(mt_tz)
 
         srp_data = get_reservoir_data()
         for name, values in srp_data.items():
             print(f"  ✓ {name}: {values['current_storage_af']:,} af @ {values['current_elevation_ft']} ft")
-            for reservoir in reservoirs:
+            for reservoir in self.reservoirs:
                 if name.startswith(reservoir.name):
-                    SRP.receive_data(reservoir.name, reservoir.df_daily, now_mt, values)
+                    reservoir.receive_data(reservoir.name, reservoir.df_daily, now_mt, values)
                     break
-
-    @staticmethod
-    def receive_data(name:str, df:pd.DataFrame, dt:datetime.datetime, data:Dict):
-        active_capacity_af = data.get('current_storage_af', 0)
-        if active_capacity_af:
-            df_utils.set_value_at_datetime(df, dt, all_b.STORAGE, active_capacity_af)
-        elevation_feet = data.get('current_elevation_ft', 0)
-        if elevation_feet:
-            df_utils.set_value_at_datetime(df, dt, all_b.ELEVATION, elevation_feet)
-
-        SRP.to_srp_csv(name, df)
-
-    @staticmethod
-    def to_srp_csv(name:str, df:pd.DataFrame):
-        mt_tz = pytz.timezone("US/Mountain")
-        dt = datetime.datetime.now(mt_tz)
-        name_year =  Registry.make_nodule_name(name) + '_' + str(dt.year)
-        path = Path('data/SRP') / name_year
-        path = path.with_suffix('.csv')
-        DataSet.to_csv(path, df)
-
-    @staticmethod
-    def from_srp_csv(name:str, )->Optional[pd.DataFrame]:
-        mt_tz = pytz.timezone("US/Mountain")
-        dt = datetime.datetime.now(mt_tz)
-        name_year =  Registry.make_nodule_name(name) + '_' + str(dt.year)
-        path = Path('data/SRP') / name_year
-        path = path.with_suffix('.csv')
-        if path.exists():
-            df = pd.read_csv(
-                path,
-                dtype={'Year': 'object'},  # Read as string to avoid parsing error
-                float_precision='high'
-            )
-            return df
-        else:
-            mt_tz = pytz.timezone("US/Mountain")
-            dt = datetime.datetime.now(mt_tz)
-            df: pd.DataFrame = df_utils.create_daily_df(dt, dt,
-                                                        [all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE,
-                                                         all_b.EVAPORATION,
-                                                         all_b.INFLOW])
-            return df
 
 def get_reservoir_data() -> Dict[str, Dict[str, float | int]]:
     """
