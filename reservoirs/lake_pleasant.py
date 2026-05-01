@@ -44,7 +44,6 @@ import colorado.allb as all_b
 import pandas as pd
 from api.registry import Registry
 
-
 selenium_driver = None
 
 class LakePleasant(Reservoir):
@@ -85,7 +84,7 @@ class LakePleasant(Reservoir):
                              ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_RELEASE)
+        self.outflow_actual_af = 0
         self.release_af = 0
         self.outflow_actual_af = 0
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af

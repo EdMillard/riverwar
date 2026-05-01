@@ -20,8 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from reservoirs.reservoir import Reservoir, SRPReservoir
-from source import usbr_rise
-import colorado.lb as lb
 from api import df_utils
 from typing import List, Optional
 import requests
@@ -85,7 +83,7 @@ class SRP(SRPReservoir):
                              ("Projected", 0, Reservoir.inflow_projected_color)]
 
         # Outflow
-        self.outflow_actual_af = self.get_value_by_year(self.water_year, lb.MOHAVE_RELEASE)
+        self.outflow_actual_af = 0
         self.release_af = 0
         self.outflow_actual_af = 0
         self.outflow_projected_af = self.release_af -  self.outflow_actual_af
@@ -95,11 +93,7 @@ class SRP(SRPReservoir):
         # self.reserved_parts = reserved_parts or []
 
     def get_elevation(self, year, end_year:int|None =None)->float:
-        usbr_lake_mohave_elevation_ft = 6133
-        info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft, water_year_info=self.water_year_info,
-                                                  alias=lb.MOHAVE_ELEVATION)
-        df_utils.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.MOHAVE_ELEVATION)
-        return daily_elevation_ft[-1]
+        return 0
 
     def chronos(self):
         if self.df_daily is not None:
