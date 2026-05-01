@@ -23,14 +23,15 @@ SOFTWARE.
 import wx
 import matplotlib
 import os
-from chart.chart_frame import NotebookFrame, ChartFrame
+from chart.chart_frame import NotebookFrame
 from colorado.river_war import RiverWar
 from data_sets.data_set import DataSetRegistry
 from graphs.flow_chart_frame import FlowChartFrame
 from graphs.pie_chart_frame import PieChartFrame
 from graphs.reservoir_chart_frame import ReservoirChartFrame
-from graphs.reservoirs_chart_frame import ReservoirsChartFrame
+from graphs.reservoirs_reality import ReservoirsReality
 from graphs.time_series_chart_frame import TimeSeriesChartFrame
+from graphs.reservoirs_big3 import ReservoirsBig3
 from reservoirs.reservoir import ReservoirRegistry
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -48,12 +49,16 @@ def time_series_chart(notebook_frame:NotebookFrame):
     frame = TimeSeriesChartFrame(notebook_frame)
     frame.Show()
 
-def reservoir_chart(notebook_frame:NotebookFrame):
-    frame = ReservoirChartFrame(notebook_frame)
+def reservoir_reality_chart(notebook_frame:NotebookFrame):
+    frame = ReservoirsReality(notebook_frame)
     frame.Show()
 
-def reservoirs_chart(notebook_frame:NotebookFrame):
-    frame = ReservoirsChartFrame(notebook_frame)
+def reservoirs_big3(notebook_frame:NotebookFrame):
+    frame = ReservoirsBig3(notebook_frame)
+    frame.Show()
+
+def reservoir_chart(notebook_frame:NotebookFrame):
+    frame = ReservoirChartFrame(notebook_frame)
     frame.Show()
 
 def pie_chart(notebook_frame:NotebookFrame):
@@ -69,9 +74,10 @@ if __name__ == "__main__":
 
     callables = [
         ("Reservoir", reservoir_chart),
-        ("Reservoirs", reservoirs_chart),
+        ("Reservoir Reality", reservoir_reality_chart),
         ("Demand", pie_chart),
         ("Flow", flow_chart),
+        ("Reservoirs Big3", reservoirs_big3),
         ("Inflow Outflow", time_series_chart),
     ]
 
@@ -90,8 +96,8 @@ if __name__ == "__main__":
 
     # reservoir_chart(nb)
     # pie_chart(nb)
-    # reservoirs_chart(nb)
-    time_series_chart(nb)
+    reservoir_reality_chart(nb)
+    reservoirs_big3(nb)
 
     nb.Show()
     app.MainLoop()

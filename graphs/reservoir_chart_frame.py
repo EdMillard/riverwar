@@ -33,12 +33,13 @@ class ReservoirChartFrame(ChartFrame):
         self.start_year = 1971
         self.end_year = 2024
         self.multi_bar_chart: Optional[MultiBarChart] = None
-        super().__init__(notebook_frame, page_name='Pie Chart')
+        self.reservoir_choice = None
+        super().__init__(notebook_frame, page_name='Reservoir Reality')
 
     def create_toolbar(self):
         super().create_toolbar()
 
-        reservoir_names = self.notebook_frame.reservoir_registry.list_all()
+        reservoir_names = self.notebook_frame.river_war.reservoir.list_all()
         self.reservoir_choice = wx.Choice(self.toolbar, choices=reservoir_names)
 
         if reservoir_names:
@@ -48,7 +49,7 @@ class ReservoirChartFrame(ChartFrame):
         self.reservoir_choice.Bind(wx.EVT_CHOICE, self.on_reservoir_selected)
         self.toolbar.GetSizer().Add(self.reservoir_choice, 0, wx.ALL | wx.CENTER, border=8)
 
-    def on_reservoir_selected(self, event):
+    def on_reservoir_selected(self, _):
         """Called when user chooses a reservoir from the option menu"""
         selection = self.reservoir_choice.GetStringSelection()
         if not selection:

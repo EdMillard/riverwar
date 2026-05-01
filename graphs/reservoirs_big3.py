@@ -41,7 +41,7 @@ GIF_LOOP_ENABLED = False
 
 # ==================== MAIN FRAME ====================
 
-class TimeSeriesChartFrame(ChartFrame):
+class ReservoirsBig3(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 

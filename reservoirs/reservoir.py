@@ -105,7 +105,7 @@ class Reservoir:
                 data = usbr_rise.load_catalog(Path(f'data/USBR_RISE/catalog/{self.catalog_id}'), f'{self.catalog_id}')
                 relationships = data.get('relationships', None)
                 if relationships is not None:
-                    location = relationships.get('location', None)
+                    # location = relationships.get('location', None)
                     catalog_items = relationships.get('catalogItems', None)
                     catalog_data = catalog_items.get('data', None)
                     for item in catalog_data:
@@ -976,8 +976,8 @@ class SRPReservoir(Reservoir):
 
         # self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
         if self.df_daily is not None:
-            self.elevation_feet = self.df_daily[all_b.ELEVATION].iloc[-1]
-            self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
+            self.elevation_feet = self.df_daily.iloc[-1][all_b.ELEVATION]
+            self.active_capacity_af = self.df_daily.iloc[-1][all_b.STORAGE]
 
     @staticmethod
     def receive_data(name: str, df: pd.DataFrame, dt: datetime, data: Dict):

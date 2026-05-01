@@ -35,7 +35,7 @@ from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
 from reservoirs.navajo import Navajo
 
-class ReservoirsChartFrame(ChartFrame):
+class ReservoirsReality(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
