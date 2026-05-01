@@ -28,11 +28,14 @@ from datetime import date
 import os
 import api.df_utils as df_utils
 from typing import List
-from reservoirs.reservoir import Reservoir
 from chart.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
 import colorado.lb as lb
 import colorado.ub as ub
+from reservoirs.reservoir import Reservoir
+from reservoirs.lake_mead import LakeMead
+from reservoirs.lake_powell import LakePowell
+from reservoirs.flaming_gorge import FlamingGorge
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -49,10 +52,18 @@ GIF_LOOP_ENABLED = False
 
 class TimeSeriesChartFrame(ChartFrame):
     def __init__(self,
-                 notebook_frame: NotebookFrame,
-                 reservoirs: List[Reservoir], date_time: date,
-                 reports: List[str] | None = None,
-                 title: str = "Colorado River War"):
+                 notebook_frame: NotebookFrame):
+        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
+
+        flaming_gorge = FlamingGorge()
+        lake_powell = LakePowell(upstream=[flaming_gorge])
+        lake_mead = LakeMead(upstream=[lake_powell])
+
+        reservoirs = [
+            flaming_gorge,
+            lake_powell,
+            lake_mead,
+        ]
         super().__init__(notebook_frame, reservoirs=reservoirs, reports=reports,page_name='APR26 24-Month')
 
     def load_charts(self):

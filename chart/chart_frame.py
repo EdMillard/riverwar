@@ -19,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from pathlib import Path
 from PIL import Image
 import wx
 import pandas as pd
@@ -27,11 +26,13 @@ from datetime import date
 import os
 import wx.lib.buttons as buttons
 from typing import List, Optional, Callable, Tuple
-from reservoirs.reservoir import Reservoir, ReservoirRegistry
-from data_sets.data_set import DataSetRegistry
+from reservoirs.reservoir import Reservoir
 from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
 from colorado.river_war import RiverWar
+from datetime import datetime
+from pathlib import Path
+import re
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -551,3 +552,43 @@ class ChartFrame(wx.Panel):
             loop=0 if not GIF_LOOP_ENABLED else 0,
             optimize=True
         )
+
+    @staticmethod
+    def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
+        """Return list of directories containing the given filename."""
+        root = Path(root_dir)
+        if not root.exists():
+            raise FileNotFoundError(f"Directory not found: {root_dir}")
+
+        matching_dirs = []
+        for dir_path in root.rglob("*"):
+            if dir_path.is_dir():
+                if (dir_path / filename).is_file():
+                    matching_dirs.append(str(dir_path.resolve()))
+
+        return ChartFrame.filter_and_sort_usbr_reports(matching_dirs)
+
+    @staticmethod
+    def filter_and_sort_usbr_reports(paths):
+        def get_sort_key(path_str):
+            path = str(path_str)
+            # Extract year and month code (only for main reports)
+            match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})$', path)  # Note: $ ensures nothing after month code
+            if not match:
+                return datetime.min, path
+
+            year = int(match.group(1))
+            month_code = match.group(2)
+
+            try:
+                dt = datetime.strptime(month_code, '%b%y').replace(year=year)
+            except ValueError:
+                dt = datetime.min
+
+            return dt, path
+
+        # First filter: keep only paths that do NOT have _XXX after the month/year
+        filtered = [p for p in paths if re.search(r'/(\d{4})/[A-Z]{3}\d{2}$', str(p))]
+
+        # Then sort chronologically
+        return sorted(filtered, key=get_sort_key)
