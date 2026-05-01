@@ -19,8 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from pathlib import Path
-from datetime import date
 from reservoirs.reservoir import Reservoir, SRPReservoir
 from source import usbr_rise
 import colorado.lb as lb
@@ -30,7 +28,10 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Dict
 import datetime
+from datetime import datetime
 import pytz
+import pandas as pd
+import colorado.allb as all_b
 from reservoirs.bartlett import Bartlett
 from reservoirs.roosevelt import Roosevelt
 from reservoirs.horseshoe import Horseshoe
@@ -38,13 +39,24 @@ from reservoirs.saguaro import Saguaro
 from reservoirs.canyon import Canyon
 from reservoirs.apache import Apache
 
-class SRP(Reservoir):
+_url = "https://streamflow.watershedconnection.com/dwr"
+
+class SRP(SRPReservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
+
         headers:List[str] = []
         super().__init__('SRP', headers, upstream=upstream)
         self.catalog_id = 0
 
+        self.df_daily:pd.DataFrame = SRPReservoir.from_srp_csv(self.name)
+
         self.reservoirs:List[SRPReservoir] = [Bartlett(), Roosevelt(), Horseshoe(), Saguaro(), Apache(), Canyon()]
+
+        if self.df_daily is not None:
+            date_time_str = self.df_daily['Date'].iloc[-1]
+            self.date_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
+            self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
+
         # data = get_reservoir_data()
 
         # Elevations
@@ -82,9 +94,6 @@ class SRP(Reservoir):
 
         # self.reserved_parts = reserved_parts or []
 
-    def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
-        self.load_date(None, start_date, current_date, end_date)
-
     def get_elevation(self, year, end_year:int|None =None)->float:
         usbr_lake_mohave_elevation_ft = 6133
         info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft, water_year_info=self.water_year_info,
@@ -93,10 +102,25 @@ class SRP(Reservoir):
         return daily_elevation_ft[-1]
 
     def chronos(self):
+        if self.df_daily is not None:
+            if not Reservoir.is_new_day(self.df_daily):
+                return
+
         mt_tz = pytz.timezone("US/Mountain")
-        now_mt = datetime.datetime.now(mt_tz)
+        now_mt = datetime.now(mt_tz)
 
         srp_data = get_reservoir_data()
+        total = srp_data.get('Total Reservoir System', None)
+        if total is not None:
+            storage_af = total.get('current_storage_af', None)
+            if storage_af is not None:
+                self.active_capacity_af = storage_af
+                df_utils.set_value_at_datetime(self.df_daily, now_mt, all_b.STORAGE, self.active_capacity_af)
+                available_storage_af = total.get('available_storage_af', None)
+                if available_storage_af is not None:
+                    self.full_af = storage_af + available_storage_af
+                SRPReservoir.to_srp_csv(self.name, self.df_daily)
+
         for name, values in srp_data.items():
             print(f"  ✓ {name}: {values['current_storage_af']:,} af @ {values['current_elevation_ft']} ft")
             for reservoir in self.reservoirs:
@@ -107,16 +131,14 @@ class SRP(Reservoir):
 def get_reservoir_data() -> Dict[str, Dict[str, float | int]]:
     """
     Scrapes the reservoir data from https://streamflow.watershedconnection.com/dwr
-    using the actual HTML table structure.
+    Returns individual reservoirs + Total Reservoir System line.
     """
-    url = "https://streamflow.watershedconnection.com/dwr"
+    global _url
 
-    response = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+    response = requests.get(_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
     response.raise_for_status()
 
     soup = BeautifulSoup(response.text, "html.parser")
-
-    # Find the main reservoir table
     table = soup.find("table")
     if not table:
         raise ValueError("Could not find the reservoir table on the page.")
@@ -137,41 +159,40 @@ def get_reservoir_data() -> Dict[str, Dict[str, float | int]]:
         if len(cells) < 6:
             continue
 
-        # Reservoir name is in the first cell (inside <a> tag)
         name_cell = cells[0]
         link = name_cell.find("a")
-        if link:
-            name = link.get_text(strip=True)
-        else:
-            name = name_cell.get_text(strip=True)
-
-        if name not in target_reservoirs:
-            continue
+        name = link.get_text(strip=True) if link else name_cell.get_text(strip=True)
 
         try:
-            # cells:
-            # 0: name
-            # 1: % full
-            # 2: Current Elevation
-            # 3: Current Storage
-            # 4: Remaining Elevation
-            # 5: Available Storage
-            current_elevation = float(cells[2].get_text(strip=True).replace(",", ""))
-            current_storage = int(cells[3].get_text(strip=True).replace(",", ""))
-            remaining_elevation = float(cells[4].get_text(strip=True).replace(",", ""))
-            available_storage = int(cells[5].get_text(strip=True).replace(",", ""))
+            percent_full = float(cells[1].get_text(strip=True).replace(",", ""))
+            current_storage = int(cells[3].get_text(strip=True).replace(",", "")) if cells[3].get_text(strip=True) else None
+            available_storage = int(cells[5].get_text(strip=True).replace(",", "")) if cells[5].get_text(strip=True) else None
 
-            data[name] = {
-                "current_elevation_ft": current_elevation,
-                "current_storage_af": current_storage,
-                "remaining_elevation_ft": remaining_elevation,
-                "available_storage_af": available_storage,
-            }
+            # Individual reservoirs
+            if name in target_reservoirs:
+                current_elevation = float(cells[2].get_text(strip=True).replace(",", ""))
+                remaining_elevation = float(cells[4].get_text(strip=True).replace(",", ""))
+
+                data[name] = {
+                    "current_elevation_ft": current_elevation,
+                    "current_storage_af": current_storage,
+                    "remaining_elevation_ft": remaining_elevation,
+                    "available_storage_af": available_storage,
+                }
+
+            # Total Reservoir System
+            elif "Total Reservoir System" in name:
+                data["Total Reservoir System"] = {
+                    "percent_full": percent_full,
+                    "current_storage_af": current_storage,
+                    "available_storage_af": available_storage,
+                }
+
         except (ValueError, IndexError, AttributeError):
-            continue  # skip if any parsing fails
+            continue
 
-    if len(data) < 6:
-        print(f"Warning: Only found data for {len(data)} reservoirs.")
+    if len(data) < 7:   # 6 reservoirs + total
+        print(f"Warning: Only found data for {len(data)} entries (expected 7).")
 
     return data
 

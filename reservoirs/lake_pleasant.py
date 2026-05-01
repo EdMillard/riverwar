@@ -153,9 +153,9 @@ class LakePleasant(Reservoir):
             return df
 
 
-    def get_lake_pleasant_data(self):
-        import os
-        os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    def get_lake_pleasant_data(self)->Optional[Dict]:
+        if not Reservoir.is_new_day(self.df_daily):
+            return None
 
         options = Options()
         options.add_argument("--headless=new")  # Faster modern headless

@@ -36,7 +36,8 @@ def run_daily_tasks():
         if _lake_pleasant is None:
             _lake_pleasant = lake_pleasant.LakePleasant()
         lake_pleasant_data = _lake_pleasant.get_lake_pleasant_data()
-        print(lake_pleasant_data)
+        if lake_pleasant_data is not None:
+            print(lake_pleasant_data)
 
         print("✅ All daily tasks completed successfully.")
 

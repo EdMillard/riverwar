@@ -22,6 +22,7 @@ SOFTWARE.
 from __future__ import annotations
 import copy
 import csv
+from datetime import date
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from api.registry import Registry
@@ -30,7 +31,6 @@ from pathlib import Path
 import pandas as pd
 from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
-from datetime import date
 from typing import List, Tuple, Literal, Optional, Dict
 from sheet import sheet
 from source import usbr_rise
@@ -39,7 +39,6 @@ from graph.water import WaterGraph
 import calendar
 from pandas.tseries.offsets import MonthEnd
 from api import df_utils
-import datetime
 import pytz
 from data_sets.data_set import DataSet
 
@@ -449,6 +448,21 @@ class Reservoir:
         mask = (daily_dates >= first_month_start) & (daily_dates <= first_month_end)
         df_daily.loc[mask, daily_target_col] = pd.NA
 
+    @staticmethod
+    def is_new_day(df:pd.DataFrame) -> bool:
+        is_new_day = False
+
+        if df is not None:
+            mt_tz = pytz.timezone("US/Mountain")
+            now_mt = datetime.now(mt_tz)
+            date_time_str = df['Date'].iloc[-1]
+            date_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
+            if date_time.year < now_mt.year or date_time.month < now_mt.month \
+                    or date_time.day < now_mt.day:
+                is_new_day = True
+        else:
+            is_new_day = True
+        return is_new_day
 
     @staticmethod
     def usbr_end_of_month(
@@ -966,7 +980,7 @@ class SRPReservoir(Reservoir):
             self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
 
     @staticmethod
-    def receive_data(name: str, df: pd.DataFrame, dt: datetime.datetime, data: Dict):
+    def receive_data(name: str, df: pd.DataFrame, dt: datetime, data: Dict):
         active_capacity_af = data.get('current_storage_af', 0)
         if active_capacity_af:
             df_utils.set_value_at_datetime(df, dt, all_b.STORAGE, active_capacity_af)
@@ -979,7 +993,7 @@ class SRPReservoir(Reservoir):
     @staticmethod
     def to_srp_csv(name: str, df: pd.DataFrame):
         mt_tz = pytz.timezone("US/Mountain")
-        dt = datetime.datetime.now(mt_tz)
+        dt = datetime.now(mt_tz)
         name_year = Registry.make_nodule_name(name) + '_' + str(dt.year)
         path = Path('data/SRP') / name_year
         path = path.with_suffix('.csv')
@@ -988,7 +1002,7 @@ class SRPReservoir(Reservoir):
     @staticmethod
     def from_srp_csv(name: str, ) -> Optional[pd.DataFrame]:
         mt_tz = pytz.timezone("US/Mountain")
-        dt = datetime.datetime.now(mt_tz)
+        dt = datetime.now(mt_tz)
         name_year = Registry.make_nodule_name(name) + '_' + str(dt.year)
         path = Path('data/SRP') / name_year
         path = path.with_suffix('.csv')
@@ -1001,7 +1015,7 @@ class SRPReservoir(Reservoir):
             return df
         else:
             mt_tz = pytz.timezone("US/Mountain")
-            dt = datetime.datetime.now(mt_tz)
+            dt = datetime.now(mt_tz)
             df: pd.DataFrame = df_utils.create_daily_df(dt, dt,
                                                         [all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE,
                                                          all_b.EVAPORATION,
