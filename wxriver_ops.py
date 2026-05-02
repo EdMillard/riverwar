@@ -27,7 +27,7 @@ from chart.chart_frame import NotebookFrame
 from colorado.river_war import RiverWar
 from data_sets.data_set import DataSetRegistry
 from graphs.flow_chart_frame import FlowChartFrame
-from graphs.pie_chart_frame import PieChartFrame
+from graphs.supply_v_demand import SupplyVDemand
 from graphs.reservoir_chart_frame import ReservoirChartFrame
 from graphs.reservoirs_reality import ReservoirsReality
 from graphs.time_series_chart_frame import TimeSeriesChartFrame
@@ -61,8 +61,8 @@ def reservoir_chart(notebook_frame:NotebookFrame):
     frame = ReservoirChartFrame(notebook_frame)
     frame.Show()
 
-def pie_chart(notebook_frame:NotebookFrame):
-    frame = PieChartFrame(notebook_frame)
+def supply_v_demand(notebook_frame:NotebookFrame):
+    frame = SupplyVDemand(notebook_frame)
     frame.Show()
 
 def flow_chart(notebook_frame:NotebookFrame):
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     callables = [
         ("Reservoir", reservoir_chart),
         ("Reservoir Reality", reservoir_reality_chart),
-        ("Demand", pie_chart),
+        ("Supply v Demand", supply_v_demand),
         ("Flow", flow_chart),
         ("Reservoirs Big3", reservoirs_big3),
         ("Inflow Outflow", time_series_chart),
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     nb = NotebookFrame(callables, river_war)
 
     # reservoir_chart(nb)
-    pie_chart(nb)
+    supply_v_demand(nb)
     # reservoir_reality_chart(nb)
     # reservoirs_big3(nb)
 

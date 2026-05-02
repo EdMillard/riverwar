@@ -27,7 +27,7 @@ import colorado.ub as ub
 import colorado.allb as all_b
 from api import df_utils
 
-class PieChartFrame(ChartFrame):
+class SupplyVDemand(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         self.start_year = 1971
         self.end_year = 2024
