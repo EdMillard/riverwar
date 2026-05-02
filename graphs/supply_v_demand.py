@@ -22,10 +22,14 @@ SOFTWARE.
 import wx
 from chart.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
+from chart.multi_bar_chart import MultiBarChart
 import colorado.lb as lb
 import colorado.ub as ub
 import colorado.allb as all_b
+from reservoirs.lake_mead import LakeMead
+from reservoirs.lake_powell import LakePowell
 from api import df_utils
+from typing import Optional
 
 class SupplyVDemand(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
@@ -35,6 +39,9 @@ class SupplyVDemand(ChartFrame):
         self.timer = None
         self.animation_interval = 1000
         self.version = 0.3
+
+        self.demand_pie_chart:Optional[PieChart] = None
+        self.multi_bar_chart:Optional[MultiBarChart] = None
 
         super().__init__(notebook_frame, page_name='Pie Chart')
 
@@ -102,7 +109,7 @@ class SupplyVDemand(ChartFrame):
         # ====================== NATURAL FLOW ======================
         natural_flow_data = river_war.dataset.get('Natural Flow')
 
-        # ====================== AZ Aquifter ======================
+        # ====================== AZ Aquifer ======================
         az_ltsc_data = river_war.dataset.get('Az Ltsc')
 
         # Final totals
@@ -230,6 +237,30 @@ class SupplyVDemand(ChartFrame):
             version = self.version
         )
         self.charts.append(self.demand_pie_chart)
+
+        # ============= BIG 2 RESERVOIR BAR CHART ==============
+        lake_powell = LakePowell(upstream=[])
+        df_powell = lake_powell.load_data_annual(start_year=self.start_year)
+        lake_mead = LakeMead(upstream=[lake_powell])
+        df_mead = lake_mead.load_data_annual(start_year=self.start_year)
+
+        bar_groups = [
+            ('Mead', [
+                (df_mead, all_b.STORAGE, 'maroon'),
+            ]),
+            ('Powell', [
+                (df_powell, all_b.STORAGE, 'royalblue'),
+            ]),
+        ]
+        self.multi_bar_chart = MultiBarChart(
+            percentage=0.12,
+            groups=bar_groups,
+            title="",
+            start_year=self.start_year,
+            end_year=self.end_year,
+            y_min=4
+        )
+        self.charts.append(self.multi_bar_chart)
 
     def start_animation(self):
         if self.timer is None:

@@ -275,8 +275,11 @@ class MultiBarChart(Chart):
 
         self.create_bar_chart(self.ax)
 
-        fig.tight_layout(pad=1.2)
-        fig.subplots_adjust(left=0.09, right=0.96, bottom=0.085, top=0.87)
+        # === Smart top margin based on title ===
+        top_margin = 0.88 if self.title and self.title.strip() else 1
+
+        fig.tight_layout(pad=1.0)   # smaller pad
+        fig.subplots_adjust(left=0.09, right=0.96, bottom=0.085, top=top_margin)
 
         self.fig = fig
         return fig
