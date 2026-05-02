@@ -111,12 +111,14 @@ class LowerBasinCULDataSet(DataSet):
         df_utils.add_columns_across_dfs([(lb_mainstream_cul.df, lb.NV_M_I_OTHER),
                                          (lb_mainstream_cul.df, lb.NV_AGRICULTURE),
                                          (lb_mainstream_cul.df, lb.NV_POWER)],
-                                        lb_mainstream_cul.df, lb.NV_TOTAL)
+                                        lb_mainstream_cul.df, lb.NV_COLORADO_RIVER_TOTAL)
         if self.show_tributaries:
-            df_utils.add_columns_across_dfs([(lb_mainstream_cul.df, lb.NV_TOTAL),
+            df_utils.add_columns_across_dfs([(lb_mainstream_cul.df, lb.NV_COLORADO_RIVER_TOTAL),
                                              (lb_tributary_cul.df, lb.NV_TRIBUTARY_CUL)],
                                             lb_mainstream_cul.df, lb.NV_TOTAL)
-
+        else:
+            df_utils.add_columns_across_dfs([(lb_mainstream_cul.df, lb.NV_COLORADO_RIVER_TOTAL)],
+                                            lb_mainstream_cul.df, lb.NV_TOTAL)
         # Arizona Mainstem
         df_utils.add_column_sum(lb_mainstream_cul.df, [lb.AZ_M_I_OTHER, lb.AZ_AGRICULTURE, lb.AZ_POWER], lb.AZ_MAINSTEM)
         df_utils.rename_column(lb_mainstream_cul.df, lb.AZ_WITHIN_SYSTEM, lb.AZ_CAP, inplace=True)
@@ -130,6 +132,7 @@ class LowerBasinCULDataSet(DataSet):
                                      lb.AZ_BILL_WILLIAMS_CUL,
                                      lb.AZ_TRIB_BELOW_LAKE_MEAD_CUL],
                                     lb.AZ_TRIBUTARY_CUL)
+
             df_utils.add_columns_across_dfs([
                 (lb_mainstream_cul.df, lb.AZ_COLORADO_RIVER_TOTAL),
                 (lb_tributary_cul.df, lb.AZ_GILA_CUL),
@@ -163,7 +166,8 @@ class LowerBasinCULDataSet(DataSet):
                                     lb.NM_TRIBUTARY_CUL)
 
             df_utils.add_column_sum(lb_tributary_cul.df,
-                                    [lb.AZ_TRIBUTARY_CUL,
+                                    [lb.AZ_GILA_CUL,
+                                     lb.AZ_TRIBUTARY_CUL,
                                      lb.NV_TRIBUTARY_CUL,
                                      lb.UT_TRIBUTARY_CUL,
                                      lb.NM_TRIBUTARY_CUL],

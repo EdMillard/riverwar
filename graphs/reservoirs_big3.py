@@ -98,6 +98,7 @@ class ReservoirsBig3(ChartFrame):
         line_chart.set_end_date(date(2027, 5, 1))
         self.charts.append(line_chart)
 
+        '''
         time_series = []
         for reservoir in self.reservoirs:
             if reservoir.name == 'Lake Powell':
@@ -107,7 +108,7 @@ class ReservoirsBig3(ChartFrame):
         time_series.append((powell_df, 'Cut Powell Release', 'gold'))
         time_series.append((fg_df, 'Flaming Gorge DROA', 'green'))
 
-        '''
+
         line_chart = LineChart(
             time_series, title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date

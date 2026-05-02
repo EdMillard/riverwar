@@ -34,6 +34,7 @@ class PieChartFrame(ChartFrame):
         self.current_year = self.start_year
         self.timer = None
         self.animation_interval = 1000
+        self.version = 0.3
 
         super().__init__(notebook_frame, page_name='Pie Chart')
 
@@ -127,7 +128,7 @@ class PieChartFrame(ChartFrame):
         df_utils.add_columns_across_dfs([
             (df_lb_cul, lb.UT_TRIBUTARY_CUL),
             (df_lb_cul, lb.NM_TRIBUTARY_CUL)],
-            df_lb_cul, "UB State Tributaries in LB")
+            df_lb_cul, lb.UB_STATE_TRIB_IN_LB)
 
         df_utils.add_columns_across_dfs([
             (natural_flow_data.df, ub.NATURAL_LEES_FERRY)],
@@ -151,8 +152,6 @@ class PieChartFrame(ChartFrame):
             ("CA", (df_lb_cul, lb.CA_TOTAL)),
             ("AZ", (df_lb_cul, lb.AZ_TOTAL)),
             ("NV", (df_lb_cul, lb.NV_TOTAL)),
-            ('UT Trib', (df_lb_cul,  lb.UT_TRIBUTARY_CUL)),
-            ('NM Trib', (df_lb_cul, lb.NM_TRIBUTARY_CUL)),
             ("LB Evap", (df_lb_cul, lb.LB_RESERVOIR_EVAP)),
             ("LB Demand", (df_lb_cul, lb.LB_TOTAL))
         ])
@@ -164,9 +163,18 @@ class PieChartFrame(ChartFrame):
             ("Total", (df_lb_cul, all_b.EVAP_TOTAL))
         ])
 
+        trib_totals = (0.85, 0.07, [
+            ("AZ Gila", (df_lb_cul, lb.AZ_GILA_CUL)),
+            ("AZ Trib", (df_lb_cul, lb.AZ_TRIBUTARY_CUL)),
+            ("NV Trib", (df_lb_cul, lb.NV_TRIBUTARY_CUL)),
+            ("UT Trib", (df_lb_cul, lb.UT_TRIBUTARY_CUL)),
+            ("NM Trib", (df_lb_cul, lb.NM_TRIBUTARY_CUL)),
+            ("Total", (df_lb_cul, lb.LB_TRIBUTARY_CUL))
+        ])
+
         ltsc_df = az_ltsc_data.df
         df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_MAINSTEM, [(df_lb_cul, lb.AZ_CRIT_CU), (df_lb_cul, lb.WELLTON_MOHAWK_CU)], result_column=lb.AZ_MAINSTEM)
-        df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_CAP, [(ltsc_df, 'Stored')], result_column=lb.AZ_CAP)
+        df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_CAP, [(ltsc_df, lb.AZ_LTSC_STORED)], result_column=lb.AZ_CAP)
         df_utils.subtract_columns_across_dfs(df_lb_cul, lb.CA_MAINSTEM, [(df_lb_cul, lb.PALO_VERDE_CU)], result_column=lb.CA_MAINSTEM)
         pie_wedges = [
             (df_ub_cul, ub.CU_CO, '#6060ff'),
@@ -181,8 +189,9 @@ class PieChartFrame(ChartFrame):
             (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, '#e080e0', {'label': 'Metropolitan'}),
             (df_lb_cul, lb.CA_MAINSTEM, '#f070f0'),
             (df_lb_cul, lb.PALO_VERDE_CU, '#ffa0ff', {'label': 'Palo Verde'}),
-            (df_lb_cul, lb.NV_TOTAL, 'orange', {'label': 'NV'}),
-            (ltsc_df, 'Stored', 'gold', {'label': 'CAP Aquifer Store', 'hatch': '|', 'hatch_color': '#ff8080'}),
+            (df_lb_cul, lb.NV_COLORADO_RIVER_TOTAL, 'lightgray', {'label': 'NV'}),
+            (df_lb_cul, lb.NV_TRIBUTARY_CUL, 'gray', {'label': 'NV Trib'}),
+            (ltsc_df,   lb.AZ_LTSC_STORED, lb.PHX_COLOR, {'label': 'CAP Aquifer Store', 'hatch': '|', 'hatch_color': '#ff8080'}),
             (df_lb_cul, lb.AZ_CAP, '#ff8080', {'label': 'CAP'}),
             (df_lb_cul, lb.AZ_CRIT_CU, '#ff6060', {'label': 'CRIT'}),
             (df_lb_cul, lb.WELLTON_MOHAWK_CU, '#ff4040', {'label': 'Wellton Mohawk'}),
@@ -191,10 +200,10 @@ class PieChartFrame(ChartFrame):
         if show_tributaries:
             pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, '#d03030', {'label': 'AZ Trib'}))
             pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, '#c02020', {'label': 'AZ Gila'}))
-            pie_wedges.append((df_lb_cul, "UB State Tributaries in LB", 'darkblue'))
+            pie_wedges.append((df_lb_cul, lb.UB_STATE_TRIB_IN_LB, 'darkblue'))
 
             df_utils.add_columns_across_dfs([
-                (df_lb_cul, "UB State Tributaries in LB"),
+                (df_lb_cul, lb.UB_STATE_TRIB_IN_LB),
                 (df_lb_cul, lb.LB_TOTAL)
             ],
                 df_lb_cul, 'LB Total with UB Tributaries')
@@ -213,11 +222,12 @@ class PieChartFrame(ChartFrame):
             pie_wedges,
             title='Colorado River Supply v Demand',
             year=self.current_year,
-            annotations=[totals, lb_totals, evap_totals],
+            annotations=[totals, lb_totals, evap_totals, trib_totals],
             radial_lines=radial_lines,
             left_bar_series=left_bar_series,
             left_bar_ymax=27.0,
-            left_bar_ymin=10.0
+            left_bar_ymin=10.0,
+            version = self.version
         )
         self.charts.append(self.demand_pie_chart)
 

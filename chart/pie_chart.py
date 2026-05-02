@@ -44,12 +44,14 @@ class PieChart(Chart):
                  radial_lines: List[Tuple[pd.DataFrame, str, str]] | None = None,
                  left_bar_series: List[Tuple[pd.DataFrame, str, str]] | None = None,
                  left_bar_ymax: float | None = None,
-                 left_bar_ymin: float | None = None):
+                 left_bar_ymin: float | None = None,
+                 version:float = 0.1):
 
         super().__init__(reservoirs or [], start_date, current_date, end_date, percentage=percentage)
 
         self.data_series = []
         self.original_data_series = []
+        self.version = version
 
         for item in data_series:
             if len(item) == 3:
@@ -264,7 +266,7 @@ class PieChart(Chart):
             text.set_fontsize(9.5)
             text.set_fontweight('semibold')
 
-        ax.set_title(f"{self.title or 'Distribution'} — {self.year}",
+        ax.set_title(f"{self.title or 'Distribution'} — {self.year}  v{self.version}",
                      fontsize=15, fontweight='bold', pad=15)
         ax.axis('equal')
 

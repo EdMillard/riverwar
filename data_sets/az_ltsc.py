@@ -24,6 +24,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional, List
 from reservoirs.aquifers import LTSC
+import colorado.lb as lb
 
 class AZLTSCDataSet(DataSet):
     def __init__(self, name:str, month:int=10):
@@ -46,7 +47,7 @@ class AZLTSCDataSet(DataSet):
         # stored_adjusted = stored_adjusted - self.et_losses - self.other_losses # - self.credits_extinguished
 
         # === Calculate Stored (per year) ===
-        ltsc_total.df['Stored'] = (
+        ltsc_total.df[lb.AZ_LTSC_STORED] = (
                 ltsc_total.df['Water_Delivered']
                 - ltsc_total.df['Annual_Recovery']
                 - ltsc_total.df.get('LTS_Credits_Recovered', 0)

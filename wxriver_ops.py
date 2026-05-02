@@ -95,9 +95,9 @@ if __name__ == "__main__":
     nb = NotebookFrame(callables, river_war)
 
     # reservoir_chart(nb)
-    # pie_chart(nb)
-    reservoir_reality_chart(nb)
-    reservoirs_big3(nb)
+    pie_chart(nb)
+    # reservoir_reality_chart(nb)
+    # reservoirs_big3(nb)
 
     nb.Show()
     app.MainLoop()
