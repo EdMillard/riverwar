@@ -109,9 +109,9 @@ class Reservoir:
                     catalog_items = relationships.get('catalogItems', None)
                     catalog_data = catalog_items.get('data', None)
                     for item in catalog_data:
-                        id = item.get('id', None)
-                        if id:
-                            name, item_id = usbr_rise.request_catalog_item(id)
+                        data_id = item.get('id', None)
+                        if data_id:
+                            name, item_id = usbr_rise.request_catalog_item(data_id)
                             self.usbr_item_ids[name] = item_id
 
                     f = path.open(mode='w')
@@ -178,6 +178,7 @@ class Reservoir:
 
         self.full_feet:float = 0
         self.power_head_target_feet:float = 0
+        self.power_head_min_af:float = 0
         self.power_head_lowest_feet:float = 0
         self.turbine_intake_feet:float = 0
         self.dead_pool_feet:float = 0
@@ -310,6 +311,57 @@ class Reservoir:
                                                        daily_target_col=column_name)
         df_utils.subtract_constant(self.df_daily, column_name, column_name, self.power_head_min_af)
 
+    def get_projection_new(self,
+                       df_monthly: pd.DataFrame,
+                       column_name: str,  # <-- Required, no Powell default
+                       monthly_column_name: str = 'End Of Month Storage',
+                       subtract_min_af: float | None = None):  # Optional subtraction
+
+        # === Ensure daily has DatetimeIndex ===
+        daily_df = self.df_daily
+        if not isinstance(daily_df.index, pd.DatetimeIndex):
+            for possible_date_col in ['date', 'datetime', 'Date', 'Datetime']:
+                if possible_date_col in daily_df.columns:
+                    daily_df = daily_df.set_index(possible_date_col).copy()
+                    break
+            daily_df.index = pd.to_datetime(daily_df.index)
+            daily_df = daily_df.sort_index()
+
+        # === Prepare monthly data ===
+        monthly = df_monthly[[monthly_column_name]].copy()
+
+        if not isinstance(monthly.index, pd.DatetimeIndex):
+            for possible_date_col in ['date', 'datetime', 'Date', 'Month', 'End of Month']:
+                if possible_date_col in monthly.columns:
+                    monthly = monthly.set_index(possible_date_col).copy()
+                    break
+            monthly.index = pd.to_datetime(monthly.index)
+            monthly = monthly.sort_index()
+
+        # === Interpolate to daily ===
+        self.df_daily[column_name] = (
+            monthly[monthly_column_name]
+            .reindex(daily_df.index)
+            .interpolate(method='time')
+            .ffill()
+            .bfill()
+        )
+
+        # === Optional subtraction (for Powell power head, etc.) ===
+        if subtract_min_af is not None:
+            df_utils.subtract_constant(
+                self.df_daily,
+                column_name,
+                column_name,
+                subtract_min_af
+            )
+        elif hasattr(self, 'power_head_min_af') and column_name.startswith('Powell'):
+            # Only auto-subtract for Powell if you still want that behavior
+            df_utils.subtract_constant(
+                self.df_daily, column_name, column_name, self.power_head_min_af
+            )
+
+        print(f"✅ Projected {column_name} from monthly data")
     def copy(self):
         return copy.copy(self)
 
@@ -359,7 +411,7 @@ class Reservoir:
         if when == 'match':
             if usbr_rise_id:
                 daily_storage_af = self.usbr_rise_load_daily(usbr_rise_id, column_name)
-                date_time = daily_storage_af['dt'][-1]
+                # date_time = daily_storage_af['dt'][-1]
                 active_capacity_af = daily_storage_af['val'][-1]
                 # sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
                 #                       title=column_name, month=month, divisor=divisor)
@@ -378,7 +430,7 @@ class Reservoir:
 
         if usbr_rise_id:
             daily_release = self.usbr_rise_load_daily(usbr_rise_id, column_name)
-            date_time = daily_release['dt'][-1]
+            # date_time = daily_release['dt'][-1]
             release = daily_release['val'][-1]
 
         return release
@@ -527,9 +579,8 @@ class Reservoir:
                 monthly.loc[monthly['month_label'] == last_month_label, 'value'] = last_value
 
         # Fill into target DataFrame
-        mask = df['Date'].isin(monthly['month_label'])
-        filled = mask.sum()
-
+        # mask = df['Date'].isin(monthly['month_label'])
+        # filled = mask.sum()
         # print(f"✓ Filled {filled} months into '{column_name}' (last value per month + forced partial month)")
 
     @staticmethod
@@ -581,7 +632,7 @@ class Reservoir:
                 if value is not None:
                     df.loc[mask, column_name] = float(value)
                 else:
-                    print(f'fill_usbt_monthly_into_df failed: month-year not found -> {mon_year_str}')
+                    print(f'fill_usbr_monthly_into_df failed: month-year not found -> {mon_year_str}')
 
         filled = df[column_name].notna().sum()
         # print(f"✓ Filled {filled} months into '{column_name}' for gage {gage_id}")
@@ -602,14 +653,13 @@ class Reservoir:
         # Find the matching row
         month_name = target_month_year.strftime("%b")
         date_str = f"{month_name} {target_month_year.year}"
-        mask = df[date_column] == date_str
-
-        if not mask.any():
+        matching = df[df[date_column] == date_str]
+        if matching.empty:
             print(f"Warning: '{target_month_year}' not found in column '{date_column}'")
             return None
 
         # Return the value (first match)
-        value = df.loc[mask, column_name].iloc[0]
+        value = matching[column_name].iloc[0]
         return float(value) if pd.notna(value) else None
 
     def get_24_month_projected(self, df, column_name:str)->float:
