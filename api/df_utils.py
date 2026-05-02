@@ -502,6 +502,24 @@ def set_value_at_datetime(
         new_row = new_row[df.columns]
         df.loc[len(df)] = new_row.iloc[0]
 
+
+def to_datetime_safe(date_val: Union[str, "pd.Timestamp", datetime, None]) -> datetime:
+    """Safe conversion. String hint avoids PyCharm pandas stub issues."""
+
+    if pd.isna(date_val) or date_val is None:
+        raise ValueError("Date value is NaT or None")
+
+    if isinstance(date_val, pd.Timestamp):
+        return date_val.to_pydatetime()
+
+    if isinstance(date_val, datetime):
+        return date_val
+
+    if isinstance(date_val, str):
+        return pd.to_datetime(date_val).to_pydatetime()
+
+    return pd.to_datetime(date_val).to_pydatetime()
+
 def subtract_column(
         df: pd.DataFrame,
         col1: str,

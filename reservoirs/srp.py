@@ -51,8 +51,9 @@ class SRP(SRPReservoir):
         self.reservoirs:List[SRPReservoir] = [Bartlett(), Roosevelt(), Horseshoe(), Saguaro(), Apache(), Canyon()]
 
         if self.df_daily is not None:
+            # Usage in your code:
             date_time_str = self.df_daily['Date'].iloc[-1]
-            self.date_time = datetime.strptime(date_time_str, '%Y-%m-%d %H:%M:%S.%f')
+            self.date_time = df_utils.to_datetime_safe(date_time_str) # type: ignore[arg-type]
             self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
 
         # data = get_reservoir_data()
@@ -98,6 +99,7 @@ class SRP(SRPReservoir):
     def chronos(self):
         if self.df_daily is not None:
             if not Reservoir.is_new_day(self.df_daily):
+                print(f"  ✓ SRP Reservoirs up to date for today")
                 return
 
         mt_tz = pytz.timezone("US/Mountain")

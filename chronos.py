@@ -30,14 +30,22 @@ def run_daily_tasks():
         #
         print("Fetching reservoir data...")
         _srp.chronos()
+    except Exception as e:
+        print(f"❌ Error during SRP daily task: {e}")
 
-        # === AZ Lake Pleasant(CAP) Reservoir Scraper ===
-        #
+    # === AZ Lake Pleasant(CAP) Reservoir Scraper ===
+    #
+    try:
         if _lake_pleasant is None:
             _lake_pleasant = lake_pleasant.LakePleasant()
-        lake_pleasant_data = _lake_pleasant.get_lake_pleasant_data()
-        if lake_pleasant_data is not None:
-            print(lake_pleasant_data)
+        ok, lake_pleasant_data = _lake_pleasant.get_lake_pleasant_data()
+        if ok:
+            if lake_pleasant_data is not None:
+                print(lake_pleasant_data)
+        else:
+            print(f"❌ Error during Lake Pleasant daily tasks, schedule retry")
+    except Exception as e:
+        print(f"❌ Error during Lake Pleasant daily tasks: {e}")
 
         print("✅ All daily tasks completed successfully.")
 

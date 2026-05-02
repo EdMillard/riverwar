@@ -25,7 +25,7 @@ from reservoirs.reservoir import Reservoir
 from source import usbr_rise
 import colorado.lb as lb
 from api import df_utils
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Tuple
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
@@ -152,9 +152,10 @@ class LakePleasant(Reservoir):
             return df
 
 
-    def get_lake_pleasant_data(self)->Optional[Dict]:
+    def get_lake_pleasant_data(self)->Tuple[bool, Optional[Dict]]:
         if not Reservoir.is_new_day(self.df_daily):
-            return None
+            print(f"  ✓ Lake Pleasant up to date for today")
+            return True, None
 
         options = Options()
         options.add_argument("--headless=new")  # Faster modern headless
@@ -265,17 +266,19 @@ class LakePleasant(Reservoir):
             mt_tz = pytz.timezone("US/Mountain")
             now_mt = datetime.datetime.now(mt_tz)
             self.receive_data(self.name, self.df_daily, now_mt, data)
-            return data
-
+            if data is None:
+                return False, data
+            return True, data
         except TimeoutException:
             print("❌ Timeout waiting for Lake Pleasant data to load (iframes slow?)")
-            return None
+            return False, None
         except Exception as e:
             print(f"❌ Error: {e}")
-            return None
+            return False, None
         finally:
             if driver:
                 try:
                     driver.quit()
                 except:
                     pass
+            return False, None
