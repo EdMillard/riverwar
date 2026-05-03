@@ -22,7 +22,7 @@ SOFTWARE.
 from PIL import Image
 import wx
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta
 import os
 import wx.lib.buttons as buttons
 from typing import List, Optional, Callable, Tuple
@@ -242,7 +242,8 @@ class ChartFrame(wx.Panel):
             self.report_choice.Bind(wx.EVT_CHOICE, self.on_report_selected)
             tb_sizer.Add(self.report_choice, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, border=0)
 
-        self.current_nav = MonthYearNavigator(top_toolbar, date(2026, 4, 1), self.on_date_changed, name="current")
+        yesterday = date.today() - timedelta(days=1)
+        self.current_nav = MonthYearNavigator(top_toolbar, yesterday, self.on_date_changed, name="current")
         tb_sizer.Add(self.current_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
         separator = wx.StaticText(top_toolbar, label="[")

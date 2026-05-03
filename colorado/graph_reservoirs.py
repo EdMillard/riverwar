@@ -69,7 +69,7 @@ class ReservoirChart(BarChart):
         if height_inch is not None:
             self.height_inch = height_inch
 
-        title = f'Colorado River Storage - {self.month_to_short_name(self.current_date.month)} ' \
+        title = f'Colorado River Reservoir Reality\u2122 - {self.month_to_short_name(self.current_date.month)} ' \
                 f'{self.current_date.day}, {self.current_date.year}'
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)

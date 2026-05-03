@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from datetime import date
@@ -203,11 +204,31 @@ class MultiBarChart(Chart):
         # X-axis labels
         self.setup_year_xaxis(ax, years, max_ticks=20, fontsize=10)
 
-        # Legend
-        handles, labels = ax.get_legend_handles_labels()
-        unique_legend = dict(zip(labels, handles))
-        ax.legend(unique_legend.values(), unique_legend.keys(),
-                  loc='upper left', fontsize=9, frameon=True, ncol=2)
+        # === Reliable Legend with Group Names (auto location) ===
+        from matplotlib.patches import Rectangle
+
+        unique_legend = {}
+
+        for group_label, series_list in self.groups:
+            for df, col, color in series_list:
+                clean_label = col.replace('_', ' ')
+                display_label = f"{group_label} {clean_label}"
+
+                proxy = Rectangle((0, 0), 1, 1,
+                                  fc=color,
+                                  ec='white',
+                                  linewidth=0.8)
+
+                if display_label not in unique_legend:
+                    unique_legend[display_label] = proxy
+
+        # Auto location - matplotlib will pick best spot (often upper right)
+        if unique_legend:
+            ax.legend(unique_legend.values(), unique_legend.keys(),
+                      loc='best',  # ← changed to 'best'
+                      fontsize=9,
+                      frameon=True,
+                      ncol=1)  # ncol=1 or 2 depending on your preference
 
         # === Y-AXIS (now using shared function) ===
         self.setup_yaxis(ax)

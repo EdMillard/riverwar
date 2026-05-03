@@ -56,7 +56,7 @@ class ReservoirsReality(ChartFrame):
             lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
         ]
 
-        super().__init__(notebook_frame, reservoirs=reservoirs, reports=reports, page_name='Reservoirs')
+        super().__init__(notebook_frame, reservoirs=reservoirs, reports=reports, page_name='Reservoir Reality')
 
     def load_charts(self):
         start = self.start_nav.current_date
