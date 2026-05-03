@@ -47,6 +47,7 @@ class MultiBarChart(Chart):
                  current_date: date | None = None,
                  end_date: date | None = None,
                  show_totals: bool = False,
+                 show_x_labels: bool = True,
                  y_label: str = "",                    # kept for future flexibility
                  y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
                  y_divisor: float | None = None,
@@ -61,6 +62,7 @@ class MultiBarChart(Chart):
         self.show_totals = show_totals
 
         self.title = title
+        self.show_x_labels = show_x_labels
         self.y_units = y_units
         self.y_max = y_max
         self.y_min = y_min
@@ -110,8 +112,12 @@ class MultiBarChart(Chart):
             tick_positions = np.arange(n_years)
             tick_labels = [f"{y % 100:02d}" for y in years]
 
-        ax.set_xticks(tick_positions)
-        ax.set_xticklabels(tick_labels, rotation=0, ha='center', fontsize=fontsize)
+        if not self.show_x_labels:
+            ax.set_xticklabels([])
+            ax.tick_params(axis='x', which='major', length=0)
+        else:
+            ax.set_xticks(tick_positions)
+            ax.set_xticklabels(tick_labels, rotation=0, ha='center', fontsize=fontsize)
 
     def create_bar_chart(self, ax):
         if not self.groups:
@@ -277,9 +283,10 @@ class MultiBarChart(Chart):
 
         # === Smart top margin based on title ===
         top_margin = 0.88 if self.title and self.title.strip() else 1
+        bottom_margin = 0.15 if self.show_x_labels else 0.05
 
         fig.tight_layout(pad=1.0)   # smaller pad
-        fig.subplots_adjust(left=0.09, right=0.96, bottom=0.085, top=top_margin)
+        fig.subplots_adjust(left=0.09, right=0.96, bottom=bottom_margin, top=top_margin)
 
         self.fig = fig
         return fig

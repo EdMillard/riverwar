@@ -258,7 +258,8 @@ class SupplyVDemand(ChartFrame):
             title="",
             start_year=self.start_year,
             end_year=self.end_year,
-            y_min=4
+            y_min=4,
+            show_x_labels=True
         )
         self.charts.append(self.multi_bar_chart)
 
