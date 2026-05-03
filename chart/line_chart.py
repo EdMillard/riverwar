@@ -90,11 +90,14 @@ class LineChart(Chart):
 
         self.create_line_chart(ax)
 
-        has_title = bool(self.title and str(self.title).strip())
-        top_margin = 0.88 if has_title else 0.96
+        top_margin = 0.95 if self.title and self.title.strip() else 1
+        bottom_margin = 0.05 if self.show_x_labels else 0.05
 
-        fig.tight_layout(pad=1.3)
-        fig.subplots_adjust(left=0.08, right=0.95, bottom=0.085, top=top_margin)
+        fig.tight_layout(pad=1.0)
+        fig.subplots_adjust(left=0.09, right=0.96, bottom=bottom_margin, top=top_margin)
+
+        # fig.tight_layout(pad=1.3)
+        # fig.subplots_adjust(left=0.08, right=0.95, bottom=0.085, top=top_margin)
 
         self.fig = fig
         return fig
@@ -128,20 +131,44 @@ class LineChart(Chart):
         if self.title and str(self.title).strip():
             ax.set_title(self.title, fontsize=14, fontweight='bold', pad=15)
 
-        # X-AXIS
+        # ==================== X-AXIS ====================
         ax.set_xlim(x_start, x_end)
+
+        # Main ticks: Years
         ax.xaxis.set_major_locator(mdates.YearLocator())
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
+
+        # Minor ticks: Months (first letter)
+        years_span = (x_end - x_start).days / 365.25
+        if years_span >= 1.5:
+            ax.xaxis.set_minor_locator(mdates.MonthLocator())
+
+            def month_first_letter(x, pos):
+                return mdates.DateFormatter('%b')(x, pos)[0]
+
+            ax.xaxis.set_minor_formatter(month_first_letter)
+
+            ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, rotation=0, pad=2)
+            ax.tick_params(axis='x', which='major', length=6, width=1.2, labelsize=10, pad=4)
 
         if not self.show_x_labels:
             ax.set_xticklabels([])
             ax.tick_params(axis='x', which='major', length=0)
 
-        # Y-AXIS (just units now)
-        self.setup_yaxis(ax)
+        # ==================== GRID LINES ====================
+        # Major grid (years) - darker
+        ax.grid(True, which='major', linestyle='-', linewidth=1.0, color='gray', alpha=1, zorder=0)
 
-        ax.grid(True, linestyle='--', alpha=0.7)
-        ax.axhline(y=0, color='black', linewidth=2.5, linestyle='-', alpha=0.9, zorder=3)
+        # Minor grid (months) - lighter subgrid
+        ax.grid(True, which='minor', linestyle='--', linewidth=0.7, color='gray', alpha=0.75, zorder=0)
+
+        # Y grid (kept as before)
+        ax.grid(True, axis='y', linestyle='--', alpha=0.7, zorder=0)
+
+        ax.axhline(y=0, color='black', linewidth=2.5, linestyle='-', alpha=1, zorder=3)
+
+        # Y-AXIS
+        self.setup_yaxis(ax)
 
         ax.legend(fontsize=10.5, loc='best')
 
