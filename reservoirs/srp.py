@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pathlib import Path
 from reservoirs.reservoir import Reservoir, SRPReservoir
 from api import df_utils
 from typing import List, Optional
@@ -26,7 +27,7 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Dict
 import datetime
-from datetime import datetime
+from datetime import datetime, date
 import pytz
 import pandas as pd
 import colorado.allb as all_b
@@ -55,6 +56,8 @@ class SRP(SRPReservoir):
             date_time_str = self.df_daily['Date'].iloc[-1]
             self.date_time = df_utils.to_datetime_safe(date_time_str) # type: ignore[arg-type]
             self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
+        self.elevation_feet = 0
+        self.no_elevation_available = True
 
         # data = get_reservoir_data()
 
@@ -65,7 +68,7 @@ class SRP(SRPReservoir):
         self.dead_pool_af = 0
 
         self.full_feet =  0
-        self.full_af = 0
+        self.full_af =  1_255_490  + 1_036_200
 
         # Critical
         self.power_head_target_feet = 0
@@ -95,6 +98,11 @@ class SRP(SRPReservoir):
 
     def get_elevation(self, year, end_year:int|None =None)->float:
         return 0
+
+    def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
+        self.elevation_feet = 0.0
+        if self.df_daily is not None:
+            self.active_capacity_af = self.df_daily[all_b.STORAGE].iloc[-1]
 
     def chronos(self):
         if self.df_daily is not None:

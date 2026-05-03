@@ -21,9 +21,8 @@ SOFTWARE.
 """
 from pathlib import Path
 from datetime import date
+import datetime
 from reservoirs.reservoir import Reservoir
-from source import usbr_rise
-import colorado.lb as lb
 from api import df_utils
 from typing import List, Optional, Dict, Tuple
 from selenium.webdriver.support.ui import WebDriverWait
@@ -37,7 +36,6 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import re
-import datetime
 import pytz
 from data_sets.data_set import DataSet
 import colorado.allb as all_b
@@ -94,11 +92,7 @@ class LakePleasant(Reservoir):
         # self.reserved_parts = reserved_parts or []
 
     def get_elevation(self, year, end_year:int|None =None)->float:
-        usbr_lake_mohave_elevation_ft = 6133
-        info, daily_elevation_ft = usbr_rise.load(usbr_lake_mohave_elevation_ft, water_year_info=self.water_year_info,
-                                                  alias=lb.MOHAVE_ELEVATION)
-        df_utils.fill_df_from_structured_array(self.df_daily, daily_elevation_ft, date_column_name='Date', value_column_name=lb.MOHAVE_ELEVATION)
-        return daily_elevation_ft[-1]
+        return 0
 
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
         # self.load_date(report_path, start_date, current_date, end_date)
@@ -190,7 +184,7 @@ class LakePleasant(Reservoir):
             ))
 
             # Small wait for numbers to populate
-            time.sleep(4)
+            time.sleep(10)
 
             # Get full rendered text (including content from iframes if they injected)
             page_text = driver.find_element(By.TAG_NAME, "body").text
