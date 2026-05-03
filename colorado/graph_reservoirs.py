@@ -48,6 +48,7 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 class ReservoirChart(BarChart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None):
         super().__init__(reservoirs, start_date, current_date, end_date)
+        self.version = 0.3
         self.power_head_zones = [
             ('#ffffff', 'Available Capacity'),
             (Reservoir.high_power_pool_color, 'Normal Power Head'),
@@ -70,7 +71,7 @@ class ReservoirChart(BarChart):
             self.height_inch = height_inch
 
         title = f'Colorado River Reservoir Reality\u2122 - {self.month_to_short_name(self.current_date.month)} ' \
-                f'{self.current_date.day}, {self.current_date.year}'
+                f'{self.current_date.day}, {self.current_date.year}   v{self.version}'
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
         ax = fig.add_subplot(111)
@@ -197,7 +198,9 @@ class ReservoirChart(BarChart):
                         zones.append((cap - prev, color, name, cap, elev))
                         prev = cap
 
-            top_color = Reservoir.high_power_pool_color if elevations_feet[i] > 0 else Reservoir.non_power_pool_color
+            no_elevation_available = getattr(r, 'no_elevation_available', [])
+
+            top_color = Reservoir.high_power_pool_color if elevations_feet[i] > 0 or no_elevation_available  else Reservoir.non_power_pool_color
             if current_cap_maf > prev:
                 zones.append((current_cap_maf - prev, top_color, 'Above Highest Critical',
                               current_cap_maf, elevations_feet[i]))

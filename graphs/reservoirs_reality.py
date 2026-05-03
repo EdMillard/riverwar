@@ -24,7 +24,8 @@ SOFTWARE.
 from colorado.graph_reservoirs import ReservoirChart
 from chart.chart_frame import ChartFrame, NotebookFrame
 from reservoirs.imperial import Imperial
-from reservoirs.roosevelt import Roosevelt
+# from reservoirs.roosevelt import Roosevelt
+from reservoirs.srp import SRP
 from reservoirs.lake_pleasant import LakePleasant
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
@@ -48,11 +49,12 @@ class ReservoirsReality(ChartFrame):
         lake_havasu = LakeHavasu(upstream=[lake_mohave])
         imperial = Imperial(upstream=[lake_havasu])
         lake_pleasant = LakePleasant(upstream=[])
-        roosevelt = Roosevelt(upstream=[])
+        # roosevelt = Roosevelt(upstream=[])
+        srp = SRP(upstream=[])
         aquifers = Aquifers(upstream=[])
 
         reservoirs = [
-            imperial, aquifers, roosevelt, lake_pleasant, lake_havasu, lake_mohave,
+            imperial, aquifers, srp, lake_pleasant, lake_havasu, lake_mohave,
             lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
         ]
 
