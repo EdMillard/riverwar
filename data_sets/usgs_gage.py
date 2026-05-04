@@ -37,7 +37,7 @@ class USGSGageDataSet(DataSet):
             '09211200': 'Green R Bel Fontenelle Res WY',
             '09217000': 'Green R. Nr Green River, WyY',
             '09234500': 'Green River Near Greendale, UT',
-            '09251000': 'Yampa River Near Maybell, CO\\',
+            '09251000': 'Yampa River Near Maybell, CO',
             '09260000': 'Little Snake River Near Lily, CO',
             '09302000': 'Duchesne River Near Randlett, UT',
             '09306500': 'White River Near Watson, UT',
@@ -54,7 +54,10 @@ class USGSGageDataSet(DataSet):
             '09423000': 'Colorado River Below Davis Dam, AZ-NV',
             '09426000': 'Bill Williams River Below Alamo Dam, AZ',
             '09427520': 'Colorado River Below Parker Dam, AZ-CA',
-            '09429490': 'Colorado River Above Imperial Dam, AZ'
+            '09429490': 'Colorado River Above Imperial Dam, AZ',
+            '09364000': 'Azotea Tunnel near Chama, NM',  # San Juan Chama
+            '09522700': 'Wellton Mohawk Main Outlet Drain near Yuma, AZ',  # Wellton to Cienega
+            '09522800': 'Wellton Mohawk Drain at Boundary with Mexico',
         }
         self.name_to_gage = {
             'Colorado River At Glenwood Springs, CO': '09072500',
@@ -68,7 +71,7 @@ class USGSGageDataSet(DataSet):
             'Green R Bel Fontenelle Res WY': '09211200',
             'Green R. Nr Green River, WyY': '09217000',
             'Green River Near Greendale, UT': '09234500',
-            'Yampa River Near Maybell, CO\\': '09251000',
+            'Yampa River Near Maybell, CO': '09251000',
             'Little Snake River Near Lily, CO': '09260000',
             'Duchesne River Near Randlett, UT': '09302000',
             'White River Near Watson, UT': '09306500',
@@ -85,5 +88,8 @@ class USGSGageDataSet(DataSet):
             'Colorado River Below Davis Dam, AZ-NV': '09423000',
             'Bill Williams River Below Alamo Dam, AZ': '09426000',
             'Colorado River Below Parker Dam, AZ-CA': '09427520',
-            'Colorado River Above Imperial Dam, AZ': '09429490'
+            'Colorado River Above Imperial Dam, AZ': '09429490',
+            'Azotea Tunnel near Chama, NM': '09364000',  # San Juan Chama
+            'Wellton Mohawk Main Outlet Drain near Yuma, AZ': '09522700', # Wellton to Cienega
+            'Wellton Mohawk Drain at Boundary with Mexico': '09522800',
         }
