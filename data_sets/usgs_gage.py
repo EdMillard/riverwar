@@ -29,7 +29,7 @@ class USGSGageDataSet(DataSet):
             '09072500': 'Colorado River At Glenwood Springs, CO',
             '09095500': 'Colorado River Near Cameo, CO',
             '09109000': 'Taylor River Below Taylor Park Reservoir, CO',
-            '09124700': 'Gunnision River Above Blue Mesa Reservoir,CO',
+            '09124700': 'Gunnison River Above Blue Mesa Reservoir,CO',
             '09127800': 'Gunnison River At Crystal Reservoir,CO',
             '09152500': 'Gunnison River Near Grand Junction, CO',
             '09180000': 'Dolores River Near Cisco, UT',
@@ -55,15 +55,25 @@ class USGSGageDataSet(DataSet):
             '09426000': 'Bill Williams River Below Alamo Dam, AZ',
             '09427520': 'Colorado River Below Parker Dam, AZ-CA',
             '09429490': 'Colorado River Above Imperial Dam, AZ',
-            '09364000': 'Azotea Tunnel near Chama, NM',  # San Juan Chama
-            '09522700': 'Wellton Mohawk Main Outlet Drain near Yuma, AZ',  # Wellton to Cienega
-            '09522800': 'Wellton Mohawk Drain at Boundary with Mexico',
+            '09522200': 'Colorado River at Northerly International Boundary, near Andrade, CA',  # Delta
+            '09522700': 'Wellton Mohawk Main Outlet Drain near Yuma, AZ',       # Wellton to Cienega
+            '09522800': 'Wellton Mohawk Drain at Boundary with Mexico',         # Wellton to Cienega
+            # TMD's
+            '09364000': 'Azotea Tunnel near Chama, NM',                         # NM, San Juan Chama
+            '09301500': 'Duchesne River near Tabiona',                          # UT
+            '10171000': 'Diamond Fork Creek near Spanish Fork',                 # UT, Strawberry
+            '06730260': 'Adams Tunnel at East Portal, near Grand Lake, CO',     # CO, Northern Water
+            '09024000': 'Moffat Tunnel at East Portal, near Winter Park',       # CO, Denver Water
+            '09063000': 'Roberts Tunnel at East Portal',                        # CO, Denver Water
+            '09025000': 'Blue River below Green Mountain Reservoir',            # CO, Denver Water
+            '09064000': 'Homestake Tunnel at East Portal',                      # CO, Aurora
+            '09085000': 'Fryingpan River below Ruedi Reservoir, near Basalt, CO', # CO, Colorado Springs, Pueblo
         }
         self.name_to_gage = {
             'Colorado River At Glenwood Springs, CO': '09072500',
             'Colorado River Near Cameo, CO': '09095500',
             'Taylor River Below Taylor Park Reservoir, CO': '09109000',
-            'Gunnision River Above Blue Mesa Reservoir,CO': '09124700',
+            'Gunnison River Above Blue Mesa Reservoir,CO': '09124700',
             'Gunnison River At Crystal Reservoir,CO': '09127800',
             'Gunnison River Near Grand Junction, CO': '09152500',
             'Dolores River Near Cisco, UT': '09180000',
@@ -89,7 +99,17 @@ class USGSGageDataSet(DataSet):
             'Bill Williams River Below Alamo Dam, AZ': '09426000',
             'Colorado River Below Parker Dam, AZ-CA': '09427520',
             'Colorado River Above Imperial Dam, AZ': '09429490',
-            'Azotea Tunnel near Chama, NM': '09364000',  # San Juan Chama
-            'Wellton Mohawk Main Outlet Drain near Yuma, AZ': '09522700', # Wellton to Cienega
-            'Wellton Mohawk Drain at Boundary with Mexico': '09522800',
+            'Colorado River at Northerly International Boundary, near Andrade, CA': '09522200', # Delta
+            'Wellton Mohawk Main Outlet Drain near Yuma, AZ': '09522700',       # Wellton to Cienega
+            'Wellton Mohawk Drain at Boundary with Mexico': '09522800',         # Wellton to Cienega
+            # TMD's
+            'Azotea Tunnel near Chama, NM': '09364000',                         # NM San Juan Chama
+            'Duchesne River near Tabiona': '09301500',                          # UT
+            'Diamond Fork Creek near Spanish Fork': '10171000',                 # UT, Strawberry
+            'Adams Tunnel at East Portal, near Grand Lake, CO': '06730260',     # CO, Northern Water
+            'Moffat Tunnel at East Portal, near Winter Park': '09024000',       # CO, Denver Water
+            'Roberts Tunnel at East Portal': '09063000',                        # CO, Denver Water
+            'Blue River below Green Mountain Reservoir': '09025000',            # CO, Denver Water
+            'Homestake Tunnel at East Portal': '09064000',                      # CO, Aurora
+            'Fryingpan River below Ruedi Reservoir, near Basalt, CO': '09085000', # CO, Colorado Springs, Pueblo
         }
