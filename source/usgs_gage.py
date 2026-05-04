@@ -31,7 +31,7 @@ from source.water_year_info import WaterYearInfo
 # USGS Gage parameter definitions
 # https://help.waterdata.usgs.gov/code/parameter_cd_query?fmt=rdb&inline=true&group_cd=%
 
-# USGS query gage and return Tab separated csv'ish text file
+# USGS query gage and return Tab separated csv text file
 # https://waterdata.usgs.gov/nwis/dv?cb_00060=on&format=rdb&site_no=09380000&referred_module=sw&period=&begin_date=1921-10-01&end_date=2022-08-22
 
 # USGS National Water Dashboard
@@ -139,6 +139,8 @@ class USGSGage(object):
             if previous_data is not None and len(previous_data):
                 if water_year_info is not None and water_year_info.is_current_water_year:
                     last_date = previous_data[-1][0]
+                    if isinstance(last_date, np.datetime64):
+                        last_date = last_date.astype("M8[us]").astype(datetime.datetime)
                     update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
             else:
                 update = True
@@ -201,7 +203,7 @@ class USGSGage(object):
                     days += 1
 
         discharge_mean_index = usgs_discharge_mean_column(headers, parameterCd=parameterCd, statCd=statCd)
-        discharge_mean_code_index = usgs_discharge_mean_code_column(headers, parameterCd=parameterCd, statCd=statCd)
+        # discharge_mean_code_index = usgs_discharge_mean_code_column(headers, parameterCd=parameterCd, statCd=statCd)
 
         a = np.zeros(days - 1, [('dt', 'datetime64[s]'), ('val', 'f')])
         line = 0
@@ -228,8 +230,8 @@ class USGSGage(object):
                         else:
                             discharge = 0.0
 
-                        if discharge_mean_code_index:
-                            discharge_code_string = fields[discharge_mean_code_index]
+                        # if discharge_mean_code_index:
+                            # discharge_code_string = fields[discharge_mean_code_index]
                             # print(date_time, discharge_code_string)
                         # state = fields[4]
                         a[day][0] = date_time
@@ -304,7 +306,7 @@ class USGSGage(object):
                 self.daily_discharge_cfs = self.load_time_series_csv(file_path)
                 return self.daily_discharge_cfs
             end_datetime64 = self.daily_discharge_cfs[-1]['dt']
-            end_date = end_datetime64.astype(datetime.datetime).date()
+            end_date = end_datetime64.astype("datetime64[D]").astype(datetime.date)
             yesterdays_date = datetime.datetime.now().date() - datetime.timedelta(days=1)
             if end_date < yesterdays_date < self.end_date and update:
                 print(end_date, self.end_date, yesterdays_date)
@@ -372,15 +374,15 @@ def daily_to_water_year(a, water_year_month=1):
     if total > 0:
         result.append([dt, total*1.983459])
 
-    a = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
+    annual = np.zeros(len(result), [('dt', 'i'), ('val', 'f')])
     year = 0
     for l in result:
-        # a[day][0] = np.datetime64(l[0])
-        a[year][0] = l[0].year
-        a[year][1] = l[1]
+        # annual[day][0] = np.datetime64(l[0])
+        annual[year][0] = l[0].year
+        annual[year][1] = l[1]
         year += 1
 
-    return a
+    return annual
 
 
 def daily_cfs_to_monthly_af(a, start_year=0, end_year=0):
