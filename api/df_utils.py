@@ -500,7 +500,10 @@ def set_value_at_datetime(
                 new_row[col] = pd.NA
 
         new_row = new_row[df.columns]
-        df.loc[len(df)] = new_row.iloc[0]
+        if len(df) == 0:
+            df.iloc[:, :] = new_row.iloc[0:1].values  # for empty df
+        else:
+            df.loc[len(df)] = new_row.iloc[0]
 
 
 def to_datetime_safe(date_val: Union[str, "pd.Timestamp", datetime, None]) -> datetime:
