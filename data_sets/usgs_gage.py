@@ -59,7 +59,7 @@ class USGSGageDataSet(DataSet):
             '09522200': 'Colorado River at Northerly International Boundary, near Andrade, CA',  # Delta
             '09522700': 'Wellton Mohawk Main Outlet Drain near Yuma, AZ',           # Wellton to Cienega
             '09522800': 'Wellton Mohawk Drain at Boundary with Mexico',             # Wellton to Cienega
-            
+
             # UT TMD's
             '09272500': 'Duchesne Tunnel Near Kamas, Utah',                         # UT
             '10149400': 'Diamond Fork Above Red Hollow Near Thistle, UT',           # UT Above Strawberry Release
@@ -71,7 +71,7 @@ class USGSGageDataSet(DataSet):
             '09063000': 'Eagle River at Red Cliff, CO',                             # CO, Denver Water
             '09025000': 'Blue River below Green Mountain Reservoir',                # CO, Denver Water
             '09064000': 'Homestake Creek at Gold Park, CO',                         # CO, Aurora
-            '09077160': 'Charles H. Boustead Tunnel Near Leadville, CO',            # CO, Fryark
+            '09077160': 'Charles H. Boustead Tunnel Near Leadville, CO',            # CO, Fryark, Water quality only
             '09085000': 'Fryingpan River below Ruedi Reservoir, near Basalt, CO',   # CO, Colorado Springs, Pueblo
         }
 
@@ -119,8 +119,8 @@ class USGSGageDataSet(DataSet):
             'Alva B. Adams Tunnel at East Portal, near Estes Park, CO': '09013000', # CO, Northern Water
             'Fraser River at Winter Park, CO': '09024000',                          # CO, Denver Water
             'Eagle River at Red Cliff, CO': '09063000',                             # CO, Denver Water
+            'Blue River below Green Mountain Reservoir, CO': '09025000',            # CO, Denver Water
             'Homestake Creek at Gold Park, CO': '09064000',                         # CO, Aurora
-            'BCharles H. Boustead Tunnel Near Leadville, CO': '09077160',           # CO, Fryark
-            'Blue River below Green Mountain Reservoir, CO': '09025000',                # CO, Denver Water
+            'BCharles H. Boustead Tunnel Near Leadville, CO': '09077160',           # CO, Fryark Water quality only
             'Fryingpan River below Ruedi Reservoir, near Basalt, CO': '09085000',   # CO, Colorado Springs, Pueblo
         }
