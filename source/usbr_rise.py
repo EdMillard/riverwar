@@ -27,7 +27,8 @@ import pandas as pd
 import requests
 from pathlib import Path
 from source.water_year_info import WaterYearInfo
-from typing import Dict, Any, List, Union, Tuple
+from typing import Dict, Any, List, Union, Tuple, Optional
+from urllib.parse import urlparse
 
 debug = True
 
@@ -404,6 +405,38 @@ def load_catalog_items(catalog_record, prefix=''):
         print("usbr request catalog item key error: ")
         return {}
 
+def request_location(location:dict)->Tuple[str, List[str]]:
+    location_name:str = ""
+    states:List[str] = []
+    data:Optional[dict] = location.get('data', None)
+    if data is not None:
+        id:Optional[str] = data.get('id', None)
+        if id is not None:
+            url = 'https://data.usbr.gov'
+            url += id
+            print(f'USBR RISE location:  {url}')
+            r = requests.get(url)
+            if r.status_code == 200:
+                location_info = json.loads(r.content.decode("utf-8"))
+                data:Optional[dict] = location_info.get('data', None)
+                if data is not None:
+                    attributes: Optional[dict] = data.get('attributes', None)
+                    if attributes is not None:
+                        location_name_str:Optional[str] = attributes.get('locationName', None)
+                        if location_name_str is not None:
+                            location_name = location_name_str
+                    relationships: Optional[dict] = data.get('relationships', None)
+                    if relationships is not None:
+                        states_data:Optional[dict] = relationships.get('states', None)
+                        if states_data is not None:
+                            states_data: Optional[dict] = states_data.get('data', None)
+                            if states_data is not None:
+                                for state_data in states_data:
+                                    state_url: Optional[str] = state_data.get('id', None)
+                                    parsed = urlparse(state_url)
+                                    state = parsed.path.strip('/').split('/')[-1]
+                                    states.append(state)
+    return location_name, states
 
 def request_catalog_item(catalog_item_id_str)->Tuple[str, int]:
     catalog_item = {}
