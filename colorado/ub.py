@@ -109,3 +109,47 @@ CU_UT = 'UT'
 CU_WY = 'WY'
 CU_NM = 'NM'
 AZ_CU = 'AZ_'
+
+# CO TMD's
+CO_TRANS_MOUNTAIN_DIVERSIONS = 'CO TMD'
+
+CO_WEST_SLOPE = 'CO'
+# CO_WEST_SLOPE = 'West Slope'
+
+CO_NORTHERN_WATER = 'Northern Water'
+CDSS_CO_ADAMS_TUNNEL_DIVERSION = 'Adams Tunnel Diversion'   # CO, Northern Water
+CDSS_CO_ADAMS_TUNNEL_RELEASE = 'Adams Tunnel Release'       # CO, Northern Water
+CDSS_CO_ADAMS_TUNNEL = 'Adams Tunnel'                       # CO, Northern Water
+USGS_CO_ADAMS_TUNNEL_GAGE = '09013000'                      # CO, Northern Water
+
+# Denver Water
+CO_DENVER_WATER = 'Denver Water'
+CDSS_CO_MOFFAT_TUNNEL = 'Moffat Tunnel'    # CO, Denver Water
+USGS_CO_MOFFAT_TUNNEL = 'Moffat Tunnel'    # CO, Denver Water
+USGS_CO_MOFFAT_TUNNEL_GAGE = '09024000'    # CO, Denver Water
+
+CDSS_CO_ROBERTS_TUNNEL = 'Roberts Tunnel'   # CO, Denver Water
+USGS_CO_ROBERTS_TUNNEL = 'Roberts Tunnel'   # CO, Denver Water
+USGS_CO_ROBERTS_TUNNEL_GAGE = '09063000'   # CO, Denver Water
+
+# Fryark
+CO_FRYARK = 'Fryark'
+CDSS_CO_BOUSTEAD_TUNNEL = 'Boustead Tunnel'  # CO Fryark
+CDSS_CO_BOUSTEAD_TUNNEL_DIVERSION = 'Boustead Tunnel Diversion'  # CO Fryark
+CDSS_CO_BOUSTEAD_TUNNEL_RELEASE = 'Boustead Tunnel Release'  # CO Fryark
+
+# Aurora
+CO_AURORA = 'Aurora'
+CDSS_CO_HOMESTAKE_TUNNEL = 'Homestake Tunnel CDSS' # CO, Aurora
+USGS_CO_HOMESTAKE_TUNNEL = 'Homestake Tunnel' # CO, Aurora
+USGS_CO_HOMESTAKE_TUNNEL_GAGE = '09064000' # CO, Aurora
+
+# UT
+USGS_UT_Duchesne_TUNNEL = 'Duchesne Tunnel'
+
+USGS_UT_JORDAN_RIVER = 'Jordan River'
+USGS_UT_JORDAN_RIVER_GAGE = '10171000'
+
+# NM
+USGS_NM_SAN_JUAN_CHAMA_TUNNEL = 'San Juan Chama Azotea Tunnel'
+USGS_NM_SAN_JUAN_CHAMA_TUNNEL_GAGE = '08284160'
