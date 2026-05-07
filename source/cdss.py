@@ -41,6 +41,7 @@ import requests
 from pathlib import Path
 import numpy as np
 from source.water_year_info import WaterYearInfo
+import datetime
 
 
 def structure_info(wdid):
@@ -340,8 +341,8 @@ def request_structures_divrec(logger, wdid, file_name:Path, start_date:str|None=
     url = f'{base_url}?wdid={wdid}'
 
     # Generates 404 response
-    # if water_class_num:
-    #    url += f'{base_url}&waterClassNum={water_class_num}'
+    if water_class_num:
+        url += f'&waterClassNum={water_class_num}'
     if start_date:
         url += f'&min-dataMeasDate={start_date}'
     if end_date:
@@ -384,13 +385,17 @@ def request_structures_divrec(logger, wdid, file_name:Path, start_date:str|None=
 
     except requests.exceptions.RequestException as e:
         msg = f"Error querying CDSS diversion records {wdid}: {e}"
-        logger.log_message(msg)
+        if logger is not None:
+            logger.log_message(msg)
+        else:
+            print(msg)
     return time_series
 
 
 def structures_divrec(logger, wdid:str, water_year_info, meas_type:str='divrecday', water_class_num:str='',
                       update=False, file_prefix='', alias:str='', analyze=False):
-    print(f'CDSS {wdid} {alias}')
+    if analyze:
+        print(f'CDSS {wdid} {alias} {water_year_info.year}')
     if water_year_info is not None:
         water_year_string = '_' + str(water_year_info.year)
         start_date = str(water_year_info.start_date)
@@ -402,7 +407,7 @@ def structures_divrec(logger, wdid:str, water_year_info, meas_type:str='divrecda
         logger.log_message(f'CDSS structure divrec request has no info: {wdid}')
         return None
 
-    file_name = cache_file_name(wdid, meas_type=meas_type, water_year_string=water_year_string, file_prefix=file_prefix)
+    file_name = cache_file_name(wdid, meas_type=meas_type, water_year_string=water_year_string, water_class_num=water_class_num, file_prefix=file_prefix)
     if file_name.exists() and not update:
         if meas_type == 'stagevolume':
             value_name='volume'
@@ -423,3 +428,53 @@ def structures_divrec(logger, wdid:str, water_year_info, meas_type:str='divrecda
     time_series = request_structures_divrec(logger, wdid, file_name, start_date=start_date, end_date=end_date,
                                              meas_type=meas_type, water_class_num=water_class_num, alias=alias, analyze=analyze)
     return time_series
+
+def daily_to_water_year(a, water_year_start_month=10):
+    """
+    Convert daily values to water year totals.
+
+    Water Year N:
+        - Starts on water_year_start_month 1 of year (N-1)
+        - Ends on water_year_start_month 1 of year N
+        - Labeled as year N (standard USGS convention)
+
+    Example: Water Year 2014 = Oct 1 2013 – Sep 30 2014
+    """
+    if len(a) == 0:
+        return np.zeros(0, dtype=[('dt', 'i4'), ('val', 'f8')])
+
+    sorted_a = np.sort(a, order='dt')
+
+    result = []
+    current_wy = None
+    total = 0.0
+    cfs_to_af = 1.983459
+
+    for o in sorted_a:
+        dt_obj = o['dt'].astype(object)  # datetime.date
+        val = o['val']
+
+        # === Calculate correct Water Year label ===
+        if dt_obj.month >= water_year_start_month:
+            wy_year = dt_obj.year + 1
+        else:
+            wy_year = dt_obj.year
+
+        wy_start = datetime.date(wy_year - 1, water_year_start_month, 1)
+
+        # New water year started
+        if current_wy is None or wy_year != current_wy:
+            if current_wy is not None and total > 0:
+                result.append((current_wy, total * cfs_to_af))
+
+            current_wy = wy_year
+            total = 0.0
+
+        if not np.isnan(val):
+            total += val
+
+    # Last water year
+    if current_wy is not None and total > 0:
+        result.append((current_wy, total * cfs_to_af))
+
+    return np.array(result, dtype=[('dt', 'i4'), ('val', 'f8')])
