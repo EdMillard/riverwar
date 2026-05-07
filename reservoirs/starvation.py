@@ -28,9 +28,9 @@ from typing import List, Optional
 class Starvation(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Starvation', headers, catalog_id = 2456, upstream=upstream)
+        super().__init__('Starvation', headers, catalog_id = 2452, upstream=upstream)
 
-        self.start_year = 1975
+        self.start_year = 1971
 
         # Elevations
         #
