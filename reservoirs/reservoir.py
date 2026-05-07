@@ -103,9 +103,18 @@ class Reservoir:
                 self.usbr_item_ids = json.load(f)
             else:
                 data = usbr_rise.load_catalog(Path(f'data/USBR_RISE/catalog/{self.catalog_id}'), f'{self.catalog_id}')
+                attributes = data.get('attributes', None)
+                record_title = attributes.get('recordTitle', None)
+                if record_title is not None:
+                    print(record_title)
                 relationships = data.get('relationships', None)
                 if relationships is not None:
-                    # location = relationships.get('location', None)
+                    location = relationships.get('location', None)
+                    if location is not None:
+                        location_name, states = usbr_rise.request_location(location)
+                        self.usbr_item_ids['location_name'] = location_name
+                        self.usbr_item_ids['states'] = states
+
                     catalog_items = relationships.get('catalogItems', None)
                     catalog_data = catalog_items.get('data', None)
                     for item in catalog_data:
@@ -120,6 +129,8 @@ class Reservoir:
                     f.close()
 
             if self.usbr_item_ids:
+                self.location_name = self.usbr_item_ids.get('location_name', '')
+                self.states = self.usbr_item_ids.get('states', None)
                 self.usbr_rise_elevation_ft_id = self.usbr_item_ids.get('elevation_ft', 0)
                 self.usbr_rise_storage_af_id = self.usbr_item_ids.get('storage_af', 0)
                 self.usbr_change_in_storage_af_id = self.usbr_item_ids.get('change_in_storage_af', 0)
@@ -131,6 +142,9 @@ class Reservoir:
                 self.usbr_rise_release_af_id = self.usbr_item_ids.get('release_total_af', 0)
                 self.usbr_rise_release_cfs_id = self.usbr_item_ids.get('release_total_cfs', 0)
                 self.usbr_rise_area_acres_id = self.usbr_item_ids.get('area_acres', 0)
+            else:
+                self.location_name = ''
+                self.states = []
 
         # DataFrames
         self.headers = headers
