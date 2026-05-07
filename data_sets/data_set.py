@@ -45,12 +45,17 @@ class DataSet:
             # date_format='%Y-%m-%d'  # if you have any date columns
         )
 
-    def from_csv(self, filename:str)->pd.DataFrame:
+    @staticmethod
+    def csv_path(filename: str) -> Path:
         filename = Registry.make_nodule_name(filename)
-        df:Optional[pd.DataFrame] = None
-        base_path:Path = Path('data/riverwar')
+        df: Optional[pd.DataFrame] = None
+        base_path: Path = Path('data/riverwar')
         path = Path(base_path) / filename
         path = path.with_suffix('.csv')
+        return path
+
+    def from_csv(self, filename:str)->pd.DataFrame:
+        path = DataSet.csv_path(filename)
         if path.exists():
             df = pd.read_csv(
                 path,
