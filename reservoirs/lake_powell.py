@@ -165,8 +165,8 @@ class LakePowell(Reservoir):
 
     def release_usgs(self, year)->float:
         usgs_gage = USGSGage(self.usgs_release_gage_id, self.water_year_info)
-        daily = usgs_gage.daily_discharge(water_year_info=self.water_year_info, alias=ub.GLEN_CANYON_WY)
-        return daily[-1]
+        daily_cfs = usgs_gage.daily_discharge(water_year_info=self.water_year_info, alias=ub.GLEN_CANYON_WY)
+        return daily_cfs[-1]
 
     def copy(self):
         return copy.copy(self)
