@@ -65,6 +65,11 @@ class USGSGageDataSet(DataSet):
             '10149400': 'Diamond Fork Above Red Hollow Near Thistle, UT',           # UT Above Strawberry Release
             '10149500': 'Diamond Fork Below Red Hollow Near Thistle, UT',           # UT Below Strawberry Release
 
+            # Jordan River
+            # Spanish Fork River / Diamond Fork (including Central Utah Project transmountain water from Strawberry Reservoir)
+            # Utah Lake, Provo River, Urban runoff from the Salt Lake Valley
+            '10171000': 'Jordan River at 1700 South, Salt Lake City, UT',            # UT
+
             # CO TMD Tunnels/Rivers
             '09013000': 'Alva B. Adams Tunnel at East Portal, near Estes Park, CO', # CO, Northern Water
             '09024000': 'Fraser River at Winter Park, CO',                          # CO, Denver Water
@@ -114,6 +119,10 @@ class USGSGageDataSet(DataSet):
             'Duchesne Tunnel Near Kamas, UT': '09277500',                           # UT, Wasatch Front
             'Diamond Fork Above Red Hollow Near Thistle, UT': '10149400',           # UT, Above Strawberry Release
             'Diamond Fork Below Red Hollow Near Thistle, UT': '10149500',           # UT, Below Strawberry Release
+            # Jordan River
+            # Spanish Fork River / Diamond Fork (including Central Utah Project transmountain water from Strawberry Reservoir)
+            # Utah Lake, Provo River, Urban runoff from the Salt Lake Valley
+            'Jordan River at 1700 South, Salt Lake City, UT':  '10171000',         # UT
 
             # CO TMD Tunnels/Rivers
             'Alva B. Adams Tunnel at East Portal, near Estes Park, CO': '09013000', # CO, Northern Water
