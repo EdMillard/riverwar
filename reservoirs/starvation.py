@@ -25,10 +25,10 @@ from reservoirs.reservoir import Reservoir
 import colorado.ub as ub
 from typing import List, Optional
 
-class Strawberry(Reservoir):
+class Starvation(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Strawberry', headers, catalog_id = 2456, upstream=upstream)
+        super().__init__('Starvation', headers, catalog_id = 2456, upstream=upstream)
 
         self.start_year = 1975
 
