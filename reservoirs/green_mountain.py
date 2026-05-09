@@ -22,21 +22,19 @@ SOFTWARE.
 from reservoirs.reservoir import Reservoir
 from typing import List, Optional
 
-class Strawberry(Reservoir):
+class GreenMountain(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Strawberry', headers, catalog_id = 2456, upstream=upstream)
-
-        self.start_year = 1975
+        super().__init__('Green Mountain',headers,  catalog_id=2225, upstream=upstream)
+        self.start_year = 1943
 
         # Elevations
         #
-        # Must be called first
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 1_106_500
-        self.full_af = 7_612
+        self.full_feet = 154_000
+        self.full_af = 7_950
 
         # Critical
         self.power_head_target_feet = 0
@@ -44,6 +42,7 @@ class Strawberry(Reservoir):
 
         self.power_head_min_feet = 0
         self.power_head_min_af = 0
+
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0

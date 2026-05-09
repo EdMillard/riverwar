@@ -30,10 +30,10 @@ import pandas as pd
 from api import df_utils
 
 
-class LakeHeron(Reservoir):
+class Heron(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Lake Heron',headers,  catalog_id=2334, upstream=upstream) # 4503
+        super().__init__('Heron',headers,  catalog_id=2334, upstream=upstream) # 4503
         self.start_year = 1971
         self.end_year = 2026
 
@@ -75,20 +75,10 @@ class LakeHeron(Reservoir):
         return self.df_annual
 
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
-        # self.load_date(report_path, start_date, current_date, end_date)
+        super().load_data(report_path, start_date, current_date, end_date)
 
         if self.usbr_rise_san_juan_chama_average_inflow_af_id:
             sheet.usbr_annuals(self.df_annual, self.usbr_rise_release_af_id, self.start_year, self.end_year,
                                month=all_b.WY,
                                title=ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL, divisor=1)
             print('san juan chama')
-        # Current
-        #
-        self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
-        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.BLUE_MESA_WY)
-
-        self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.BLUE_MESA_EVAPORATION_WY)
-        self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.BLUE_MESA_INFLOW_CFS)
-        # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.BLUE_MESA_INFLOW)
-        self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.BLUE_MESA_RELEASE_CFS)
-        # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.BLUE_MESA_RELEASE)

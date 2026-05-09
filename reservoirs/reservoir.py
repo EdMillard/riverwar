@@ -130,6 +130,8 @@ class Reservoir:
 
             if self.usbr_item_ids:
                 self.location_name = self.usbr_item_ids.get('location_name', '')
+                if not self.location_name.startswith(self.name):
+                    print(f'Reservoir nane mismatch {self.name} {self.location_name}')
                 self.states = self.usbr_item_ids.get('states', None)
                 self.usbr_rise_elevation_ft_id = self.usbr_item_ids.get('elevation_ft', 0)
                 self.usbr_rise_storage_af_id = self.usbr_item_ids.get('storage_af', 0)
@@ -244,13 +246,18 @@ class Reservoir:
         if report_path is not None:
             if self.report_path != report_path:
                 self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
-                start_str = self.df_24_month['Date'].iloc[0]
-                end_str = self.df_24_month['Date'].iloc[-1]
-                self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
-                end_date = pd.to_datetime(end_str, format="%b %Y").date()
-                self.report_end_date = Reservoir.get_end_of_month(end_date)
-                self.df_daily = df_utils.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
-                self.report_path = report_path
+                if self.df_24_month is not None:
+                    start_str = self.df_24_month['Date'].iloc[0]
+                    end_str = self.df_24_month['Date'].iloc[-1]
+                    self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
+                    end_date = pd.to_datetime(end_str, format="%b %Y").date()
+                    self.report_end_date = Reservoir.get_end_of_month(end_date)
+                    self.df_daily = df_utils.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
+                    self.report_path = report_path
+                else:
+                    self.df_daily = df_utils.create_daily_df(self.start_date, self.end_date, self.headers)
+                    self.report_start_date = self.start_date
+                    self.report_end_date = self.end_date
         else:
             self.df_daily = df_utils.create_daily_df(self.start_date, self.end_date, self.headers)
             self.report_start_date = self.start_date
@@ -315,8 +322,18 @@ class Reservoir:
                 self.usbr_rise_load_daily(self.usbr_rise_inflow_af_id, all_b.INFLOW, start_year=start_year, end_year=end_year)
         return self.df_daily
 
-    def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
-        pass
+    def load_data(self, report_path:Optional[Path], start_date:date, current_date:date, end_date:date):
+        self.load_date(report_path, start_date, current_date, end_date)
+        if self.usbr_rise_storage_af_id:
+            self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id,  all_b.STORAGE)
+        if self.usbr_rise_elevation_ft_id:
+            self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, all_b.ELEVATION)
+        # if self.usbr_rise_release_cfs_id:
+        #     self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, all_b.RELEASE)
+        # if self.usbr_rise_evap_af_id:
+        #     self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, all_b.EVAPORATION)
+        # if self.usbr_rise_inflow_af_id:
+        #     pass
 
     def get_projection(self, df_monthly:pd.DataFrame, column_name:str, monthly_column_name:str ='End Of Month Storage'):
         # initial_value = self.df_daily[ub.POWELL_WY].iloc[0]
@@ -823,7 +840,7 @@ class Reservoir:
         Returns:
             Sum of the column between the dates (float)
         """
-        if df_monthly.empty:
+        if df_monthly is None or df_monthly.empty:
             return 0.0
 
         # Auto-detect date column if not provided
@@ -867,10 +884,10 @@ class Reservoir:
         if report_path is not None:
             res_peth = name.replace(' ', '_') + '.csv'
             path = report_path / res_peth
-            df_24_month, df_24_wy, units = Reservoir.read_usbr_24month_table(path)
-            return df_24_month, df_24_wy
-        else:
-            return None, None
+            if path.exists():
+                df_24_month, df_24_wy, units = Reservoir.read_usbr_24month_table(path)
+                return df_24_month, df_24_wy
+        return None, None
 
     def get_24_month_inflow(self, df:pd.DataFrame, inflow_name:str, side:str|None=None)\
             -> List[Tuple[str, float, str]]:

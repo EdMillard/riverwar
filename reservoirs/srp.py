@@ -126,7 +126,10 @@ class SRP(SRPReservoir):
                 SRPReservoir.to_srp_csv(self.name, self.df_daily)
 
         for name, values in srp_data.items():
-            print(f"  ✓ {name}: {values['current_storage_af']:,} af @ {values['current_elevation_ft']} ft")
+            try:
+                print(f"  ✓ {name}: {values['current_storage_af']:,} af @ {values['current_elevation_ft']} ft")
+            except Exception as e:
+                print(f'Exception on print {e}')
             for reservoir in self.reservoirs:
                 if name.startswith(reservoir.name):
                     reservoir.receive_data(reservoir.name, reservoir.df_daily, now_mt, values)

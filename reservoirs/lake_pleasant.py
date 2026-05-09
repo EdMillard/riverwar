@@ -275,4 +275,4 @@ class LakePleasant(Reservoir):
                     driver.quit()
                 except:
                     pass
-            return False, None
+            return True, None
