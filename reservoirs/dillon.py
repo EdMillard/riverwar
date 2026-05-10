@@ -59,10 +59,10 @@ class Dillon(Reservoir):
                                                          water_year_info=self.water_year_info, alias='DILLON CAPACITY')
         self.active_capacity_af = time_series[-1][1]
 
-        time_series = cdss.telemetry_station_time_series(None, 'DILRESCO', 'GAGE_HT',
-                                                         water_year_info=self.water_year_info, alias='DILLON ELEVATION')
-        if time_series is not None:
-            self.elevation_feet = time_series[-1][1]
+        # time_series = cdss.telemetry_station_time_series(None, 'DILRESCO', 'GAGE_HT',
+        #                                                 water_year_info=self.water_year_info, alias='DILLON ELEVATION')
+        # if time_series is not None:
+        #     self.elevation_feet = time_series[-1][1]
         # time_series = cdss.telemetry_station_time_series(logger, 'DILRESCO', 'DISCHRG',
         #                                                 water_year_info=water_year_info, alias='DILLON DISCHARGE')
         pass
