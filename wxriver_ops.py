@@ -23,7 +23,7 @@ SOFTWARE.
 import wx
 import matplotlib
 import os
-from chart.chart_frame import NotebookFrame
+from graphs.chart_frame import NotebookFrame
 from colorado.river_war import RiverWar
 from data_sets.data_set import DataSetRegistry
 from graphs.flow_chart_frame import FlowChartFrame
