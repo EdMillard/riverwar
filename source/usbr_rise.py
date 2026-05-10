@@ -249,17 +249,20 @@ def request_accum():
     url = 'https://www.usbr.gov/lc/region/g4000/riverops/webreports/hourlyweb.json'
     # url =  'https://www.usbr.gov/lc/region/g4000/riverops/webreports/accumweb.json'
     # https://www.usbr.gov/lc/region/g4000/hourly/levels.html
-    r = requests.get(url, timeout=(30, 60))
+    headers = {"Accept": "application/vnd.api+json"}
+    r = request_get(url)
     if r.status_code == 200:
         pass
+    else:
+        print('request accum failed')
 
 def request_hdb(sdi:int, start_date:str, end_date:str)->float:
     total:float = 0
 
     j = 'json'
     url = f'https://www.usbr.gov/pn-bin/hdb/hdb.pl?svr=lchdb&sdi={sdi}&tstp=DY&t1={start_date}&t2={end_date}&table=R&mrid=0&format={j}'
-    r = requests.get(url, timeout=(30, 60))
-    if r.status_code == 200:
+    r = request_get(url)
+    if r and r.status_code == 200:
         content = json.loads(r.content.decode('utf-8'))
         series = content.get('Series', None)
         if series is not None:
@@ -275,7 +278,9 @@ def request_hdb(sdi:int, start_date:str, end_date:str)->float:
                         except ValueError as e:
                             print(f'request_hdb {v} {e}')
         return total
-
+    else:
+        print('request_hdb failed')
+        return 0
 
 
 def request(item_id, file_name, start_date='', end_date='', csv=False):
@@ -305,8 +310,8 @@ def request(item_id, file_name, start_date='', end_date='', csv=False):
     # url += '&period='
 
     print(f'USBR RISE:  {url}')
-    r = requests.get(url)
-    if r.status_code == 200:
+    r = request_get(url)
+    if r and r.status_code == 200:
         try:
             f = file_name.open(mode='w')
             f.write(r.content.decode("utf-8"))
@@ -359,8 +364,8 @@ def request_catalog(catalog_path, id, theme_id=0)->Dict:
             url += theme_id_str
 
         print(f'USBR RISE catalog:  {url}')
-        r = requests.get(url)
-        if r.status_code == 200:
+        r = request_get(url)
+        if r and r.status_code == 200:
             try:
                 # catalog_page_path = catalog_path.joinpath('page_' + str(page_no) + '.json')
                 # f = catalog_page_path.open(mode='w')
@@ -405,6 +410,19 @@ def load_catalog_items(catalog_record, prefix=''):
         print("usbr request catalog item key error: ")
         return {}
 
+def request_get(url:str):
+    headers = {"Accept": "application/vnd.api+json"}
+    retries = 0
+    max_retries = 5
+    while retries < max_retries:
+        try:
+            r = requests.get(url, headers=headers, timeout=5)
+            return r
+        except requests.exceptions.ConnectTimeout as e:
+            print(f'USBR RISE request timeout error, retry {retries} of {max_retries}: ')
+            retries += 1
+    return {}
+
 def request_location(location:dict)->Tuple[str, List[str]]:
     location_name:str = ""
     states:List[str] = []
@@ -415,8 +433,8 @@ def request_location(location:dict)->Tuple[str, List[str]]:
             url = 'https://data.usbr.gov'
             url += id
             print(f'USBR RISE location:  {url}')
-            r = requests.get(url)
-            if r.status_code == 200:
+            r = request_get(url)
+            if r and r.status_code == 200:
                 location_info = json.loads(r.content.decode("utf-8"))
                 data:Optional[dict] = location_info.get('data', None)
                 if data is not None:
@@ -436,6 +454,8 @@ def request_location(location:dict)->Tuple[str, List[str]]:
                                     parsed = urlparse(state_url)
                                     state = parsed.path.strip('/').split('/')[-1]
                                     states.append(state)
+            else:
+                print('request_location failed')
     return location_name, states
 
 def request_catalog_item(catalog_item_id_str)->Tuple[str, int]:
@@ -444,8 +464,9 @@ def request_catalog_item(catalog_item_id_str)->Tuple[str, int]:
     url += catalog_item_id_str
 
     print(f'USBR RISE catalog item:  {url}')
-    r = requests.get(url)
-    if r.status_code == 200:
+
+    r = request_get(url)
+    if r and r.status_code == 200:
         try:
             catalog_item = json.loads(r.content.decode("utf-8"))
             data = catalog_item['data']
