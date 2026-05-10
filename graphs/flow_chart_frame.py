@@ -21,7 +21,7 @@ SOFTWARE.
 """
 import wx
 from chart.multi_bar_chart import MultiBarChart
-from chart.chart_frame import ChartFrame, NotebookFrame
+from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
 import colorado.lb as lb
 import colorado.ub as ub

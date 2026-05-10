@@ -25,7 +25,7 @@ from dateutil.utils import today
 from reservoirs.reservoir import Reservoir
 from chart.line_chart import LineChart
 from chart.multi_bar_chart import MultiBarChart
-from chart.chart_frame import ChartFrame, NotebookFrame
+from graphs.chart_frame import ChartFrame, NotebookFrame
 import colorado.allb as all_b
 
 class ReservoirChartFrame(ChartFrame):

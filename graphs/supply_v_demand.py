@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import wx
-from chart.chart_frame import ChartFrame, NotebookFrame
+from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
 from chart.multi_bar_chart import MultiBarChart
 import colorado.lb as lb
@@ -39,6 +39,9 @@ class SupplyVDemand(ChartFrame):
         self.timer = None
         self.animation_interval = 1000
         self.version = 0.3
+        self.play_btn = None
+        self.year_slider = None
+        self.toolbar_status = None
 
         self.demand_pie_chart:Optional[PieChart] = None
         self.multi_bar_chart:Optional[MultiBarChart] = None
@@ -97,6 +100,9 @@ class SupplyVDemand(ChartFrame):
         # ====================== UPPER BASIN ======================
         ub_cul = river_war.dataset.get('Upper Basin Cul')
         df_ub_cul = ub_cul.df
+
+        ub_users = river_war.dataset.get('Upper Basin Users')
+        df_ub_users = ub_users.df
 
         # ====================== LAKE POWELL ======================
         powell = river_war.reservoir.get('Lake Powell')
@@ -179,12 +185,20 @@ class SupplyVDemand(ChartFrame):
             ("Total", (df_lb_cul, lb.LB_TRIBUTARY_CUL))
         ])
 
+        # AZ CAP/Aquifer LTSC
         ltsc_df = az_ltsc_data.df
         df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_MAINSTEM, [(df_lb_cul, lb.AZ_CRIT_CU), (df_lb_cul, lb.WELLTON_MOHAWK_CU)], result_column=lb.AZ_MAINSTEM)
         df_utils.subtract_columns_across_dfs(df_lb_cul, lb.AZ_CAP, [(ltsc_df, lb.AZ_LTSC_STORED)], result_column=lb.AZ_CAP)
+
+        # CA Mainstem
         df_utils.subtract_columns_across_dfs(df_lb_cul, lb.CA_MAINSTEM, [(df_lb_cul, lb.PALO_VERDE_CU)], result_column=lb.CA_MAINSTEM)
+
+        # CO TMD/West Slope
+        df_utils.subtract_columns_across_dfs(df_ub_cul, ub.CU_CO, [(df_ub_users, ub.CO_NORTHERN_WATER)], result_column=ub.CO_WEST_SLOPE)
+
         pie_wedges = [
-            (df_ub_cul, ub.CU_CO, '#6060ff'),
+            (df_ub_cul, ub.CO_WEST_SLOPE, '#4040ff'),
+            (df_ub_users, ub.CO_NORTHERN_WATER, '6060ff'),
             (df_ub_cul, ub.CU_UT, '#8080ff'),
             (df_ub_cul, ub.CU_WY, '#a0a0ff'),
             (df_ub_cul, ub.CU_NM, '#c0c0ff'),

@@ -21,8 +21,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # from colorado.graph_inflow_outflow import InflowOutflowChart
-from colorado.graph_reservoirs import ReservoirChart
-from chart.chart_frame import ChartFrame, NotebookFrame
+from graphs.graph_reservoirs import ReservoirChart
+from graphs.chart_frame import ChartFrame, NotebookFrame
 import colorado.lb as lb
 from reservoirs.reservoir import Reservoir
 
@@ -44,19 +44,23 @@ from reservoirs.lake_granby import LakeGranby
 from reservoirs.mcphee import Mcphee
 from reservoirs.lake_nighthorse import LakeNighthorse
 from reservoirs.fontenelle import Fontenelle
-from reservoirs.lemon import Lemon
 from reservoirs.ruedi import Ruedi
 from reservoirs.taylor_park import TaylorPark
 from reservoirs.vallecito import Vallecito
 from reservoirs.starvation import Starvation
 from reservoirs.strawberry import Strawberry
-from reservoirs.grand_lake import GrandLake
-from reservoirs.shadow_mountain import ShadowMountain
-from reservoirs.heron import Heron
+from reservoirs.dillon import Dillon
+# from reservoirs.gross import Gross
+# from reservoirs.groundhog import Groundhog
+# from reservoirs.lemon import Lemon
+# from reservoirs.grand_lake import GrandLake
+# from reservoirs.shadow_mountain import ShadowMountain
+# from reservoirs.heron import Heron
 
 class ReservoirsReality(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
+
 
         flaming_gorge = FlamingGorge()
         navajo = Navajo()
@@ -78,6 +82,7 @@ class ReservoirsReality(ChartFrame):
             lake_mead, lake_powell, flaming_gorge, navajo, strawberry
         ]
 
+        dillon = Dillon()
         fontenelle = Fontenelle(upstream=[])
         lake_granby = LakeGranby(upstream=[])
         mcphee = Mcphee(upstream=[])
@@ -87,17 +92,19 @@ class ReservoirsReality(ChartFrame):
         green_mountain = GreenMountain(upstream=[])
         starvation = Starvation(upstream=[])
         ruedi = Ruedi(upstream=[])
+        # gross = Gross()
+        # groundhog = Groundhog()
         # grand_lake = GrandLake(upstream=[])
         # lemon = Lemon(upstream=[])
         # shadow_mountain = ShadowMountain(upstream=[])
         # heron = Heron(upstream=[])
 
         self.ub_reservoirs = [
-            blue_mesa, lake_granby,
+            blue_mesa, lake_granby, dillon,
             fontenelle,
             vallecito, taylor_park,  mcphee, lake_nighthorse, green_mountain,  ruedi,
             starvation,
-            # grand_lake, lemon, shadow_mountain, heron,
+            # grand_lake, lemon, shadow_mountain, heron, groundhog, gross
         ]
         reservoir_lists = [self.reservoirs, self.ub_reservoirs]
         super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name='Reservoir Reality')

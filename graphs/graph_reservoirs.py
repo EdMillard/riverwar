@@ -139,7 +139,7 @@ class ReservoirChart(BarChart):
                     for item in crit_points:
                         if isinstance(item, (list, tuple)) and len(item) >= 3:
                             cap_maf = item[2] / 1_000_000
-                            if cap_maf <= reserved_bottom and cap_maf > dash_to_y:
+                            if reserved_bottom >= cap_maf > dash_to_y:
                                 dash_to_y = cap_maf
 
                 # === Dashed vertical line + annotation ===

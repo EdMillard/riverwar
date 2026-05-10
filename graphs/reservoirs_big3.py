@@ -25,7 +25,7 @@ from datetime import datetime
 import wx
 from datetime import date
 import api.df_utils as df_utils
-from chart.chart_frame import ChartFrame, NotebookFrame
+from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
 import colorado.lb as lb
 import colorado.ub as ub
@@ -54,7 +54,7 @@ class ReservoirsBig3(ChartFrame):
             lake_powell,
             lake_mead,
         ]
-        super().__init__(notebook_frame, reservoirs=reservoirs, reports=reports, page_name='APR26 24-Month')
+        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name='APR26 24-Month')
 
     def load_charts(self):
         powell_df = None
@@ -63,37 +63,40 @@ class ReservoirsBig3(ChartFrame):
         end_powell_mod_date = date(2026, 9, 30)
         end_fg_mod_date = date(2027, 4, 1)
         time_series = []
-        for reservoir in self.reservoirs:
-            if reservoir.name == 'Lake Powell':
-                #  Apply 1.5 MAF cut in release to Powell storage level
-                powell_df = reservoir.df_daily
-                df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 1_480_000)
-                # df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 0)
-                reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + powell_df['Cut Powell Release']
-                reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + fg_df['Flaming Gorge DROA']
+        for reservoirs in self.reservoir_lists:
+            for reservoir in reservoirs:
+                if reservoir.name == 'Lake Powell':
+                    #  Apply 1.5 MAF cut in release to Powell storage level
+                    powell_df = reservoir.df_daily
+                    df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 1_480_000)
+                    # df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 0)
+                    reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + powell_df['Cut Powell Release']
+                    reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + fg_df['Flaming Gorge DROA']
 
-                time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
-                time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
-                prev_path = previous_month_path(Path(reservoir.report_path))
-                df_24_month_prev, df_24_wy_prev = reservoir.load_24_month(prev_path, reservoir.name)
-                reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
-                # time_series.append((reservoir.df_daily, 'Powell Most MAR26', '#6060ff'))
-                df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
-            elif reservoir.name == 'Lake Mead':
-                reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
+                    time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
+                    time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
+                    prev_path = previous_month_path(Path(reservoir.report_path))
+                    df_24_month_prev, df_24_wy_prev = reservoir.load_24_month(prev_path, reservoir.name)
+                    reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
+                    # time_series.append((reservoir.df_daily, 'Powell Most MAR26', '#6060ff'))
+                    df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
+                elif reservoir.name == 'Lake Mead':
+                    reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
 
-                time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
-                time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
-            elif reservoir.name == 'Flaming Gorge':
-                fg_df = reservoir.df_daily
-                df_utils.add_cumulative_daily_delta(fg_df, 'Flaming Gorge DROA', start_mod_date, end_fg_mod_date, 1_000_000)
-                reservoir.df_daily[ub.FLAMING_GORGE_MOST] = reservoir.df_daily[ub.FLAMING_GORGE_MOST] - fg_df['Flaming Gorge DROA']
-                time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050'))
-                time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
+                    time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
+                    time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
+                elif reservoir.name == 'Flaming Gorge':
+                    fg_df = reservoir.df_daily
+                    df_utils.add_cumulative_daily_delta(fg_df, 'Flaming Gorge DROA', start_mod_date, end_fg_mod_date, 1_000_000)
+                    reservoir.df_daily[ub.FLAMING_GORGE_MOST] = reservoir.df_daily[ub.FLAMING_GORGE_MOST] - fg_df['Flaming Gorge DROA']
+                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050'))
+                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
+
         line_chart = LineChart(
-            time_series, title='Reservoir Storage Above Critical Elevation',
+            time_series,
+            title='Reservoir Storage Above Critical Elevation',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
-            show_x_labels = False
+            show_x_labels = True
         )
         line_chart.set_end_date(date(2027, 5, 1))
         self.charts.append(line_chart)

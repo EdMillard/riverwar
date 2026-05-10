@@ -25,7 +25,7 @@ from datetime import datetime
 import wx
 from datetime import date
 import api.df_utils as df_utils
-from chart.chart_frame import ChartFrame, NotebookFrame
+from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
 import colorado.lb as lb
 import colorado.ub as ub
