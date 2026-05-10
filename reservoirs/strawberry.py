@@ -35,8 +35,8 @@ class Strawberry(Reservoir):
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 1_106_500
-        self.full_af = 7_612
+        self.full_feet = 7_612
+        self.full_af = 1_106_500
 
         # Critical
         self.power_head_target_feet = 0

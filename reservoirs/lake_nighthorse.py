@@ -26,15 +26,15 @@ class LakeNighthorse(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Lake Nighthorse',headers,  catalog_id=2361, upstream=upstream)
-        self.start_year = 2011
+        self.start_year = 2009
 
         # Elevations
         #
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 0
-        self.full_af = 0
+        self.full_feet = 6_882
+        self.full_af = 123_541
 
         # Critical
         self.power_head_target_feet = 0

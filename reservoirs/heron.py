@@ -78,7 +78,8 @@ class Heron(Reservoir):
         super().load_data(report_path, start_date, current_date, end_date)
 
         if self.usbr_rise_san_juan_chama_average_inflow_af_id:
-            sheet.usbr_annuals(self.df_annual, self.usbr_rise_release_af_id, self.start_year, self.end_year,
-                               month=all_b.WY,
-                               title=ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL, divisor=1)
-            print('san juan chama')
+            if self.df_annual is not None:
+                sheet.usbr_annuals(self.df_annual, self.usbr_rise_san_juan_chama_average_inflow_af_id, 2009, self.end_year,
+                                   month=all_b.WY,
+                                   title=ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL, divisor=1)
+                print('san juan chama')

@@ -34,7 +34,6 @@ from typing import List, Optional, Literal
 
 class Chart:
     def __init__(self,
-                 reservoirs: List[Reservoir],
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
@@ -47,7 +46,6 @@ class Chart:
         self.canvas = None
         self.panel = None
 
-        self.reservoirs = reservoirs
         self.report_name = ''
 
         # Dates
@@ -172,12 +170,12 @@ class Chart:
         return date(2026, month, 1).strftime("%b")
 class BarChart(Chart):
     def __init__(self,
-                 reservoirs: List[Reservoir],
                  start_date: date | None = None,
                  current_date: date | None = None,
-                 end_date: date | None = None
+                 end_date: date | None = None,
+                 percentage: float = 0.0,
                  ):
-        super().__init__(reservoirs, start_date, current_date, end_date)
+        super().__init__(start_date, current_date, end_date, percentage=percentage)
 
     def final_layout(self, ax, title:str, names:List[str], x_pos:np.ndarray):
         ax.set_ylabel('Million Acre-Feet', fontsize=11.5, fontweight='bold')

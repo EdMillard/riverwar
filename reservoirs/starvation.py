@@ -42,8 +42,8 @@ class Starvation(Reservoir):
         self.power_head_target_feet = 0
         self.power_head_target_af = 0
 
-        self.power_head_min_feet = 5_624.8
-        self.power_head_min_af = 14_658
+        self.power_head_min_feet = 0
+        self.power_head_min_af = 0
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0

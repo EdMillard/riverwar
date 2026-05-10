@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from pathlib import Path
 import wx
-from typing import List
+from typing import List, Tuple
 from reservoirs.reservoir import Reservoir
 import colorado.lb as lb
 from chart.chart import BarChart
@@ -46,23 +46,19 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 
 # ==================== RESERVOIR CHART ====================
 class ReservoirChart(BarChart):
-    def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None):
-        super().__init__(reservoirs, start_date, current_date, end_date)
+    def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None,
+                 power_head_zones:List[Tuple]=None, reserved_names:List[Tuple]=None, aquifer_zones:List[Tuple]=None,
+                 y_max:float=14.0, percentage:float = 0.0):
+        super().__init__(start_date, current_date, end_date, percentage=percentage)
         self.version = 0.3
-        self.power_head_zones = [
-            ('#ffffff', 'Available Capacity'),
-            (Reservoir.high_power_pool_color, 'Normal Power Head'),
-            (Reservoir.low_power_pool_color, 'Low Power Head'),
-            (Reservoir.non_power_pool_color, 'Limited Access')
-        ]
+        self.reservoirs = reservoirs
 
-        self.reserved_zones = [
-            (lb.AZ_COLOR, 'AZ'),
-            (lb.NV_COLOR, 'NV'),
-            (lb.CA_COLOR, 'CA')
-        ]
+        self.power_head_zones = power_head_zones
+        self.aquifer_zones = aquifer_zones
+        self.reserved_zones = reserved_names
+
         self.height_inch = 6.5
-        self.y_max = 14.0
+        self.y_max = y_max
 
     def create_figure(self, width_inch=None, height_inch=None):
         if width_inch is not None and width_inch > 0:
@@ -78,9 +74,12 @@ class ReservoirChart(BarChart):
 
         self.create_reservoir_chart(ax, title)
 
-        # Tighter top margin + title moved up
         fig.tight_layout(pad=0.8)
-        fig.subplots_adjust(left=0.06, right=0.97, bottom=0.12, top=0.96)   # ← Higher title
+        if self.percentage < 0.2 and self.percentage != 0:
+            bottom_margin = 0.16
+        else:
+            bottom_margin = 0.04
+        fig.subplots_adjust(left=0.06, right=0.97, bottom=bottom_margin, top=0.96)
 
         self.fig = fig
         return fig
@@ -89,7 +88,13 @@ class ReservoirChart(BarChart):
         if not self.reservoirs:
             raise ValueError("Reservoir list cannot be empty")
 
-        active_reservoirs = [r for r in self.reservoirs if getattr(r, 'active_capacity_af', 0) > 0]
+        active_reservoirs = []
+        for r in self.reservoirs:
+            if getattr(r, 'active_capacity_af', 0) > 0:
+                active_reservoirs.append(r)
+            else:
+                print(f"reservoir inactive {r.name}")
+
         reservoirs = active_reservoirs
         names = [r.name for r in reservoirs]
         current_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
@@ -234,6 +239,8 @@ class ReservoirChart(BarChart):
         teacup_linewidth = 1.5
 
         for i, r in enumerate(reservoirs):
+            if r.name == 'Strawberry':
+                pass
             curr_af = getattr(r, 'active_capacity_af', 0)
             full_af = getattr(r, 'full_af', None)
             if full_af is None or full_af <= curr_af or curr_af <= 0:
@@ -407,14 +414,15 @@ class ReservoirChart(BarChart):
                             fontsize=9, title_fontsize=10, framealpha=0.95)
             ax.add_artist(leg)
 
-        aquifer_patches = [
-            mpatches.Patch(color=lb.TUCSON_COLOR, label='Tucson AMA'),
-            mpatches.Patch(color=lb.PINAL_COLOR, label='Pinal AMA'),
-            mpatches.Patch(color=lb.PHX_COLOR, label='Phoenix AMA')
-        ]
-        ax.legend(handles=aquifer_patches, title="AZ Aquifer LTSC 2023 EOY",
-                  loc='upper left', bbox_to_anchor=(0.15, 1.0),
-                  fontsize=9, title_fontsize=10, framealpha=0.95)
+        if self.aquifer_zones:
+            aquifer_patches = [
+                mpatches.Patch(color=lb.TUCSON_COLOR, label='Tucson AMA'),
+                mpatches.Patch(color=lb.PINAL_COLOR, label='Pinal AMA'),
+                mpatches.Patch(color=lb.PHX_COLOR, label='Phoenix AMA')
+            ]
+            ax.legend(handles=aquifer_patches, title="AZ Aquifer LTSC 2023 EOY",
+                      loc='upper left', bbox_to_anchor=(0.15, 1.0),
+                      fontsize=9, title_fontsize=10, framealpha=0.95)
 
         ax.set_xlim(-0.65, len(names) - 0.35)
 

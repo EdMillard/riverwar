@@ -82,12 +82,12 @@ class NotebookFrame(wx.Frame):
 class ChartFrame(wx.Panel):
     def __init__(self,
                  notebook_frame: NotebookFrame,
-                 reservoirs: Optional[List[Reservoir]] = None,
+                 reservoir_lists: Optional[List[List[Reservoir]]] = None,
                  reports: List[str] | None = None,
                  page_name: str = "Chart"
     ):
         self.notebook_frame = notebook_frame
-        self.reservoirs: List[Reservoir] = reservoirs or []
+        self.reservoir_lists:List[List[Reservoir]] = reservoir_lists or []
         self.reports: List[str] = reports or []
         self.report_path: str = ''
 
@@ -118,7 +118,7 @@ class ChartFrame(wx.Panel):
         self.SetSizer(self.main_sizer)
 
         if self.reports:
-            self.toolbar = self._init_toolbar(self.reservoirs, self.reports)
+            self.toolbar = self._init_toolbar(self.reports)
             self.main_sizer.Add(self.toolbar, 0, wx.EXPAND | wx.ALL, border=2)
         else:
             self.create_toolbar()
@@ -130,7 +130,7 @@ class ChartFrame(wx.Panel):
         self.chart_panel.Bind(wx.EVT_SIZE, self.on_chart_panel_resize)
 
         self.current_time_from_usbr = None
-        if self.reservoirs:
+        if self.reservoir_lists:
             self.current_time_from_usbr = self.load_reservoirs()
 
         self.load_charts()
@@ -222,13 +222,13 @@ class ChartFrame(wx.Panel):
         self.do_manual_chart_layout()
         self.Refresh()
 
-    def _init_toolbar(self, reservoirs: List[Reservoir], reports: List[str]) -> wx.Panel:
+    def _init_toolbar(self, reports: List[str]) -> wx.Panel:
         top_toolbar = wx.Panel(self, style=wx.BORDER_NONE)
         top_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))
 
         tb_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.status_text = wx.StaticText(top_toolbar, label=f"Displaying {len(reservoirs)} reservoirs")
+        self.status_text = wx.StaticText(top_toolbar, label=f"Displaying reservoirs")
         tb_sizer.Add(self.status_text, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, border=0)
         tb_sizer.AddStretchSpacer(1)
 
@@ -359,10 +359,11 @@ class ChartFrame(wx.Panel):
         current = self.current_nav.current_date
         end = self.end_nav.current_date
 
-        for reservoir in self.reservoirs:
-            reservoir.load_data(Path(self.report_path), start, current, end)
-            if reservoir.name == 'Lake Powell':
-                date_time_as_date = pd.Timestamp(reservoir.date_time)
+        for reservoir_list in self.reservoir_lists:
+            for reservoir in reservoir_list:
+                reservoir.load_data(Path(self.report_path), start, current, end)
+                if reservoir.name == 'Lake Powell':
+                    date_time_as_date = pd.Timestamp(reservoir.date_time)
         return date_time_as_date
 
     def load_charts(self):

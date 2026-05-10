@@ -33,8 +33,8 @@ class GreenMountain(Reservoir):
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 154_000
-        self.full_af = 7_950
+        self.full_feet = 7_950
+        self.full_af = 153_000
 
         # Critical
         self.power_head_target_feet = 0

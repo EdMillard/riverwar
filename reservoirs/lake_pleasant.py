@@ -61,15 +61,17 @@ class LakePleasant(Reservoir):
         self.dead_pool_af = 0
         # Bottom 5586.00
 
-        self.full_feet =  0
-        self.full_af = 0
+        # Maximum conservation storage: ~812,100 acre-feet at elevation 1,702 feet (surface area ~9,970 acres).
+        # This is the primary "full" operational target for conservation/storage purposes
+        self.full_feet =  1_725
+        self.full_af = 1_108_600
 
         # Critical
         self.power_head_target_feet = 0
         self.power_head_target_af = 0
 
-        self.power_head_min_feet = 0
-        self.power_head_min_af = 0
+        self.power_head_min_feet =  1_552
+        self.power_head_min_af = 40_500
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0

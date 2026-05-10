@@ -33,8 +33,8 @@ class Ruedi(Reservoir):
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 0
-        self.full_af = 0
+        self.full_feet = 7_766
+        self.full_af = 102_373
 
         # Critical
         self.power_head_target_feet = 0

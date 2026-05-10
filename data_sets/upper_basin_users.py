@@ -29,7 +29,7 @@ import pandas as pd
 from typing import Optional
 from reservoirs.strawberry import Strawberry
 from reservoirs.starvation import Starvation
-from reservoirs.lake_heron import LakeHeron
+from reservoirs.heron import Heron
 from sheet import sheet
 from source import cdss
 from source.water_year_info import WaterYearInfo
@@ -65,13 +65,13 @@ class UpperBasinUsersDataSet(DataSet):
 
         df: pd.DataFrame = df_utils.create_df(start_year, end_year, [])
 
-        UpperBasinUsersDataSet.upper_basin_from_api(df, start_year, end_year, divisor=1)
+        UpperBasinUsersDataSet.upper_basin_from_api(df, start_year, end_year)
 
         # df_utils.add_column_sum(df, [])
         return df
 
     @staticmethod
-    def upper_basin_from_api(df: pd.DataFrame, start_year:int, end_year:int, divisor=1_000_000):
+    def upper_basin_from_api(df: pd.DataFrame, start_year:int, end_year:int):
 
         # UT
         # UT Starvation
@@ -84,21 +84,17 @@ class UpperBasinUsersDataSet(DataSet):
         strawberry.load_data_annual()
         df_utils.copy_column(strawberry.df_annual, df, 'Strawberry')
 
-
-
         # UT / Wasatch Front
         # Need to find data for this tunnel to Provo River since USGS discontinued theirs in 1969, Utah DWRi, Provo River WUA
         # sheet.usgs_annuals(df, '09272500', 1954, 1969, month=all_b.WY, divisor=1, title='Duchesne Tunnel')
-
-        #sheet.usgs_annuals(df, '09282000', start_year, end_year, month=all_b.WY, divisor=1, title='Old Strawberry Tunnel')
-        sheet.usgs_annuals(df, '10149400', 2002, end_year, month=all_b.WY, divisor=1, title='Above Strawberry Tunnel')
-        sheet.usgs_annuals(df, '10149500', 1989, end_year, month=all_b.WY, divisor=1, title='Below Strawberry Tunnel')
-        df_utils.subtract_columns_by_year(df, 'Above Strawberry Tunnel', 'Strawberry Tunnel', [(df, 'Below Strawberry Tunnel')])
-        '''(The older Strawberry Tunnel had a historical USGS gage — 09282000 at the West Portal — but it's long retired/inactive.)How to Monitor the DiversionYou calculate or estimate diverted/augmented flows by comparing gages above and below the release points, or by subtracting natural inflows:Key USGS gages:10149000 — Sixth Water Creek above Syar Tunnel (monitors natural flow above the system). 
-            10149400 — Diamond Fork above Red Hollow near Thistle (primary gage for instream flows and augmented discharge from the system; heavily referenced for CUPCA-mandated minimums). 
-            10149500 — Diamond Fork below Red Hollow near Thistle (helps show changes post-release). 
-            '''
-        sheet.usgs_annuals(df, ub.USGS_UT_JORDAN_RIVER_GAGE, start_year, end_year, month=all_b.WY, divisor=1, title=ub.USGS_UT_JORDAN_RIVER)
+        # sheet.usgs_annuals(df, '09282000', start_year, end_year, month=all_b.WY, divisor=1, title='Old Strawberry Tunnel')
+        # sheet.usgs_annuals(df, '10149400', 2002, end_year, month=all_b.WY, divisor=1, title='Above Strawberry Tunnel')
+        # sheet.usgs_annuals(df, '10149500', 1989, end_year, month=all_b.WY, divisor=1, title='Below Strawberry Tunnel')
+        # df_utils.subtract_columns_by_year(df, 'Above Strawberry Tunnel', 'Strawberry Tunnel', [(df, 'Below Strawberry Tunnel')])
+        # (The older Strawberry Tunnel had a historical USGS gage — 09282000 at the West Portal — but it's long retired/inactive.)How to Monitor the DiversionYou calculate or estimate diverted/augmented flows by comparing gages above and below the release points, or by subtracting natural inflows:Key USGS gages:10149000 — Sixth Water Creek above Syar Tunnel (monitors natural flow above the system).
+        #     10149400 — Diamond Fork above Red Hollow near Thistle (primary gage for instream flows and augmented discharge from the system; heavily referenced for CUPCA-mandated minimums).
+        #     10149500 — Diamond Fork below Red Hollow near Thistle (helps show changes post-release).
+        # sheet.usgs_annuals(df, ub.USGS_UT_JORDAN_RIVER_GAGE, start_year, end_year, month=all_b.WY, divisor=1, title=ub.USGS_UT_JORDAN_RIVER)
 
         # CDSS
         # ===============================================================
@@ -206,10 +202,9 @@ class UpperBasinUsersDataSet(DataSet):
         # https://nwis.waterdata.usgs.gov/nwis/uv?09096100 Vega
 
         # NM / San Juan Chama
-        lake_heron = LakeHeron()
-        lake_heron.load_data_annual()
-        df_utils.copy_column(lake_heron.df_annual, df, ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL)
-
+        heron = Heron()
+        heron.load_data_annual()
+        df_utils.copy_column(heron.df_annual, df, ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL)
 
         pass
 
@@ -217,7 +212,6 @@ class UpperBasinUsersDataSet(DataSet):
 
 def cdss_annuals(df: pd.DataFrame, wdid:str,  start_year:int, end_year:int, water_class_num:str='', title:str='',
                  month:int=10, divisor:int=1, analyze:bool=False):
-    offset = 0
     annuals = []
     values = []
     for year in range(start_year, end_year + 1):

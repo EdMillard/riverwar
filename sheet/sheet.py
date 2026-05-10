@@ -27,7 +27,7 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Side, Border
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
-from source.usgs_gage import USGSGage, daily_to_water_year
+from source.usgs_gage import USGSGage, daily_to_water_year, convert_cfs_to_af_per_day
 from source.water_year_info import WaterYearInfo
 from typing import Optional
 from api import df_utils
@@ -538,9 +538,10 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         gage = USGSGage(gage_id, water_year_info)
         try:
-            daily_af = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
+            daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
                                         statCd=stat_cd)
-            annual_af = daily_to_water_year(daily_af, water_year_month=month)
+            daily_discharge_af = convert_cfs_to_af_per_day(daily_cfs)
+            annual_af = daily_to_water_year(daily_discharge_af, water_year_month=month)
             # result = (annual_af[0]['dt'], annual_af[0]['val'])
             # annuals.append(result)
             if len(annual_af) == 1:
@@ -586,13 +587,13 @@ def usgs_value(df, gage_id, start_year, end_year, title='', parameterCd='00060',
             ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
         water_year_info = WaterYearInfo.get_water_year(ts, month=month)
         gage = USGSGage(gage_id, water_year_info)
-        daily_feet = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameterCd,
+        daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameterCd,
                                         statCd=statCd)
-        # total = daily_release_ft['val'].sum()
-        feet = daily_feet[-1]
+        # total = daily_release_cfs['val'].sum()
+        cfs = daily_cfs[-1]
         years.append(year + 1)
-        values.append(feet[1])
-        annuals.append(feet)
+        values.append(cfs[1])
+        annuals.append(cfs)
 
     # if title:
     #     print(title)
@@ -687,7 +688,8 @@ def usbr_annuals(df, gage_id, start_year, end_year, title='', cfs_to_af=False, m
     #    print(title)
     #    for annual in annuals:
     #        print(f'{annual[0]} {annual[1] / divisor:10.2f} ')
-
+    if df is None:
+        pass
     if title:
         if title not in df.columns:
             df[title] = np.nan
