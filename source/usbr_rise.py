@@ -325,6 +325,7 @@ def request(item_id, file_name, start_date='', end_date='', csv=False):
             print("usbr_rise request cache file open failed for item id: ", item_id_str)
     else:
         print('usbr_rise request failed with response: ', r.status_code, ' ', r.reason)
+    return None
 
 
 def load_catalog(catalog_path, unified_region_id, theme_id=0):
@@ -395,7 +396,6 @@ def request_catalog(catalog_path, id, theme_id=0)->Dict:
             print('usbr request catalog failed with response: ', r.status_code, ' ', r.reason)
             break
     return {}
-
 
 def load_catalog_items(catalog_record, prefix=''):
     try:
