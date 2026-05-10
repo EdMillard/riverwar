@@ -234,11 +234,13 @@ def fill_df_from_structured_array(
     if len(arr) == 0:
         return df
 
-    if date_column_name not in df.columns:
-        raise ValueError(f"Date column '{date_column_name}' not found in DataFrame. "
-                        f"Available columns: {list(df.columns)}")
+    if value_column_name not in df.columns:
+        if value_column_name is None:
+            raise ValueError("Cannot auto-create column when value_column_name is None")
+        # print(f"Creating missing column: {value_column_name}")  # optional
+        df[value_column_name] = pd.NA
 
-    # Extract dates and values from structured array
+        # Extract dates and values from structured array
     dates = arr['dt'].astype('datetime64[D]')   # truncate to day only
     values = arr['val']
 
