@@ -249,7 +249,10 @@ def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=Non
             print_last_value(abbrev, time_series, alias=alias)
     except requests.exceptions.RequestException as e:
         msg = f"Error querying CDSS telemetry station {abbrev} info: {e}"
-        logger.log_message(msg)
+        if logger is not None:
+            logger.log_message(msg)
+        else:
+            print(msg)
     return time_series
 
 
