@@ -35,19 +35,19 @@ class LakeHavasu(Reservoir):
         # Elevations
         #
         # Must be called first
-        self.dead_pool_feet = 0
+        self.dead_pool_feet = 400
         self.dead_pool_af = 0
         # Bottom 5586.00
 
-        self.full_feet = 445
+        self.full_feet = 450
         self.full_af = 619_400  # Most commonly used, USBR often says 646_200 at 450' as real max
 
         # Critical
         self.power_head_target_feet = 0
         self.power_head_target_af = 0
 
-        self.power_head_min_feet = 0
-        self.power_head_min_af = 0
+        self.power_head_min_feet = 440      # Minimum elevation for MWD and CAP Pumps
+        self.power_head_min_af = 439_400
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0

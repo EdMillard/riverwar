@@ -47,12 +47,14 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 # ==================== RESERVOIR CHART ====================
 class ReservoirChart(BarChart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None,
+                 reservoir_totals:List[Tuple]=None,
                  power_head_zones:List[Tuple]=None, reserved_names:List[Tuple]=None, aquifer_zones:List[Tuple]=None,
                  y_max:float=14.0, percentage:float = 0.0):
         super().__init__(start_date, current_date, end_date, percentage=percentage)
         self.version = 0.3
         self.reservoirs = reservoirs
 
+        self.reservoir_totals = reservoir_totals
         self.power_head_zones = power_head_zones
         self.aquifer_zones = aquifer_zones
         self.reserved_zones = reserved_names
@@ -70,16 +72,18 @@ class ReservoirChart(BarChart):
                 f'{self.current_date.day}, {self.current_date.year}   v{self.version}'
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
-        ax = fig.add_subplot(111)
+        self.ax = fig.add_subplot(111)
 
-        self.create_reservoir_chart(ax, title)
+        self.create_reservoir_chart(self.ax, title)
 
         fig.tight_layout(pad=0.8)
         if self.percentage < 0.2 and self.percentage != 0:
+            top_margin = 0.92
             bottom_margin = 0.16
         else:
+            top_margin = 0.96
             bottom_margin = 0.04
-        fig.subplots_adjust(left=0.06, right=0.97, bottom=bottom_margin, top=0.96)
+        fig.subplots_adjust(left=0.06, right=0.97, bottom=bottom_margin, top=top_margin)
 
         self.fig = fig
         return fig
@@ -218,16 +222,27 @@ class ReservoirChart(BarChart):
                 bar = ax.bar(x_pos[i], draw_h, width=main_width, bottom=bottom,
                              color=color, alpha=0.85, edgecolor='navy')[0]
 
-                if draw_h >= 0.3:
+                if draw_h >= 0.1:
+                    r.annotation_drawn_in_bar = draw_h
                     ax.annotate(f'{draw_h:.3f}',
                                 xy=(bar.get_x() + bar.get_width()/2, bottom + draw_h/2),
                                 ha='center', va='center', fontsize=9, fontweight='bold', color='black')
+                else:
+                    r.annotation_drawn_in_bar = 0.0
 
                 if "Above Highest Critical" not in label:
                     ax.annotate(f'{elev:,.0f}\'',
                                 xy=(x_pos[i] + main_width*0.52, bottom + draw_h),
-                                ha='left', va='center', fontsize=9, fontweight='bold', color='darkblue',
-                                bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9))
+                                ha='left', va='center',
+                                fontsize=9,
+                                fontweight='bold',
+                                color='darkblue',
+                                bbox=dict(boxstyle="square",
+                                          facecolor="white",
+                                          edgecolor="none",
+                                          pad=0,
+                                          alpha=1)
+                                )
 
                 bottom += draw_h
                 if bottom >= current_cap_maf:
@@ -310,6 +325,9 @@ class ReservoirChart(BarChart):
                         fontsize=9.5, fontweight='bold', color='darkred')
 
         # ==================== ANNOTATIONS ====================
+        # Totals
+        self.add_total_annotations()
+
         # Special levels
         for i, r in enumerate(reservoirs):
             for elev_ft, cap_af, label in getattr(r, 'special_levels', []):
@@ -319,7 +337,16 @@ class ReservoirChart(BarChart):
                             color='black', markeredgecolor='black', markerfacecolor='white')
                     ax.annotate(f'{elev_ft:,.0f}\'\n{label}',
                                 xy=(x_pos[i] + main_width*0.52 + 0.04, cap_maf),
-                                ha='left', va='center', fontsize=9.5, fontweight='bold', color='black')
+                                ha='left', va='center',
+                                fontsize=9.5,
+                                fontweight='bold',
+                                color='black',
+                                bbox=dict(boxstyle="round",
+                                          edgecolor='none',
+                                          facecolor="white",
+                                          pad=0,
+                                          alpha=1)
+                                )
 
         # ==================== FINAL ANNOTATIONS ====================
         for i in range(len(names)):
@@ -355,15 +382,32 @@ class ReservoirChart(BarChart):
                             fontsize=9.8,
                             fontweight='bold',
                             color='black',
-                            linespacing=1.08)
+                            linespacing=1.08,
+                            bbox=dict(boxstyle="round",
+                                      edgecolor='none',
+                                      facecolor="white",
+                                      pad=0,
+                                      alpha=1)
+                            )
             else:
                 # Single line fallback
-                ax.annotate(f'{current_maf_val:.3f}',
-                            xy=(x_pos[i], current_maf_val),
-                            xytext=(0, 0.6),
-                            textcoords="offset points",
-                            ha='center', va='bottom',
-                            fontsize=10.5, fontweight='bold', color='black')
+                if r.annotation_drawn_in_bar > 0 and r.annotation_drawn_in_bar == current_maf_val:
+                    pass
+                else:
+                    ax.annotate(f'{current_maf_val:.3f}',
+                                xy=(x_pos[i], current_maf_val),
+                                xytext=(0, 0.6),
+                                textcoords="offset points",
+                                ha='center', va='bottom',
+                                fontsize=9.8,
+                                fontweight='bold',
+                                color='black',
+                                bbox=dict(boxstyle="round",
+                                          edgecolor='none',
+                                          facecolor="white",
+                                          pad=0,
+                                          alpha=1)
+                                )
 
             # === Current elevation on the right (always shown) ===
             if elevations_feet[i]:
@@ -373,9 +417,11 @@ class ReservoirChart(BarChart):
                             fontsize=9.5,
                             color='darkgreen',
                             fontweight='bold',
-                            bbox=dict(boxstyle="round,pad=0.25",
-                                      facecolor="lightyellow",
-                                      alpha=0.9))
+                            # bbox=dict(boxstyle="round,pad=0.25",
+                            #           facecolor="lightyellow",
+                            #           alpha=0.9)
+                            )
+
         # ==================== ANNOTATIONS ====================
         if self.power_head_zones:
             power_patches = []
@@ -427,6 +473,59 @@ class ReservoirChart(BarChart):
         ax.set_xlim(-0.65, len(names) - 0.35)
 
         # Title
-        ax.set_title(title, fontsize=14.5, fontweight='bold', pad=10)
+        if self.percentage > 0.5 or self.percentage == 0:
+            ax.set_title(title, fontsize=14.5, fontweight='bold', pad=10)
 
         self.final_layout(ax, title, names, x_pos)
+
+    def add_total_annotations(self):
+        if self.reservoir_totals is not None:
+            totals = []
+            for name, reservoir_list in self.reservoir_totals:
+                active_capacity_total = 0
+                accessible_total = 0
+                limited_access_total = 0
+                for r in reservoir_list:
+                    active_capacity_af = getattr(r, 'active_capacity_af', 0)
+                    limited_access = 0
+                    crit_points = getattr(r, 'critical_elevations_feet', [])
+                    for crit in crit_points:
+                        if crit[0] == 'Safe Power Head':
+                            limited_access = crit[2]
+                            # print(f'{r.name} {crit[0]} {crit[1]} {crit[2]}')
+
+                    active_capacity_total += active_capacity_af
+                    if active_capacity_af >= limited_access:
+                        accessible = active_capacity_af - limited_access
+                        accessible_total += accessible
+                        limited_access_total += limited_access
+                    else:
+                        limited_access_total += active_capacity_af
+                totals.append((name, accessible_total, limited_access_total, active_capacity_total))
+                lines = []
+                lines.append(name)
+                lines.append(f' {accessible_total/1_000_000:6.3f} MAF Accessible Storage')
+                lines.append(f' {limited_access_total/1_000_000:6.3f} MAF Limited Access ')
+
+                if name.startswith('CRSP'):
+                    x = 0.8
+                else:
+                    x = 0.3
+                y = 0.8
+                text_block = "\n".join(lines)
+                self.ax.text(
+                    x=x, y=y, s=text_block,
+                    transform=self.ax.transAxes,
+                    fontsize=11,
+                    fontfamily='monospace',
+                    fontweight='semibold',
+                    ha='left', va='top',
+                    zorder=15,
+                    bbox=dict(
+                        boxstyle="round,pad=0.6",
+                        facecolor="white",
+                        edgecolor="#aaaaaa",      # light gray, matches typical legend border
+                        alpha=0.95,
+                        linewidth=1.1
+                    )
+                )

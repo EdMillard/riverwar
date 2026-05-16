@@ -50,8 +50,11 @@ from reservoirs.vallecito import Vallecito
 from reservoirs.starvation import Starvation
 from reservoirs.strawberry import Strawberry
 from reservoirs.dillon import Dillon
+# from reservoirs.wolford import Wolford
+# from reservoirs.ridgeway import Ridgeway
+# from reservoirs.big_sandy import BigSandy
 # from reservoirs.gross import Gross
-# from reservoirs.groundhog import Groundhog
+# from reservoirs.groundhog import Groundhoggi
 # from reservoirs.lemon import Lemon
 # from reservoirs.grand_lake import GrandLake
 # from reservoirs.shadow_mountain import ShadowMountain
@@ -59,8 +62,10 @@ from reservoirs.dillon import Dillon
 
 class ReservoirsReality(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
+        current_size = notebook_frame.GetSize()
+        current_size.x = 2048
+        notebook_frame.SetSize(current_size)
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
-
 
         flaming_gorge = FlamingGorge()
         navajo = Navajo()
@@ -79,7 +84,20 @@ class ReservoirsReality(ChartFrame):
 
         self.reservoirs = [
             imperial, aquifers, srp, lake_pleasant, lake_havasu, lake_mohave,
-            lake_mead, lake_powell, flaming_gorge, navajo, strawberry
+            lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
+        ]
+
+        self.usbr_lower_basin_reservoirs = [
+            lake_havasu, lake_mohave, lake_mead
+        ]
+
+        self.crsp_reservoirs = [
+            lake_powell, flaming_gorge, navajo, blue_mesa
+        ]
+
+        self.reservoir_totals = [
+            ('USBR Lower Basin Reservoirs', self.usbr_lower_basin_reservoirs),
+            ('CRSP Reservoirs', self.crsp_reservoirs)
         ]
 
         dillon = Dillon()
@@ -92,6 +110,9 @@ class ReservoirsReality(ChartFrame):
         green_mountain = GreenMountain(upstream=[])
         starvation = Starvation(upstream=[])
         ruedi = Ruedi(upstream=[])
+        # wolford = Wolford(upstream=[])
+        # ridgeway = Ridgeway(upstream=[])
+        # big_sandy = BigSandy()
         # gross = Gross()
         # groundhog = Groundhog()
         # grand_lake = GrandLake(upstream=[])
@@ -100,11 +121,10 @@ class ReservoirsReality(ChartFrame):
         # heron = Heron(upstream=[])
 
         self.ub_reservoirs = [
-            blue_mesa, lake_granby, dillon,
+            strawberry, lake_granby, dillon,
             fontenelle,
-            vallecito, taylor_park,  mcphee, lake_nighthorse, green_mountain,  ruedi,
-            starvation,
-            # grand_lake, lemon, shadow_mountain, heron, groundhog, gross
+            mcphee,  starvation, lake_nighthorse, vallecito, taylor_park, green_mountain, ruedi,
+            # big_sandy, grand_lake, lemon, shadow_mountain, heron, groundhog, gross, ridgeway, wolford
         ]
         reservoir_lists = [self.reservoirs, self.ub_reservoirs]
         super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name='Reservoir Reality')
@@ -136,13 +156,14 @@ class ReservoirsReality(ChartFrame):
 
         reservoir_chart = ReservoirChart(
             self.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=14.0,
+            reservoir_totals=self.reservoir_totals,
             power_head_zones=power_head_zones, reserved_names=reserved_zones, aquifer_zones=aquifer_zones
         )
         self.charts.append(reservoir_chart)
 
         reservoir_chart = ReservoirChart(
-            self.ub_reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=0.9,
-            percentage = 0.1
+            self.ub_reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
+            percentage = 0.09
         )
         self.charts.append(reservoir_chart)
 
