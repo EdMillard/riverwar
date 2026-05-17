@@ -51,7 +51,7 @@ class ReservoirChart(BarChart):
                  power_head_zones:List[Tuple]=None, reserved_names:List[Tuple]=None, aquifer_zones:List[Tuple]=None,
                  y_max:float=14.0, percentage:float = 0.0):
         super().__init__(start_date, current_date, end_date, percentage=percentage)
-        self.version = 0.3
+        self.version = 0.4
         self.reservoirs = reservoirs
 
         self.reservoir_totals = reservoir_totals
@@ -79,7 +79,7 @@ class ReservoirChart(BarChart):
         fig.tight_layout(pad=0.8)
         if self.percentage < 0.2 and self.percentage != 0:
             top_margin = 0.92
-            bottom_margin = 0.16
+            bottom_margin = 0.18
         else:
             top_margin = 0.96
             bottom_margin = 0.04

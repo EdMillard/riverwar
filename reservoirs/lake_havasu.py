@@ -60,7 +60,7 @@ class LakeHavasu(Reservoir):
         # Current
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.HAVASU_ELEVATION)
-        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.HAVASU)
+        self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id, lb.HAVASU)
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, lb.HAVASU_RELEASE_CFS)
         self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, lb.HAVASU_RELEASE)
 

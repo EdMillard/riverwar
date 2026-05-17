@@ -29,6 +29,7 @@ from api.registry import Registry
 import json
 from pathlib import Path
 import pandas as pd
+import numpy as np
 from ruamel.yaml.timestamp import TimeStamp
 from source.water_year_info import WaterYearInfo
 from typing import List, Tuple, Literal, Optional, Dict
@@ -183,6 +184,8 @@ class Reservoir:
         #
         self.elevation_feet:float = 0
         self.active_capacity_af:float = 0
+        self.storage_one_month_ago: float = 0
+        self.storage_two_months_ago: float = 0
         self.evap_af:float = 0
         self.inflow_af:float = 0
         self.inflow_cfs:float = 0
@@ -325,7 +328,7 @@ class Reservoir:
     def load_data(self, report_path:Optional[Path], start_date:date, current_date:date, end_date:date):
         self.load_date(report_path, start_date, current_date, end_date)
         if self.usbr_rise_storage_af_id:
-            self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id,  all_b.STORAGE)
+            self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id,  all_b.STORAGE)
         if self.usbr_rise_elevation_ft_id:
             self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, all_b.ELEVATION)
         # if self.usbr_rise_release_cfs_id:
@@ -436,8 +439,106 @@ class Reservoir:
 
         return date_time, elevation_feet
 
-    def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->float:
+    @staticmethod
+    def get_value_at_time(arr: np.ndarray, target_dt) -> float | None:
+        """
+        Return the 'val' for the given datetime from a structured array
+        with dtype [('dt', '<M8[s]'), ('val', '<f4')].
+
+        Parameters:
+            arr: structured ndarray (must be sorted by 'dt' for best performance)
+            target_dt: datetime-like (np.datetime64, datetime object, or string)
+
+        Returns:
+            float value if exact match found, else None
+        """
+        if len(arr) == 0:
+            return None
+
+        # Convert target to np.datetime64[s] for consistency
+        if isinstance(target_dt, str):
+            target = np.datetime64(target_dt)
+        elif isinstance(target_dt, datetime):
+            target = np.datetime64(target_dt)
+        else:
+            target = np.asarray(target_dt).astype('M8[s]')
+
+        # Extract the datetime field (view as 1D array)
+        dts = arr['dt']
+
+        # Binary search for insertion point (assumes array is sorted by 'dt')
+        idx = np.searchsorted(dts, target)
+
+        # Check for exact match
+        if idx < len(dts) and dts[idx] == target:
+            return float(arr['val'][idx])
+
+        return None  # No exact match
+
+    @staticmethod
+    def months_earlier(dt, months: int = 1):
+        """
+        Return a date/time that is N months earlier than the input.
+
+        Parameters:
+            dt: datetime, np.datetime64, or string (e.g. '2026-04-15')
+            months: number of months to go back (positive integer, default=1)
+
+        Returns:
+            Same type as input (datetime or np.datetime64)
+        """
+        if months <= 0:
+            raise ValueError("months must be a positive integer")
+
+        # Convert input to Python datetime for easy manipulation
+        original_type = type(dt)
+        if isinstance(dt, str):
+            dt = np.datetime64(dt).astype(datetime)
+        elif isinstance(dt, np.datetime64):
+            dt = dt.astype(datetime)
+        elif not isinstance(dt, datetime):
+            raise TypeError(f"Unsupported type: {type(dt)}")
+
+        # Simple and reliable method (handles year rollover)
+        year = dt.year
+        month = dt.month - months
+
+        # Adjust year and month
+        while month <= 0:
+            month += 12
+            year -= 1
+
+        # Clamp day to valid range for the new month (e.g. Jan 31 → Feb 28/29)
+        day = min(dt.day,
+                  [31, 29 if (year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)) else 28,
+                   31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+
+        result = dt.replace(year=year, month=month, day=day)
+
+        # Return in the original input type
+        if original_type is np.datetime64 or isinstance(dt, np.datetime64):
+            return np.datetime64(result)
+        return result
+
+    def print_storage(self, daily_storage_af):
+        current_dt = daily_storage_af['dt'][-1]
+        one_month_ago_dt = Reservoir.months_earlier(current_dt)
+        self.storage_one_month_ago = Reservoir.get_value_at_time(daily_storage_af, one_month_ago_dt)
+        one_month_delta = self.active_capacity_af - self.storage_one_month_ago
+
+        two_months_ago_dt = Reservoir.months_earlier(current_dt, months=2)
+        self.storage_two_months_ago = Reservoir.get_value_at_time(daily_storage_af, two_months_ago_dt)
+        two_month_delta = self.active_capacity_af - self.storage_two_months_ago
+
+        three_months_ago_dt = Reservoir.months_earlier(current_dt, months=3)
+        storage_three_months_ago = Reservoir.get_value_at_time(daily_storage_af, three_months_ago_dt)
+        three_month_delta = self.active_capacity_af - storage_three_months_ago
+
+        print(f'{self.name.ljust(16)} Storage {self.active_capacity_af/1_000_000:5.3f} MAF 1 mo {one_month_delta:9.0f}  2 mo {two_month_delta:9.0f} 3 mo {three_month_delta:9.0f}')
+
+    def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->Tuple[float, np.ndarray]:
         active_capacity_af = 0
+        daily_storage_af = None
         when = Reservoir.compare_to_today(self.current_date)
         if when == 'match':
             if usbr_rise_id:
@@ -454,7 +555,7 @@ class Reservoir:
             # predicted for month
             active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
 
-        return active_capacity_af
+        return active_capacity_af, daily_storage_af
 
     def get_daily_and_last(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->float:
         release = 0

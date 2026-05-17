@@ -91,7 +91,13 @@ class LakeMead(Reservoir):
         # Current
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, lb.MEAD_ELEVATION)
-        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, lb.MEAD)  # 1937
+        self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id, lb.MEAD)  # 1937
+        one_month_ago_dt = Reservoir.months_earlier(daily_storage_af['dt'][-1] )
+        self.storage_one_month_ago = Reservoir.get_value_at_time(daily_storage_af, one_month_ago_dt)
+        two_months_ago_dt = Reservoir.months_earlier(daily_storage_af['dt'][-1], months=2)
+        self.storage_two_months_ago = Reservoir.get_value_at_time(daily_storage_af, two_months_ago_dt)
+        self.print_storage(daily_storage_af)
+
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, lb.MEAD_RELEASE_CFS)
         self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, lb.MEAD_RELEASE)
 

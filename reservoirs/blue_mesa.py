@@ -61,7 +61,7 @@ class BlueMesa(Reservoir):
         # Current
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.BLUE_MESA_ELEVATION_WY)
-        self.active_capacity_af = self.get_storage(self.usbr_rise_storage_af_id, ub.BLUE_MESA_WY)
+        self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id, ub.BLUE_MESA_WY)
 
         self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.BLUE_MESA_EVAPORATION_WY)
         self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.BLUE_MESA_INFLOW_CFS)
