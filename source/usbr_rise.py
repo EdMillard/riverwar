@@ -220,7 +220,7 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
                     update = True
                 if water_year_info is not None and water_year_info.is_current_water_year:
                     last_date = previous_data[-1][0]
-                    update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=24)
+                    update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
 
     if not info or update:
         if file_path.exists():
