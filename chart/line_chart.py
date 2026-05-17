@@ -51,6 +51,7 @@ class LineChart(Chart):
         self.show_x_labels = show_x_labels
         self.y_label = y_label.strip()
         self.y_units = y_units
+        self.ax = None
 
         # Auto-determine divisor
         if y_divisor is not None:
@@ -85,9 +86,9 @@ class LineChart(Chart):
             self.height_inch = height_inch
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=110)
-        ax = fig.add_subplot(111)
+        self.ax = fig.add_subplot(111)
 
-        self.create_line_chart(ax)
+        self.create_line_chart(self.ax)
 
         top_margin = 0.95 if self.title and self.title.strip() else 1
         bottom_margin = 0.05 if self.show_x_labels else 0.05

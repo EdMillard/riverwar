@@ -48,6 +48,7 @@ class ReservoirsBig3(ChartFrame):
         flaming_gorge = FlamingGorge()
         lake_powell = LakePowell(upstream=[flaming_gorge])
         lake_mead = LakeMead(upstream=[lake_powell])
+        self.line_chart = None
 
         reservoirs = [
             flaming_gorge,
@@ -56,12 +57,88 @@ class ReservoirsBig3(ChartFrame):
         ]
         super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name='APR26 24-Month')
 
+        for reservoirs in self.reservoir_lists:
+            for reservoir in reservoirs:
+                if  reservoir.name == 'Lake Powell':
+                    crit_points = getattr(reservoir, 'critical_elevations_feet', [])
+                    if crit_points:
+                        min_capacity = 0
+                        if hasattr(self.line_chart, 'ax') and self.line_chart.ax is not None:
+                            ax = self.line_chart.ax
+                            for item in crit_points:
+                                if isinstance(item, (list, tuple)) and len(item) >= 3:
+                                    if item[0] == 'Safe Power Head':
+                                        # Add text annotation to the left of the right spine
+                                        ax.text(
+                                            0.99, 0.0,
+                                            f"{item[1]}'",
+                                            transform=ax.get_yaxis_transform(),
+                                            va='center',
+                                            ha='right',
+                                            fontsize=10,
+                                            color='dodgerblue',
+                                            fontweight='bold',
+                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=1,
+                                                      edgecolor='darkred')
+                                        )
+                elif  reservoir.name == 'Lake Mead':
+                    crit_points = getattr(reservoir, 'critical_elevations_feet', [])
+                    if crit_points:
+                        min_capacity = 0
+                        if hasattr(self.line_chart, 'ax') and self.line_chart.ax is not None:
+                            ax = self.line_chart.ax
+                            for item in crit_points:
+                                if isinstance(item, (list, tuple)) and len(item) >= 3:
+                                    if item[0] == 'Safe Power Head':
+                                        min_capacity = item[2]
+
+                                        # Add text annotation to the right of the right spine
+                                        ax.text(
+                                            1.01, 0.0,
+                                            f"{item[1]}'",
+                                            transform=ax.get_yaxis_transform(),
+                                            va='center',
+                                            ha='left',
+                                            fontsize=10,
+                                            color='darkred',
+                                            fontweight='bold',
+                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8,
+                                                      edgecolor='darkred')
+                                        )
+                                    else:
+                                        cap_maf = (item[2] - min_capacity)
+                                        elevation_ft = item[1]
+
+                                        # Dashed horizontal line across the entire plot
+                                        ax.axhline(
+                                            y=cap_maf,
+                                            color='gray',
+                                            linestyle='--',
+                                            linewidth=1.5,
+                                            alpha=0.85,
+                                            zorder=3
+                                        )
+
+                                        # Add text annotation to the right of the right spine
+                                        ax.text(
+                                            1.01, cap_maf,
+                                            f"{elevation_ft}'",
+                                            transform=ax.get_yaxis_transform(),
+                                            va='center',
+                                            ha='left',
+                                            fontsize=10,
+                                            color='darkred',
+                                            fontweight='bold',
+                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8,
+                                                      edgecolor='darkred')
+                                        )
+
     def load_charts(self):
         powell_df = None
         fg_df = None
         start_mod_date = date(2026, 5, 1)
         end_powell_mod_date = date(2026, 9, 30)
-        end_fg_mod_date = date(2027, 4, 1)
+        end_fg_mod_date = date(2026, 9, 30)
         time_series = []
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
@@ -92,14 +169,15 @@ class ReservoirsBig3(ChartFrame):
                     time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050'))
                     time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
 
-        line_chart = LineChart(
+
+        self.line_chart = LineChart(
             time_series,
             title='Reservoir Storage Above Critical Elevation',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
             show_x_labels = True
         )
-        line_chart.set_end_date(date(2027, 5, 1))
-        self.charts.append(line_chart)
+        self.line_chart.set_end_date(date(2027, 5, 1))
+        self.charts.append(self.line_chart)
 
         '''
         time_series = []
