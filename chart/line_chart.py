@@ -39,13 +39,12 @@ class LineChart(Chart):
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
-                 reservoirs: List[Reservoir] | None = None,
                  show_x_labels: bool = True,
                  y_label: str = "",                    # kept for future flexibility
                  y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
                  y_divisor: float | None = None):
 
-        super().__init__(reservoirs or [], start_date, current_date, end_date, y_divisor=y_divisor, y_units=y_units, percentage=percentage)
+        super().__init__(start_date, current_date, end_date, y_divisor=y_divisor, y_units=y_units, percentage=percentage)
 
         self.data_series = data_series
         self.title = title
