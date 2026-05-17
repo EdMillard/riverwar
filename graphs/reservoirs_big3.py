@@ -56,7 +56,9 @@ class ReservoirsBig3(ChartFrame):
             lake_mead,
         ]
         super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name='APR26 24-Month')
+        self.right_axis_annotations()
 
+    def right_axis_annotations(self):
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
                 if  reservoir.name == 'Lake Powell':
@@ -70,7 +72,7 @@ class ReservoirsBig3(ChartFrame):
                                     if item[0] == 'Safe Power Head':
                                         # Add text annotation to the left of the right spine
                                         ax.text(
-                                            0.99, 0.0,
+                                            1.00, 0.0,
                                             f"{item[1]}'",
                                             transform=ax.get_yaxis_transform(),
                                             va='center',
@@ -79,7 +81,7 @@ class ReservoirsBig3(ChartFrame):
                                             color='dodgerblue',
                                             fontweight='bold',
                                             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=1,
-                                                      edgecolor='darkred')
+                                                      edgecolor='dodgerblue')
                                         )
                 elif  reservoir.name == 'Lake Mead':
                     crit_points = getattr(reservoir, 'critical_elevations_feet', [])
@@ -172,12 +174,36 @@ class ReservoirsBig3(ChartFrame):
 
         self.line_chart = LineChart(
             time_series,
-            title='Reservoir Storage Above Critical Elevation',
+            title='Colorado River Big 3 Reservoir Storage Above Critical Elevation',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
-            show_x_labels = True
+            show_x_labels = False
         )
-        self.line_chart.set_end_date(date(2027, 5, 1))
+        self.line_chart.set_end_date(date(2027, 5, 15))
         self.charts.append(self.line_chart)
+
+        time_series = []
+        for reservoirs in self.reservoir_lists:
+            for reservoir in reservoirs:
+                if reservoir.name == 'Lake Powell':
+                    time_series.append((reservoir.df_daily, ub.POWELL_INFLOW_CFS, 'dodgerblue'))
+                    time_series.append((reservoir.df_daily, ub.POWELL_RELEASE_CFS, 'royalblue'))
+                elif reservoir.name == 'Lake Mead':
+                    time_series.append((reservoir.df_daily, lb.MEAD_RELEASE_CFS, 'darkred'))
+                elif reservoir.name == 'Flaming Gorge':
+                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_INFLOW_CFS, '#50a050'))
+                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_RELEASE_CFS, 'darkgreen'))
+
+        self.inflow_outflow_chart = LineChart(
+            time_series,
+            title='',
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
+            show_x_labels = True,
+            percentage=0.4,
+            # y_max=18000,
+            y_units='CFS',
+        )
+        self.inflow_outflow_chart.set_end_date(date(2027, 5, 15))
+        self.charts.append(self.inflow_outflow_chart)
 
         '''
         time_series = []
