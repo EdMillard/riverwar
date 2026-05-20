@@ -168,6 +168,7 @@ class Chart:
         if not 1 <= month <= 12:
             return "???"
         return date(2026, month, 1).strftime("%b")
+
 class BarChart(Chart):
     def __init__(self,
                  start_date: date | None = None,

@@ -23,6 +23,7 @@ SOFTWARE.
 from pathlib import Path
 from datetime import datetime
 import wx
+from chart.chart import Chart
 from datetime import date
 import api.df_utils as df_utils
 from graphs.chart_frame import ChartFrame, NotebookFrame
@@ -49,6 +50,7 @@ class ReservoirsBig3(ChartFrame):
         lake_powell = LakePowell(upstream=[flaming_gorge])
         lake_mead = LakeMead(upstream=[lake_powell])
         self.line_chart = None
+        self.version = 0.2
 
         reservoirs = [
             flaming_gorge,
@@ -64,25 +66,49 @@ class ReservoirsBig3(ChartFrame):
                 if  reservoir.name == 'Lake Powell':
                     crit_points = getattr(reservoir, 'critical_elevations_feet', [])
                     if crit_points:
-                        min_capacity = 0
                         if hasattr(self.line_chart, 'ax') and self.line_chart.ax is not None:
+                            min_capacity = 0
                             ax = self.line_chart.ax
                             for item in crit_points:
                                 if isinstance(item, (list, tuple)) and len(item) >= 3:
                                     if item[0] == 'Safe Power Head':
+                                        min_capacity = item[2]
                                         # Add text annotation to the left of the right spine
                                         ax.text(
-                                            1.00, 0.0,
+                                            0.995, 0.0,
                                             f"{item[1]}'",
                                             transform=ax.get_yaxis_transform(),
                                             va='center',
                                             ha='right',
                                             fontsize=10,
-                                            color='dodgerblue',
+                                            color='royalblue',
                                             fontweight='bold',
                                             bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=1,
-                                                      edgecolor='dodgerblue')
+                                                      edgecolor='royalblue')
                                         )
+                            elevation_3525 = getattr(reservoir, 'elevation_3525_af', 0)
+                            if elevation_3525:
+                                ax = self.line_chart.ax
+                                ax.axhline(
+                                    y=elevation_3525-min_capacity,
+                                    color='royalblue',
+                                    linestyle='--',
+                                    linewidth=1.5,
+                                    alpha=0.85,
+                                    zorder=3
+                                )
+                                ax.text(
+                                    0.995, elevation_3525-min_capacity,
+                                    f"3525'",
+                                    transform=ax.get_yaxis_transform(),
+                                    va='center',
+                                    ha='right',
+                                    fontsize=10,
+                                    color='royalblue',
+                                    fontweight='bold',
+                                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=1,
+                                              edgecolor='royalblue')
+                                )
                 elif  reservoir.name == 'Lake Mead':
                     crit_points = getattr(reservoir, 'critical_elevations_feet', [])
                     if crit_points:
@@ -96,7 +122,7 @@ class ReservoirsBig3(ChartFrame):
 
                                         # Add text annotation to the right of the right spine
                                         ax.text(
-                                            1.01, 0.0,
+                                            1.005, 0.0,
                                             f"{item[1]}'",
                                             transform=ax.get_yaxis_transform(),
                                             va='center',
@@ -114,7 +140,7 @@ class ReservoirsBig3(ChartFrame):
                                         # Dashed horizontal line across the entire plot
                                         ax.axhline(
                                             y=cap_maf,
-                                            color='gray',
+                                            color='darkred',
                                             linestyle='--',
                                             linewidth=1.5,
                                             alpha=0.85,
@@ -123,7 +149,7 @@ class ReservoirsBig3(ChartFrame):
 
                                         # Add text annotation to the right of the right spine
                                         ax.text(
-                                            1.01, cap_maf,
+                                            1.005, cap_maf,
                                             f"{elevation_ft}'",
                                             transform=ax.get_yaxis_transform(),
                                             va='center',
@@ -136,6 +162,7 @@ class ReservoirsBig3(ChartFrame):
                                         )
 
     def load_charts(self):
+        do_adjustment = False
         powell_df = None
         fg_df = None
         start_mod_date = date(2026, 5, 1)
@@ -147,10 +174,11 @@ class ReservoirsBig3(ChartFrame):
                 if reservoir.name == 'Lake Powell':
                     #  Apply 1.5 MAF cut in release to Powell storage level
                     powell_df = reservoir.df_daily
-                    df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 1_480_000)
-                    # df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 0)
-                    reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + powell_df['Cut Powell Release']
-                    reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + fg_df['Flaming Gorge DROA']
+                    if do_adjustment:
+                        df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 1_480_000)
+                        # df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 0)
+                        reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + powell_df['Cut Powell Release']
+                        reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + fg_df['Flaming Gorge DROA']
 
                     time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
                     time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
@@ -160,38 +188,42 @@ class ReservoirsBig3(ChartFrame):
                     # time_series.append((reservoir.df_daily, 'Powell Most MAR26', '#6060ff'))
                     df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
                 elif reservoir.name == 'Lake Mead':
-                    reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
+                    if do_adjustment:
+                        reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
 
                     time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
                     time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
                 elif reservoir.name == 'Flaming Gorge':
                     fg_df = reservoir.df_daily
-                    df_utils.add_cumulative_daily_delta(fg_df, 'Flaming Gorge DROA', start_mod_date, end_fg_mod_date, 1_000_000)
-                    reservoir.df_daily[ub.FLAMING_GORGE_MOST] = reservoir.df_daily[ub.FLAMING_GORGE_MOST] - fg_df['Flaming Gorge DROA']
+                    if do_adjustment:
+                        df_utils.add_cumulative_daily_delta(fg_df, 'Flaming Gorge DROA', start_mod_date, end_fg_mod_date, 1_000_000)
+                        reservoir.df_daily[ub.FLAMING_GORGE_MOST] = reservoir.df_daily[ub.FLAMING_GORGE_MOST] - fg_df['Flaming Gorge DROA']
                     time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050'))
                     time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
 
-
+        today = datetime.today().date()
         self.line_chart = LineChart(
             time_series,
-            title='Colorado River Big 3 Reservoir Storage Above Critical Elevation',
+            title=f'Colorado River Big 3 Reservoir Storage Above Critical Elevations - May 24 Month - {Chart.month_to_short_name(today.month)} ' \
+                f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
-            show_x_labels = False
+            show_x_labels = True
         )
         self.line_chart.set_end_date(date(2027, 5, 15))
         self.charts.append(self.line_chart)
 
         time_series = []
         for reservoirs in self.reservoir_lists:
-            for reservoir in reservoirs:
+            for reservoir in reversed(reservoirs):
                 if reservoir.name == 'Lake Powell':
-                    time_series.append((reservoir.df_daily, ub.POWELL_INFLOW_CFS, 'dodgerblue'))
-                    time_series.append((reservoir.df_daily, ub.POWELL_RELEASE_CFS, 'royalblue'))
+                    time_series.append((reservoir.df_daily, ub.POWELL_INFLOW_CFS, 'royalblue'))
+                    time_series.append((reservoir.df_daily, ub.POWELL_RELEASE_CFS, 'dodgerblue'))
                 elif reservoir.name == 'Lake Mead':
+                    time_series.append((reservoir.df_daily, lb.DIAMOND_CREEK, '#ffa0a0'))
                     time_series.append((reservoir.df_daily, lb.MEAD_RELEASE_CFS, 'darkred'))
                 elif reservoir.name == 'Flaming Gorge':
-                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_INFLOW_CFS, '#50a050'))
-                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_RELEASE_CFS, 'darkgreen'))
+                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_INFLOW_CFS, 'darkgreen'))
+                    time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_RELEASE_CFS, '#50a050'))
 
         self.inflow_outflow_chart = LineChart(
             time_series,

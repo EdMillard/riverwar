@@ -65,6 +65,9 @@ class LakePowell(Reservoir):
         self.full_af = self.af_for_elevation(self.full_feet)
 
         # Critical
+        self.elevation_3525_ft = 3525
+        self.elevation_3525_af = self.af_for_elevation(self.elevation_3525_ft)
+
         self.power_head_target_feet = 3510
         self.power_head_target_af = self.af_for_elevation(self.power_head_target_feet)
 

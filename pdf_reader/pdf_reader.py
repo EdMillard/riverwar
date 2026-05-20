@@ -743,13 +743,13 @@ if __name__ == "__main__":
     years = [2026]
     download_usbr_24mo_reports(years=years)
     # https://www.usbr.gov/lc/region/g4000/24mo/index.html
-    # report_path = Path('/opt/dev/riverwar/data/USBR_24_Month/March_2026/24mo.pdf')
+    # report_path = Path('/opt/dev/riverwar/data/USBR_24Month_Reports/May26.pdf')
     # tables = read_pdf_camelot(report_path)
-    # out_path = Path(f'../data/reports/24_Month/{report_path.parent.name}/{report_path.stem}')
+    # out_path = Path(f'../data/reports/24_Month_Reports/{report_path.parent.name}/{report_path.stem}')
     # usbr_24_month_to_csv(tables, out_path)
 
-    # for year in range(2022, 2025):
-    #     report_path = Path(f'/opt/dev/USBR_Reports/Lower_Basin_Annual_Reports/{year}.pdf')
-    #     tables = read_pdf_camelot(report_path)
+    #for year in range(2026, 2027):
+    #    report_path = Path(f'/opt/dev/USBR_Reports/Lower_Basin_Annual_Reports/{year}.pdf')
+    #    tables = read_pdf_camelot(report_path)
     #    out_path = Path(f'../data/reports/{report_path.parent.name}/{report_path.stem}')
     #    tables_to_csv(tables, out_path)

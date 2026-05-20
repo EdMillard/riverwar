@@ -42,6 +42,7 @@ from pandas.tseries.offsets import MonthEnd
 from api import df_utils
 import pytz
 from data_sets.data_set import DataSet
+from source.usgs_gage import USGSGage, daily_to_water_year, convert_cfs_to_af_per_day
 
 # Head and tail USBR JSON Files for verification
 # find . -name '*2026.json' -type f -printf '%T@ %p\0' | sort -zn | cut -zd' ' -f2- | xargs -0 -I {} sh -c 'echo "=== {} ==="; head -n 10 "{}"; echo "..."; tail -n 8 "{}"; echo "────────────────────────────────────────"'
@@ -419,6 +420,23 @@ class Reservoir:
             self.water_year_info = self.get_water_year_info(year, month=self.water_year_month)
             info, daily = usbr_rise.load(usbr_rise_id, water_year_info=self.water_year_info, alias=column_name)
             df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=column_name)
+        return daily
+
+    def usgs_load_daily(self, gage_id:str, column_name:str, start_year:int=0, end_year:int=0, parameterCd='00060', statCd='00003', month=1):
+        daily = 0
+        if self.report_start_date is not None:
+            start_year = self.report_start_date.year
+        if self.report_end_date is not None:
+            end_year = self.report_end_date.year
+        if not end_year or end_year > date.today().year:
+            end_year = date.today().year
+
+        for year in range(start_year, end_year+1):
+            water_year_info = self.get_water_year_info(year, month=self.water_year_month)
+            gage = USGSGage(gage_id, water_year_info)
+            daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=column_name, parameterCd=parameterCd,
+                                             statCd=statCd)
+            df_utils.fill_df_from_structured_array(self.df_daily, daily_cfs, date_column_name='Date', value_column_name=column_name)
         return daily
 
     def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:

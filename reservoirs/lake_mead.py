@@ -100,6 +100,7 @@ class LakeMead(Reservoir):
 
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, lb.MEAD_RELEASE_CFS)
         self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, lb.MEAD_RELEASE)
+        self.usgs_load_daily('09404200', lb.DIAMOND_CREEK)
 
         # usbr_lake_mead_storage_af = 6124  # 1937
         # sheet.usbr_last_value(self.df, usbr_lake_mead_storage_af, self.water_year, self.water_year, title=lb.MEAD, month=1, divisor=1)
