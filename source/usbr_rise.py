@@ -298,6 +298,7 @@ def request(item_id, file_name, start_date='', end_date='', csv=False):
         url += '&after='
         url += start_date
 
+    # url += '&dateTime[before]='
     url += '&before='
     if len(end_date) > 0:
         url += end_date

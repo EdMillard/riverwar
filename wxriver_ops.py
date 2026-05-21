@@ -96,8 +96,8 @@ if __name__ == "__main__":
 
     # reservoir_chart(nb)
     # supply_v_demand(nb)
-    # reservoir_reality_chart(nb)
-    reservoirs_big3(nb)
+    reservoir_reality_chart(nb)
+    # reservoirs_big3(nb)
 
     nb.Show()
     app.MainLoop()

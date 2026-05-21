@@ -37,6 +37,8 @@ from reservoirs.lake_mead import LakeMead
 from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
+from reservoirs.morrow_point import MorrowPoint
+from reservoirs.crystal import Crystal
 from reservoirs.navajo import Navajo
 
 from reservoirs.green_mountain import GreenMountain
@@ -50,6 +52,7 @@ from reservoirs.vallecito import Vallecito
 from reservoirs.starvation import Starvation
 from reservoirs.strawberry import Strawberry
 from reservoirs.dillon import Dillon
+from reservoirs.paonia import Paonia
 # from reservoirs.wolford import Wolford
 # from reservoirs.ridgeway import Ridgeway
 # from reservoirs.big_sandy import BigSandy
@@ -72,6 +75,8 @@ class ReservoirsReality(ChartFrame):
 
         strawberry = Strawberry(upstream=[])
         blue_mesa = BlueMesa()
+        morrow_point = MorrowPoint()
+        crystal = Crystal()
         lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
         lake_mead = LakeMead(upstream=[lake_powell])
         lake_mohave = LakeMohave(upstream=[lake_mead])
@@ -110,6 +115,7 @@ class ReservoirsReality(ChartFrame):
         green_mountain = GreenMountain(upstream=[])
         starvation = Starvation(upstream=[])
         ruedi = Ruedi(upstream=[])
+        # paonia = Paonia(upstream=[])
         # wolford = Wolford(upstream=[])
         # ridgeway = Ridgeway(upstream=[])
         # big_sandy = BigSandy()
@@ -123,8 +129,9 @@ class ReservoirsReality(ChartFrame):
         self.ub_reservoirs = [
             strawberry, lake_granby, dillon,
             fontenelle,
-            mcphee,  starvation, lake_nighthorse, vallecito, taylor_park, green_mountain, ruedi,
-            # big_sandy, grand_lake, lemon, shadow_mountain, heron, groundhog, gross, ridgeway, wolford
+            mcphee,  starvation, green_mountain, lake_nighthorse, vallecito, morrow_point, taylor_park, ruedi,
+            # big_sandy, crystal, grand_lake, lemon, shadow_mountain, heron, groundhog, gross, ridgeway,
+            # wolford, paonia
         ]
         reservoir_lists = [self.reservoirs, self.ub_reservoirs]
         super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name='Reservoir Reality')
