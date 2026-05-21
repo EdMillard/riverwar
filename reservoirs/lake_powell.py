@@ -101,6 +101,11 @@ class LakePowell(Reservoir):
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.POWELL_RELEASE_CFS)
         # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.POWELL_RELEASE)
 
+        self.usgs_load_daily('09180500', 'Colorado River Near Cisco UT')
+        self.usgs_load_daily('09333500', 'Dirty Devil Near Hanksville, UT')
+        self.usgs_load_daily('09315000', 'Green River Near Green River, UT')
+        self.usgs_load_daily('09379500', 'San Juan River Near Bluff, UT')
+
         # 24 Month
         #
         self.inflow_parts = self.get_24_month_inflow(self.df_24_month, "Unregulated Inflow")

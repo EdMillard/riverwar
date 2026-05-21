@@ -50,7 +50,8 @@ class ReservoirsBig3(ChartFrame):
         lake_powell = LakePowell(upstream=[flaming_gorge])
         lake_mead = LakeMead(upstream=[lake_powell])
         self.line_chart = None
-        self.version = 0.2
+        self.inflow_outflow_chart = None
+        self.version = 0.3
 
         reservoirs = [
             flaming_gorge,
@@ -167,30 +168,25 @@ class ReservoirsBig3(ChartFrame):
         fg_df = None
         start_mod_date = date(2026, 5, 1)
         end_powell_mod_date = date(2026, 9, 30)
-        end_fg_mod_date = date(2026, 9, 30)
+        end_fg_mod_date = date(2027, 5, 1)
         time_series = []
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
                 if reservoir.name == 'Lake Powell':
-                    #  Apply 1.5 MAF cut in release to Powell storage level
                     powell_df = reservoir.df_daily
                     if do_adjustment:
                         df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 1_480_000)
-                        # df_utils.add_cumulative_daily_delta(powell_df, 'Cut Powell Release', start_mod_date, end_powell_mod_date, 0)
                         reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + powell_df['Cut Powell Release']
                         reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + fg_df['Flaming Gorge DROA']
-
                     time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff'))
                     time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
                     prev_path = previous_month_path(Path(reservoir.report_path))
                     df_24_month_prev, df_24_wy_prev = reservoir.load_24_month(prev_path, reservoir.name)
                     reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
-                    # time_series.append((reservoir.df_daily, 'Powell Most MAR26', '#6060ff'))
                     df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
                 elif reservoir.name == 'Lake Mead':
                     if do_adjustment:
                         reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
-
                     time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0'))
                     time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
                 elif reservoir.name == 'Flaming Gorge':
@@ -207,7 +203,7 @@ class ReservoirsBig3(ChartFrame):
             title=f'Colorado River Big 3 Reservoir Storage Above Critical Elevations - May 24 Month - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
-            show_x_labels = True
+            show_x_labels = False
         )
         self.line_chart.set_end_date(date(2027, 5, 15))
         self.charts.append(self.line_chart)
@@ -229,15 +225,31 @@ class ReservoirsBig3(ChartFrame):
             time_series,
             title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
-            show_x_labels = True,
-            percentage=0.4,
+            show_x_labels = False,
+            percentage=0.2,
             # y_max=18000,
             y_units='CFS',
         )
         self.inflow_outflow_chart.set_end_date(date(2027, 5, 15))
         self.charts.append(self.inflow_outflow_chart)
 
-        '''
+        time_series = [
+            (powell_df, 'Colorado River Near Cisco UT', 'royalblue'),
+            (powell_df, 'Green River Near Green River, UT', 'darkgreen'),
+            (powell_df, 'San Juan River Near Bluff, UT', 'goldenrod'),
+            (powell_df, 'Dirty Devil Near Hanksville, UT', 'purple')
+        ]
+        line_chart = LineChart(
+            time_series, title='',
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
+            percentage=0.2,
+            y_units='CFS',
+            y_max=11_000
+        )
+        line_chart.set_end_date(date(2027, 5, 15))
+        self.charts.append(line_chart)
+
+'''
         time_series = []
         for reservoir in self.reservoirs:
             if reservoir.name == 'Lake Powell':
@@ -246,16 +258,13 @@ class ReservoirsBig3(ChartFrame):
                     pass
         time_series.append((powell_df, 'Cut Powell Release', 'gold'))
         time_series.append((fg_df, 'Flaming Gorge DROA', 'green'))
-
-
         line_chart = LineChart(
             time_series, title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date
         )
         line_chart.set_end_date(date(2027, 5, 1))
         self.charts.append(line_chart)
-        '''
-
+'''
 def previous_month_path(path: Path) -> Path:
     """
     Takes a path like: /.../2026/APR26

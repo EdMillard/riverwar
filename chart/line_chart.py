@@ -91,11 +91,13 @@ class LineChart(Chart):
 
         self.create_line_chart(self.ax)
 
+        left_margin = 0.07
+        right_margin = 0.95
         top_margin = 0.92 if self.title and self.title.strip() else 1
-        bottom_margin = 0.07 if self.show_x_labels else 0.05
+        bottom_margin = 0.1 if self.show_x_labels else 0.01
 
         fig.tight_layout(pad=1.0)
-        fig.subplots_adjust(left=0.09, right=0.96, bottom=bottom_margin, top=top_margin)
+        fig.subplots_adjust(left=left_margin, right=right_margin, bottom=bottom_margin, top=top_margin)
 
         # fig.tight_layout(pad=1.3)
         # fig.subplots_adjust(left=0.08, right=0.95, bottom=0.085, top=top_margin)
@@ -144,17 +146,18 @@ class LineChart(Chart):
         if years_span >= 1.5:
             ax.xaxis.set_minor_locator(mdates.MonthLocator())
 
-            def month_first_letter(x, pos):
-                return mdates.DateFormatter('%b')(x, pos)[0]
+        # if self.show_x_labels:
+        def month_first_letter(x, pos):
+            return mdates.DateFormatter('%b')(x, pos)[0]
 
-            ax.xaxis.set_minor_formatter(month_first_letter)
+        ax.xaxis.set_minor_formatter(month_first_letter)
 
-            ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, rotation=0, pad=2)
-            ax.tick_params(axis='x', which='major', length=6, width=1.2, labelsize=10, pad=4)
+        ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, rotation=0, pad=2)
+        ax.tick_params(axis='x', which='major', length=6, width=1.2, labelsize=10, pad=4)
 
         if not self.show_x_labels:
             ax.set_xticklabels([])
-            ax.tick_params(axis='x', which='major', length=0)
+            # ax.tick_params(axis='x', which='major', length=0)
 
         # ==================== GRID LINES ====================
         # Major grid (years) - darker
@@ -166,7 +169,7 @@ class LineChart(Chart):
         # Y grid (kept as before)
         ax.grid(True, axis='y', linestyle='--', alpha=0.7, zorder=0)
 
-        ax.axhline(y=0, color='black', linewidth=2.5, linestyle='-', alpha=1, zorder=3)
+        ax.axhline(y=0, color='black', linewidth=1.0, linestyle='-', alpha=1, zorder=3)
 
         # Y-AXIS
         self.setup_yaxis(ax)
