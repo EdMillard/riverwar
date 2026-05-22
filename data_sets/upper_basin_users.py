@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import datetime
-
 from data_sets.data_set import DataSet
 from api import df_utils
 import colorado.ub as ub

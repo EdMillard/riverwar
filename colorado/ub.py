@@ -117,17 +117,22 @@ CO_WEST_SLOPE = 'CO'
 # CO_WEST_SLOPE = 'West Slope'
 
 CO_NORTHERN_WATER = 'Northern Water'
+CDSS_CO_ADAMS_TUNNEL_ABBREV = 'ADATUNCO'
 CDSS_CO_ADAMS_TUNNEL_DIVERSION = 'Adams Tunnel Diversion'   # CO, Northern Water
 CDSS_CO_ADAMS_TUNNEL_RELEASE = 'Adams Tunnel Release'       # CO, Northern Water
 CDSS_CO_ADAMS_TUNNEL = 'Adams Tunnel'                       # CO, Northern Water
 USGS_CO_ADAMS_TUNNEL_GAGE = '09013000'                      # CO, Northern Water
 
 # Denver Water
+CDSS_CO_DILLON_ABBREV = 'DILRESCO'
+CDSS_CO_DILLON_STORAGE = 'Dillon Storage'
 CO_DENVER_WATER = 'Denver Water'
+CDSS_CO_MOFFAT_TUNNEL_ABBREV = 'MOFTUNCO'
 CDSS_CO_MOFFAT_TUNNEL = 'Moffat Tunnel'    # CO, Denver Water
 USGS_CO_MOFFAT_TUNNEL = 'Moffat Tunnel'    # CO, Denver Water
 USGS_CO_MOFFAT_TUNNEL_GAGE = '09024000'    # CO, Denver Water
 
+CDSS_CO_ROBERTS_TUNNEL_ABBREV = 'ROBTUNCO'
 CDSS_CO_ROBERTS_TUNNEL = 'Roberts Tunnel'   # CO, Denver Water
 USGS_CO_ROBERTS_TUNNEL = 'Roberts Tunnel'   # CO, Denver Water
 USGS_CO_ROBERTS_TUNNEL_GAGE = '09063000'   # CO, Denver Water

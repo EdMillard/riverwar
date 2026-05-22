@@ -21,6 +21,9 @@ SOFTWARE.
 """
 from reservoirs.reservoir import Reservoir
 from typing import List, Optional
+from pathlib import Path
+from datetime import date
+import colorado.allb as all_b
 
 class GreenMountain(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
@@ -48,3 +51,8 @@ class GreenMountain(Reservoir):
         self.turbine_intake_af = 0
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
+
+    def load_data(self, report_path: Optional[Path], start_date: date, current_date: date, end_date: date):
+        super().load_data(report_path, start_date, current_date, end_date)
+        # self.usgs_load_daily('09053500', all_b.INFLOW)   # Blue River above Green Mountain Reservoir, CO, ended in 1987
+

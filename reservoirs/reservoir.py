@@ -28,10 +28,8 @@ from dateutil.relativedelta import relativedelta
 from api.registry import Registry
 import json
 from pathlib import Path
-import pandas as pd
 import numpy as np
 from ruamel.yaml.timestamp import TimeStamp
-from source.water_year_info import WaterYearInfo
 from typing import List, Tuple, Literal, Optional, Dict
 from sheet import sheet
 from source import usbr_rise
@@ -42,7 +40,10 @@ from pandas.tseries.offsets import MonthEnd
 from api import df_utils
 import pytz
 from data_sets.data_set import DataSet
-from source.usgs_gage import USGSGage, daily_to_water_year, convert_cfs_to_af_per_day
+from source.usgs_gage import USGSGage
+from source import cdss
+import pandas as pd
+from source.water_year_info import WaterYearInfo
 
 # Head and tail USBR JSON Files for verification
 # find . -name '*2026.json' -type f -printf '%T@ %p\0' | sort -zn | cut -zd' ' -f2- | xargs -0 -I {} sh -c 'echo "=== {} ==="; head -n 10 "{}"; echo "..."; tail -n 8 "{}"; echo "────────────────────────────────────────"'
@@ -305,6 +306,19 @@ class Reservoir:
                                    title=all_b.INFLOW_UNREGULATED, divisor=1)
         return self.df_annual
 
+    def load_cdss_daily(self, wdid: str, start_year: int, end_year: int, water_class_num: str = '',
+                   title: str = '',
+                   month: int = 10, divisor: int = 1, analyze: bool = False):
+        for year in range(start_year, end_year + 1):
+            if month != 1:
+                ts = pd.Timestamp(f'{year - 1}-{month}-01 00:00:00')
+            else:
+                ts = pd.Timestamp(f'{year}-{month}-01 00:00:00')
+            water_year_info = WaterYearInfo.get_water_year(ts, month=month)
+            daily = cdss.structures_divrec(None, wdid, water_year_info, water_class_num=water_class_num,
+                                              analyze=analyze)
+            df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=title)
+            pass
     def load_data_daily(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
         water_year_info = self.water_year_info
         if self.df_daily is None or water_year_info.start_date != self.start_date or water_year_info.end_date != self.end_date:
@@ -329,15 +343,15 @@ class Reservoir:
     def load_data(self, report_path:Optional[Path], start_date:date, current_date:date, end_date:date):
         self.load_date(report_path, start_date, current_date, end_date)
         if self.usbr_rise_storage_af_id:
-            self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id,  all_b.STORAGE)
+            self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id,  self.name+'.'+all_b.STORAGE)
         if self.usbr_rise_elevation_ft_id:
             self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, all_b.ELEVATION)
-        # if self.usbr_rise_release_cfs_id:
-        #     self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, all_b.RELEASE)
-        # if self.usbr_rise_evap_af_id:
-        #     self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, all_b.EVAPORATION)
-        # if self.usbr_rise_inflow_af_id:
-        #     pass
+        if self.usbr_rise_release_cfs_id:
+             self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, self.name+'.'+all_b.RELEASE)
+        # if self.usbr_rise_inflow_cfs_id:
+        #      self.release_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, all_b.INFLOW)
+        if self.usbr_rise_evap_af_id:
+             self.evap_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, all_b.EVAPORATION)
 
     def get_projection(self, df_monthly:pd.DataFrame, column_name:str, monthly_column_name:str ='End Of Month Storage'):
         # initial_value = self.df_daily[ub.POWELL_WY].iloc[0]

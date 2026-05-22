@@ -27,6 +27,7 @@ from graphs.chart_frame import NotebookFrame
 from colorado.river_war import RiverWar
 from data_sets.data_set import DataSetRegistry
 from graphs.flow_chart_frame import FlowChartFrame
+from graphs.front_range import FrontRange
 from graphs.supply_v_demand import SupplyVDemand
 from graphs.reservoir_chart_frame import ReservoirChartFrame
 from graphs.reservoirs_reality import ReservoirsReality
@@ -55,6 +56,10 @@ def reservoir_reality_chart(notebook_frame:NotebookFrame):
 
 def reservoirs_big3(notebook_frame:NotebookFrame):
     frame = ReservoirsBig3(notebook_frame)
+    frame.Show()
+
+def front_range(notebook_frame:NotebookFrame):
+    frame = FrontRange(notebook_frame)
     frame.Show()
 
 def reservoir_chart(notebook_frame:NotebookFrame):
@@ -96,8 +101,9 @@ if __name__ == "__main__":
 
     # reservoir_chart(nb)
     # supply_v_demand(nb)
-    reservoir_reality_chart(nb)
+    # reservoir_reality_chart(nb)
     # reservoirs_big3(nb)
+    front_range(nb)
 
     nb.Show()
     app.MainLoop()

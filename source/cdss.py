@@ -225,7 +225,9 @@ def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=Non
 
     # api_key = None  # Replace with your CDSS API key (optional for limited queries)
     base_url = "https://dwr.state.co.us/Rest/GET/api/v2/telemetrystations/telemetrytimeseriesday/"
-    url = f"{base_url}?abbrev={abbrev}&parameter={parameter}"
+    url = f"{base_url}?abbrev={abbrev}"
+    if parameter:
+        url += f"&parameter={parameter}"
     if start_date:
         url += f'&startDate={start_date}'
     if end_date:

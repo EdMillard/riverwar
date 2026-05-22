@@ -169,6 +169,7 @@ class ReservoirsBig3(ChartFrame):
         start_mod_date = date(2026, 5, 1)
         end_powell_mod_date = date(2026, 9, 30)
         end_fg_mod_date = date(2027, 5, 1)
+        graph_end_date = date(2027, 5, 1)
         time_series = []
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
@@ -205,7 +206,7 @@ class ReservoirsBig3(ChartFrame):
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
             show_x_labels = False
         )
-        self.line_chart.set_end_date(date(2027, 5, 15))
+        self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
         time_series = []
@@ -230,7 +231,7 @@ class ReservoirsBig3(ChartFrame):
             # y_max=18000,
             y_units='CFS',
         )
-        self.inflow_outflow_chart.set_end_date(date(2027, 5, 15))
+        self.inflow_outflow_chart.set_end_date(graph_end_date)
         self.charts.append(self.inflow_outflow_chart)
 
         time_series = [
@@ -246,7 +247,7 @@ class ReservoirsBig3(ChartFrame):
             y_units='CFS',
             y_max=11_000
         )
-        line_chart.set_end_date(date(2027, 5, 15))
+        line_chart.set_end_date(graph_end_date)
         self.charts.append(line_chart)
 
 '''
