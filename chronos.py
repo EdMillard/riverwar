@@ -1,3 +1,25 @@
+"""
+Copyright (c) 2025 Ed Millard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
 import time
 import datetime
 import schedule
@@ -6,6 +28,9 @@ from typing import Optional
 # Scrapers
 from reservoirs.srp import SRP
 from reservoirs import lake_pleasant
+import requests
+import pandas as pd
+from datetime import datetime
 
 import matplotlib
 import os
@@ -22,13 +47,19 @@ def run_daily_tasks():
 
     """Run all your daily scrapers."""
     mt_tz = pytz.timezone("US/Mountain")
-    now_mt = datetime.datetime.now(mt_tz)
+    now_mt = datetime.now(mt_tz)
     print(f"\n=== Chronos scrape Started: {now_mt.strftime('%Y-%m-%d %I:%M %p')} MT ===")
+
+    try:
+        print("Fetching Denver Water reservoir data...")
+        download_denverwater_reservoirs()
+    except Exception as e:
+        print(f"❌ Error during Denver Water daily task: {e}")
 
     try:
         # === AZ Salt River Project(SRP) Reservoir Scraper ===
         #
-        print("Fetching reservoir data...")
+        print("Fetching SRP reservoir data...")
         _srp.chronos()
     except Exception as e:
         print(f"❌ Error during SRP daily task: {e}")
@@ -37,6 +68,7 @@ def run_daily_tasks():
     #
     try:
         if _lake_pleasant is None:
+            print("Fetching Lake Pleasant reservoir data...")
             _lake_pleasant = lake_pleasant.LakePleasant()
         ok, lake_pleasant_data = _lake_pleasant.get_lake_pleasant_data()
         if ok:
@@ -49,8 +81,40 @@ def run_daily_tasks():
 
         print("✅ All daily tasks completed successfully.")
 
-    except Exception as e:
-        print(f"❌ Error during daily tasks: {e}")
+
+def download_denverwater_reservoirs():
+    url = "https://www.denverwater.org/your-water/water-supply-and-planning/reservoir-levels/csv?page&_format=csv"
+
+    # Download the CSV
+    response = requests.get(url)
+    response.raise_for_status()
+
+    # Read the CSV (skip the separator line)
+    df = pd.read_csv(url, skiprows=[1])
+
+    # Get the latest date from the file
+    if 'Valid Date' in df.columns:
+        df['Valid Date'] = pd.to_datetime(df['Valid Date'], errors='coerce')
+        latest_date = df['Valid Date'].max()
+        date_str = latest_date.strftime('%Y-%m-%d')
+    else:
+        date_str = datetime.now().strftime('%Y-%m-%d')
+
+    # Define the target path
+    directory = "data/DenverWater"
+    filename = f"denverwater_reservoirs_{date_str}.csv"
+    full_path = os.path.join(directory, filename)
+
+    # Make sure directory exists
+    os.makedirs(directory, exist_ok=True)
+
+    # Save the file
+    df.to_csv(full_path, index=False)
+
+    print(f"✅ Successfully saved: {full_path}")
+
+    return full_path
+
 
 def chronos():
     mt_tz = pytz.timezone("US/Mountain")
@@ -59,7 +123,7 @@ def chronos():
 
     print("Daily Scheduler Started (Colorado Mountain Time)")
     print(f"Tasks scheduled daily at {schedule_time} MT")
-    print(f"Current time: {datetime.datetime.now(mt_tz).strftime('%Y-%m-%d %I:%M %p %Z')}\n")
+    print(f"Current time: {datetime.now(mt_tz).strftime('%Y-%m-%d %I:%M %p %Z')}\n")
 
     # Schedule the job - pytz automatically adjusts for DST
     schedule.every().day.at(schedule_time).do(run_daily_tasks)
