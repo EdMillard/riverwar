@@ -29,10 +29,10 @@ import colorado.ub as ub
 import colorado.allb as all_b
 
 
-class Dillon(Reservoir):
+class WilliamsFork(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Dillon',headers,  catalog_id=0, upstream=upstream)
+        super().__init__('Williams Fork',headers,  catalog_id=0, upstream=upstream)
         self.start_year = 1965
         self.no_elevation_available = True
 
@@ -41,8 +41,8 @@ class Dillon(Reservoir):
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 9_017
-        self.full_af = 257_304
+        self.full_feet = 7_811
+        self.full_af = 97_000
 
         # Critical
         self.power_head_target_feet = 0
@@ -58,29 +58,13 @@ class Dillon(Reservoir):
 
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
         super().load_data(report_path, start_date, current_date, end_date)
-
-        time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_DILLON_ABBREV, 'STORAGE',
+        time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WILLIAMS_FORK_ABBREV, 'STORAGE',
                                                          water_year_info=self.water_year_info, alias=self.name+'.'+all_b.STORAGE)
         self.active_capacity_af = time_series[-1][1]
         df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date', value_column_name=self.name+'.'+all_b.STORAGE)
-
-        # time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_DILLON_ABBREV, 'DISCHRG',
+        pass
+        # time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WILLIAMS_FORK_ABBREV, 'DISCHRG',
         #                                                  water_year_info=self.water_year_info, alias=self.name+'.'+all_b.RELEASE)
         # df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date', value_column_name=self.name+'.'+all_b.RELEASE)
 
-        daily = cdss.telemetry_station_time_series(None, ub.CDSS_CO_MOFFAT_TUNNEL_ABBREV, 'DISCHRG',
-                                                         water_year_info=self.water_year_info, alias=ub.CDSS_CO_MOFFAT_TUNNEL)
-        df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=ub.CDSS_CO_MOFFAT_TUNNEL)
-
-        daily = cdss.telemetry_station_time_series(None, ub.CDSS_CO_ROBERTS_TUNNEL_ABBREV, 'DISCHRG',
-                                                         water_year_info=self.water_year_info, alias=ub.CDSS_CO_ROBERTS_TUNNEL)
-        df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=ub.CDSS_CO_ROBERTS_TUNNEL)
-
-        # time_series = cdss.telemetry_station_time_series(None, 'DILRESCO', 'GAGE_HT',
-        #                                                 water_year_info=self.water_year_info, alias='DILLON ELEVATION')
-        # if time_series is not None:
-        #     self.elevation_feet = time_series[-1][1]
-        # time_series = cdss.telemetry_station_time_series(logger, 'DILRESCO', 'DISCHRG',
-        #                                                 water_year_info=water_year_info, alias='DILLON DISCHARGE')
-        pass
 

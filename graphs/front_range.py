@@ -24,7 +24,6 @@ from pathlib import Path
 from datetime import datetime
 import wx
 import colorado.ub as ub
-from basins.uc import lake_granby
 from chart.chart import Chart
 from datetime import date
 from graphs.chart_frame import ChartFrame, NotebookFrame
@@ -33,6 +32,38 @@ import colorado.allb as all_b
 from reservoirs.green_mountain import GreenMountain
 from reservoirs.lake_granby import LakeGranby
 from reservoirs.dillon import Dillon
+from reservoirs.wolford import Wolford
+from reservoirs.williams_fork import WilliamsFork
+
+# Northern Water Reservoirs and Lakes
+#   Boulder Lake
+#   Carter Lake
+#   Flatiron Reservoir
+#   Grand Lake
+#   Green Mountain Reservoir
+#   Horsetooth Reservoir
+#   Lake Estes
+#   Lake Granby
+#   Mary's Lake
+#   Pinewood Reservoir
+#   Shadow Mountain Reservoir
+#   Willow Creek Reservoir
+# Tunnels
+#   Adans
+#   Farr/Grand Pump/Canal
+#   Moffat
+#   Roberts
+#   Gumlick
+#   Vasquez
+#   Dille
+#   Hansen
+#   North Poudre
+
+# Arkansas Tunnels
+#   Homestake
+#   Boustead
+#   Busk Ivanhoe
+#   Twin Lakes
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -49,14 +80,31 @@ class FrontRange(ChartFrame):
         self.inflow_outflow_chart = None
         self.version = 0.1
 
+        self.maps:List[str] = [
+            # DWR - All TMD's
+            # https://drive.google.com/drive/folders/1S1372jZGuZKswUI3Jbf0QtXHpZkW8u-e
+            'https://drive.google.com/file/d/1cOEzBGVSAU7MyBlx92ZutKew6DtHBB5U/view'
+            # Northern Water
+            'https://www.northernwater.org/getmedia/3c15e504-54bf-4b2a-abd9-48e881e808d0/CBT-Project-Map.pdf'
+            # Denver Water
+            'https://www.denverwater.org/sites/default/files/2017-05/map-collection-system.pdf',
+            # Fryark
+            'https://www.roaringfork.org/media/1299/map-of-fryingpan-arkansas-project.pdf',
+            'https://www.secwcd.org/content/fryingpan-arkansas-project-system-map',
+        ]
+
         lake_granby = LakeGranby()
         dillon = Dillon()
         green_mountain = GreenMountain()
+        williams_fork = WilliamsFork()
+        wolford = Wolford()
 
         reservoirs = [
             lake_granby,
             dillon,
             green_mountain,
+            williams_fork,
+            wolford,
         ]
         super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name='APR26 24-Month')
         self.right_axis_annotations()
@@ -67,13 +115,7 @@ class FrontRange(ChartFrame):
                 pass
 
     def load_charts(self):
-        do_adjustment = False
-        powell_df = None
-        fg_df = None
-        start_mod_date = date(2026, 5, 1)
-        end_powell_mod_date = date(2026, 9, 30)
-        end_fg_mod_date = date(2027, 5, 1)
-        graph_end_date = date(2027, 5, 1)
+        graph_end_date = date.today()
         time_series = []
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
@@ -83,7 +125,10 @@ class FrontRange(ChartFrame):
                     time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'royalblue'))
                 elif reservoir.name == 'Green Mountain':
                     time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'darkgreen'))
-
+                elif reservoir.name == 'Wolford':
+                    time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'gold'))
+                elif reservoir.name == 'Williams Fork':
+                    time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'purple'))
 
         today = datetime.today().date()
         self.line_chart = LineChart(
@@ -101,13 +146,15 @@ class FrontRange(ChartFrame):
         for reservoirs in self.reservoir_lists:
             for reservoir in reversed(reservoirs):
                 if reservoir.name == 'Lake Granby':
-                    # time_series.append((reservoir.df_daily, all_b.INFLOW, 'darkred'))
                     time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.RELEASE, 'darkred'))
                 elif reservoir.name == 'Dillon':
                     pass
                 elif reservoir.name == 'Green Mountain':
-                    # time_series.append((reservoir.df_daily, all_b.INFLOW, 'darkgreen'))
                     time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.RELEASE, 'green'))
+                elif reservoir.name == 'Wolford':
+                    pass
+                elif reservoir.name == 'Williams Fork':
+                    pass
 
         self.inflow_outflow_chart = LineChart(
             time_series,

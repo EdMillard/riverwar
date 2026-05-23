@@ -143,7 +143,7 @@ class LineChart(Chart):
 
         # Minor ticks: Months (first letter)
         years_span = (x_end - x_start).days / 365.25
-        if years_span >= 1.5:
+        if years_span >= 0.5:
             ax.xaxis.set_minor_locator(mdates.MonthLocator())
 
         # if self.show_x_labels:

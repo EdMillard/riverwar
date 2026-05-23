@@ -27,7 +27,7 @@ from api import df_utils
 from pathlib import Path
 from datetime import date
 import colorado.allb as all_b
-from sheet import sheet
+import colorado.ub as ub
 
 class Wolford(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
@@ -64,18 +64,17 @@ class Wolford(Reservoir):
                                                                [all_b.STORAGE, all_b.STORAGE_DELTA, all_b.ELEVATION,
                                                                 all_b.RELEASE, all_b.EVAPORATION, all_b.INFLOW])
         # USGS=09041395
-        sheet.usgs_value(self.df_daily, '09041395', self.start_year, 2026, title=all_b.STORAGE, parameterCd='62614', statCd='00003')
+        # sheet.usgs_value(self.df_daily, '09041395', self.start_year, 2026, title=all_b.STORAGE, parameterCd='62614', statCd='00003')
 
-        # wdid=5003657
-        # time_series = cdss.telemetry_station_time_series(None, 'WOLFORD', 'STORAGE',
+        time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WOLFORD_ABBREV, 'STORAGE',
+                                                         water_year_info=self.water_year_info,
+                                                         alias=self.name + '.' + all_b.STORAGE)
+        self.active_capacity_af = time_series[-1][1]
+        df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date',
+                                               value_column_name=self.name + '.' + all_b.STORAGE)
+
+        # time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WOLFORD_ABBREV, 'DISCHRG',
         #                                                  water_year_info=self.water_year_info,
-        #                                                  alias='WOLFORD CAPACITY')
-        # self.active_capacity_af = time_series[-1][1]
-
-        # time_series = cdss.telemetry_station_time_series(None, 'WOLF', 'GAGE_HT',
-        #                                                 water_year_info=self.water_year_info, alias='WOLFORD ELEVATION')
-        # if time_series is not None:
-        #     self.elevation_feet = time_series[-1][1]
-        # time_series = cdss.telemetry_station_time_series(logger, 'WOLF', 'DISCHRG',
-        #                                                 water_year_info=water_year_info, alias='WOLFORD DISCHARGE')
-        pass
+        #                                                  alias=self.name + '.' + all_b.RELEASE)
+        # df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date',
+        #                                      value_column_name=self.name + '.' + all_b.RELEASE)
