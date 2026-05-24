@@ -27,6 +27,9 @@ import pandas as pd
 from source import usbr_report
 from rw.util import reshape_annual_range
 from source.water_year_info import WaterYearInfo
+from datetime import date
+from api import df_utils
+
 
 # USGS Gage parameter definitions
 # https://help.waterdata.usgs.gov/code/parameter_cd_query?fmt=rdb&inline=true&group_cd=%
@@ -322,6 +325,31 @@ class USGSGage(object):
 
         return self.daily_discharge_cfs
 
+
+def get_water_year_info(year:int, month:int=10):
+    if month == 1:
+        start_date = date(year, month, 1)
+    else:
+        start_date = date(year-1, month, 1)
+    water_year_info = WaterYearInfo.get_water_year(start_date, month=month)
+    return water_year_info
+
+def get_last_nonzero(df: pd.DataFrame, column: str):
+    # Filter out NaN and zero values, then get the last one
+    valid = df[column].replace(0, np.nan).dropna()
+
+    if valid.empty:
+        return None  # or np.nan, or raise an exception
+
+    return valid.iloc[-1]
+
+def daily_to_df(df:pd.DataFrame, gage_id:str, column_name:str, start_date:date, end_date:date, parameterCd='00060', statCd='00003', month:int=10)->None:
+    for year in range(start_date.year, end_date.year + 1):
+        water_year_info = get_water_year_info(year, month=month)
+        gage = USGSGage(gage_id, water_year_info)
+        daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=column_name, parameterCd=parameterCd,
+                                         statCd=statCd)
+        df_utils.fill_df_from_structured_array(df, daily_cfs, date_column_name='Date', value_column_name=column_name)
 
 def usgs_discharge_mean_column(headers, parameterCd='00060', statCd='00003'):
     discharge_mean_index = 0

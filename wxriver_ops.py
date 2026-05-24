@@ -108,8 +108,8 @@ if __name__ == "__main__":
     # supply_v_demand(nb)
     # reservoir_reality_chart(nb)
     # reservoirs_big3(nb)
-    front_range(nb)
-    # grand_valley(nb)
+    # front_range(nb)
+    grand_valley(nb)
 
     nb.Show()
     app.MainLoop()

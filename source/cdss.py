@@ -45,7 +45,6 @@ import numpy as np
 from source.water_year_info import WaterYearInfo
 import datetime
 from datetime import date
-from typing import Optional
 
 def structure_info(wdid):
     json_info = None
