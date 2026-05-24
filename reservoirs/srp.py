@@ -107,7 +107,7 @@ class SRP(SRPReservoir):
     def chronos(self):
         if self.df_daily is not None:
             if not Reservoir.is_new_day(self.df_daily):
-                print(f"  ✓ SRP Reservoirs up to date for today")
+                print(f"✅ SRP Reservoirs up to date for today")
                 return
 
         mt_tz = pytz.timezone("US/Mountain")

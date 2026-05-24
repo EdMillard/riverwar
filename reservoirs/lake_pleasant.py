@@ -150,7 +150,7 @@ class LakePleasant(Reservoir):
 
     def get_lake_pleasant_data(self)->Tuple[bool, Optional[Dict]]:
         if not Reservoir.is_new_day(self.df_daily):
-            print(f"  ✓ Lake Pleasant up to date for today")
+            print(f"✅ Lake Pleasant up to date for today")
             return True, None
 
         options = Options()
