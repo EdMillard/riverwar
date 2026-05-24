@@ -98,7 +98,6 @@ GIF_LOOP_ENABLED = False
 
 class FrontRange(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
-        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
         self.line_chart = None
         self.inflow_outflow_chart = None
         self.version = 0.1
@@ -129,7 +128,7 @@ class FrontRange(ChartFrame):
             WilliamsFork(),
             Wolford(),
         ]
-        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name='APR26 24-Month')
+        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=None, page_name='Front Range')
         self.right_axis_annotations()
 
 
@@ -138,10 +137,21 @@ class FrontRange(ChartFrame):
             for reservoir in reservoirs:
                 pass
 
+    def load_reservoirs(self) -> Optional[date]:
+        date_time_as_date = None
+        start = self.start_date
+        current = self.end_date
+        end = self.end_date
+
+        for reservoir_list in self.reservoir_lists:
+            for reservoir in reservoir_list:
+                reservoir.load_data(None, start, current, end)
+                if reservoir.name == 'Lake Powell':
+                    date_time_as_date = pd.Timestamp(reservoir.date_time)
+        return date_time_as_date
+
     def load_data(self) -> Optional[date]:
         self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])
-        self.start_nav.current_date = self.start_date
-        self.end_nav.current_date = self.end_date
         # https://dwr.state.co.us/Tools/Stations/ADATUNCO?params=DISCHRG
         cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_ADAMS_TUNNEL_ABBREV, ub.CDSS_CO_ADAMS_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
         # https://dwr.state.co.us/Tools/Stations/MOFTUNCO?params=DISCHRG
@@ -181,7 +191,7 @@ class FrontRange(ChartFrame):
             time_series,
             title=f'Front Range - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
-            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = False,
             y_units='TAF',
         )
@@ -205,7 +215,7 @@ class FrontRange(ChartFrame):
         self.inflow_outflow_chart = LineChart(
             time_series,
             title='',
-            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = False,
             percentage=0.2,
             # y_max=18000,
@@ -221,7 +231,7 @@ class FrontRange(ChartFrame):
         ]
         line_chart = LineChart(
             time_series, title='',
-            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             percentage=0.2,
             y_units='CFS',
             # y_max=700
@@ -237,7 +247,7 @@ class FrontRange(ChartFrame):
         ]
         line_chart = LineChart(
             time_series, title='',
-            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             percentage=0.2,
             y_units='CFS',
             # y_max=700
