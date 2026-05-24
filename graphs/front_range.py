@@ -22,12 +22,16 @@ SOFTWARE.
 """
 from pathlib import Path
 from datetime import datetime
-import wx
-import colorado.ub as ub
-from chart.chart import Chart
 from datetime import date
+from typing import List, Optional
+from source import cdss
+from api import df_utils
+import pandas as pd
+from chart.chart import Chart
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
+import wx
+import colorado.ub as ub
 import colorado.allb as all_b
 from reservoirs.green_mountain import GreenMountain
 from reservoirs.lake_granby import LakeGranby
@@ -48,22 +52,41 @@ from reservoirs.williams_fork import WilliamsFork
 #   Pinewood Reservoir
 #   Shadow Mountain Reservoir
 #   Willow Creek Reservoir
+#
 # Tunnels
-#   Adans
-#   Farr/Grand Pump/Canal
+#   North Poudre
+#   Adams
+#   Farr/Grand Pump/Canal feeds Adams
 #   Moffat
 #   Roberts
+#   Berthoud Pass Ditch
 #   Gumlick
+#   Straight Pass Tunnel
 #   Vasquez
 #   Dille
 #   Hansen
-#   North Poudre
+#   Boreas Pass Ditch
+#   Con-Hoosier Tunnel
 
-# Arkansas Tunnels
+# Arkansas Tunnels and TND Ditches
+#   Columbine Ditch
+#   Ewing Ditch
+#   Wurts Ditch
 #   Homestake
 #   Boustead
 #   Busk Ivanhoe
 #   Twin Lakes
+#   Larkspur Ditch
+
+# Rio Grande
+#   Tarbell Ditch
+#   Tabor Ditch
+#   Weminuche Pass
+#   Pine River Weminuche Pass Ditch
+#   Williams Creek-Squaw Pass Ditch
+#   Don La Font Ditch No. 1
+#   Don La Font Ditch No. 2
+#   Treasure Pass Ditch
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -80,6 +103,11 @@ class FrontRange(ChartFrame):
         self.inflow_outflow_chart = None
         self.version = 0.1
 
+        self.end_date = date.today()
+        self.start_date = self.end_date.replace(year=self.end_date.year - 5)
+        self.df_daily:Optional[pd.DataFrame] = None
+        self.water_year_info = None
+
         self.maps:List[str] = [
             # DWR - All TMD's
             # https://drive.google.com/drive/folders/1S1372jZGuZKswUI3Jbf0QtXHpZkW8u-e
@@ -91,28 +119,46 @@ class FrontRange(ChartFrame):
             # Fryark
             'https://www.roaringfork.org/media/1299/map-of-fryingpan-arkansas-project.pdf',
             'https://www.secwcd.org/content/fryingpan-arkansas-project-system-map',
+            'https://coyotegulch.blog/wp-content/uploads/2012/08/fryingpanarkansasprojectdistrictboundariesmapsecwd.jpg'
         ]
 
-        lake_granby = LakeGranby()
-        dillon = Dillon()
-        green_mountain = GreenMountain()
-        williams_fork = WilliamsFork()
-        wolford = Wolford()
-
         reservoirs = [
-            lake_granby,
-            dillon,
-            green_mountain,
-            williams_fork,
-            wolford,
+            LakeGranby(),
+            Dillon(),
+            GreenMountain(),
+            WilliamsFork(),
+            Wolford(),
         ]
         super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name='APR26 24-Month')
         self.right_axis_annotations()
+
 
     def right_axis_annotations(self):
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
                 pass
+
+    def load_data(self) -> Optional[date]:
+        self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])
+        self.start_nav.current_date = self.start_date
+        self.end_nav.current_date = self.end_date
+        # https://dwr.state.co.us/Tools/Stations/ADATUNCO?params=DISCHRG
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_ADAMS_TUNNEL_ABBREV, ub.CDSS_CO_ADAMS_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
+        # https://dwr.state.co.us/Tools/Stations/MOFTUNCO?params=DISCHRG
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_MOFFAT_TUNNEL_ABBREV, ub.CDSS_CO_MOFFAT_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
+        # https://dwr.state.co.us/Tools/Stations/ROBTUNCO?params=DISCHRG
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_ROBERTS_TUNNEL_ABBREV, ub.CDSS_CO_ROBERTS_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
+
+        # https://dwr.state.co.us/Tools/Stations/BOUTUNCO?params=DISCHRG
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_BOUSTEAD_TUNNEL_ABBREV, ub.CDSS_CO_BOUSTEAD_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
+        # https://dwr.state.co.us/Tools/Stations/BUSTUNCO?params=DISCHRG
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_BUSK_IVANHOE_TUNNEL_ABBREV, ub.CDSS_CO_BUSK_IVANHOE_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
+        # https://dwr.state.co.us/Tools/Stations/HOMTUNCO?params=DISCHRG
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_HOMESTAKE_TUNNEL_ABBREV, ub.CDSS_CO_HOMESTAKE_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
+        # https://dwr.state.co.us/Tools/Stations/TWITUNCO?params=DISCHRG
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_TWIN_LAKES_TUNNEL_ABBREV, ub.CDSS_CO_TWIN_LAKES_TUNNEL, 'DISCHRG', self.start_date, self.end_date)
+
+        return self.load_reservoirs()
 
     def load_charts(self):
         graph_end_date = date.today()
@@ -126,7 +172,7 @@ class FrontRange(ChartFrame):
                 elif reservoir.name == 'Green Mountain':
                     time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'darkgreen'))
                 elif reservoir.name == 'Wolford':
-                    time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'gold'))
+                    time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'goldenrod'))
                 elif reservoir.name == 'Williams Fork':
                     time_series.append((reservoir.df_daily, reservoir.name+'.'+all_b.STORAGE, 'purple'))
 
@@ -168,16 +214,27 @@ class FrontRange(ChartFrame):
         self.inflow_outflow_chart.set_end_date(graph_end_date)
         self.charts.append(self.inflow_outflow_chart)
 
-        time_series = []
-        for reservoirs in self.reservoir_lists:
-            for reservoir in reversed(reservoirs):
-                if reservoir.name == 'Lake Granby':
-                    time_series.append((reservoir.df_daily, ub.CDSS_CO_ADAMS_TUNNEL, 'darkred'))
-                elif reservoir.name == 'Dillon':
-                    time_series.append((reservoir.df_daily, ub.CDSS_CO_MOFFAT_TUNNEL, 'royalblue'))
-                    time_series.append((reservoir.df_daily, ub.CDSS_CO_ROBERTS_TUNNEL, 'dodgerblue'))
-                elif reservoir.name == 'Green Mountain':
-                    pass
+        time_series = [
+            (self.df_daily, ub.CDSS_CO_ADAMS_TUNNEL, 'darkred'),
+            (self.df_daily, ub.CDSS_CO_MOFFAT_TUNNEL, 'purple'),
+            (self.df_daily, ub.CDSS_CO_ROBERTS_TUNNEL, 'royalblue'),
+        ]
+        line_chart = LineChart(
+            time_series, title='',
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
+            percentage=0.2,
+            y_units='CFS',
+            # y_max=700
+        )
+        line_chart.set_end_date(graph_end_date)
+        self.charts.append(line_chart)
+
+        time_series = [
+            (self.df_daily, ub.CDSS_CO_BOUSTEAD_TUNNEL, 'darkred'),
+            (self.df_daily, ub.CDSS_CO_TWIN_LAKES_TUNNEL, 'dodgerblue'),
+            (self.df_daily, ub.CDSS_CO_HOMESTAKE_TUNNEL, 'purple'),
+            (self.df_daily, ub.CDSS_CO_BUSK_IVANHOE_TUNNEL, 'goldenrod'),
+        ]
         line_chart = LineChart(
             time_series, title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,

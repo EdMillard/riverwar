@@ -319,6 +319,7 @@ class Reservoir:
                                               analyze=analyze)
             df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=title)
             pass
+
     def load_data_daily(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
         water_year_info = self.water_year_info
         if self.df_daily is None or water_year_info.start_date != self.start_date or water_year_info.end_date != self.end_date:
@@ -943,6 +944,7 @@ class Reservoir:
             return float(pd.to_numeric(value, errors='coerce'))
         except (IndexError, KeyError, ValueError) as e:
             raise ValueError(f"Could not find value for row '{row_key}' in column '{column_name}'") from e
+
     @staticmethod
     def get_water_year_info(year:int, month:int=10):
         if month == 1:

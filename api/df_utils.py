@@ -505,7 +505,23 @@ def set_value_at_datetime(
         if len(df) == 0:
             df.iloc[:, :] = new_row.iloc[0:1].values  # for empty df
         else:
-            df.loc[len(df)] = new_row.iloc[0]
+            # df.loc[len(df)] = new_row.iloc[0]
+            # df = pd.concat([df, new_row], ignore_index=True)
+            append_row_inplace(df, new_row)
+
+
+def append_row_inplace(df: pd.DataFrame, new_row):
+    """Modify DataFrame in place (no return needed)"""
+    if isinstance(new_row, pd.Series):
+        new_row = new_row.to_frame().T
+    elif isinstance(new_row, dict):
+        new_row = pd.DataFrame([new_row])
+
+    if new_row.empty:
+        return
+
+    # This is the cleanest modern way
+    df.loc[len(df)] = new_row.iloc[0]  # Still triggers warning in newer pandas
 
 
 def to_datetime_safe(date_val: Union[str, "pd.Timestamp", datetime, None]) -> datetime:

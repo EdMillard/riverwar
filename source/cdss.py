@@ -37,12 +37,15 @@ SOFTWARE.
 # 'api/v2/surfacewater/surfacewatertswateryear'
 import copy
 import json
+from api import df_utils
+import pandas as pd
 import requests
 from pathlib import Path
 import numpy as np
 from source.water_year_info import WaterYearInfo
 import datetime
-
+from datetime import date
+from typing import Optional
 
 def structure_info(wdid):
     json_info = None
@@ -199,13 +202,35 @@ def data_from_json(json_data, value_name:str='value', date_name:str='measDate', 
             return np.array(list(zip(date_times, values)), dtype=dtype)
     return None
 
+def get_water_year_info(year:int, month:int=10):
+    if month == 1:
+        start_date = date(year, month, 1)
+    else:
+        start_date = date(year-1, month, 1)
+    water_year_info = WaterYearInfo.get_water_year(start_date, month=month)
+    return water_year_info
+
+def get_last_nonzero(df: pd.DataFrame, column: str):
+    # Filter out NaN and zero values, then get the last one
+    valid = df[column].replace(0, np.nan).dropna()
+
+    if valid.empty:
+        return None  # or np.nan, or raise an exception
+
+    return valid.iloc[-1]
+
+def telemetry_station_daily_to_df(df:pd.DataFrame, abbrev:str, name:str, measurement:str, start_date:date, end_date:date, month:int=10)->None:
+    for year in range(start_date.year, end_date.year + 1):
+        water_year_info = get_water_year_info(year, month=month)
+        time_series = telemetry_station_time_series(None, abbrev, measurement, water_year_info=water_year_info, alias=name)
+        df_utils.fill_df_from_structured_array(df, time_series, date_column_name='Date', value_column_name=name)
 
 def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=None, update=False, alias='',
                                   start_date=None, end_date=None):
     time_series = None
 
     if water_year_info is not None:
-        water_year_string = '_' + str(water_year_info.year)
+        water_year_string = '_' + parameter + '_' + str(water_year_info.year)
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
         if water_year_info.is_current_water_year:

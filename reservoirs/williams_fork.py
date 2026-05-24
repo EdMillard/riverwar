@@ -58,13 +58,16 @@ class WilliamsFork(Reservoir):
 
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
         super().load_data(report_path, start_date, current_date, end_date)
-        time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WILLIAMS_FORK_ABBREV, 'STORAGE',
-                                                         water_year_info=self.water_year_info, alias=self.name+'.'+all_b.STORAGE)
-        self.active_capacity_af = time_series[-1][1]
-        df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date', value_column_name=self.name+'.'+all_b.STORAGE)
-        pass
-        # time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WILLIAMS_FORK_ABBREV, 'DISCHRG',
-        #                                                  water_year_info=self.water_year_info, alias=self.name+'.'+all_b.RELEASE)
-        # df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date', value_column_name=self.name+'.'+all_b.RELEASE)
+
+        # https://dwr.state.co.us/Tools/Stations/WLFRESCO?params=STORAGE
+        # CDSS Period of Record, 1987
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_WILLIAMS_FORK_ABBREV, self.name + '.' + all_b.STORAGE,
+                                           'STORAGE', self.start_date, self.end_date)
+        self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, self.name + '.' + all_b.STORAGE)
+
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_WILLIAMS_FORK_ABBREV, self.name + '.' + all_b.ELEVATION,
+                                           'ELEV', self.start_date, self.end_date)
+        self.elevation_feet = cdss.get_last_nonzero(self.df_daily, self.name + '.' + all_b.ELEVATION)
+
 
 

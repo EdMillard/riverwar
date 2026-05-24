@@ -58,8 +58,6 @@ class LakeGranby(Reservoir):
         # water_class_num = '20404634',
         # self.load_cdss_daily('0404634', start_date.year+1, end_date.year,
         #                       title=ub.CO_NORTHERN_WATER, analyze=True)
-        daily = cdss.telemetry_station_time_series(None, ub.CDSS_CO_ADAMS_TUNNEL_ABBREV, 'DISCHRG',
-                                                         water_year_info=self.water_year_info, alias=ub.CDSS_CO_ADAMS_TUNNEL)
-        df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=ub.CDSS_CO_ADAMS_TUNNEL)
+
 
         pass

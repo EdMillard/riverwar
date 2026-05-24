@@ -58,23 +58,8 @@ class Wolford(Reservoir):
 
     def load_data(self, report_path: Path, start_date: date, current_date: date, end_date: date):
         super().load_data(report_path, start_date, current_date, end_date)
-        self.start_date = date(2026 - 1, 10, 1)
-        self.end_date = date(2026, 9, 30)
-        self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date,
-                                                               [all_b.STORAGE, all_b.STORAGE_DELTA, all_b.ELEVATION,
-                                                                all_b.RELEASE, all_b.EVAPORATION, all_b.INFLOW])
-        # USGS=09041395
-        # sheet.usgs_value(self.df_daily, '09041395', self.start_year, 2026, title=all_b.STORAGE, parameterCd='62614', statCd='00003')
 
-        time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WOLFORD_ABBREV, 'STORAGE',
-                                                         water_year_info=self.water_year_info,
-                                                         alias=self.name + '.' + all_b.STORAGE)
-        self.active_capacity_af = time_series[-1][1]
-        df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date',
-                                               value_column_name=self.name + '.' + all_b.STORAGE)
-
-        # time_series = cdss.telemetry_station_time_series(None, ub.CDSS_CO_WOLFORD_ABBREV, 'DISCHRG',
-        #                                                  water_year_info=self.water_year_info,
-        #                                                  alias=self.name + '.' + all_b.RELEASE)
-        # df_utils.fill_df_from_structured_array(self.df_daily, time_series, date_column_name='Date',
-        #                                      value_column_name=self.name + '.' + all_b.RELEASE)
+        # https://dwr.state.co.us/Tools/Stations/WOLRESCO?params=STORAGE
+        # CDSS Period of Record, 1997
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_WOLFORD_ABBREV, self.name+'.'+all_b.STORAGE, 'STORAGE', self.start_date, self.end_date)
+        self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, self.name+'.'+all_b.STORAGE)

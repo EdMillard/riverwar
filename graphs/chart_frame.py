@@ -32,6 +32,7 @@ from colorado.month_nav import MonthYearNavigator
 from colorado.river_war import RiverWar
 from datetime import datetime
 from pathlib import Path
+from source.water_year_info import WaterYearInfo
 import re
 
 arrow_fg = wx.Colour(150, 150, 150)
@@ -131,7 +132,7 @@ class ChartFrame(wx.Panel):
 
         self.current_time_from_usbr = None
         if self.reservoir_lists:
-            self.current_time_from_usbr = self.load_reservoirs()
+            self.current_time_from_usbr = self.load_data()
 
         self.load_charts()
         self.layout_charts()
@@ -353,6 +354,18 @@ class ChartFrame(wx.Panel):
         self.charts_btn.GetParent().PopupMenu(menu, pos)
         menu.Destroy()
 
+    @staticmethod
+    def get_water_year_info(year:int, month:int=10):
+        if month == 1:
+            start_date = date(year, month, 1)
+        else:
+            start_date = date(year-1, month, 1)
+        water_year_info = WaterYearInfo.get_water_year(start_date, month=month)
+        return water_year_info
+
+    def load_data(self) -> Optional[date]:
+        return self.load_reservoirs()
+
     def load_reservoirs(self) -> Optional[date]:
         date_time_as_date = None
         start = self.start_nav.current_date
@@ -381,7 +394,7 @@ class ChartFrame(wx.Panel):
         self.set_report(self.reports[idx])
 
         print(f"Selected report: {Path(self.report_path).name}")
-        self.load_reservoirs()
+        self.load_data()
 
         for chart in self.charts:
             chart.update_dates(start_date=self.start_nav.current_date,
@@ -393,7 +406,7 @@ class ChartFrame(wx.Panel):
         wx.CallAfter(self.final_full_layout)
 
     def on_date_changed(self, which: str, date_val: date):
-        self.load_reservoirs()
+        self.load_data()
 
         if which == "start":
             for chart in self.charts:
@@ -428,7 +441,7 @@ class ChartFrame(wx.Panel):
                 nav.current_date = date(year, month, 1)
             nav.update_display()
 
-        self.load_reservoirs()
+        self.load_data()
         for chart in self.charts:
             chart.update_dates(start_date=self.start_nav.current_date,
                                current_date=self.current_nav.current_date,

@@ -24,7 +24,8 @@ from datetime import date
 from reservoirs.reservoir import Reservoir
 from typing import List, Optional
 from source import cdss
-
+import colorado.ub as ub
+import colorado.allb as all_b
 
 class Groundhog(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
@@ -54,11 +55,15 @@ class Groundhog(Reservoir):
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):
-        # super().load_data(report_path, start_date, current_date, end_date)
-        time_series = cdss.telemetry_station_time_series(None, 'GRORESCO', 'STORAGE',
-                                                         water_year_info=self.water_year_info, alias='GRNDHOG CAPACITY')
-        self.active_capacity_af = time_series[-1][1]
+        super().load_data(report_path, start_date, current_date, end_date)
 
-        # time_series = cdss.telemetry_station_time_series(logger, 'GROBGRCO', 'DISCHRG',
-        #                                                 water_year_info=water_year_info, alias='GRNDHOG DISCHARGE')
+        # https://dwr.state.co.us/Tools/Stations/GRORESCO?params=STORAGE
+        # CDSS Period of Record, 2011
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_GROUND_HOG_ABBREV, self.name + '.' + all_b.STORAGE,
+                                           'STORAGE', self.start_date, self.end_date)
+        self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, self.name + '.' + all_b.STORAGE)
 
+        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_GROUND_HOG_ABBREV,
+                                           self.name + '.' + all_b.ELEVATION,
+                                           'ELEV', self.start_date, self.end_date)
+        self.elevation_feet = cdss.get_last_nonzero(self.df_daily, self.name + '.' + all_b.ELEVATION)
