@@ -581,6 +581,61 @@ def subtract_column(
 
     return target
 
+def subtract_column_offset(
+        df: pd.DataFrame,
+        col1: str,
+        col2: str,
+        offset_days: int = 0,
+        result_column: str = 'difference',
+        inplace: bool = True,
+        date_col: str = "Date"
+) -> pd.DataFrame:
+    """
+    Subtract col2 from col1 with an optional day offset on col2.
+    Useful for lagged comparisons in daily time series (e.g. water rights / tunnel data).
+
+    Result = col1[Date] - col2[Date + offset_days]
+
+    Parameters:
+        col1 (str): Main column (minuend) - not shifted.
+        col2 (str): Column to subtract (subtrahend) - will be shifted.
+        offset_days (int):
+            Positive = shift col2 forward (use future values)
+            Negative = shift col2 backward (use past values)
+            0 = no shift (normal subtraction)
+        result_column (str): Name of the output column.
+        inplace (bool): Modify DataFrame in place.
+        date_col (str): Name of the daily date column.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Input must be a pandas DataFrame")
+
+    missing = [col for col in [col1, col2] if col not in df.columns]
+    if missing:
+        raise ValueError(f"Columns not found: {missing}")
+
+    if inplace:
+        target = df
+    else:
+        target = df.copy()
+
+    # Ensure date column is datetime
+    if not pd.api.types.is_datetime64_any_dtype(target[date_col]):
+        target[date_col] = pd.to_datetime(target[date_col])
+
+    if offset_days == 0:
+        # Simple subtraction - no shift
+        target[result_column] = target[col1] - target[col2]
+    else:
+        # Shift col2 using date index
+        temp = target.set_index(date_col)
+        shifted_col2 = temp[col2].shift(periods=-offset_days, freq='D')
+
+        # Map back
+        target[result_column] = target[col1] - target[date_col].map(shifted_col2)
+
+    return target
+
 def rename_column(
         df: pd.DataFrame,
         old_name: Union[str, Dict[str, str]],
@@ -716,6 +771,88 @@ def copy_rows_by_year(
 
     print(f"✅ Copied {len(columns_to_copy)} columns from source into target by Year match")
 
+def zero_out_column(
+        df: pd.DataFrame,
+        column: str,
+        start_date: Union[str, datetime, pd.Timestamp],
+        end_date: Union[str, datetime, pd.Timestamp],
+        date_col: str = "Date",
+        inclusive: bool = True
+) -> None:
+    """
+    Zero out a specified column in the DataFrame between start_date and end_date (in place).
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        DataFrame containing the data. Must have a 'Date' column (or specified date_col).
+    column : str
+        Name of the column to zero out.
+    start_date : str, datetime, or pd.Timestamp
+        Start date (e.g., '2023-01-01').
+    end_date : str, datetime, or pd.Timestamp
+        End date.
+    date_col : str, default "Date"
+        Name of the date column.
+    inclusive : bool, default True
+        Whether to include both start_date and end_date.
+
+    Returns:
+    --------
+    None - modifies the DataFrame in place.
+    """
+    # Ensure Date column is datetime
+    if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
+        df[date_col] = pd.to_datetime(df[date_col])
+
+    # Convert start/end to datetime
+    start = pd.to_datetime(start_date)
+    end = pd.to_datetime(end_date)
+
+    # Create mask
+    if inclusive:
+        mask = (df[date_col] >= start) & (df[date_col] <= end)
+    else:
+        mask = (df[date_col] > start) & (df[date_col] < end)
+
+    # Zero out in place
+    df.loc[mask, column] = 0
+
+def zero_out_column_seasonal(
+        df: pd.DataFrame,
+        column: str,
+        start_date: str,
+        end_date: str,
+        date_col: str = "Date",
+        inclusive: bool = True
+) -> None:
+    """
+    Zero out a column for a recurring seasonal window (ignores year).
+    Safely handles periods that cross the year-end (e.g. Oct 15 to Mar 1).
+
+    start_date and end_date should be strings in 'MM-DD' format.
+    """
+    # Ensure date column is datetime
+    if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
+        df[date_col] = pd.to_datetime(df[date_col])
+
+    # Extract MM-DD from DataFrame (very safe)
+    df_md = df[date_col].dt.strftime('%m-%d')
+
+    # Normalize inputs to MM-DD
+    start_str = pd.to_datetime(start_date, format='%m-%d').strftime('%m-%d')
+    end_str = pd.to_datetime(end_date, format='%m-%d').strftime('%m-%d')
+
+    if start_str <= end_str:
+        # Same-year window (e.g. 06-01 to 09-15)
+        mask = (df_md >= start_str) & (df_md <= end_str) if inclusive else \
+            (df_md > start_str) & (df_md < end_str)
+    else:
+        # Cross-year window (e.g. 10-15 to 03-01)
+        mask = (df_md >= start_str) | (df_md <= end_str) if inclusive else \
+            (df_md > start_str) | (df_md < end_str)
+
+    df.loc[mask, column] = 0
 
 def copy_column(
         source_df: pd.DataFrame,

@@ -22,11 +22,13 @@ SOFTWARE.
 from reservoirs.reservoir import Reservoir
 from typing import List, Optional
 
-class Ridgeway(Reservoir):
+class Ridgway(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
-        super().__init__('Ridgeway',headers,  catalog_id=2417, upstream=upstream)
+        super().__init__('Ridgway',headers,  catalog_id=2417, upstream=upstream)
         self.start_year = 1990
+
+        self.usbr_rise_evap_af_id = 0
 
         # Elevations
         #

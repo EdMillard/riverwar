@@ -42,7 +42,6 @@ GIF_LOOP_ENABLED = False
 
 class GrandValley(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
-        # reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
         self.line_chart = None
         self.inflow_outflow_chart = None
         self.version = 0.1
@@ -54,7 +53,7 @@ class GrandValley(ChartFrame):
 
         self.maps:List[str] = [
             'https://www.grandvalleyirrigation.com/providers/',
-            'https://www.grandvalleyirrigation.com/about/history/,'
+            'https://www.grandvalleyirrigation.com/about/history/',
             'https://thedrainagedistrict.org/gvdd-gis-map/',
         ]
 
@@ -145,7 +144,7 @@ class GrandValley(ChartFrame):
         )
         line_chart.set_end_date(graph_end_date)
         self.charts.append(line_chart)
-        
+
         time_series = [
             (self.df_daily, "Grand Valley Diversion", 'purple'),
             (self.df_daily, "Outflow", 'darkgray'),
