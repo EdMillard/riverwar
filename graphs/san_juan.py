@@ -69,7 +69,7 @@ class SanJuan(ChartFrame):
             Lemon(),
             JacksonGulch(),
         ]
-        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=None, page_name='San Juab')
+        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=None, page_name='San Juan')
         self.right_axis_annotations()
 
     def right_axis_annotations(self):
@@ -196,7 +196,7 @@ class SanJuan(ChartFrame):
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
                 if reservoir.name == 'Heron':
-                    time_series.append((reservoir.df_daily, ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL, 'red'))
+                    time_series.append((reservoir.df_daily, ub.USBR_NM_SAN_JUAN_CHAMA_TUNNEL_CFS, 'red'))
                 elif reservoir.name == 'Navajo':
                     time_series.append((reservoir.df_daily, 'Estimated CFS to Cutter', 'darkgreen'))
         line_chart = LineChart(

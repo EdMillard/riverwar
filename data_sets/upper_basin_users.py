@@ -203,10 +203,7 @@ class UpperBasinUsersDataSet(DataSet):
         # NM / San Juan Chama
         heron = Heron()
         heron.load_data_annual()
-        df_utils.copy_column(heron.df_annual, df, ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL)
-
-        pass
-
+        df_utils.copy_column(heron.df_annual, df, ub.USBR_NM_SAN_JUAN_CHAMA_TUNNEL_AF)
 
 
 def cdss_annuals(df: pd.DataFrame, wdid:str,  start_year:int, end_year:int, water_class_num:str='', title:str='',
