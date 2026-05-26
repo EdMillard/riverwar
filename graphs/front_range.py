@@ -98,6 +98,7 @@ GIF_LOOP_ENABLED = False
 
 class FrontRange(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
+        self.name = 'Front Range'
         self.line_chart = None
         self.inflow_outflow_chart = None
         self.version = 0.1
@@ -128,7 +129,7 @@ class FrontRange(ChartFrame):
             WilliamsFork(),
             Wolford(),
         ]
-        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=None, page_name='Front Range')
+        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=None, page_name=self.name)
         self.right_axis_annotations()
 
 
@@ -189,7 +190,7 @@ class FrontRange(ChartFrame):
         today = datetime.today().date()
         self.line_chart = LineChart(
             time_series,
-            title=f'Front Range - {Chart.month_to_short_name(today.month)} ' \
+            title=f'{self.name} - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = False,

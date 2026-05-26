@@ -44,6 +44,7 @@ GIF_LOOP_ENABLED = False
 
 class ReservoirsBig3(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
+        self.name = 'Big 3 Reservoirs'
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
         flaming_gorge = FlamingGorge()
@@ -58,7 +59,7 @@ class ReservoirsBig3(ChartFrame):
             lake_powell,
             lake_mead,
         ]
-        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name='APR26 24-Month')
+        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name=self.name)
         self.right_axis_annotations()
 
     def right_axis_annotations(self):
@@ -201,7 +202,7 @@ class ReservoirsBig3(ChartFrame):
         today = datetime.today().date()
         self.line_chart = LineChart(
             time_series,
-            title=f'Colorado River Big 3 Reservoir Storage Above Critical Elevations - May 24 Month - {Chart.month_to_short_name(today.month)} ' \
+            title=f'Colorado River {self.name} Storage Above Critical Elevations - May 24 Month - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
             show_x_labels = False

@@ -30,13 +30,14 @@ from api import df_utils
 
 class FlowChartFrame(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
+        self.name = 'Natural Flow v Flow'
         self.start_year = 1971
         self.end_year = 2024
         self.current_year = self.start_year
         self.timer = None
         self.animation_interval = 1000
 
-        super().__init__(notebook_frame, page_name='Pie Chart')
+        super().__init__(notebook_frame, page_name=self.name)
 
     def create_toolbar(self):
         super().create_toolbar()
@@ -196,7 +197,7 @@ class FlowChartFrame(ChartFrame):
             groups=bar_groups,
             underlay_lines=underlay_lines,
             overlay_lines=overlay_lines,
-            title="Colorado River Supply vs Demand",
+            title = f"Colorado River {self.name}",
             start_year = 1906,
             # start_year=self.start_year,
             end_year=self.end_year,

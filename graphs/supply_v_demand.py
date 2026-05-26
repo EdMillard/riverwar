@@ -33,6 +33,7 @@ from typing import Optional
 
 class SupplyVDemand(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
+        self.name = 'Supply v Demand'
         self.start_year = 1971
         self.end_year = 2024
         self.current_year = self.start_year
@@ -46,7 +47,7 @@ class SupplyVDemand(ChartFrame):
         self.demand_pie_chart:Optional[PieChart] = None
         self.multi_bar_chart:Optional[MultiBarChart] = None
 
-        super().__init__(notebook_frame, page_name='Pie Chart')
+        super().__init__(notebook_frame, page_name=self.name)
 
     def create_toolbar(self):
         super().create_toolbar()
@@ -241,7 +242,7 @@ class SupplyVDemand(ChartFrame):
 
         self.demand_pie_chart = PieChart(
             pie_wedges,
-            title='Colorado River Supply v Demand',
+            title=f'Colorado River {self.name}',
             year=self.current_year,
             annotations=[totals, lb_totals, evap_totals, trib_totals],
             radial_lines=radial_lines,

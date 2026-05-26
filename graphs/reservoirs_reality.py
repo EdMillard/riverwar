@@ -65,6 +65,7 @@ from reservoirs.paonia import Paonia
 
 class ReservoirsReality(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
+        self.name = 'Reservoir Reality'
         current_size = notebook_frame.GetSize()
         current_size.x = 2048
         notebook_frame.SetSize(current_size)
@@ -134,7 +135,7 @@ class ReservoirsReality(ChartFrame):
             # wolford, paonia
         ]
         reservoir_lists = [self.reservoirs, self.ub_reservoirs]
-        super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name='Reservoir Reality')
+        super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name=self.name)
 
 
     def load_charts(self):
