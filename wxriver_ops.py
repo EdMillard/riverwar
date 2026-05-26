@@ -30,6 +30,7 @@ from graphs.flow_chart_frame import FlowChartFrame
 from graphs.front_range import FrontRange
 from graphs.grand_valley import GrandValley
 from graphs.uncompahgre import Uncompahgre
+from graphs.san_juan import SanJuan
 from graphs.supply_v_demand import SupplyVDemand
 from graphs.reservoir_chart_frame import ReservoirChartFrame
 from graphs.reservoirs_reality import ReservoirsReality
@@ -70,6 +71,10 @@ def grand_valley(notebook_frame:NotebookFrame):
 
 def uncompahgre(notebook_frame:NotebookFrame):
     frame = Uncompahgre(notebook_frame)
+    frame.Show()
+
+def san_juan(notebook_frame:NotebookFrame):
+    frame = SanJuan(notebook_frame)
     frame.Show()
 
 def reservoir_chart(notebook_frame:NotebookFrame):
@@ -115,7 +120,8 @@ if __name__ == "__main__":
     # reservoirs_big3(nb)
     # front_range(nb)
     # grand_valley(nb)
-    uncompahgre(nb)
+    # uncompahgre(nb)
+    san_juan(nb)
 
     nb.Show()
     app.MainLoop()

@@ -31,6 +31,8 @@ from reservoirs import lake_pleasant
 import requests
 import pandas as pd
 from datetime import datetime
+import json
+from pathlib import Path
 
 import matplotlib
 import os
@@ -57,6 +59,12 @@ def run_daily_tasks():
         print(f"❌ Error during Denver Water daily task: {e}")
 
     try:
+        print("Fetching USBR Lower Colorado hourly data...")
+        download_usbr_hourlyweb('data/usbr_lower_colorado_hourly')
+    except Exception as e:
+        print(f"❌ Error during USBR Lower Colorado hourly data task: {e}")
+
+    try:
         # === AZ Salt River Project(SRP) Reservoir Scraper ===
         #
         print("Fetching SRP reservoir data...")
@@ -81,6 +89,46 @@ def run_daily_tasks():
 
         print("✅ All daily tasks completed successfully.")
 
+
+def download_usbr_hourlyweb(save_dir: str = ".") -> str:
+    """
+    Download the USBR Lower Colorado hourlyweb.json file and save it
+    with a suffix based on the 'QueryDate' field inside the JSON.
+
+    Example saved filename: hourlyweb_2026-05-20_191016.json
+
+    Returns the full path to the saved file.
+    """
+    url = "https://www.usbr.gov/lc/region/g4000/riverops/webreports/hourlyweb.json"
+
+    # Download the JSON
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+
+    data = response.json()
+
+    # Extract QueryDate (e.g., "5/20/2026 7:10:16 PM")
+    query_date_str = data.get("QueryDate")
+    if not query_date_str:
+        raise ValueError("QueryDate not found in the JSON response")
+
+    # Parse the date string
+    dt = datetime.strptime(query_date_str, "%m/%d/%Y %I:%M:%S %p")
+
+    # Create filename suffix: YYYY-MM-DD_HHMMSS
+    suffix = dt.strftime("%Y-%m-%d_%H%M%S")
+
+    # Build filename
+    filename = f"hourlyweb_{suffix}.json"
+    save_path = Path(save_dir) / filename
+
+    # Save the file
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(save_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
+    print(f"✅ Saved: {save_path}")
+    return str(save_path)
 
 def download_denverwater_reservoirs():
     url = "https://www.denverwater.org/your-water/water-supply-and-planning/reservoir-levels/csv?page&_format=csv"

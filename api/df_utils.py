@@ -306,6 +306,30 @@ def subtract_constant(
     # Optional: convert to numeric and handle NaNs gracefully
     df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
 
+def multiply_constant(
+        df: pd.DataFrame,
+        source_col: str,
+        target_col: str,
+        constant: float,
+        inplace: bool = True
+) -> None:
+    """
+    Subtract a constant from source_col and store result in target_col.
+
+    Example:
+        subtract_constant(df_daily, "Inflow_cfs", "Inflow_cfs_minus_5000", 5000)
+    """
+    if source_col not in df.columns:
+        raise ValueError(f"Column '{source_col}' not found in DataFrame")
+
+    if not inplace:
+        df = df.copy()
+
+    df[target_col] = df[source_col] * constant
+
+    # Optional: convert to numeric and handle NaNs gracefully
+    df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
+
 def add_column_sum(df: pd.DataFrame,
                    cols_to_sum: list,
                    sum_column_name: str = 'total_sum') -> pd.DataFrame:

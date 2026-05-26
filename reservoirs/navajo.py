@@ -23,7 +23,10 @@ from pathlib import Path
 from datetime import date
 from reservoirs.reservoir import Reservoir
 import colorado.ub as ub
+import colorado.allb as all_b
 from typing import List, Optional
+from api import df_utils
+
 
 class Navajo(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
@@ -69,6 +72,25 @@ class Navajo(Reservoir):
         # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.NAVAJO_INFLOW)
         self.release_cfs = self.get_daily_and_last(self.usbr_rise_release_cfs_id, ub.NAVAJO_RELEASE_CFS)
         # self.release_af = self.get_daily_and_last(self.usbr_rise_release_af_id, ub.NAVAJO_RELEASE)
+
+        change_in_storage_af_id = self.usbr_item_ids.get('change_in_storage_af', 0)
+        if change_in_storage_af_id:
+            self.usbr_rise_load_daily(change_in_storage_af_id, 'change_in_storage_af')
+
+        release_total_cfs_id = self.usbr_item_ids.get('release_total_cfs', 0)
+        if release_total_cfs_id:
+            df_utils.multiply_constant(self.df_daily, ub.NAVAJO_EVAPORATION_WY, 'Evaporation CFS', 1/1.983459)
+            self.usbr_rise_load_daily(release_total_cfs_id, 'Navajo.release_total_cfs')
+            sources = [
+                (self.df_daily, 'Evaporation CFS'),
+                (self.df_daily, 'Navajo.release_total_cfs')
+            ]
+            df_utils.subtract_columns_across_dfs(self.df_daily, ub.NAVAJO_INFLOW_CFS, sources,
+                                                 result_column='Inflow Outflow CFS')
+            df_utils.multiply_constant(self.df_daily, 'Inflow Outflow CFS', 'Inflow Outflow AF', 1.983459)
+        if change_in_storage_af_id and release_total_cfs_id:
+            df_utils.subtract_column(self.df_daily, 'Inflow Outflow AF', 'change_in_storage_af', 'Estimated AF to Cutter')
+            df_utils.multiply_constant(self.df_daily, 'Estimated AF to Cutter', 'Estimated CFS to Cutter', 1/1.983459)
 
         # self.power_release_cfs = self.get_daily_and_last(self.usbr_rise_power_release_cfs_id, ub.NAVAJO_POWER_RELEASE_CFS)
         # self.power_release_af = self.get_daily_and_last(self.usbr_rise_power_release_af_id, ub.NAVAJO_POWER_RELEASE)

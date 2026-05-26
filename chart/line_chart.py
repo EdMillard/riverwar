@@ -43,7 +43,9 @@ class LineChart(Chart):
                  y_label: str = "",                    # kept for future flexibility
                  y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
                  y_divisor: float | None = None,
-                 y_max: Optional[float] = None):
+                 y_max: Optional[float] = None,
+                 y_min: Optional[float] = None
+                 ):
 
         super().__init__(start_date, current_date, end_date, y_divisor=y_divisor, y_units=y_units, percentage=percentage)
 
@@ -53,6 +55,7 @@ class LineChart(Chart):
         self.y_label = y_label.strip()
         self.y_units = y_units
         self.y_max = y_max
+        self.y_min = y_min
         self.ax = None
 
         # Auto-determine divisor
@@ -176,5 +179,9 @@ class LineChart(Chart):
 
         ax.legend(fontsize=10.5, loc='best')
 
-        if self.y_max is not None:
-            ax.set_ylim(0, self.y_max)
+        if self.y_max is not None and self.y_min is not None:
+            ax.set_ylim(self.y_min, self.y_max)
+        elif self.y_max is not None :
+            ax.set_ylim(ymax=self.y_max)
+        elif self.y_min is not None :
+            ax.set_ylim(ymin=self.y_min)
