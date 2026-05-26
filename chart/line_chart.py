@@ -96,8 +96,8 @@ class LineChart(Chart):
 
         left_margin = 0.07
         right_margin = 0.95
-        top_margin = 0.92 if self.title and self.title.strip() else 1
-        bottom_margin = 0.1 if self.show_x_labels else 0.01
+        top_margin = 0.84 if self.title and self.title.strip() else 0.99
+        bottom_margin = 0.12 if self.show_x_labels else 0.03
 
         fig.tight_layout(pad=1.0)
         fig.subplots_adjust(left=left_margin, right=right_margin, bottom=bottom_margin, top=top_margin)
@@ -146,14 +146,14 @@ class LineChart(Chart):
 
         # Minor ticks: Months (first letter)
         years_span = (x_end - x_start).days / 365.25
-        if years_span >= 0.5:
+        if years_span < 10:
             ax.xaxis.set_minor_locator(mdates.MonthLocator())
 
-        # if self.show_x_labels:
-        def month_first_letter(x, pos):
-            return mdates.DateFormatter('%b')(x, pos)[0]
+            # if self.show_x_labels:
+            def month_first_letter(x, pos):
+                return mdates.DateFormatter('%b')(x, pos)[0]
 
-        ax.xaxis.set_minor_formatter(month_first_letter)
+            ax.xaxis.set_minor_formatter(month_first_letter)
 
         ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, rotation=0, pad=2)
         ax.tick_params(axis='x', which='major', length=6, width=1.2, labelsize=10, pad=4)

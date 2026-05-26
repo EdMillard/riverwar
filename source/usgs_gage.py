@@ -343,7 +343,10 @@ def get_last_nonzero(df: pd.DataFrame, column: str):
 
     return valid.iloc[-1]
 
-def daily_to_df(df:pd.DataFrame, gage_id:str, column_name:str, start_date:date, end_date:date, parameterCd='00060', statCd='00003', month:int=10)->None:
+def daily_to_df(df:pd.DataFrame, gage_id:str, column_name:str, start_date:date, end_date:date,
+                gage_start_year:int=0, parameterCd='00060', statCd='00003', month:int=10)->None:
+    if start_date.year < gage_start_year:
+        start_date = start_date.replace(year=gage_start_year)
     for year in range(start_date.year, end_date.year + 1):
         water_year_info = get_water_year_info(year, month=month)
         gage = USGSGage(gage_id, water_year_info)

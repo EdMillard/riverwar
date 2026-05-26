@@ -55,7 +55,7 @@ class SanJuan(ChartFrame):
         self.version = 0.1
 
         self.end_date = date.today()
-        self.start_date = self.end_date.replace(year=self.end_date.year - 8)
+        self.start_date = self.end_date.replace(year=self.end_date.year - 1)
         self.df_daily:Optional[pd.DataFrame] = None
         self.water_year_info = None
 
@@ -189,6 +189,7 @@ class SanJuan(ChartFrame):
             show_x_labels = False,
             percentage=0.20,
             y_units='TAF',
+            y_min = 0.0,
         )
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
@@ -205,7 +206,7 @@ class SanJuan(ChartFrame):
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             percentage=0.20,
             y_units='CFS',
-            # y_max=700
+            y_min=0.0,
         )
         line_chart.set_end_date(graph_end_date)
         self.charts.append(line_chart)
@@ -224,6 +225,7 @@ class SanJuan(ChartFrame):
             show_x_labels = False,
             percentage=0.20,
             y_units='CFS',
+            y_min=0.0,
         )
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
@@ -240,6 +242,7 @@ class SanJuan(ChartFrame):
             show_x_labels = False,
             percentage=0.20,
             y_units='CFS',
+            y_min=0.0,
         )
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
