@@ -121,9 +121,10 @@ class LakeMead(Reservoir):
                            ("SNWA Projected", self.snwa_projected_af, Reservoir.snwa_pump_projected_color)]
 
         df_utils.subtract_constant(self.df_daily, lb.MEAD, lb.MEAD_ABOVE_1000, self.power_head_min_af)
-        Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
-                                                       monthly_value_col='End Of Month Storage', daily_target_col=lb.MEAD_MOST)
-        df_utils.subtract_constant(self.df_daily, lb.MEAD_MOST, lb.MEAD_MOST, self.power_head_min_af)
+        if self.df_24_month is not None:
+            Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
+                                                           monthly_value_col='End Of Month Storage', daily_target_col=lb.MEAD_MOST)
+            df_utils.subtract_constant(self.df_daily, lb.MEAD_MOST, lb.MEAD_MOST, self.power_head_min_af)
 
         # t1 = '2026-01-01T00:00'
         # t2 = '2026-03-27T23:59'
