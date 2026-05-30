@@ -29,8 +29,8 @@ from chart.chart import Chart
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
 import wx
-import colorado.ub as ub
 import source.usgs_gage as usgs
+import source.cdss as cdss
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -78,6 +78,11 @@ class GrandValley(ChartFrame):
         # Above Grand Valley and Plateau Creek
         usgs.daily_to_df(self.df_daily, '09095500', 'Colorado River Near Cameo, CO', self.start_date, self.end_date)
 
+        # GHICANCO - GOVERNMENT HIGHLINE CANAL NEAR CAMEO, CO (7200646)
+        cdss.telemetry_station_daily_to_df(self.df_daily, 'GHICANCO', 'Government Highline Canal Near Cameo, CO', 'DISCHRG', self.start_date, self.end_date)
+        # GRDVALCO - GRAND VALLEY CANAL NEAR PALISADE, CO (7200645)
+        cdss.telemetry_station_daily_to_df(self.df_daily, 'GRDVALCO', 'Grand Valley Canal Near Palisade, CO', 'DISCHRG', self.start_date, self.end_date)
+
         # Upto Oct 1,2024
         usgs.daily_to_df(self.df_daily, '09106150', 'Colo River Below Grand Valley Div NR Palisade, CO', self.start_date, self.end_date)
         # After Oct 1 2024
@@ -87,6 +92,7 @@ class GrandValley(ChartFrame):
         usgs.daily_to_df(self.df_daily, '09163492', 'Salt Creek Near Mouth Near Mack, Co', self.start_date, self.end_date)
 
         usgs.daily_to_df(self.df_daily, '09163500', 'Colorado River Near Colorado-Utah State Line', self.start_date, self.end_date)
+
         df_utils.subtract_column(self.df_daily, 'Colorado River Near Colorado-Utah State Line', 'Gunnison River Near Grand Junction, CO', "Grand Valley Depletion")
         df_utils.add_column_sum(self.df_daily,
                                 ['Colorado River Near Cameo, CO',
@@ -113,17 +119,32 @@ class GrandValley(ChartFrame):
         today = datetime.today().date()
         time_series = [
             (self.df_daily, 'Colorado River Near Cameo, CO', 'darkred'),
-            (self.df_daily, 'Colo River Below Grand Valley Div NR Palisade, CO', 'darkgreen'),
+            # (self.df_daily, 'Colo River Below Grand Valley Div NR Palisade, CO', 'darkgreen'),
             # (self.df_daily, 'Colorado R. Abv Gunnison R. at Grand Junction, CO', 'green'),
         ]
-
         self.line_chart = LineChart(
             time_series,
             title=f'{self.name} - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = False,
-            percentage=0.33,
+            percentage=0.25,
+            y_units='CFS',
+        )
+        self.line_chart.set_end_date(graph_end_date)
+        self.charts.append(self.line_chart)
+
+        time_series = [
+            (self.df_daily, 'Government Highline Canal Near Cameo, CO', 'royalblue'),
+            (self.df_daily, 'Grand Valley Canal Near Palisade, CO', 'darkgray'),
+        ]
+        self.line_chart = LineChart(
+            time_series,
+            title=f'{self.name} - {Chart.month_to_short_name(today.month)} ' \
+                f'{today.day}, {today.year}  v{self.version}',
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
+            show_x_labels = False,
+            percentage=0.25,
             y_units='CFS',
         )
         self.line_chart.set_end_date(graph_end_date)
@@ -137,7 +158,7 @@ class GrandValley(ChartFrame):
         line_chart = LineChart(
             time_series, title='',
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            percentage=0.33,
+            percentage=0.25,
             y_units='CFS',
             # y_max=700
         )
@@ -152,7 +173,7 @@ class GrandValley(ChartFrame):
             time_series, title='',
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels=False,
-            percentage=0.33,
+            percentage=0.25,
             y_units='CFS',
             # y_max=700
         )
