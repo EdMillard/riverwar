@@ -38,6 +38,7 @@ from reservoirs.lake_nighthorse import LakeNighthorse
 from reservoirs.lemon import Lemon
 from reservoirs.jackson_gulch import JacksonGulch
 import source.usgs_gage as usgs
+import source.cdss as cdss
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -126,7 +127,13 @@ class SanJuan(ChartFrame):
         # usgs.daily_to_df(self.df_daily, '09362900', 'Florida River Below Lemon Reservoir', self.start_date, self.end_date) # 1955-1963
         # usgs.daily_to_df(self.df_daily, '09363000', 'Florida River Near Durango', self.start_date, self.end_date) # 1910-1960
         # usgs.daily_to_df(self.df_daily, '09363200', 'Florida River at Bondad', self.start_date, self.end_date) # 1956-1983
-        # Try CDSS
+        # FLOBONCO - FLORIDA RIVER AT BONDAD, CO. (3002213)
+        # FLOBLECO - FLORIDA RIVER BELOW LEMON RESERVOIR (3002216)
+        # FLOFARCO - FLORIDA RIVER BELOW FLORIDA FARMERS CANAL NEAR DURANGO (3002214)
+        # FARMERCO - FLORIDA FARMERS CANAL (3001011)
+
+        # FLOALECO - FLORIDA RIVER ABOVE LEMON RESERVOIR NEAR DURANGO (3002212)
+        cdss.telemetry_station_daily_to_df(self.df_daily, 'FLOALECO', 'Florida River Above Lemon Reservoir Near Durango', 'DISCHRG', self.start_date, self.end_date)
 
         # usgs.daily_to_df(self.df_daily, '09365500', 'La Plata River at Hesperus, CO', self.start_date, self.end_date) # 1917-2018
         # usgs.daily_to_df(self.df_daily, '09366500', 'La Plata River at Colorado-New Mexico State Line', self.start_date, self.end_date) # 1920-2018
@@ -139,6 +146,12 @@ class SanJuan(ChartFrame):
         # 09369500 — Middle Mancos River Near Mancos, CO
         # 372113108154001 — Mancos River Below East And West Forks (confluence)
         # 371613108213700 — Mancos River Above Canyon
+
+        # MANCHICO - MANCOS RIVER AT CJ's BRIDGE NEAR MANCOS (3402201)
+        # 3402202
+        cdss.telemetry_station_daily_to_df(self.df_daily, 'MANMANCO', 'Mancos River near Mancos', 'DISCHRG', self.start_date, self.end_date)
+        # 3402203
+        cdss.telemetry_station_daily_to_df(self.df_daily, 'MANTOWCO', 'Mancos River near Towaoc', 'DISCHRG', self.start_date, self.end_date)
 
         usgs.daily_to_df(self.df_daily, '09372000', 'McElmo Creek Near Colorado-Utah State Line', self.start_date, self.end_date)
         # usgs.daily_to_df(self.df_daily, '09372200', 'McElmo Creek Near Bluff, UT', self.start_date, self.end_date)  # Gage height only 2021-
@@ -244,9 +257,25 @@ class SanJuan(ChartFrame):
                 if reservoir.name == 'Navajo':
                     time_series.append((reservoir.df_daily, 'Navajo.release_total_cfs', 'royalblue'))
         time_series.append((self.df_daily, 'Animas River at Durango, CO', 'darkgreen'))
-        time_series.append((self.df_daily, 'La Plata River Near Farmington, NM', 'darkgray'))
-        time_series.append((self.df_daily, "McElmo Creek Near Colorado-Utah State Line", 'dodgerblue'))
         time_series.append((self.df_daily, 'San Juan River Near Bluff, UT', 'darkred'))
+        self.line_chart = LineChart(
+            time_series,
+            title='',
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
+            show_x_labels = False,
+            percentage=0.20,
+            y_units='CFS',
+            y_min=0.0,
+        )
+        self.line_chart.set_end_date(graph_end_date)
+        self.charts.append(self.line_chart)
+
+        time_series = [
+            (self.df_daily, 'La Plata River Near Farmington, NM', 'darkgray'),
+            (self.df_daily, "McElmo Creek Near Colorado-Utah State Line", 'dodgerblue'),
+            (self.df_daily, 'Mancos River near Mancos', 'green'),
+            (self.df_daily, 'Mancos River near Towaoc', 'darkgreen')
+        ]
         self.line_chart = LineChart(
             time_series,
             title='',
