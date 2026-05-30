@@ -65,9 +65,7 @@ class GrandValley(ChartFrame):
 
 
     def right_axis_annotations(self):
-        for reservoirs in self.reservoir_lists:
-            for reservoir in reservoirs:
-                pass
+        pass
 
     def load_data(self) -> Optional[date]:
         self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])

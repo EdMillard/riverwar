@@ -134,9 +134,7 @@ class FrontRange(ChartFrame):
 
 
     def right_axis_annotations(self):
-        for reservoirs in self.reservoir_lists:
-            for reservoir in reservoirs:
-                pass
+        pass
 
     def load_reservoirs(self) -> Optional[date]:
         date_time_as_date = None

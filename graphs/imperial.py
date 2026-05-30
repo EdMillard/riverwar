@@ -29,7 +29,6 @@ from chart.chart import Chart
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
 import wx
-import colorado.allb as all_b
 import colorado.lb as lb
 from reservoirs.lake_mohave import LakeMohave
 from reservoirs.lake_havasu import LakeHavasu
@@ -71,9 +70,7 @@ class Imperial(ChartFrame):
         self.right_axis_annotations()
 
     def right_axis_annotations(self):
-        for reservoirs in self.reservoir_lists:
-            for reservoir in reservoirs:
-                pass
+        pass
 
     def load_data(self) -> Optional[date]:
         self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])
