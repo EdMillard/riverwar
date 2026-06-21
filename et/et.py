@@ -60,12 +60,6 @@ def download_openet_old(lat: float, lon: float, acres: float = 1000,
     print("✅ Download complete!")
     return filename
 
-
-import requests
-import os
-import math
-
-
 def download_monthly_openet_api(
         lat: float,
         lon: float,
@@ -135,17 +129,9 @@ def download_monthly_openet_api(
         print("Response:", data)
         return data
 
-
 import requests
 import os
 import math
-from pathlib import Path
-
-import requests
-import os
-import math
-from pathlib import Path
-
 
 def download_openet_monthlyX(
         lat: float,
