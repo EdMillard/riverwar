@@ -134,7 +134,9 @@ class ReservoirsReality(ChartFrame):
             # big_sandy, crystal, grand_lake, lemon, shadow_mountain, heron, groundhog, gross, ridgeway,
             # wolford, paonia
         ]
-        reservoir_lists = [self.reservoirs, self.ub_reservoirs]
+        reservoir_lists = [self.reservoirs]
+        # reservoir_lists = [self.reservoirs, self.ub_reservoirs]
+
         super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name=self.name)
 
 
@@ -173,7 +175,7 @@ class ReservoirsReality(ChartFrame):
             self.ub_reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
             percentage = 0.09
         )
-        self.charts.append(reservoir_chart)
+        # self.charts.append(reservoir_chart)
 
         # inflow_chart = InflowOutflowChart(
         #    self.reservoirs, start_date=start, current_date=current, end_date=end

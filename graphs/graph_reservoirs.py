@@ -111,84 +111,102 @@ class ReservoirChart(BarChart):
         # ==================== RESERVED BARS ====================
         for i, r in enumerate(reservoirs):
             reserved_parts = getattr(r, 'reserved_parts', [])
-            if reserved_parts:
-                total_reserved_af = sum(amount for _, amount, _ in reserved_parts)
-                total_reserved_maf = total_reserved_af / 1_000_000
-                main_bar_maf = current_maf[i]
-                reserved_bottom = main_bar_maf - total_reserved_maf
+            if not reserved_parts:
+                continue
 
-                current_bottom = reserved_bottom
-                for owner, amount, color in reserved_parts:
-                    if amount > 0:
-                        amount_maf = amount / 1_000_000
-                        reserved_x = x_pos[i] - (main_width / 2) - (reserved_width / 2)
-                        bar = ax.bar(reserved_x, amount_maf, width=reserved_width,
-                                     bottom=current_bottom, color=color, alpha=0.92,
-                                     edgecolor='darkgoldenrod')[0]
+            total_reserved_af = sum(amount for _, amount, _ in reserved_parts)
+            total_reserved_maf = total_reserved_af / 1_000_000
+            main_bar_maf = current_maf[i]
+            reserved_bottom = main_bar_maf - total_reserved_maf
 
-                        if amount_maf >= 0.45:
-                            ax.annotate(owner[:8],
-                                        xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2 + 0.13),
-                                        ha='center', va='center', fontsize=8, fontweight='bold', color='black')
-                        ax.annotate(f'{amount_maf:.3f}',
-                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2 - 0.11),
-                                    ha='center', va='center', fontsize=8.5, fontweight='bold', color='black')
-                        current_bottom += amount_maf
-
-                # === Find nearest critical elevation below the reserved zone ===
-                dash_to_y = 0.0
-                crit_points = getattr(r, 'critical_elevations_feet', [])
-
-                if crit_points:
-                    for item in crit_points:
-                        if isinstance(item, (list, tuple)) and len(item) >= 3:
-                            cap_maf = item[2] / 1_000_000
-                            if reserved_bottom >= cap_maf > dash_to_y:
-                                dash_to_y = cap_maf
-
-                # === Dashed vertical line + annotation ===
-                if total_reserved_maf > 0:
+            # ==================== RESERVED STACKED BARS (original) ====================
+            current_bottom = reserved_bottom
+            for owner, amount, color in reserved_parts:
+                if amount > 0:
+                    amount_maf = amount / 1_000_000
                     reserved_x = x_pos[i] - (main_width / 2) - (reserved_width / 2)
+                    bar = ax.bar(reserved_x, amount_maf, width=reserved_width,
+                                 bottom=current_bottom, color=color, alpha=0.92,
+                                 edgecolor='darkgoldenrod')[0]
 
-                    # Dashed line from bottom of reserved to nearest critical (or 0)
-                    ax.plot([reserved_x, reserved_x],
-                            [reserved_bottom, dash_to_y],
-                            color='darkred',
-                            linestyle='--',
-                            linewidth=1.4,
-                            alpha=0.85,
-                            zorder=5)
+                    if amount_maf >= 0.45:
+                        ax.annotate(owner[:8],
+                                    xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2 + 0.13),
+                                    ha='center', va='center', fontsize=8, fontweight='bold', color='black')
+                    ax.annotate(f'{amount_maf:.3f}',
+                                xy=(bar.get_x() + bar.get_width() / 2, current_bottom + amount_maf / 2 - 0.11),
+                                ha='center', va='center', fontsize=8.5, fontweight='bold', color='black')
+                    current_bottom += amount_maf
 
-                    mid_y = (reserved_bottom + dash_to_y) / 2
+            # ==================== ORIGINAL DASHED LINE + ANNOTATION ====================
+            dash_to_y = 0.0
+            crit_points = getattr(r, 'critical_elevations_feet', [])
 
-                    # Value to display = reserved water sitting above the critical elevation
-                    displayed_value = reserved_bottom - dash_to_y
+            if crit_points:
+                for item in crit_points:
+                    if isinstance(item, (list, tuple)) and len(item) >= 3:
+                        cap_maf = item[2] / 1_000_000
+                        if reserved_bottom >= cap_maf > dash_to_y:
+                            dash_to_y = cap_maf
 
-                    # White background
-                    ax.add_patch(mpatches.Rectangle(
-                        (reserved_x - 0.115, mid_y - 0.115),
-                        0.23, 0.23,
-                        facecolor='white',
-                        edgecolor='none',
-                        zorder=6
-                    ))
+            if total_reserved_maf > 0:
+                reserved_x = x_pos[i] - (main_width / 2) - (reserved_width / 2)
 
-                    # Annotation showing reserved amount above the critical elevation
-                    ax.annotate(
-                        f'{displayed_value:.3f}',
-                        xy=(reserved_x, mid_y),
-                        ha='center', va='center',
-                        fontsize=9.5,
-                        fontweight='bold',
-                        color='black',
-                        zorder=7
-                    )
+                ax.plot([reserved_x, reserved_x],
+                        [reserved_bottom, dash_to_y],
+                        color='darkred', linestyle='--', linewidth=1.4, alpha=0.85, zorder=5)
 
-                # Original total reserved annotation at top (unchanged)
+                mid_y = (reserved_bottom + dash_to_y) / 2
+                displayed_value = reserved_bottom - dash_to_y
+
+                ax.add_patch(mpatches.Rectangle(
+                    (reserved_x - 0.115, mid_y - 0.115),
+                    0.23, 0.23,
+                    facecolor='white', edgecolor='none', zorder=6
+                ))
+
+                ax.annotate(
+                    f'{displayed_value:.3f}',
+                    xy=(reserved_x, mid_y),
+                    ha='center', va='center',
+                    fontsize=9.5, fontweight='bold', color='black', zorder=7
+                )
+
                 ax.annotate(f'{total_reserved_maf:.3f}',
                             xy=(x_pos[i] - (main_width/2) - (reserved_width/2), main_bar_maf),
                             xytext=(0, 3), textcoords="offset points",
                             ha='center', va='bottom', fontsize=10.5, fontweight='bold', color='black')
+
+            # ==================== FULL-WIDTH SOLID RED BAR + LABEL ====================
+            lowest_critical_maf = 0.0
+            for item in crit_points:
+                if isinstance(item, (list, tuple)) and len(item) >= 3:
+                    cap_maf = item[2] / 1_000_000
+                    if cap_maf > 0 and (lowest_critical_maf == 0 or cap_maf < lowest_critical_maf):
+                        lowest_critical_maf = cap_maf
+
+            in_the_red_maf = max(0.0, lowest_critical_maf - reserved_bottom)
+
+            if in_the_red_maf > 0.001:
+                red_bottom = lowest_critical_maf - in_the_red_maf
+
+                # Full-width solid red bar
+                ax.bar(x_pos[i], in_the_red_maf, width=main_width,
+                       bottom=red_bottom,
+                       color='red', alpha=1.0, edgecolor='darkred', linewidth=1.5, zorder=10)
+
+                # Numeric value inside red bar
+                ax.annotate(f'{in_the_red_maf:.3f}',
+                            xy=(x_pos[i], red_bottom + in_the_red_maf / 2),
+                            ha='center', va='center',
+                            fontsize=9.4, fontweight='bold', color='white', zorder=11)
+
+                # === TWO-LINE "ICS Deficit" moved down slightly ===
+                ax.annotate('ICS\nDeficit',
+                            xy=(x_pos[i] + main_width * 0.55, red_bottom + in_the_red_maf / 2 - 0.12),
+                            ha='left', va='center',
+                            fontsize=9.6, fontweight='bold', color='red',
+                            linespacing=0.95, zorder=12)
 
         # ==================== MAIN STACKED BARS ====================
         for i, r in enumerate(reservoirs):
@@ -455,7 +473,7 @@ class ReservoirChart(BarChart):
 
         if self.reserved_zones:
             ics_patches = [mpatches.Patch(color=c, label=l) for c, l in self.reserved_zones]
-            leg = ax.legend(handles=ics_patches, title="ICS 2024 EoY",
+            leg = ax.legend(handles=ics_patches, title="ICS 2025 EoY",
                             loc='upper right', bbox_to_anchor=(0.4, 1.0),
                             fontsize=9, title_fontsize=10, framealpha=0.95)
             ax.add_artist(leg)
