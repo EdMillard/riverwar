@@ -64,7 +64,7 @@ def request_esplist()->Dict[str, str]:
 
 
 def request_forecast(esp_id:str, year:int)->Optional[pd.DataFrame]:
-    url = f'https://www.cbrfc.noaa.gov/wsup/graph/esptxt.py?id={esp_id}&year={year}&qpf=0&db=&csv=1'
+    url = f'https://www.cbrfc.noaa.gov/wsup/graph/esptxt.py?id={esp_id}&year={year}&db=&csv=1'
 
     r = request_get(url)
     if r and r.status_code == 200:
@@ -83,14 +83,12 @@ def request_forecast(esp_id:str, year:int)->Optional[pd.DataFrame]:
 
         df = pd.read_csv(
             StringIO(clean_csv),
-            header=None,  # Read everything first
+            # header=None,  # Read everything first
             skiprows=lambda x: x < 4 and len(clean_lines[x].split(',')) < 5,  # heuristic
             on_bad_lines='skip'
         )
-
-        # Then manually assign columns if needed
-        print(df.shape)
-        df.head()
+        df = df.rename(columns={'Run Date': 'Date'})
+        print(df.head())
         return df
     else:
         return None
