@@ -25,7 +25,7 @@ from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 import pandas as pd
 from datetime import date
-from typing import List, Optional, Tuple, Literal
+from typing import List, Optional, Tuple, Literal, Union
 from chart.chart import Chart
 
 class LineChart(Chart):
@@ -33,7 +33,10 @@ class LineChart(Chart):
     Line chart for multiple time series with short two-digit year X-axis.
     """
     def __init__(self,
-                 data_series: List[Tuple[pd.DataFrame, str, str]],
+                 data_series: List[Union[
+                     Tuple[pd.DataFrame, str, str],  # df, column, color
+                     Tuple[pd.DataFrame, str, str, str]  # df, column, color, linestyle
+                 ]],
                  percentage: float = 0.0,
                  title: str = "",
                  start_date: date | None = None,
@@ -67,11 +70,33 @@ class LineChart(Chart):
         self.height_inch = 5.5
         self.width_inch = 10.5
 
-        # Normalize DataFrames
-        for i, (df, col, color) in enumerate(self.data_series):
+        normalized_series = []
+        for item in self.data_series:
+            # Unpack safely with variable length
+            if len(item) == 4:
+                df, col, color, linestyle = item
+            else:
+                df, col, color = item
+                linestyle = None
+
+            if df is None or df.empty:
+                continue
+
+            # Work on a copy to avoid modifying original DataFrames
+            df = df.copy()
+
             if 'Date' in df.columns:
-                df['Date'] = pd.to_datetime(df['Date'])
-                self.data_series[i] = (df.sort_values('Date').reset_index(drop=True), col, color)
+                df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+                df = df.sort_values('Date').reset_index(drop=True)
+
+            # Rebuild tuple preserving original structure
+            if linestyle is not None:
+                normalized_series.append((df, col, color, linestyle))
+            else:
+                normalized_series.append((df, col, color))
+
+        # Replace the original list with normalized version
+        self.data_series = normalized_series
 
     # ==================== SETTERS ====================
     def set_start_date(self, start_date: date | None):
@@ -96,7 +121,7 @@ class LineChart(Chart):
 
         left_margin = 0.07
         right_margin = 0.95
-        top_margin = 0.84 if self.title and self.title.strip() else 0.99
+        top_margin = 0.9 if self.title and self.title.strip() else 0.99
         bottom_margin = 0.12 if self.show_x_labels else 0.03
 
         fig.tight_layout(pad=1.0)
@@ -114,7 +139,13 @@ class LineChart(Chart):
             return
 
         all_dates = []
-        for df, col, color in self.data_series:
+        for item in self.data_series:
+            if len(item) == 4:
+                df, col, color, linestyle = item
+            else:
+                df, col, color = item
+                linestyle = '-'  # default solid line
+
             if df.empty or col not in df.columns:
                 continue
             df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -123,7 +154,8 @@ class LineChart(Chart):
             ax.plot(df['Date'], df[col],
                     label=col.replace('_', ' '),
                     linewidth=2.2,
-                    color=color)
+                    color=color,
+                    linestyle=linestyle)
 
         if not all_dates:
             return
@@ -145,15 +177,15 @@ class LineChart(Chart):
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
 
         # Minor ticks: Months (first letter)
-        years_span = (x_end - x_start).days / 365.25
-        if years_span < 10:
-            ax.xaxis.set_minor_locator(mdates.MonthLocator())
+        if self.show_x_labels:
+            years_span = (x_end - x_start).days / 365.25
+            if years_span < 10:
+                ax.xaxis.set_minor_locator(mdates.MonthLocator())
 
-            # if self.show_x_labels:
-            def month_first_letter(x, pos):
-                return mdates.DateFormatter('%b')(x, pos)[0]
+                def month_first_letter(x, pos):
+                    return mdates.DateFormatter('%b')(x, pos)[0]
 
-            ax.xaxis.set_minor_formatter(month_first_letter)
+                ax.xaxis.set_minor_formatter(month_first_letter)
 
         ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, rotation=0, pad=2)
         ax.tick_params(axis='x', which='major', length=6, width=1.2, labelsize=10, pad=4)
