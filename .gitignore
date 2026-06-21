@@ -1,9 +1,7 @@
+LOTR
 comm
 cache
-data/cdss  
-data/USBR_RISE  
-data/USGS_Gages
-data/USBR_Reports/generated
+data/
 pdf_reader/data
 .idea
 __pycache__/
