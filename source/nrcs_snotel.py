@@ -6,11 +6,58 @@ from pathlib import Path
 from typing import Optional
 from bs4 import BeautifulSoup
 
+'''
+WTEQ    Snow Water Equivalent       inches
+SNWD    Snow Depth                  inches
+PREC    Precipitation Accumulation  inches
+PRCP    Precipitation Increment     inches
+PRCPSA  Precipitation Increment (Snow-Adjusted) inches
+
+Temperature Parameters
+TAVG    Air Temperature Average     °F
+TMAX    Air Temperature Maximum     °F
+TMIN    Air Temperature Minimum     °F
+TOBS    Air Temperature Observed    °F
+
+Soil Parameters (available at many enhanced sites)
+SMS                     Soil Moisture Percent                           %
+STO / STV / STX / STN   Soil Temperature (Observed / Avg / Max / Min)   °F
+SMO / SMV etc.          Soil Moisture (Bars)                            inches of Mercury
+
+Other Common Meteorological Parameters
+RHUM / RHUMV    Relative Humidity (or Average)  %
+SRAD / SRADV    Solar Radiation (or Average)    watt/m²
+WSPD / WSPDV    Wind Speed (or Average)         mph
+WDIR / WDIRV    Wind Direction (or Average)     degrees
+PRES            Barometric Pressure             inches of Mercury
+BATT            Battery Voltage                 volts
+
+Additional / Less Common CodesEVAP — Evaporation (inches)
+DPTP — Dew Point Temperature (°F)
+PARV — Photosynthetically Active Radiation
+NTRDV etc. — Net Solar Radiation
+WTEMP — Water Temperature (°F)
+Various streamflow, reservoir, and other specialized codes (less common on standard SNOTEL)
+
+Notes:Not every station measures every parameter. Core ones (WTEQ, SNWD, PREC, temperatures) are on almost all sites; soil moisture, wind, radiation, etc., vary.
+Data is available at different time scales: Daily (_D), Hourly (_H), Monthly (_m), Water Year (_wy), etc.
+You request these via the AWDB REST API, SOAP Web Service, or tools like the NRCS interactive map / Report Generator.
+
+Official Reference: The complete list is in the AWDB Web Service User Guide (PDF).  nrcs.usda.gov
+'''
+
 def get_snotel_data(snotel_id:str, state:str, file_name:Optional[str]=None):
+    file_path = Path('data/NRCS/SNOTEL')
+    file_path.mkdir(parents=True, exist_ok=True)
+    file_path = file_path / f"{file_name}"
+    if file_path.exists():
+        df = pd.read_csv(file_path)
+        return df
+
     url = (
         "https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customSingleStationReport/daily/"
         f"{snotel_id}:{state}:SNTL|id=%22%22|name/POR_BEGIN,POR_END/"
-        "TAVG::value,TMAX::value,TMIN::value,WTEQ::value,SNWD::value"
+        "TAVG::value,TMAX::value,TMIN::value,WTEQ::value,SNWD::value,PREC::value"
     )
 
     print("Downloading from NRCS...")
@@ -43,8 +90,8 @@ def get_snotel_data(snotel_id:str, state:str, file_name:Optional[str]=None):
     # Clean column names
     df.columns = [col.strip().split('(')[0].strip().lower().replace(' ', '_')
                   for col in df.columns]
-
-    df = df.set_index('date')
+    df = df.rename(columns={'date': 'Date'})
+    df = df.set_index('Date')
 
     # start_date = "2024-01-01"
     # end_date = None
@@ -55,15 +102,19 @@ def get_snotel_data(snotel_id:str, state:str, file_name:Optional[str]=None):
     print(f"✅ Successfully loaded {len(df)} rows")
 
     print(df.head())
-    if file_name:
-        path = Path('data/NRCS/SNOTEL')
-        path.mkdir(parents=True, exist_ok=True)
-        path = path / f"{file_name}.csv"
-        df.to_csv(path)
+
+    df.to_csv(file_path)
+
     return df
 
 
-def get_snotel_stations(file_name:Optional[str]=None):
+def get_snotel_stations(file_name:Optional[str]=None)->Optional[pd.DataFrame]:
+    file_path = Path('data/NRCS/SNOTEL')
+    file_path.mkdir(parents=True, exist_ok=True)
+    file_path = file_path / f"{file_name}"
+    if file_path.exists():
+        df = pd.read_csv(file_path)
+        return df
     url = "https://wcc.sc.egov.usda.gov/nwcc/sitelist.jsp"
 
     print("Downloading SNOTEL station list...")
@@ -89,11 +140,7 @@ def get_snotel_stations(file_name:Optional[str]=None):
 
     print(f"✅ Loaded {len(df)} SNOTEL stations")
 
-    if file_name:
-        path = Path('data/NRCS/SNOTEL')
-        path.mkdir(parents=True, exist_ok=True)
-        path = path / f"{file_name}.csv"
-        df.to_csv(path, index=False)
+    df.to_csv(file_path, index=False)
 
     return df
 
