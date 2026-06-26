@@ -1,33 +1,15 @@
 """
 Copyright (c) 2025 Ed Millard
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute copies of the Software, and
-to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 """
-script_paths = [
-    "/opt/dev/riverwar"
-]
+
+import sys
+
+script_paths = ["/opt/dev/riverwar"]
 for p in script_paths:
     if p not in sys.path:
         sys.path.append(p)
         print(f"Added to Python path: {p}")
-        
+
 from osgeo import gdal
 import numpy as np
 import os
@@ -47,7 +29,6 @@ forestry_dir = "/opt/dev/gis/forestry"
 os.makedirs(forestry_dir, exist_ok=True)
 
 
-# ====================== RESET QGIS ======================
 def reset_qgis():
     print("🧹 Resetting QGIS — removing all layers...")
     QgsProject.instance().removeAllMapLayers()
@@ -55,36 +36,29 @@ def reset_qgis():
     print("✅ QGIS has been reset to a clean state")
 
 
-# ====================== FOREST TYPE DICTIONARY ======================
+def load_vector_layer(path: str, name: str, color: QColor):
+    vector_layer = QgsVectorLayer(path, name, "ogr")
+    if not vector_layer.isValid():
+        raise Exception("❌ Failed to load HUC vector")
+
+    symbol = vector_layer.renderer().symbol()
+    symbol.setColor(color)
+    vector_layer.setOpacity(0.65)
+    QgsProject.instance().addMapLayer(vector_layer)
+    print(f"✅ HUC layer added as '{name}'")
+    return vector_layer
 
 
-
-# ====================== CLIP CONUS VEGTYPE TO HUC ======================
-def clip_conus_to_huc():
+def clip_conus_to_huc(huc_layer):
     print(f"Clipping full CONUS vegtype to {huc_name}...")
     output_clipped_veg = os.path.join(forestry_dir, f"vegtype_{huc_name.replace(' ', '_')}.tif")
 
-    # Load HUC
-    huc_layer = QgsVectorLayer(huc_vector_path, huc_name, "ogr")
-    if not huc_layer.isValid():
-        raise Exception("❌ Failed to load HUC vector")
-
-    # Style as dark gray
-    symbol = huc_layer.renderer().symbol()
-    symbol.setColor(QColor(50, 50, 50))
-    huc_layer.setOpacity(0.65)
-    QgsProject.instance().addMapLayer(huc_layer)
-    print(f"✅ HUC layer added as '{huc_name}' (dark gray)")
-
-    # Reproject if needed (without adding extra layer)
     target_crs = QgsCoordinateReferenceSystem("EPSG:5069")
     if huc_layer.crs() != target_crs:
-        print("Reprojecting HUC to EPSG:5069...")
+        print("Reprojecting HUC...")
         params = {'INPUT': huc_layer, 'TARGET_CRS': target_crs, 'OUTPUT': 'memory:Temp_HUC'}
-        reprojected = processing.run("native:reprojectlayer", params)['OUTPUT']
-        huc_layer = reprojected  # Use reprojected version
+        huc_layer = processing.run("native:reprojectlayer", params)['OUTPUT']
 
-    # Clip the raster using the (possibly reprojected) HUC
     params = {
         'INPUT': conus_raster_path,
         'MASK': huc_layer,
@@ -99,14 +73,14 @@ def clip_conus_to_huc():
 
     if clipped_veg_layer.isValid():
         QgsProject.instance().addMapLayer(clipped_veg_layer)
-        print(f"✅ Clipped vegtype added to QGIS")
+        print(f"✅ Clipped vegtype added (kept outside group)")
         return clipped_veg_layer, result['OUTPUT']
     else:
         raise Exception("❌ Failed to create clipped vegtype")
 
+
 def list_vegtypes_in_clipped(clipped_veg_path: str):
     print("\n=== Vegetation Types Present in Upper Dolores ===")
-
     ds = gdal.Open(clipped_veg_path)
     if ds is None:
         print("❌ Could not open clipped vegtype")
@@ -130,23 +104,20 @@ def list_vegtypes_in_clipped(clipped_veg_path: str):
     return present
 
 
-def extract_tree_type_from_clipped(clipped_veg_path: str, veg_value: int, tree_name: str, color_rgb: tuple):
+def extract_tree_type_from_clipped(clipped_veg_path: str, veg_value: int, tree_name: str, color_rgb: tuple, group):
     safe_name = tree_name.lower().replace(" ", "_").replace("-", "_").replace("/", "_").replace("(", "").replace(")",
                                                                                                                  "")
     output_path = os.path.join(forestry_dir, f"{safe_name}.tif")
 
     nodata_value = -9999
-    print(f"Extracting {tree_name} ({veg_value})...")
 
     ds_in = gdal.Open(clipped_veg_path)
     if ds_in is None:
-        print("❌ Could not open clipped vegtype")
-        return
+        return None
 
     driver = gdal.GetDriverByName('GTiff')
     ds_out = driver.Create(output_path, ds_in.RasterXSize, ds_in.RasterYSize, 1, gdal.GDT_Int16,
                            options=['COMPRESS=LZW', 'TILED=YES'])
-
     ds_out.SetGeoTransform(ds_in.GetGeoTransform())
     ds_out.SetProjection(ds_in.GetProjection())
 
@@ -155,7 +126,6 @@ def extract_tree_type_from_clipped(clipped_veg_path: str, veg_value: int, tree_n
 
     band = ds_in.GetRasterBand(1)
     block_size = 2048
-
     for y in range(0, ds_in.RasterYSize, block_size):
         for x in range(0, ds_in.RasterXSize, block_size):
             xsize = min(block_size, ds_in.RasterXSize - x)
@@ -172,23 +142,45 @@ def extract_tree_type_from_clipped(clipped_veg_path: str, veg_value: int, tree_n
     output_layer = QgsRasterLayer(output_path, layer_name)
 
     if output_layer.isValid():
-        classes = [QgsPalettedRasterRenderer.Class(veg_value, QColor(*color_rgb), tree_name)]
-        renderer = QgsPalettedRasterRenderer(output_layer.dataProvider(), 1, classes)
+        renderer = QgsPalettedRasterRenderer(output_layer.dataProvider(), 1,
+                                             [QgsPalettedRasterRenderer.Class(veg_value, QColor(*color_rgb),
+                                                                              tree_name)])
         output_layer.setRenderer(renderer)
-        QgsProject.instance().addMapLayer(output_layer)
-        print(f"   ✅ {tree_name} extracted and styled")
-    else:
-        print(f"   ❌ Failed to load {tree_name}")
+
+        QgsProject.instance().addMapLayer(output_layer, False)  # Don't add to root
+        group.addLayer(output_layer)  # Add directly to group
+
+        print(f"   ✅ {tree_name} added to group")
+        return output_layer
+    return None
 
 
-# ====================== MAIN PROGRAM ======================
+def create_forest_group():
+    root = QgsProject.instance().layerTreeRoot()
+    group_name = "Upper Dolores Forest Types"
+
+    existing = root.findGroup(group_name)
+    if existing:
+        root.removeChildNode(existing)
+
+    group = root.insertGroup(0, group_name)  # Top of stack
+    group.setExpanded(True)
+    print(f"✅ Created group at TOP: '{group_name}'")
+    return group
+
+
+# ====================== MAIN ======================
 
 print("\n=== Starting Full Workflow ===")
 
 reset_qgis()
 
-clipped_veg_layer, clipped_veg_path = clip_conus_to_huc()
+huc_layer = load_vector_layer(huc_vector_path, huc_name, QColor(40, 40, 40))
+
+clipped_veg_layer, clipped_veg_path = clip_conus_to_huc(huc_layer)
 present_types = list_vegtypes_in_clipped(clipped_veg_path)
+
+forest_group = create_forest_group()
 
 for code, name in present_types:
     color = (150, 150, 150)
@@ -217,6 +209,6 @@ for code, name in present_types:
     elif code == 709:
         color = (0, 160, 100)
 
-    extract_tree_type_from_clipped(clipped_veg_path, code, name, color)
+    extract_tree_type_from_clipped(clipped_veg_path, code, name, color, forest_group)
 
-print("\n🎉 Workflow complete!")
+print("\n🎉 Done! HUC8 + VegType layer should stay visible, forest types are in the group at the top.")
