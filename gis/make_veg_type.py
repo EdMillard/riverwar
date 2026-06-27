@@ -16,6 +16,7 @@ import zipfile
 import tempfile
 from pathlib import Path
 import time
+# from typing import Optional
 
 script_paths = ["/opt/dev/riverwar"]
 for p in script_paths:
@@ -23,17 +24,18 @@ for p in script_paths:
         sys.path.append(p)
         print(f"Added to Python path: {p}")
 
-# ====================== SETTINGS ======================
-conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
-huc_vector_path = "/opt/dev/gis/upper_dolores_HU8.shp"
-contour_vector_path = "contours_reprojected.shp"
-huc_name = "HUC8"
-
 # ====================== GLOBAL PROJECT SETTINGS ======================
-TARGET_CRS = "EPSG:5070"          # Defualt CRS
+TARGET_CRS = "EPSG:5070"
+huc_name = "HUC8"
+huc8_name =  "Upper Dolores"
 
-forestry_dir = "/opt/dev/gis/forestry/"
-os.makedirs(forestry_dir, exist_ok=True)
+base_path:Path = Path("/opt/dev/gis/")
+huc8_dir_name = huc_name + '_' + huc8_name.replace(" ", "_")
+forestry_dir = base_path / huc8_dir_name
+forestry_dir.mkdir(parents=True, exist_ok=True)
+
+conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
+contour_vector_path = "contours_reprojected.shp"
 
 def remove_layer(layer):
     """Remove a layer by passing the layer object"""
@@ -457,6 +459,7 @@ def extract_huc12_in_huc8(wbd_gpkg_path: str, huc8_name: str):
 
 
 def build(huc_layer, huc8_name:str):
+    # huc_vector_path = "/opt/dev/gis/upper_dolores_HU8.shp"
     # huc_layer = load_vector_layer(huc_vector_path, huc_name, QColor(40, 40, 40))
 
     clipped_veg_layer, clipped_veg_path = clip_conus_to_huc(huc_layer)
@@ -473,8 +476,9 @@ def build(huc_layer, huc8_name:str):
 
         layer = extract_tree_type_from_clipped(clipped_veg_path, code, name, color, forest_group)
 
-    path = forestry_dir + contour_vector_path
-    contour_layer = load_vector_layer(path, "ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp", QColor(80, 80, 80))
+    path = forestry_dir / contour_vector_path
+    print(f"Contour path {path}")
+    contour_layer = load_vector_layer(str(path), "ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp", QColor(80, 80, 80))
     major_contour_layer = extract_contours("ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp",
                      [8000, 9000, 10000, 11000, 12000],
                      "Major Contours 8k-12k ft")
@@ -486,7 +490,7 @@ def build(huc_layer, huc8_name:str):
 reset_qgis()
 
 print("\n=== Starting HUC8 Build ===")
-huc8_name =  "Upper Dolores"
+
 wbd_huc8 = load_huc8_from_wbd("/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg")  # Load Upper Colorado HU2, HUC8
 huc8_layer = extract_and_reproject_huc8(wbd_huc8, huc8_name)
 remove_layer(wbd_huc8)
