@@ -1,15 +1,7 @@
 """
 Copyright (c) 2025 Ed Millard
 """
-
 import sys
-
-script_paths = ["/opt/dev/riverwar"]
-for p in script_paths:
-    if p not in sys.path:
-        sys.path.append(p)
-        print(f"Added to Python path: {p}")
-
 from osgeo import gdal
 import numpy as np
 import os
@@ -25,15 +17,22 @@ import tempfile
 from pathlib import Path
 import time
 
+script_paths = ["/opt/dev/riverwar"]
+for p in script_paths:
+    if p not in sys.path:
+        sys.path.append(p)
+        print(f"Added to Python path: {p}")
+
 # ====================== SETTINGS ======================
 conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
 huc_vector_path = "/opt/dev/gis/upper_dolores_HU8.shp"
-contour_vector_path = "/opt/dev/gis/forestry/contours_reprojected.shp"
+contour_vector_path = "contours_reprojected.shp"
 huc_name = "HUC8"
 
 # ====================== GLOBAL PROJECT SETTINGS ======================
 TARGET_CRS = "EPSG:5070"          # Defualt CRS
-forestry_dir = "/opt/dev/gis/forestry"
+
+forestry_dir = "/opt/dev/gis/forestry/"
 os.makedirs(forestry_dir, exist_ok=True)
 
 def remove_layer(layer):
@@ -466,12 +465,16 @@ def build(huc_layer, huc8_name:str):
     forest_group = create_forest_group()
 
     for code, info in forest_types.items():
+        if code not in [p[0] for p in present_types]:  # Only process present types
+            continue
+
         name = info["name"]
         color = info["color"]
 
         layer = extract_tree_type_from_clipped(clipped_veg_path, code, name, color, forest_group)
 
-    contour_layer = load_vector_layer(contour_vector_path, "ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp", QColor(80, 80, 80))
+    path = forestry_dir + contour_vector_path
+    contour_layer = load_vector_layer(path, "ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp", QColor(80, 80, 80))
     major_contour_layer = extract_contours("ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp",
                      [8000, 9000, 10000, 11000, 12000],
                      "Major Contours 8k-12k ft")
