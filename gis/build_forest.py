@@ -478,7 +478,7 @@ def clip_to_mask(
         elif 'OUTPUT' not in result:
             print("❌ No OUTPUT in result")
             print("Result keys:", list(result.keys()))
-            
+
         clipped_layer = QgsVectorLayer(str(output_path), output_name, "ogr")
 
     if clipped_layer.isValid():
@@ -562,8 +562,6 @@ def build(huc_layer, huc8_name:str):
 
     iface.mapCanvas().setExtent(huc_layer.extent()) # type: ignore[attr-defined]
     iface.mapCanvas().refresh()                     # type: ignore[attr-defined]
-
-    print("\n🎉 Done! HUC8 + VegType layer should stay visible, forest types are in the group at the top.")
 
 reset_qgis()
 reload_modules()

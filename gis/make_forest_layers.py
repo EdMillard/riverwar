@@ -9,38 +9,59 @@ from qgis.PyQt.QtGui import QColor
 from gis.forest_type import forest_types
 import processing # type: ignore
 
-conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
 huc_name = "HUC8"
 
-def clip_conus_to_huc(forestry_dir: Path, huc_layer):
-    print(f"Clipping full CONUS vegtype to {huc_name}...")
-    output_clipped_veg = forestry_dir / f"vegtype_{huc_name.replace(' ', '_')}.tif"
+def clip_raster_to_mask(
+    input_raster_path: str,
+    mask_layer,
+    output_dir: Path,
+    output_name: str = None,
+    target_crs: str = "EPSG:5070",
+    nodata: int = -9999
+):
+    """
+    General purpose raster clipper.
+    Works with TreeMap, CONUS Forest Type, or any other raster.
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    target_crs = QgsCoordinateReferenceSystem("EPSG:5069")
-    if huc_layer.crs() != target_crs:
-        print("Reprojecting HUC...")
-        params = {'INPUT': huc_layer, 'TARGET_CRS': target_crs, 'OUTPUT': 'memory:Temp_HUC'}
-        huc_layer = processing.run("native:reprojectlayer", params)['OUTPUT']
+    if output_name is None:
+        output_name = Path(input_raster_path).stem + "_clipped"
 
+    output_path = output_dir / f"{output_name}.tif"
+
+    print(f"Clipping raster: {Path(input_raster_path).name}")
+
+    # Reproject mask if needed
+    if mask_layer.crs().authid() != target_crs:
+        print(f"Reprojecting mask to {target_crs}...")
+        params = {
+            'INPUT': mask_layer,
+            'TARGET_CRS': QgsCoordinateReferenceSystem(target_crs),
+            'OUTPUT': 'memory:Reprojected_Mask'
+        }
+        mask_layer = processing.run("native:reprojectlayer", params)['OUTPUT']
+
+    # Clip the raster
     params = {
-        'INPUT': conus_raster_path,
-        'MASK': huc_layer,
-        'NODATA': -9999,
+        'INPUT': input_raster_path,
+        'MASK': mask_layer,
+        'NODATA': nodata,
         'CROP_TO_CUTLINE': True,
         'KEEP_RESOLUTION': True,
-        'OUTPUT': str(output_clipped_veg)
+        'OUTPUT': str(output_path)
     }
 
     result = processing.run("gdal:cliprasterbymasklayer", params)
-    clipped_veg_layer = QgsRasterLayer(result['OUTPUT'], f"VegType_{huc_name}")
 
-    if clipped_veg_layer.isValid():
-        QgsProject.instance().addMapLayer(clipped_veg_layer)
-        print(f"✅ Clipped vegtype added (kept outside group)")
-        return clipped_veg_layer, result['OUTPUT']
+    clipped_layer = QgsRasterLayer(result['OUTPUT'], output_name)
+
+    if clipped_layer.isValid():
+        QgsProject.instance().addMapLayer(clipped_layer)
+        print(f"✅ Clipped raster added: {output_name}")
+        return clipped_layer, result['OUTPUT']
     else:
-        raise Exception("❌ Failed to create clipped vegtype")
-
+        raise Exception(f"❌ Failed to clip raster: {input_raster_path}")
 
 def list_vegtypes_in_clipped(clipped_veg_path: str, huc8_name: str):
     print(f"\n=== Vegetation Types Present in {huc8_name} ===")
@@ -178,7 +199,8 @@ def style_clipped_layer(clipped_veg_layer: QgsRasterLayer, present_types: list):
     print(f"✅ Applied {len(classes)} color classes to clipped layer")
 
 def build_forest_layers(forestry_dir: Path, huc_layer, huc8_name: str):
-    clipped_veg_layer, clipped_veg_path = clip_conus_to_huc(forestry_dir, huc_layer)
+    conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
+    clipped_veg_layer, clipped_veg_path = clip_raster_to_mask(conus_raster_path, huc_layer, forestry_dir)
     present_types = list_vegtypes_in_clipped(clipped_veg_path, huc8_name)
 
     # === Style the clipped layer (this is what you see as VegType_HUC8) ===
