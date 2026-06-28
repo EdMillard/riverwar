@@ -1,67 +1,35 @@
 """
-Copyright (c) 2025 Ed Millard
+Copyright (c) 2026 Ed Millard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 """
 from osgeo import gdal
 import numpy as np
 from pathlib import Path
-from qgis.core import QgsRasterLayer, QgsProject, QgsPalettedRasterRenderer, QgsCoordinateReferenceSystem
+from qgis.core import QgsRasterLayer, QgsProject, QgsPalettedRasterRenderer
 from qgis.PyQt.QtGui import QColor
 from gis.forest_type import forest_types
+from gis.layer import clip_raster_to_mask
 import processing # type: ignore
 
 huc_name = "HUC8"
-
-def clip_raster_to_mask(
-    input_raster_path: str,
-    mask_layer,
-    output_dir: Path,
-    output_name: str = None,
-    target_crs: str = "EPSG:5070",
-    nodata: int = -9999
-):
-    """
-    General purpose raster clipper.
-    Works with TreeMap, CONUS Forest Type, or any other raster.
-    """
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    if output_name is None:
-        output_name = Path(input_raster_path).stem + "_clipped"
-
-    output_path = output_dir / f"{output_name}.tif"
-
-    print(f"Clipping raster: {Path(input_raster_path).name}")
-
-    # Reproject mask if needed
-    if mask_layer.crs().authid() != target_crs:
-        print(f"Reprojecting mask to {target_crs}...")
-        params = {
-            'INPUT': mask_layer,
-            'TARGET_CRS': QgsCoordinateReferenceSystem(target_crs),
-            'OUTPUT': 'memory:Reprojected_Mask'
-        }
-        mask_layer = processing.run("native:reprojectlayer", params)['OUTPUT']
-
-    # Clip the raster
-    params = {
-        'INPUT': input_raster_path,
-        'MASK': mask_layer,
-        'NODATA': nodata,
-        'CROP_TO_CUTLINE': True,
-        'KEEP_RESOLUTION': True,
-        'OUTPUT': str(output_path)
-    }
-
-    result = processing.run("gdal:cliprasterbymasklayer", params)
-
-    clipped_layer = QgsRasterLayer(result['OUTPUT'], output_name)
-
-    if clipped_layer.isValid():
-        QgsProject.instance().addMapLayer(clipped_layer)
-        print(f"✅ Clipped raster added: {output_name}")
-        return clipped_layer, result['OUTPUT']
-    else:
-        raise Exception(f"❌ Failed to clip raster: {input_raster_path}")
 
 def list_vegtypes_in_clipped(clipped_veg_path: str, huc8_name: str):
     print(f"\n=== Vegetation Types Present in {huc8_name} ===")
