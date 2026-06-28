@@ -4,15 +4,15 @@ Copyright (c) 2025 Ed Millard
 import sys
 import os
 import time
-from qgis.core import QgsProject, QgsCoordinateReferenceSystem, QgsVectorLayer
+from qgis.core import QgsRasterLayer, QgsVectorLayer, QgsProject, QgsCoordinateReferenceSystem
 from qgis.PyQt.QtGui import QColor
 from qgis.utils import iface
-
-import processing
+from osgeo import ogr
+import processing   # type: ignore
+import importlib
 import zipfile
 import tempfile
 from pathlib import Path
-# from typing import Optional
 
 script_paths = ["/opt/dev/riverwar"]
 for p in script_paths:
@@ -24,7 +24,8 @@ from gis.contours import extract_contours, select_contours_on_layer
 from gis.make_forest_layers import build_forest_layers
 
 # ====================== GLOBAL PROJECT SETTINGS ======================
-TARGET_CRS = "EPSG:5070"
+# TARGET_CRS = "EPSG:5070"
+TARGET_CRS = "EPSG:4269"
 huc_name = "HUC8"
 huc8_name =  "Upper Dolores"
 
@@ -33,8 +34,21 @@ huc8_dir_name = huc_name + '_' + huc8_name.replace(" ", "_")
 forestry_dir = base_path / huc8_dir_name
 forestry_dir.mkdir(parents=True, exist_ok=True)
 
-conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
 contour_vector_path = "contours_reprojected.shp"
+
+def reload_modules():
+    modules_to_reload = [
+        'gis.make_forest_layers',
+        'gis.forest_type',
+        'gis.contours',
+        # add any other modules you edit often
+    ]
+    for mod in modules_to_reload:
+        if mod in sys.modules:
+            importlib.reload(sys.modules[mod])
+            print(f"✅ Reloaded {mod}")
+        else:
+            print(f"⚠️  {mod} not loaded yet")
 
 def remove_layer(layer):
     """Remove a layer by passing the layer object"""
@@ -58,7 +72,7 @@ def reset_qgis():
 
     # Extra safety
     project.clear()
-    iface.mapCanvas().refresh()
+    iface.mapCanvas().refresh() # type: ignore[attr-defined]
     time.sleep(0.8)  # longer wait
 
     print("✅ Thorough reset complete — project should be empty")
@@ -139,6 +153,12 @@ def reproject_layer(layer, new_name=None):
     }
 
     result = processing.run("native:reprojectlayer", params)
+    if result is None:
+        print("❌ Processing algorithm failed (returned None)")
+    elif 'OUTPUT' not in result:
+        print("❌ No OUTPUT in result")
+        print("Result keys:", list(result.keys()))
+
     reproj_layer = QgsVectorLayer(output_path, new_name, "ogr")
 
     print(f"Reprojected features: {reproj_layer.featureCount()}")
@@ -149,84 +169,134 @@ def reproject_layer(layer, new_name=None):
     symbol.setWidth(0.7)
 
     QgsProject.instance().addMapLayer(reproj_layer)
-
-    # Correct zoom
-    if reproj_layer.featureCount() > 0:
-        iface.mapCanvas().setExtent(reproj_layer.extent())
-        iface.mapCanvas().refresh()
-
     print(f"✅ Added: {new_name}")
     return reproj_layer
 
 def load_vector_layer(path: str, name: str = None, color: QColor = QColor(40, 40, 40)):
-    """
-    Load vector layer - automatically handles .zip files by extracting them.
-    """
     if not os.path.exists(path):
         raise Exception(f"❌ File not found: {path}")
 
     layer_name = name or Path(path).stem.replace("_", " ")
 
-    # Handle zipped shapefile
+    actual_path = path
+
     if path.lower().endswith('.zip'):
         print(f"📦 Zip file detected: {path}")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmpdir = Path(tmpdir)
+        # Use a persistent temp folder instead of TemporaryDirectory
+        tmpdir = Path("/tmp/qgis_extract") / Path(path).stem
+        tmpdir.mkdir(parents=True, exist_ok=True)
 
-            # Extract the zip
-            with zipfile.ZipFile(path, 'r') as zip_ref:
-                zip_ref.extractall(tmpdir)
-                print(f"   Extracted to temporary folder")
+        with zipfile.ZipFile(path, 'r') as zip_ref:
+            zip_ref.extractall(tmpdir)
 
-            # Find the .shp file inside
-            shp_files = list(tmpdir.glob("**/*.shp"))
-            if not shp_files:
-                raise Exception("❌ No .shp file found inside the zip!")
+        shp_files = list(tmpdir.glob("**/*.shp"))
+        if not shp_files:
+            raise Exception("❌ No .shp file found inside the zip!")
 
-            actual_path = str(shp_files[0])
-            print(f"   Using shapefile: {actual_path}")
+        actual_path = str(shp_files[0])
+        print(f"   Extracted to: {actual_path}")
 
-            layer = QgsVectorLayer(actual_path, layer_name, "ogr")
-    else:
-        layer = QgsVectorLayer(path, layer_name, "ogr")
-
-    if not layer.isValid():
-        raise Exception(f"❌ Failed to load layer from {path}")
-
-    # Style
-    symbol = get_symbol(layer)
+    # Load with QGIS directly (skip OGR for now)
+    qgis_layer = QgsVectorLayer(actual_path, layer_name, "ogr")
+    symbol = get_symbol(qgis_layer)
     symbol.setColor(color)
-    layer.setOpacity(0.65)
 
-    QgsProject.instance().addMapLayer(layer)
-    print(f"✅ Successfully loaded: {layer_name}")
-    return layer
+    if not qgis_layer.isValid():
+        raise Exception(f"❌ Failed to load layer from {actual_path}")
+
+    QgsProject.instance().addMapLayer(qgis_layer)
+    # qgis_layer.triggerRepaint()
+
+    print(f"✅ Successfully loaded: {layer_name} ({qgis_layer.featureCount()} features)")
+    return qgis_layer
+
+def load_gpkg_from_zip(zip_path: str, layer_name: str, display_name: str = None):
+    """
+    Extract .gpkg from zip and load a specific layer.
+    Works with files like NHD_H_14030002_HU8_GPKG.zip
+    """
+    zip_path = Path(zip_path)
+    if not zip_path.exists():
+        raise FileNotFoundError(f"Zip file not found: {zip_path}")
+
+    print(f"📦 Extracting GPKG from zip: {zip_path.name}")
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+
+        # Extract everything
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            z.extractall(tmpdir)
+
+        # Find the .gpkg file
+        gpkg_files = list(tmpdir.glob("**/*.gpkg"))
+        if not gpkg_files:
+            raise Exception("No .gpkg file found inside the zip!")
+
+        gpkg_path = gpkg_files[0]
+        print(f"   Extracted: {gpkg_path.name}")
+
+        # Now load the layer
+        full_path = f"{gpkg_path}|layername={layer_name}"
+        layer = QgsVectorLayer(full_path, display_name or layer_name, "ogr")
+
+        if not layer.isValid():
+            print(f"❌ Failed to load layer '{layer_name}'")
+            return None
+
+        QgsProject.instance().addMapLayer(layer)
+        print(f"✅ Loaded {layer.name()} ({layer.featureCount()} features) from zipped GPKG")
+        return layer
 
 def ensure_crs_target(layer, layer_name: str = None):
-    """Reproject to the global TARGET_CRS if needed"""
+    if layer is None or not layer.isValid():
+        print("❌ Input layer is invalid")
+        return None
+
     target = QgsCoordinateReferenceSystem(TARGET_CRS)
 
     if layer.crs() == target:
-        print(f"✅ {layer_name or layer.name()} already in {TARGET_CRS}")
+        print(f"✅ Already in {TARGET_CRS}")
         return layer
 
     print(f"🔄 Reprojecting {layer_name or layer.name()} → {TARGET_CRS}")
 
-    output_path = os.path.join(forestry_dir,
-                               f"{(layer_name or layer.name()).replace(' ', '_')}_{TARGET_CRS.split(':')[1]}.gpkg")
+    output_path = forestry_dir / f"{(layer_name or layer.name()).replace(' ', '_')}_{TARGET_CRS.split(':')[1]}.gpkg"
 
     params = {
         'INPUT': layer,
         'TARGET_CRS': target,
-        'OUTPUT': output_path
+        'OUTPUT': str(output_path),
+        'OPERATION': '',           # Let QGIS choose best transformation
+        'ERROR': 0.0               # Tolerance
     }
 
     result = processing.run("native:reprojectlayer", params)
-    new_layer = QgsVectorLayer(output_path, layer_name or layer.name(), "ogr")
+    if result is None:
+        print("❌ Processing algorithm failed (returned None)")
+        # Optionally raise or return early
+    elif 'OUTPUT' not in result:
+        print("❌ No OUTPUT in result")
+        print("Result keys:", list(result.keys()))
 
+    new_layer = QgsVectorLayer(str(output_path), layer_name or layer.name(), "ogr")
+
+    print(f"   New layer feature count: {new_layer.featureCount()}")
+
+    if new_layer.featureCount() == 0:
+        print("❌ Reprojection produced empty layer! Possible causes:")
+        print("   - Invalid geometries in source")
+        print("   - CRS transformation failed")
+        print("   - Features outside valid area")
+        # Optional: save without reprojection as fallback
+        QgsProject.instance().addMapLayer(layer)
+        return layer
+
+    QgsProject.instance().addMapLayer(new_layer)
+
+    print(f"✅ Successfully reprojected: {new_layer.featureCount()} features")
     return new_layer
-
 
 def extract_and_reproject_huc8(wbd_layer, huc8_name: str):
     """
@@ -338,25 +408,165 @@ def extract_huc12_in_huc8(wbd_gpkg_path: str, huc8_name: str):
 
     return final_layer
 
+def clip_to_mask(
+    input_layer,           # Can be path (str/Path) or QgsLayer object
+    mask_layer,            # Vector mask (usually HUC8)
+    output_dir: Path,
+    output_name: str = None,
+    target_crs: str = "EPSG:4269",
+    nodata: int = -9999,
+    crop_to_cutline: bool = True,
+    keep_resolution: bool = True
+):
+    """
+    General purpose clip: works on both raster and vector.
+    Returns (clipped_layer, output_path)
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Handle input as path or layer
+    if isinstance(input_layer, (str, Path)):
+        input_path = str(input_layer)
+        layer_name = Path(input_layer).stem
+        is_raster = input_path.lower().endswith(('.tif', '.img', '.asc', '.dem'))
+    else:
+        input_path = input_layer
+        layer_name = input_layer.name() if hasattr(input_layer, 'name') else "clipped"
+        is_raster = isinstance(input_layer, QgsRasterLayer)
+
+    if output_name is None:
+        output_name = f"{layer_name}_clipped"
+
+    output_path = output_dir / f"{output_name}.{'tif' if is_raster else 'gpkg'}"
+
+    print(f"Clipping {'raster' if is_raster else 'vector'} to mask...")
+
+    # Reproject mask if needed
+    if mask_layer.crs().authid() != target_crs:
+        print("Reprojecting mask layer...")
+        params = {
+            'INPUT': mask_layer,
+            'TARGET_CRS': QgsCoordinateReferenceSystem(target_crs),
+            'OUTPUT': 'memory:Reprojected_Mask'
+        }
+        mask_layer = processing.run("native:reprojectlayer", params)['OUTPUT']
+
+    if is_raster:
+        # Raster clipping
+        params = {
+            'INPUT': input_path,
+            'MASK': mask_layer,
+            'NODATA': nodata,
+            'CROP_TO_CUTLINE': crop_to_cutline,
+            'KEEP_RESOLUTION': keep_resolution,
+            'OUTPUT': str(output_path)
+        }
+        result = processing.run("gdal:cliprasterbymasklayer", params)
+        clipped_layer = QgsRasterLayer(result['OUTPUT'], output_name)
+
+    else:
+        # Vector clipping
+        params = {
+            'INPUT': input_path,
+            'OVERLAY': mask_layer,
+            'OUTPUT': str(output_path)
+        }
+        result = processing.run("native:clip", params)
+        if result is None:
+            print("❌ Processing algorithm failed (returned None)")
+            # Optionally raise or return early
+        elif 'OUTPUT' not in result:
+            print("❌ No OUTPUT in result")
+            print("Result keys:", list(result.keys()))
+            
+        clipped_layer = QgsVectorLayer(str(output_path), output_name, "ogr")
+
+    if clipped_layer.isValid():
+        QgsProject.instance().addMapLayer(clipped_layer)
+        print(f"✅ Clipped successfully: {output_name}")
+        return clipped_layer, str(output_path)
+    else:
+        raise Exception(f"❌ Failed to clip layer: {output_name}")
+
+def load_gpkg_with_ogr(gpkg_path: str, layer_name: str, display_name: str = None):
+    gpkg_path = Path(gpkg_path)
+
+    ds = ogr.Open(str(gpkg_path))
+    if ds is None:
+        print(f"❌ Failed to open {gpkg_path}")
+        return None
+
+    ogr_layer = ds.GetLayerByName(layer_name)
+    if ogr_layer is None:
+        print(f"❌ Layer '{layer_name}' not found")
+        return None
+
+    print(f"✅ OGR loaded {ogr_layer.GetFeatureCount()} features from '{layer_name}'")
+
+    # Create QGIS layer
+    qgis_layer = QgsVectorLayer(
+        f"{gpkg_path}|layername={layer_name}",
+        display_name or layer_name,
+        "ogr"
+    )
+
+    if qgis_layer.isValid():
+        QgsProject.instance().addMapLayer(qgis_layer)
+        print(f"✅ Added to QGIS: {qgis_layer.name()}")
+        return qgis_layer
+    else:
+        print("❌ QGIS layer is invalid")
+        return None
 
 def build(huc_layer, huc8_name:str):
-    # huc_vector_path = "/opt/dev/gis/upper_dolores_HU8.shp"
-    # huc_layer = load_vector_layer(huc_vector_path, huc_name, QColor(40, 40, 40))
-
     build_forest_layers(forestry_dir, huc_layer, huc8_name)
 
     path = forestry_dir / contour_vector_path
     print(f"Contour path {path}")
     contour_layer = load_vector_layer(str(path), "ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp", QColor(80, 80, 80))
-    major_contour_layer = extract_contours("ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp",
-                     [8000, 9000, 10000, 11000, 12000],
-                     "Major Contours 8k-12k ft")
-    select_contours_on_layer(major_contour_layer, [10000, 11000], highlight_color=QColor(200, 000, 0))
+    temp_contour_layer = extract_contours("ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp",
+                     [8440, 9000, 10000, 11000, 12000],
+                     "Temp Major Contours")
+    elevation_layer, elevation_path = clip_to_mask(temp_contour_layer, huc_layer, forestry_dir, "Elevation Contours")
+    layer_node = QgsProject.instance().layerTreeRoot().findLayer(elevation_layer.id())
+    if layer_node:
+        layer_node.setItemVisibilityChecked(False)
+    symbol = get_symbol(elevation_layer)
+    symbol.setColor(QColor(0, 0, 0))
+    symbol.setWidth(0.5)
+    select_contours_on_layer(elevation_layer, [9000], highlight_color=QColor(200, 000, 0))
+
+    nhd_gpkg_path = "/opt/dev/gis/NHD/NHD_H_14030002_HU8_GPKG.gpkg"  # extracted
+
+    water_body_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDWaterbody")
+    symbol = get_symbol(water_body_layer)
+    symbol.setColor(QColor(64, 64, 255))
+
+    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea")
+    symbol = get_symbol(river_layer)
+    symbol.symbolLayer(0).setStrokeColor(QColor(64, 64, 255))
+    symbol.symbolLayer(0).setStrokeWidth(0.4)
+
+    temp_weather_station_layer = load_vector_layer("/opt/dev/gis/CO_DWR/ClimateStationPOR.zip", "Teno Weather Stations", QColor(0, 0, 0))
+    weather_station_layer, weather_station_path = clip_to_mask(temp_weather_station_layer, huc_layer, forestry_dir, "Weather Stations")
+    remove_layer(temp_weather_station_layer)
+    weather_station_layer.setOpacity(1.0)
+    symbol = get_symbol(weather_station_layer)
+    if symbol:
+        symbol.setColor(QColor(255, 0, 0))
+        symbol.setSize(2)
+        symbol.setOpacity(0.9)
+
+    remove_layer(temp_contour_layer)
     remove_layer(contour_layer)
+
+    iface.mapCanvas().setExtent(huc_layer.extent()) # type: ignore[attr-defined]
+    iface.mapCanvas().refresh()                     # type: ignore[attr-defined]
 
     print("\n🎉 Done! HUC8 + VegType layer should stay visible, forest types are in the group at the top.")
 
 reset_qgis()
+reload_modules()
 
 print("\n=== Starting HUC8 Build ===")
 

@@ -62,7 +62,7 @@ forest_types = {
     263: {"name": "Shasta Red Fir", "color": (150, 150, 150)},
     264: {"name": "Noble Fir", "color": (150, 150, 150)},
 
-    265: {"name": "Engelmann Spruce", "color": (0, 100, 255)},
+    265: {"name": "Engelmann Spruce", "color": (0, 255, 100)},
     266: {"name": "Engelmann Spruce / Subalpine Fir", "color": (0, 160, 140)},
     267: {"name": "Grand Fir", "color": (150, 150, 150)},
     268: {"name": "Subalpine Fir", "color": (150, 150, 150)},
