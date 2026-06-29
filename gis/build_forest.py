@@ -20,6 +20,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+# GOV databases
+# https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/GovtUnit/
 from pathlib import Path
 import importlib
 import sys
@@ -27,7 +29,6 @@ import os
 from qgis.core import QgsVectorLayer, QgsProject
 from qgis.PyQt.QtGui import QColor
 from qgis.utils import iface
-from osgeo import ogr
 import processing   # type: ignore
 
 script_paths = ["/opt/dev/riverwar"]
@@ -37,11 +38,13 @@ for p in script_paths:
         print(f"Added to Python path: {p}")
 
 def reload_modules():
+    print("Reload Modules")
     modules_to_reload = [
+        'gis.layer',
         'gis.make_forest_layers',
         'gis.forest_type',
         'gis.contours',
-        'gis.layers',
+        'gis.wildfires',
     ]
     for mod in modules_to_reload:
         if mod in sys.modules:
@@ -49,12 +52,14 @@ def reload_modules():
             print(f"✅ Reloaded {mod}")
         else:
             print(f"⚠️  {mod} not loaded yet")
+    print("Modules Loaded")
 reload_modules()
 
-from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vector_layer, clip_to_mask
+from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vector_layer, clip_to_mask, create_group, \
+    add_layer_to_group, remove_features_by_attribute_fast, load_gpkg_with_ogr
 from gis.contours import build_elevation_layers
-from gis.make_forest_layers import build_forest_layers
-reset_qgis()
+from gis.make_forest_layers import build_forest_layers, build_tree_map_layers
+from gis.wildfire import build_wildfires
 
 # ====================== GLOBAL PROJECT SETTINGS ======================
 # TARGET_CRS = "EPSG:5070"
@@ -225,50 +230,27 @@ def extract_huc12_in_huc8(wbd_gpkg_path: str, huc_name: str):
 
     return final_layer
 
-def load_gpkg_with_ogr(gpkg_path: str, layer_name: str, display_name: str = None):
-    gpkg_path = Path(gpkg_path)
-
-    ds = ogr.Open(str(gpkg_path))
-    if ds is None:
-        print(f"❌ Failed to open {gpkg_path}")
-        return None
-
-    ogr_layer = ds.GetLayerByName(layer_name)
-    if ogr_layer is None:
-        print(f"❌ Layer '{layer_name}' not found")
-        return None
-
-    print(f"✅ OGR loaded {ogr_layer.GetFeatureCount()} features from '{layer_name}'")
-
-    # Create QGIS layer
-    qgis_layer = QgsVectorLayer(
-        f"{gpkg_path}|layername={layer_name}",
-        display_name or layer_name,
-        "ogr"
-    )
-
-    if qgis_layer.isValid():
-        QgsProject.instance().addMapLayer(qgis_layer)
-        print(f"✅ Added to QGIS: {qgis_layer.name()}")
-        return qgis_layer
-    else:
-        print("❌ QGIS layer is invalid")
-        return None
-
 def build_hydrology():
     nhd_gpkg_path = "/opt/dev/gis/NHD/NHD_H_14030002_HU8_GPKG.gpkg"
 
-    water_body_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDWaterbody")
+    group = create_group("Hydrology", position=0)
+
+    water_body_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDWaterbody", group=group)
     symbol = get_symbol(water_body_layer)
+    symbol.setColor(QColor(90, 90, 255))
+
+    flow_line_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDFlowline", group=group)
+    remove_features_by_attribute_fast(flow_line_layer, "gnis_name")
+    symbol = get_symbol(flow_line_layer)
     symbol.setColor(QColor(64, 64, 255))
 
-    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea")
+    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea", group=group)
     symbol = get_symbol(river_layer)
     symbol.symbolLayer(0).setStrokeColor(QColor(64, 64, 255))
     symbol.symbolLayer(0).setStrokeWidth(0.4)
 
 def build_weather_stations(huc8_layer):
-    temp_weather_station_layer = load_vector_layer("/opt/dev/gis/CO_DWR/ClimateStationPOR.zip", "Teno Weather Stations", QColor(0, 0, 0))
+    temp_weather_station_layer = load_vector_layer("/opt/dev/gis/CO_DWR/ClimateStationPOR.zip", "Teno Weather Stations", QColor(255, 0, 0))
     weather_station_layer, weather_station_path = clip_to_mask(temp_weather_station_layer, huc8_layer, forestry_dir, "Weather Stations")
     remove_layer(temp_weather_station_layer)
     weather_station_layer.setOpacity(1.0)
@@ -279,20 +261,31 @@ def build_weather_stations(huc8_layer):
         symbol.setOpacity(0.9)
 
 def build(huc_name:str):
+    co_counties = load_vector_layer('/opt/dev/gis/Gov/GOVTUNIT_Colorado_State_Shape.zip', 'GU_CountyOrEquivalent.shp', QColor(140, 0, 140))
+
     wbd_huc8 = load_huc8_from_wbd("/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg")  # Load Upper Colorado HU2, HUC8
     huc8_layer = extract_and_reproject_huc8(wbd_huc8, huc_name)
     remove_layer(wbd_huc8)
     huc12_layer = extract_huc12_in_huc8('/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg', huc_name)
 
-    build_forest_layers(forestry_dir, huc8_layer, huc_name)
+    # temp_protected_area_layer = load_vector_layer("/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz", "Temp Protected Areas", QColor(100, 255, 100))
+    # protected_area_layer, protected_area_path = clip_to_mask(temp_protected_area_layer, huc8_layer, forestry_dir, "Protected Areas")
+    # remove_layer(temp_protected_area_layer)
 
-    build_elevation_layers(forestry_dir, huc8_layer)
+    # build_forest_layers(forestry_dir, huc8_layer, huc_name)
+    build_tree_map_layers(forestry_dir, huc8_layer, huc12_layer)
 
-    build_hydrology()
+    build_wildfires()
 
-    build_weather_stations(huc8_layer)
+    # build_elevation_layers(forestry_dir, huc8_layer)
+
+    # build_hydrology()
+
+    # build_weather_stations(huc8_layer)
 
     return huc8_layer
+
+reset_qgis()
 
 print(f"\n=== Starting {huc8_name} Build ===")
 huc8_layer = build(huc8_name)

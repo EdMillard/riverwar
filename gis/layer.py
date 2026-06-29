@@ -24,18 +24,142 @@ from pathlib import Path
 import processing # type: ignore
 import time
 import os
-from qgis.core import QgsRasterLayer, QgsVectorLayer, QgsProject, QgsCoordinateReferenceSystem
+from osgeo import ogr
+from qgis.core import QgsRasterLayer, QgsVectorLayer, QgsProject, QgsCoordinateReferenceSystem, QgsFeatureRequest
 from qgis.PyQt.QtGui import QColor
 from qgis.utils import iface
 import zipfile
 import tempfile
+from typing import Optional
+
+def remove_features_by_attribute_fast(layer: QgsVectorLayer, field_name: str, value=None):
+    """
+    Remove features by attribute - modifies layer in place, no duplication.
+    """
+    if not layer or not layer.isValid():
+        print("❌ Invalid layer")
+        return 0
+
+    layer.startEditing()
+
+    if value is None:
+        expression = f'"{field_name}" IS NULL'
+    else:
+        expression = f'"{field_name}" = {value}' if isinstance(value, (int, float)) else f'"{field_name}" = \'{value}\''
+
+    request = QgsFeatureRequest().setFilterExpression(expression)
+    to_delete = [f.id() for f in layer.getFeatures(request)]
+
+    if to_delete:
+        layer.deleteFeatures(to_delete)
+        layer.commitChanges()
+        print(f"✅ Removed {len(to_delete)} features where {field_name} = {value}")
+    else:
+        layer.rollBack()
+        print(f"No features to remove where {field_name} = {value}")
+
+    # Force refresh
+    layer.triggerRepaint()
+    return len(to_delete)
+
+def remove_features_by_attribute(layer: QgsVectorLayer, field_name: str, value=None):
+    """
+    Remove features where field equals value (default: NULL/None)
+    """
+    if not layer or not layer.isValid():
+        print("❌ Invalid layer")
+        return 0
+
+    if value is None:
+        # Remove where field IS NULL
+        expression = f'"{field_name}" IS NULL'
+    else:
+        expression = f'"{field_name}" = {value}' if isinstance(value, (int, float)) else f'"{field_name}" = \'{value}\''
+
+    layer.selectByExpression(expression)
+    count = layer.selectedFeatureCount()
+
+    if count > 0:
+        layer.startEditing()
+        layer.deleteSelectedFeatures()
+        layer.commitChanges()
+        print(f"✅ Removed {count} features where {field_name} = {value}")
+    else:
+        print(f"No features found where {field_name} = {value}")
+
+    return count
+
+def create_group(group_name, position:Optional[int]=None, existing_layer=None):
+    root = QgsProject.instance().layerTreeRoot()
+
+    existing = root.findGroup(group_name)
+    if existing:
+        root.removeChildNode(existing)
+
+    if existing_layer is not None:
+        existing_layer_node = root.findLayer(existing_layer.id())
+        if existing_layer_node:
+            group = root.insertGroup(root.children().index(existing_layer_node), group_name)
+    elif position is None:
+        group = root.addGroup(group_name)
+    else:
+        group = root.insertGroup(0, group_name)
+
+    group.setExpanded(False)
+    group.setItemVisibilityChecked(False)
+
+    print(f"✅ Created collapsed group at top: '{group_name}'")
+    return group
+
+def add_layer_to_group(layer, group):
+    group.addLayer(layer)
+    # Remove from EVERYWHERE else
+    root = QgsProject.instance().layerTreeRoot()
+    root.removeLayer(layer)
+
+    group.setExpanded(False)
+    group.setItemVisibilityChecked(False)
 
 def get_symbol(layer):
-    """Safe way to get symbol (avoids PyCharm unresolved attribute warning)"""
     renderer = layer.renderer()
-    if renderer is not None:
-        return renderer.symbol()   # type: ignore[attr-defined]
+    if renderer:
+        if hasattr(renderer, 'symbol') and renderer.symbol() is not None:
+            return renderer.symbol()   # type: ignore[attr-defined]
     return None
+
+def load_gpkg_with_ogr(gpkg_path: str, layer_name: str, display_name: str = None, group=None):
+    print(f'Loading {gpkg_path}')
+    ds = ogr.Open(gpkg_path)
+    if ds is None:
+        print("❌ Failed to open GPKG with OGR")
+        return None
+
+    qgis_layer = QgsVectorLayer(f"{gpkg_path}|layername={layer_name}", display_name or layer_name, "ogr")
+
+    if not qgis_layer.isValid():
+        print("❌ QGIS layer invalid")
+        return None
+
+    if group:
+        # This is a known bizarre hack required for features to draw correctly by removing them from root first
+        # then adding them to root, then adding them to the group
+        root = QgsProject.instance().layerTreeRoot()
+        root.removeLayer(qgis_layer)
+        QgsProject.instance().addMapLayer(qgis_layer)
+        group.addLayer(qgis_layer)
+    else:
+        QgsProject.instance().addMapLayer(qgis_layer)
+
+    print(f"Loaded gpkg {gpkg_path}")
+
+    return qgis_layer
+
+def set_layer_state(layer, visible:bool, expanded:bool):
+    root = QgsProject.instance().layerTreeRoot()
+    layer_node = root.findLayer(layer.id())
+    if layer_node:
+        layer_node.setItemVisibilityChecked(visible)  # Hidden
+        layer_node.setExpanded(expanded)
 
 # Not used
 def reproject_layer(forestry_dir:Path, layer, new_name=None):
@@ -105,7 +229,8 @@ def load_vector_layer(path: str, name: str = None, color: QColor = QColor(40, 40
     # Load with QGIS directly (skip OGR for now)
     qgis_layer = QgsVectorLayer(actual_path, layer_name, "ogr")
     symbol = get_symbol(qgis_layer)
-    symbol.setColor(color)
+    if symbol is not None:
+        symbol.setColor(color)
 
     if not qgis_layer.isValid():
         raise Exception(f"❌ Failed to load layer from {actual_path}")
@@ -205,8 +330,8 @@ def ensure_crs(forestry_dir:Path, target_crs:str, layer, layer_name: str = None)
 
 
 def clip_to_mask(
-    input_layer,           # Can be path (str/Path) or QgsLayer object
-    mask_layer,            # Vector mask (usually HUC8)
+    input_layer,
+    mask_layer,
     output_dir: Path,
     output_name: str = None,
     target_crs: str = "EPSG:4269",
@@ -214,13 +339,9 @@ def clip_to_mask(
     crop_to_cutline: bool = True,
     keep_resolution: bool = True
 ):
-    """
-    General purpose clip: works on both raster and vector.
-    Returns (clipped_layer, output_path)
-    """
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Handle input as path or layer
+    # Handle input...
     if isinstance(input_layer, (str, Path)):
         input_path = str(input_layer)
         layer_name = Path(input_layer).stem
@@ -248,7 +369,6 @@ def clip_to_mask(
         mask_layer = processing.run("native:reprojectlayer", params)['OUTPUT']
 
     if is_raster:
-        # Raster clipping
         params = {
             'INPUT': input_path,
             'MASK': mask_layer,
@@ -261,25 +381,26 @@ def clip_to_mask(
         clipped_layer = QgsRasterLayer(result['OUTPUT'], output_name)
 
     else:
-        # Vector clipping
-        params = {
+        # === VECTOR CLIP WITH GEOMETRY FIX ===
+        # First fix invalid geometries
+        fix_params = {
             'INPUT': input_path,
+            'OUTPUT': 'memory:Fixed_Geometries'
+        }
+        fixed_layer = processing.run("native:fixgeometries", fix_params)['OUTPUT']
+
+        # Then clip
+        clip_params = {
+            'INPUT': fixed_layer,
             'OVERLAY': mask_layer,
             'OUTPUT': str(output_path)
         }
-        result = processing.run("native:clip", params)
-        if result is None:
-            print("❌ Processing algorithm failed (returned None)")
-            # Optionally raise or return early
-        elif 'OUTPUT' not in result:
-            print("❌ No OUTPUT in result")
-            print("Result keys:", list(result.keys()))
-
+        result = processing.run("native:clip", clip_params)
         clipped_layer = QgsVectorLayer(str(output_path), output_name, "ogr")
 
     if clipped_layer.isValid():
         QgsProject.instance().addMapLayer(clipped_layer)
-        print(f"✅ Clipped successfully: {output_name}")
+        print(f"✅ Clipped successfully: {output_name} ({clipped_layer.featureCount()} features)")
         return clipped_layer, str(output_path)
     else:
         raise Exception(f"❌ Failed to clip layer: {output_name}")

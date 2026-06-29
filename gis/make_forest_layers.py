@@ -20,13 +20,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
+# Treemap download
+# https://data.fs.usda.gov/geodata/rastergateway/treemap/index.php
+#
 from osgeo import gdal
 import numpy as np
 from pathlib import Path
 from qgis.core import QgsRasterLayer, QgsProject, QgsPalettedRasterRenderer
 from qgis.PyQt.QtGui import QColor
 from gis.forest_type import forest_types
-from gis.layer import clip_raster_to_mask
+from gis.layer import clip_raster_to_mask, create_group, add_layer_to_group, set_layer_state
 import processing # type: ignore
 
 huc_name = "HUC8"
@@ -120,23 +124,6 @@ def extract_tree_type_from_clipped(forestry_dir: Path, clipped_veg_path: str, ve
         return output_layer
     return None
 
-
-def create_forest_group():
-    root = QgsProject.instance().layerTreeRoot()
-    group_name = "Forest Types"
-
-    existing = root.findGroup(group_name)
-    if existing:
-        root.removeChildNode(existing)
-
-    group = root.insertGroup(0, group_name)
-    group.setExpanded(False)
-    group.setItemVisibilityChecked(False)
-
-    print(f"✅ Created collapsed group at top: '{group_name}'")
-    return group
-
-
 def style_clipped_layer(clipped_veg_layer: QgsRasterLayer, present_types: list):
     """Apply colors from forest_types to the clipped VegType layer"""
     if not clipped_veg_layer or not clipped_veg_layer.isValid():
@@ -166,6 +153,62 @@ def style_clipped_layer(clipped_veg_layer: QgsRasterLayer, present_types: list):
 
     print(f"✅ Applied {len(classes)} color classes to clipped layer")
 
+def reclassify_tpa_dead_layer(
+    tpa_dead_layer: QgsRasterLayer,
+    output_dir: Path,
+    output_name: str = None
+):
+    """
+    Reclassify TPA_DEAD into Low / Medium / High mortality with good visibility.
+    """
+    if not tpa_dead_layer or not tpa_dead_layer.isValid():
+        raise Exception("Input TPA_DEAD layer is invalid")
+
+    if output_name is None:
+        output_name = tpa_dead_layer.name() + "_Reclass"
+
+    output_path = output_dir / f"{output_name}.tif"
+
+    # Reclassification table
+    low = 50
+    medium = 100
+    high = 160
+    reclass_table = [
+        0, low, 1,  # Low mortality
+        low, medium, 2,  # Medium
+        high, 9999, 3  # High
+    ]
+
+    params = {
+        'INPUT_RASTER': tpa_dead_layer,
+        'RASTER_BAND': 1,
+        'TABLE': reclass_table,
+        'NO_DATA': 0,
+        'RANGE_BOUNDARIES': 0,
+        'OUTPUT': str(output_path)
+    }
+
+    result = processing.run("native:reclassifybytable", params)
+    reclass_layer = QgsRasterLayer(result['OUTPUT'], output_name)
+
+    if reclass_layer.isValid():
+        renderer = QgsPalettedRasterRenderer(reclass_layer.dataProvider(), 1, [
+            QgsPalettedRasterRenderer.Class(1, QColor(200, 200, 200, 70), f"Low <{low}"),
+            QgsPalettedRasterRenderer.Class(2, QColor(255, 180, 80, 255), f"Medium {low}-{medium}"),
+            QgsPalettedRasterRenderer.Class(3, QColor(220, 50, 50, 255), f"High >{medium}")
+        ])
+        reclass_layer.setRenderer(renderer)
+
+        # Force good visibility
+        reclass_layer.setOpacity(0.95)
+        reclass_layer.triggerRepaint()
+
+        QgsProject.instance().addMapLayer(reclass_layer)
+        print(f"✅ Reclassified TPA_DEAD: {reclass_layer.name()}")
+        return reclass_layer
+    else:
+        raise Exception("Failed to reclassify TPA_DEAD layer")
+
 def build_forest_layers(forestry_dir: Path, huc_layer, huc8_name: str):
     conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
     clipped_veg_layer, clipped_veg_path = clip_raster_to_mask(conus_raster_path, huc_layer, forestry_dir)
@@ -174,7 +217,7 @@ def build_forest_layers(forestry_dir: Path, huc_layer, huc8_name: str):
     # === Style the clipped layer (this is what you see as VegType_HUC8) ===
     style_clipped_layer(clipped_veg_layer, present_types)
 
-    forest_group = create_forest_group()
+    forest_group = create_group("Forest Types")
 
     for code, info in forest_types.items():
         if code not in [p[0] for p in present_types]:
@@ -183,4 +226,37 @@ def build_forest_layers(forestry_dir: Path, huc_layer, huc8_name: str):
         color = info["color"]
         extract_tree_type_from_clipped(forestry_dir, clipped_veg_path, code, name, color, forest_group)
 
-    return
+def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
+
+    tree_map_group = create_group("TreeMap 2022", position=None, existing_layer=huc12_layer)
+
+    tree_map_balive_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_BALIVE/TreeMap2022_CONUS_BALIVE.tif"
+    clipped_tree_map_balive, path = clip_raster_to_mask(tree_map_balive_raster_path, huc_layer, forestry_dir)
+    #add_layer_to_group(clipped_tree_map_balive, tree_map_group)
+    set_layer_state(clipped_tree_map_balive, False, False)
+
+    tree_map_canopypct_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_CANOPYPCT/TreeMap2022_CONUS_CANOPYPCT.tif"
+    clipped_tree_map_canopypct, path = clip_raster_to_mask(tree_map_canopypct_raster_path, huc_layer, forestry_dir)
+    #add_layer_to_group(clipped_tree_map_canopypct, tree_map_group)
+    set_layer_state(clipped_tree_map_canopypct, False, False)
+
+    tree_map_tpa_dead_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_TPA_DEAD/TreeMap2022_CONUS_TPA_DEAD.tif"
+    clipped_tree_map_tpa_dead, path = clip_raster_to_mask(tree_map_tpa_dead_raster_path, huc_layer, forestry_dir)
+    #add_layer_to_group(clipped_tree_map_tpa_dead, tree_map_group)
+    set_layer_state(clipped_tree_map_tpa_dead, False, False)
+
+    open_et_path = "/opt/dev/gis/OpenET/8ac409f632cecc4ec3f62d12807823a7-ec15122101886c12354db14775427dde_getPixels.tiff"
+    open_et, path = clip_raster_to_mask(open_et_path, huc_layer, forestry_dir)
+    # add_layer_to_group(open_et, tree_map_group)
+    set_layer_state(open_et, True, False)
+
+    tpa_dead_layer = reclassify_tpa_dead_layer(clipped_tree_map_tpa_dead, forestry_dir, "TPA_DEADs")
+    tpa_dead_layer.setOpacity(1.0)
+    # add_layer_to_group(tpa_dead_layer, tree_map_group)
+    set_layer_state(tpa_dead_layer, True, False)
+
+    tree_map_tpa_live_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_TPA_LIVE/TreeMap2022_CONUS_TPA_LIVE.tif"
+    clipped_tree_map_tpa_live, path = clip_raster_to_mask(tree_map_tpa_live_raster_path, huc_layer, forestry_dir)
+    # add_layer_to_group(clipped_tree_map_tpa_live, tree_map_group)
+    set_layer_state(clipped_tree_map_tpa_live, False, False)
+

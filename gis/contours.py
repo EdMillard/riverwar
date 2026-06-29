@@ -121,11 +121,9 @@ def select_contours_on_layer(layer, elevations, highlight_color: QColor = QColor
 
     return count
 
-contour_layer = extract_contours("ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp",
-                 [8000, 9000, 10000, 11000, 12000],
-                 "Major Contours 8k-12k ft")
-
-
-select_contours_on_layer(contour_layer, [10000, 11000], highlight_color=QColor(200, 000, 0))
+# contour_layer = extract_contours("ELEV_Cortez_E_CO_1X1_Shape — Shape/Elev_Contour.shp",
+#                  [8000, 9000, 10000, 11000, 12000],
+#                  "Major Contours 8k-12k ft")
+# select_contours_on_layer(contour_layer, [10000, 11000], highlight_color=QColor(200, 000, 0))
 
 
