@@ -153,37 +153,42 @@ def style_clipped_layer(clipped_veg_layer: QgsRasterLayer, present_types: list):
 
     print(f"✅ Applied {len(classes)} color classes to clipped layer")
 
-def reclassify_tpa_dead_layer(
-    tpa_dead_layer: QgsRasterLayer,
+def reclassify_raster(
+    input_layer: QgsRasterLayer,
     output_dir: Path,
-    output_name: str = None
-):
+    output_name: str = None,
+    classes: list = None,           # List of (min, max, value, color, label)
+    no_data: int = 0,
+    opacity: float = 0.95
+) -> QgsRasterLayer:
     """
-    Reclassify TPA_DEAD into Low / Medium / High mortality with good visibility.
+    General raster reclassifier with variable number of classes.
     """
-    if not tpa_dead_layer or not tpa_dead_layer.isValid():
-        raise Exception("Input TPA_DEAD layer is invalid")
+    if not input_layer or not input_layer.isValid():
+        raise Exception("Input raster layer is invalid")
 
     if output_name is None:
-        output_name = tpa_dead_layer.name() + "_Reclass"
+        output_name = input_layer.name() + "_Reclass"
 
     output_path = output_dir / f"{output_name}.tif"
 
-    # Reclassification table
-    low = 50
-    medium = 100
-    high = 160
-    reclass_table = [
-        0, low, 1,  # Low mortality
-        low, medium, 2,  # Medium
-        high, 9999, 3  # High
-    ]
+    if classes is None:
+        classes = [
+            (0, 50, 1, QColor(200, 200, 200, 80), "Low"),
+            (50, 100, 2, QColor(255, 180, 80, 255), "Medium"),
+            (100, 9999, 3, QColor(220, 50, 50, 255), "High")
+        ]
+
+    # Build reclassification table
+    reclass_table = []
+    for min_val, max_val, new_val, _, _ in classes:
+        reclass_table.extend([min_val, max_val, new_val])
 
     params = {
-        'INPUT_RASTER': tpa_dead_layer,
+        'INPUT_RASTER': input_layer,
         'RASTER_BAND': 1,
         'TABLE': reclass_table,
-        'NO_DATA': 0,
+        'NO_DATA': no_data,
         'RANGE_BOUNDARIES': 0,
         'OUTPUT': str(output_path)
     }
@@ -192,22 +197,99 @@ def reclassify_tpa_dead_layer(
     reclass_layer = QgsRasterLayer(result['OUTPUT'], output_name)
 
     if reclass_layer.isValid():
-        renderer = QgsPalettedRasterRenderer(reclass_layer.dataProvider(), 1, [
-            QgsPalettedRasterRenderer.Class(1, QColor(200, 200, 200, 70), f"Low <{low}"),
-            QgsPalettedRasterRenderer.Class(2, QColor(255, 180, 80, 255), f"Medium {low}-{medium}"),
-            QgsPalettedRasterRenderer.Class(3, QColor(220, 50, 50, 255), f"High >{medium}")
-        ])
+        # Build classes for renderer (newer QGIS style)
+        renderer_classes = []
+        for value, color, label in [(c[2], c[3], c[4]) for c in classes]:
+            renderer_classes.append(
+                QgsPalettedRasterRenderer.Class(value, color, label)
+            )
+
+        renderer = QgsPalettedRasterRenderer(
+            reclass_layer.dataProvider(), 1, renderer_classes
+        )
         reclass_layer.setRenderer(renderer)
 
-        # Force good visibility
-        reclass_layer.setOpacity(0.95)
+        reclass_layer.setOpacity(opacity)
         reclass_layer.triggerRepaint()
 
         QgsProject.instance().addMapLayer(reclass_layer)
-        print(f"✅ Reclassified TPA_DEAD: {reclass_layer.name()}")
+        print(f"✅ Reclassified: {reclass_layer.name()} ({len(classes)} classes)")
         return reclass_layer
     else:
-        raise Exception("Failed to reclassify TPA_DEAD layer")
+        raise Exception(f"Failed to reclassify {input_layer.name()}")
+
+
+def print_raster_value_counts(raster_layer: QgsRasterLayer, band: int = 1):
+    """
+    Print ALL unique values (rounded to nearest integer) and their pixel counts.
+    """
+    if not raster_layer or not raster_layer.isValid():
+        print("❌ Invalid raster layer")
+        return
+
+    provider = raster_layer.dataProvider()
+    extent = raster_layer.extent()
+
+    block = provider.block(band, extent, raster_layer.width(), raster_layer.height())
+    array = np.frombuffer(block.data(), dtype=np.float32).reshape(
+        raster_layer.height(), raster_layer.width()
+    )
+
+    # Round to nearest integer
+    rounded = np.round(array).astype(int)
+
+    unique, counts = np.unique(rounded, return_counts=True)
+    count_dict = dict(zip(unique, counts))
+    sorted_counts = dict(sorted(count_dict.items()))
+
+    total_pixels = array.size
+
+    print(f"✅ Full value counts for: {raster_layer.name()} (rounded to integer)")
+    print(f"   Total pixels: {total_pixels:,}")
+    print(f"   Unique values: {len(unique)}\n")
+    print(f"{'Value':>8} | {'Pixel Count':>12} | {'Percentage':>8}")
+    print("-" * 38)
+
+    for value, count in sorted_counts.items():
+        percent = (count / total_pixels) * 100
+        print(f"{value:8d} | {count:12,} | {percent:7.3f}%")
+
+def raster_value_counts(raster_layer: QgsRasterLayer, band: int = 1, max_unique: int = 500):
+    """
+    Count pixels for each value in a raster.
+    Returns a sorted dictionary {value: pixel_count}
+    """
+    if not raster_layer or not raster_layer.isValid():
+        print("❌ Invalid raster layer")
+        return {}
+
+    provider = raster_layer.dataProvider()
+    extent = raster_layer.extent()
+
+    # Read the entire band as numpy array
+    block = provider.block(band, extent, raster_layer.width(), raster_layer.height())
+    array = np.frombuffer(block.data(), dtype=np.float32).reshape(
+        raster_layer.height(), raster_layer.width()
+    )
+
+    # Count occurrences
+    unique, counts = np.unique(array, return_counts=True)
+
+    # Convert to dict and sort by value
+    count_dict = dict(zip(unique, counts))
+    sorted_counts = dict(sorted(count_dict.items()))
+
+    print(f"✅ Raster statistics for {raster_layer.name()}")
+    print(f"   Total pixels: {array.size:,}")
+    print(f"   Unique values: {len(unique)}")
+    print(f"   Min: {array.min():.1f}   Max: {array.max():.1f}")
+
+    # Print top values
+    print("\nTop values by pixel count:")
+    for value, count in sorted(sorted_counts.items(), key=lambda x: x[1], reverse=True)[:20]:
+        print(f"   {value:8.1f} : {count:12,} pixels ({count / array.size * 100:5.2f}%)")
+
+    return sorted_counts
 
 def build_forest_layers(forestry_dir: Path, huc_layer, huc8_name: str):
     conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
@@ -235,6 +317,19 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
     #add_layer_to_group(clipped_tree_map_balive, tree_map_group)
     set_layer_state(clipped_tree_map_balive, False, False)
 
+    # counts = raster_value_counts(clipped_tree_map_balive)
+    # print_raster_value_counts(clipped_tree_map_balive)
+    classes_balive = [
+        (0, 60, 1, QColor(0, 0, 200, 255), "Sparse <60"),
+        (60, 120, 1, QColor(0, 200, 0, 255), "Healthy 60-120"),
+        (120, 180, 2, QColor(255, 180, 80, 255), "Dense 120-180"),
+        (180, 9999, 3, QColor(220, 50, 50, 255), "Extreme >180")
+    ]
+    balive_layer = reclassify_raster(clipped_tree_map_balive, forestry_dir, classes=classes_balive)
+    balive_layer.setOpacity(1.0)
+    # add_layer_to_group(tpa_dead_layer, tree_map_group)
+    set_layer_state(balive_layer, True, False)
+
     tree_map_canopypct_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_CANOPYPCT/TreeMap2022_CONUS_CANOPYPCT.tif"
     clipped_tree_map_canopypct, path = clip_raster_to_mask(tree_map_canopypct_raster_path, huc_layer, forestry_dir)
     #add_layer_to_group(clipped_tree_map_canopypct, tree_map_group)
@@ -248,12 +343,17 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
     open_et_path = "/opt/dev/gis/OpenET/8ac409f632cecc4ec3f62d12807823a7-ec15122101886c12354db14775427dde_getPixels.tiff"
     open_et, path = clip_raster_to_mask(open_et_path, huc_layer, forestry_dir)
     # add_layer_to_group(open_et, tree_map_group)
-    set_layer_state(open_et, True, False)
+    set_layer_state(open_et, False, False)
 
-    tpa_dead_layer = reclassify_tpa_dead_layer(clipped_tree_map_tpa_dead, forestry_dir, "TPA_DEADs")
+    classes_tpa = [
+        (0, 50, 1, QColor(200, 200, 200, 80), "Low <50"),
+        (50, 100, 2, QColor(255, 180, 80, 255), "Medium 50-100"),
+        (100, 9999, 3, QColor(220, 50, 50, 255), "High >100")
+    ]
+    tpa_dead_layer = reclassify_raster(clipped_tree_map_tpa_dead, forestry_dir, classes=classes_tpa)
     tpa_dead_layer.setOpacity(1.0)
     # add_layer_to_group(tpa_dead_layer, tree_map_group)
-    set_layer_state(tpa_dead_layer, True, False)
+    set_layer_state(tpa_dead_layer, False, False)
 
     tree_map_tpa_live_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_TPA_LIVE/TreeMap2022_CONUS_TPA_LIVE.tif"
     clipped_tree_map_tpa_live, path = clip_raster_to_mask(tree_map_tpa_live_raster_path, huc_layer, forestry_dir)

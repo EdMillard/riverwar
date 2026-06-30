@@ -64,6 +64,7 @@ from gis.wildfire import build_wildfires
 # ====================== GLOBAL PROJECT SETTINGS ======================
 # TARGET_CRS = "EPSG:5070"
 TARGET_CRS = "EPSG:4269"
+wbd_gpkg_path = '/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg'
 
 base_path:Path = Path("/opt/dev/gis/")
 huc8_name =  "Upper Dolores"
@@ -171,14 +172,13 @@ def extract_and_reproject_huc8(wbd_layer, huc_name: str):
 
     return final_layer
 
-def extract_huc12_in_huc8(wbd_gpkg_path: str, huc_name: str):
+def extract_huc12_in_huc8(gpkg_path: str, huc_name: str):
     """
     Extract HUC12s belonging to a HUC8 and ensure they are in TARGET_CRS.
     """
-    huc8_path = f"{wbd_gpkg_path}|layername=WBDHU8"
-    huc12_path = f"{wbd_gpkg_path}|layername=WBDHU12"
-
+    huc8_path = f"{gpkg_path}|layername=WBDHU8"
     huc8_layer = QgsVectorLayer(huc8_path, "WBDHU8", "ogr")
+    huc12_path = f"{gpkg_path}|layername=WBDHU12"
     huc12_layer = QgsVectorLayer(huc12_path, "WBDHU12", "ogr")
 
     if not huc8_layer.isValid() or not huc12_layer.isValid():
@@ -261,21 +261,29 @@ def build_weather_stations(huc8_layer):
         symbol.setOpacity(0.9)
 
 def build(huc_name:str):
-    co_counties = load_vector_layer('/opt/dev/gis/Gov/GOVTUNIT_Colorado_State_Shape.zip', 'GU_CountyOrEquivalent.shp', QColor(140, 0, 140))
+    # co_counties = load_vector_layer('/opt/dev/gis/Gov/GOVTUNIT_Colorado_State_Shape.zip', 'GU_CountyOrEquivalent.shp', QColor(140, 0, 140))
+
+    huc2_path = f"{wbd_gpkg_path}|layername=WBDHU2"
+    huc2_layer = QgsVectorLayer(huc2_path, "Upper Colorado", "ogr")
+    QgsProject.instance().addMapLayer(huc2_layer)
+
+    huc4_path = f"{wbd_gpkg_path}|layername=WBDHU4"
+    huc4_layer = QgsVectorLayer(huc4_path, "WBDHU4", "ogr")
+    QgsProject.instance().addMapLayer(huc4_layer)
 
     wbd_huc8 = load_huc8_from_wbd("/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg")  # Load Upper Colorado HU2, HUC8
     huc8_layer = extract_and_reproject_huc8(wbd_huc8, huc_name)
     remove_layer(wbd_huc8)
-    huc12_layer = extract_huc12_in_huc8('/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg', huc_name)
+    huc12_layer = extract_huc12_in_huc8(wbd_gpkg_path, huc_name)
 
     # temp_protected_area_layer = load_vector_layer("/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz", "Temp Protected Areas", QColor(100, 255, 100))
     # protected_area_layer, protected_area_path = clip_to_mask(temp_protected_area_layer, huc8_layer, forestry_dir, "Protected Areas")
     # remove_layer(temp_protected_area_layer)
 
-    # build_forest_layers(forestry_dir, huc8_layer, huc_name)
+    build_forest_layers(forestry_dir, huc8_layer, huc_name)
     build_tree_map_layers(forestry_dir, huc8_layer, huc12_layer)
 
-    build_wildfires()
+    # build_wildfires()
 
     # build_elevation_layers(forestry_dir, huc8_layer)
 
