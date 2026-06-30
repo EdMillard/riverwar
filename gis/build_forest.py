@@ -45,6 +45,7 @@ def reload_modules():
         'gis.forest_type',
         'gis.contours',
         'gis.wildfires',
+        'et.openet',
     ]
     for mod in modules_to_reload:
         if mod in sys.modules:
@@ -58,7 +59,7 @@ reload_modules()
 from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vector_layer, clip_to_mask, create_group, \
     add_layer_to_group, remove_features_by_attribute_fast, load_gpkg_with_ogr
 from gis.contours import build_elevation_layers
-from gis.make_forest_layers import build_forest_layers, build_tree_map_layers
+from gis.make_forest_layers import build_forest_layers, build_tree_map_layers, build_open_et_layers
 from gis.wildfire import build_wildfires
 
 # ====================== GLOBAL PROJECT SETTINGS ======================
@@ -280,16 +281,17 @@ def build(huc_name:str):
     # protected_area_layer, protected_area_path = clip_to_mask(temp_protected_area_layer, huc8_layer, forestry_dir, "Protected Areas")
     # remove_layer(temp_protected_area_layer)
 
-    build_forest_layers(forestry_dir, huc8_layer, huc_name)
+    # build_forest_layers(forestry_dir, huc8_layer, huc_name)
+    # build_open_et_layers(forestry_dir, huc8_layer, huc12_layer)
     build_tree_map_layers(forestry_dir, huc8_layer, huc12_layer)
 
     # build_wildfires()
 
     # build_elevation_layers(forestry_dir, huc8_layer)
 
-    # build_hydrology()
+    build_hydrology()
 
-    # build_weather_stations(huc8_layer)
+    build_weather_stations(huc8_layer)
 
     return huc8_layer
 

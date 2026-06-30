@@ -405,6 +405,51 @@ def clip_to_mask(
     else:
         raise Exception(f"❌ Failed to clip layer: {output_name}")
 
+def tight_clip_raster(
+    input_layer: QgsRasterLayer,
+    mask_layer,                    # polygon layer or feature
+    output_path: Path = None,
+    name: str = None
+) -> QgsRasterLayer:
+    """
+    Clip raster tightly to mask with minimal NoData.
+    """
+    if output_path is None:
+        output_path = Path("/tmp") / f"{input_layer.name()}_clipped.tif"
+    else:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if name is None:
+        name = input_layer.name() + "_clipped"
+
+    clipped_layer = tight_clip_raster(
+        input_layer=input_layer,
+        mask_layer=mask_layer,
+        output_path=output_path
+    )
+
+    if 0:
+        params = {
+            'INPUT': input_layer,
+            'MASK': mask_layer,
+            'SOURCE_CRS': input_layer.crs(),
+            'TARGET_CRS': input_layer.crs(),
+            'CROP_TO_CUTLINE': True,      # Important for tight clip
+            'KEEP_NODATA': False,         # Helps reduce NoData padding
+            'OUTPUT': str(output_path)
+        }
+
+        result = processing.run("gdal:cliprasterbymasklayer", params)
+        clipped_layer = QgsRasterLayer(result['OUTPUT'], name)
+
+    if clipped_layer.isValid():
+        QgsProject.instance().addMapLayer(clipped_layer)
+        print(f"✅ Tight clip created: {clipped_layer.name()}")
+        return clipped_layer
+    else:
+        raise Exception("Failed to create clipped raster")
+
+
 def clip_raster_to_mask(
     input_raster_path: str,
     mask_layer,

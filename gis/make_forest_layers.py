@@ -27,19 +27,34 @@ SOFTWARE.
 from osgeo import gdal
 import numpy as np
 from pathlib import Path
-from qgis.core import QgsRasterLayer, QgsProject, QgsPalettedRasterRenderer
+from qgis.core import (QgsRasterLayer, QgsProject, QgsPalettedRasterRenderer, QgsProcessingException, QgsRasterBandStats,
+                       QgsSingleBandGrayRenderer, QgsContrastEnhancement, QgsProject)
 from qgis.PyQt.QtGui import QColor
 from gis.forest_type import forest_types
 from gis.layer import clip_raster_to_mask, create_group, add_layer_to_group, set_layer_state
 import processing # type: ignore
+from typing import Optional
 
 huc_name = "HUC8"
 
-def list_vegtypes_in_clipped(clipped_veg_path: str, huc8_name: str):
-    print(f"\n=== Vegetation Types Present in {huc8_name} ===")
-    ds = gdal.Open(clipped_veg_path)
+def list_vegtypes_in_layer(input_item, forest_types: dict):
+    """
+    List vegetation types present in a raster.
+    Works with either a file path (str/Path) or a QgsRasterLayer.
+    """
+    print(f"\n=== Vegetation Types Present ===")
+
+    # Handle both path and layer
+    if isinstance(input_item, (str, Path)):
+        ds = gdal.Open(str(input_item))
+        layer_name = Path(input_item).stem
+    else:
+        # It's a QgsRasterLayer
+        ds = gdal.Open(input_item.source())
+        layer_name = input_item.name()
+
     if ds is None:
-        print("❌ Could not open clipped vegtype")
+        print("❌ Could not open raster")
         return []
 
     band = ds.GetRasterBand(1)
@@ -55,9 +70,9 @@ def list_vegtypes_in_clipped(clipped_veg_path: str, huc8_name: str):
         print(f"   {val:4d}  →  {info['name']}")
         present.append((val, info["name"]))
 
-    print(f"\nTotal unique types found: {len(present)}\n")
+    print(f"\nTotal unique types found in '{layer_name}': {len(present)}\n")
+    ds = None  # close dataset
     return present
-
 
 def style_conus_layer_with_colors(conus_layer: QgsRasterLayer, present_codes: list):
     """Apply colors from forest_types dictionary to the original CONUS layer"""
@@ -219,40 +234,90 @@ def reclassify_raster(
         raise Exception(f"Failed to reclassify {input_layer.name()}")
 
 
+def apply_discrete_colors(
+        layer: QgsRasterLayer,
+        class_colors: dict,  # {value: (color, label)}
+        band: int = 1,
+        opacity: float = 0.9
+):
+    """
+    Apply colors to specific discrete values (no reclassification needed).
+
+    Example:
+    class_colors = {
+        1: (QColor(0, 200, 0, 255), "Seedlings/Saplings"),
+        2: (QColor(100, 255, 100, 255), "Small trees"),
+        3: (QColor(255, 255, 100, 255), "Medium trees"),
+        4: (QColor(255, 140, 0, 255), "Large trees"),
+        5: (QColor(220, 50, 50, 255), "Multi-layered"),
+        0: (QColor(150, 150, 150, 255), "No Data")
+    }
+    """
+    if not layer or not layer.isValid():
+        print("❌ Invalid layer")
+        return
+
+    renderer_classes = []
+    for value, (color, label) in class_colors.items():
+        renderer_classes.append(
+            QgsPalettedRasterRenderer.Class(value, color, label)
+        )
+
+    renderer = QgsPalettedRasterRenderer(layer.dataProvider(), band, renderer_classes)
+    layer.setRenderer(renderer)
+    layer.setOpacity(opacity)
+    layer.triggerRepaint()
+
+    QgsProject.instance().addMapLayer(layer)
+    print(f"✅ Styled discrete classes on: {layer.name()}")
+
 def print_raster_value_counts(raster_layer: QgsRasterLayer, band: int = 1):
-    """
-    Print ALL unique values (rounded to nearest integer) and their pixel counts.
-    """
     if not raster_layer or not raster_layer.isValid():
         print("❌ Invalid raster layer")
         return
 
     provider = raster_layer.dataProvider()
     extent = raster_layer.extent()
+    width = raster_layer.width()
+    height = raster_layer.height()
 
-    block = provider.block(band, extent, raster_layer.width(), raster_layer.height())
-    array = np.frombuffer(block.data(), dtype=np.float32).reshape(
-        raster_layer.height(), raster_layer.width()
-    )
+    block = provider.block(band, extent, width, height)
+    data_buffer = block.data()
 
-    # Round to nearest integer
+    # Read as flat array first
+    array = np.frombuffer(data_buffer, dtype=np.float32)
+
+    expected = height * width
+    actual = len(array)
+
+    print(f"Expected pixels: {expected:,}, Actual buffer: {actual:,}")
+
+    if actual < expected:
+        print("⚠️ Buffer smaller than expected (likely NoData or masked raster). Using available data.")
+        # Pad with NoData if needed, or just use what we have
+        array = np.pad(array, (0, expected - actual), mode='constant', constant_values=np.nan)
+    elif actual > expected:
+        array = array[:expected]
+
+    array = array.reshape(height, width)
+
+    # Round to integer
     rounded = np.round(array).astype(int)
 
     unique, counts = np.unique(rounded, return_counts=True)
-    count_dict = dict(zip(unique, counts))
-    sorted_counts = dict(sorted(count_dict.items()))
+    sorted_counts = dict(sorted(zip(unique, counts)))
 
-    total_pixels = array.size
+    total = array.size   # or np.count_nonzero(~np.isnan(array)) if you want to exclude NaN
 
-    print(f"✅ Full value counts for: {raster_layer.name()} (rounded to integer)")
-    print(f"   Total pixels: {total_pixels:,}")
+    print(f"\n✅ Value counts for: {raster_layer.name()}")
+    print(f"   Total pixels: {total:,}")
     print(f"   Unique values: {len(unique)}\n")
-    print(f"{'Value':>8} | {'Pixel Count':>12} | {'Percentage':>8}")
-    print("-" * 38)
+    print(f"{'Value':>8} | {'Count':>12} | {'%':>7}")
+    print("-" * 35)
 
     for value, count in sorted_counts.items():
-        percent = (count / total_pixels) * 100
-        print(f"{value:8d} | {count:12,} | {percent:7.3f}%")
+        percent = (count / total) * 100 if total > 0 else 0
+        print(f"{value:8d} | {count:12,} | {percent:6.2f}%")
 
 def raster_value_counts(raster_layer: QgsRasterLayer, band: int = 1, max_unique: int = 500):
     """
@@ -294,7 +359,7 @@ def raster_value_counts(raster_layer: QgsRasterLayer, band: int = 1, max_unique:
 def build_forest_layers(forestry_dir: Path, huc_layer, huc8_name: str):
     conus_raster_path = "/opt/dev/gis/USFS/conus_foresttype.img"
     clipped_veg_layer, clipped_veg_path = clip_raster_to_mask(conus_raster_path, huc_layer, forestry_dir)
-    present_types = list_vegtypes_in_clipped(clipped_veg_path, huc8_name)
+    present_types = list_vegtypes_in_layer(clipped_veg_path, forest_types)
 
     # === Style the clipped layer (this is what you see as VegType_HUC8) ===
     style_clipped_layer(clipped_veg_layer, present_types)
@@ -308,55 +373,374 @@ def build_forest_layers(forestry_dir: Path, huc_layer, huc8_name: str):
         color = info["color"]
         extract_tree_type_from_clipped(forestry_dir, clipped_veg_path, code, name, color, forest_group)
 
+def style_rasters_consistently(
+        layers: list,
+        method: str = "shared_scale",
+        num_classes: int = 5,
+        opacity: float = 0.85,
+        color_ramp: list = None
+):
+    """
+    Style multiple rasters consistently and add them to the map.
+    """
+    if color_ramp is None:
+        color_ramp = [
+            QColor(0, 100, 0, 255),
+            QColor(100, 200, 0, 255),
+            QColor(255, 255, 100, 255),
+            QColor(255, 140, 0, 255),
+            QColor(200, 0, 0, 255)
+        ]
+
+    # Collect statistics
+    stats = []
+    all_mins = []
+    all_maxs = []
+
+    for layer in layers:
+        provider = layer.dataProvider()
+        stat = provider.bandStatistics(1, QgsRasterBandStats.All)
+
+        stats.append({
+            'layer': layer,
+            'min': stat.minimumValue,
+            'max': stat.maximumValue,
+            'mean': stat.mean
+        })
+        all_mins.append(stat.minimumValue)
+        all_maxs.append(stat.maximumValue)
+
+    global_min = min(all_mins)
+    global_max = max(all_maxs)
+
+    print(f"Global range: {global_min:.1f} — {global_max:.1f}")
+
+    for s in stats:
+        layer = s['layer']
+
+        if method == "shared_scale":
+            breaks = np.linspace(global_min, global_max, num_classes + 1)
+        else:
+            breaks = np.linspace(s['min'], s['max'], num_classes + 1)
+
+        # Build classes
+        renderer_classes = []
+        for i in range(num_classes):
+            low = breaks[i]
+            high = breaks[i + 1]
+            color = color_ramp[i % len(color_ramp)]
+            label = f"{low:.0f}–{high:.0f}"
+            renderer_classes.append(
+                QgsPalettedRasterRenderer.Class(i + 1, color, label)
+            )
+
+        renderer = QgsPalettedRasterRenderer(layer.dataProvider(), 1, renderer_classes)
+        layer.setRenderer(renderer)
+        layer.setOpacity(opacity)
+        layer.triggerRepaint()
+
+        # Add to map
+        # QgsProject.instance().addMapLayer(layer)
+        print(f"✅ Styled and added: {layer.name()}")
+
+    print("🎉 All layers styled and added to the map!")
+
+def normalize_grayscale_rasters(layers: list, global_min=None, global_max=None):
+    """
+    Normalize multiple rasters to the same grayscale range so 128 = middle value.
+    """
+    # Get global min/max if not provided
+    if global_min is None or global_max is None:
+        all_mins = []
+        all_maxs = []
+        for layer in layers:
+            stat = layer.dataProvider().bandStatistics(1, QgsRasterBandStats.All)
+            all_mins.append(stat.minimumValue)
+            all_maxs.append(stat.maximumValue)
+        global_min = min(all_mins)
+        global_max = max(all_maxs)
+
+    print(f"Normalizing to range: {global_min:.1f} — {global_max:.1f}")
+
+    for layer in layers:
+        renderer = QgsSingleBandGrayRenderer(layer.dataProvider(), 1)
+
+        # Set contrast enhancement to stretch to global min/max
+        ce = QgsContrastEnhancement()
+        ce.setMinimumValue(global_min)
+        ce.setMaximumValue(global_max)
+        ce.setContrastEnhancementAlgorithm(QgsContrastEnhancement.StretchToMinimumMaximum)
+        renderer.setContrastEnhancement(ce)
+
+        layer.setRenderer(renderer)
+        layer.setOpacity(1.0)  # full opacity for grayscale
+        layer.triggerRepaint()
+
+        QgsProject.instance().addMapLayer(layer)
+        print(f"Normalized grayscale: {layer.name()}")
+
+    print("✅ All layers normalized to same grayscale scale")
+
+def create_overstocked_mortality_layer(
+    balive_layer: QgsRasterLayer,
+    tpa_dead_layer: QgsRasterLayer,
+    output_dir: Path,
+    output_name: str = "Overstocked_HighMortality",
+    balive_threshold: float = 160,      # adjust as needed
+    tpa_dead_threshold: float = 50,
+    opacity: float = 0.9
+) -> QgsRasterLayer:
+    """
+    Creates a raster showing areas that are both too dense (high BALIVE) and high mortality.
+    """
+    output_path = output_dir / f"{output_name}.tif"
+
+    # Step 1: Reclassify BALIVE
+    balive_reclass = [
+        (0, balive_threshold, 1, QColor(100, 200, 100, 80), "Normal Density"),
+        (balive_threshold, 9999, 2, QColor(255, 100, 100, 80), "Too Dense")
+    ]
+
+    balive_params = {
+        'INPUT_RASTER': balive_layer,
+        'RASTER_BAND': 1,
+        'TABLE': [item for c in balive_reclass for item in c[:3]],
+        'NO_DATA': 0,
+        'RANGE_BOUNDARIES': 0,
+        'OUTPUT': 'memory:balive_reclass'
+    }
+    balive_re = processing.run("native:reclassifybytable", balive_params)['OUTPUT']
+
+    # Step 2: Reclassify TPA_DEAD
+    tpa_params = {
+        'INPUT_RASTER': tpa_dead_layer,
+        'RASTER_BAND': 1,
+        'TABLE': [0, tpa_dead_threshold, 1, tpa_dead_threshold, 9999, 2],
+        'NO_DATA': 0,
+        'RANGE_BOUNDARIES': 0,
+        'OUTPUT': 'memory:tpa_reclass'
+    }
+    tpa_re = processing.run("native:reclassifybytable", tpa_params)['OUTPUT']
+
+    # Step 3: Combine (Too Dense AND High Mortality)
+    combine_params = {
+        'INPUT_A': balive_re,
+        'INPUT_B': tpa_re,
+        'BAND_A': 1,
+        'BAND_B': 1,
+        'FORMULA': '(A@1 == 2) * (B@1 == 2) * 1',   # 1 = Overstocked + High Mortality
+        'NO_DATA': 0,
+        'OUTPUT': str(output_path)
+    }
+    result = processing.run("gdal:rastercalculator", combine_params)
+
+    combined_layer = QgsRasterLayer(result['OUTPUT'], output_name)
+
+    if combined_layer.isValid():
+        # Simple 2-class renderer
+        classes = [
+            QgsPalettedRasterRenderer.Class(0, QColor(150, 150, 150, 80), "Normal"),
+            QgsPalettedRasterRenderer.Class(1, QColor(220, 50, 50, 255), "Too Dense + High Mortality")
+        ]
+        renderer = QgsPalettedRasterRenderer(combined_layer.dataProvider(), 1, classes)
+        combined_layer.setRenderer(renderer)
+        combined_layer.setOpacity(opacity)
+        combined_layer.triggerRepaint()
+
+        QgsProject.instance().addMapLayer(combined_layer)
+        print(f"✅ Created Overstocked + High Mortality layer: {output_name}")
+        return combined_layer
+    else:
+        raise Exception("Failed to create combined layer")
+
+# overstocked = create_overstocked_mortality_layer(
+#     balive_layer=balive_layer,
+#      tpa_dead_layer=tpa_dead_layer,
+#     output_dir=forestry_dir,
+#     balive_threshold=160,
+#     tpa_dead_threshold=50
+# )
+
+def create_high_canopy_low_et_risk(
+    canopy_layer: QgsRasterLayer,
+    et_layer: QgsRasterLayer,
+    output_dir: Path,
+    output_name: str = "HighCanopy_LowET_Risk",
+    canopy_threshold: float = 60,      # % canopy cover considered "high"
+    et_threshold: float = 150,         # adjust based on your ET units (mm)
+    opacity: float = 0.9
+) -> QgsRasterLayer:
+    """
+    Creates a raster showing areas with high canopy cover but unexpectedly low ET.
+    """
+    output_path = output_dir / f"{output_name}.tif"
+
+    # Reclassify Canopy
+    canopy_params = {
+        'INPUT_RASTER': canopy_layer,
+        'RASTER_BAND': 1,
+        'TABLE': [0, canopy_threshold, 1, canopy_threshold, 9999, 2],
+        'NO_DATA': 0,
+        'RANGE_BOUNDARIES': 0,
+        'OUTPUT': 'memory:canopy_reclass'
+    }
+    canopy_re = processing.run("native:reclassifybytable", canopy_params)['OUTPUT']
+
+    # Reclassify ET (low ET = risk)
+    et_params = {
+        'INPUT_RASTER': et_layer,
+        'RASTER_BAND': 1,
+        'TABLE': [0, et_threshold, 2, et_threshold, 9999, 1],
+        'NO_DATA': 0,
+        'RANGE_BOUNDARIES': 0,
+        'OUTPUT': 'memory:et_reclass'
+    }
+    et_re = processing.run("native:reclassifybytable", et_params)['OUTPUT']
+
+    # Combine: High Canopy (2) AND Low ET (2) = Risk (1)
+    combine_params = {
+        'INPUT_A': canopy_re,
+        'INPUT_B': et_re,
+        'BAND_A': 1,
+        'BAND_B': 1,
+        'FORMULA': '(A@1 == 2) * (B@1 == 2) * 1',
+        'NO_DATA': 0,
+        'OUTPUT': str(output_path)
+    }
+    result = processing.run("gdal:rastercalculator", combine_params)
+
+    risk_layer = QgsRasterLayer(result['OUTPUT'], output_name)
+
+    if risk_layer.isValid():
+        classes = [
+            QgsPalettedRasterRenderer.Class(0, QColor(150, 150, 150, 80), "Normal"),
+            QgsPalettedRasterRenderer.Class(1, QColor(220, 50, 50, 255), "High Canopy + Low ET (Risk)")
+        ]
+        renderer = QgsPalettedRasterRenderer(risk_layer.dataProvider(), 1, classes)
+        risk_layer.setRenderer(renderer)
+        risk_layer.setOpacity(opacity)
+        risk_layer.triggerRepaint()
+
+        QgsProject.instance().addMapLayer(risk_layer)
+        print(f"✅ Created High Canopy + Low ET Risk layer: {output_name}")
+        return risk_layer
+    else:
+        raise Exception("Failed to create risk layer")
+
+# risk = create_high_canopy_low_et_risk(
+#     canopy_layer=canopy_layer,
+#     et_layer=et_layer,
+#     output_dir=forestry_dir,
+#     canopy_threshold=60,
+#     et_threshold=150   # adjust based on your ET units
+# )
+
+
+
 def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
 
-    tree_map_group = create_group("TreeMap 2022", position=None, existing_layer=huc12_layer)
+    tree_map_layers = {}
+    tree_map_files = [
+        'TreeMap2022_CONUS_BALIVE',
+        "TreeMap2022_CONUS_CANOPYPCT",
 
-    tree_map_balive_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_BALIVE/TreeMap2022_CONUS_BALIVE.tif"
-    clipped_tree_map_balive, path = clip_raster_to_mask(tree_map_balive_raster_path, huc_layer, forestry_dir)
-    #add_layer_to_group(clipped_tree_map_balive, tree_map_group)
-    set_layer_state(clipped_tree_map_balive, False, False)
+        'TreeMap2022_CONUS_FLDTYPCD',   # Recommended
+        # 'TreeMap2022_CONUS_FORTYPCD',
 
-    # counts = raster_value_counts(clipped_tree_map_balive)
-    # print_raster_value_counts(clipped_tree_map_balive)
-    classes_balive = [
-        (0, 60, 1, QColor(0, 0, 200, 255), "Sparse <60"),
-        (60, 120, 1, QColor(0, 200, 0, 255), "Healthy 60-120"),
-        (120, 180, 2, QColor(255, 180, 80, 255), "Dense 120-180"),
-        (180, 9999, 3, QColor(220, 50, 50, 255), "Extreme >180")
+        'TreeMap2022_CONUS_STANDHT',
+
+        'TreeMap2022_CONUS_STDSZCD',    # Recommended
+        # 'TreeMap2022_CONUS_FLDSZCD',
+
+        'TreeMap2022_CONUS_TPA_DEAD',
+        'TreeMap2022_CONUS_TPA_LIVE',
+
+        'TreeMap2022_CONUS_VOLBFNET_L',
+        'TreeMap2022_CONUS_VOLCFNET_D',
+        'TreeMap2022_CONUS_VOLCFNET_L',
     ]
-    balive_layer = reclassify_raster(clipped_tree_map_balive, forestry_dir, classes=classes_balive)
-    balive_layer.setOpacity(1.0)
-    # add_layer_to_group(tpa_dead_layer, tree_map_group)
-    set_layer_state(balive_layer, True, False)
+    for raster_file in tree_map_files:
+        raster_path =  f"/opt/dev/gis/TreeMap/{raster_file}/{raster_file}.tif"
+        layer, path = clip_raster_to_mask(raster_path, huc_layer, forestry_dir)
+        tree_map_layers[raster_file] = layer
 
-    tree_map_canopypct_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_CANOPYPCT/TreeMap2022_CONUS_CANOPYPCT.tif"
-    clipped_tree_map_canopypct, path = clip_raster_to_mask(tree_map_canopypct_raster_path, huc_layer, forestry_dir)
-    #add_layer_to_group(clipped_tree_map_canopypct, tree_map_group)
-    set_layer_state(clipped_tree_map_canopypct, False, False)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_FLDTYPCD', None)
+    if layer is not None:
+        present_types = list_vegtypes_in_layer(layer, forest_types)
+        style_clipped_layer(layer, present_types)
+        set_layer_state(layer, True, False)
 
-    tree_map_tpa_dead_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_TPA_DEAD/TreeMap2022_CONUS_TPA_DEAD.tif"
-    clipped_tree_map_tpa_dead, path = clip_raster_to_mask(tree_map_tpa_dead_raster_path, huc_layer, forestry_dir)
-    #add_layer_to_group(clipped_tree_map_tpa_dead, tree_map_group)
-    set_layer_state(clipped_tree_map_tpa_dead, False, False)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_STDSZCD', None)
+    if layer is not None:
+        # print_raster_value_counts(layer)
+        # counts = raster_value_counts(layer)
+        stand_colors = {
+            1: (QColor(0, 200, 0, 255), "1 - Seedlings/Saplings"),
+            2: (QColor(100, 255, 100, 255), "2 - Small trees"),
+            3: (QColor(255, 255, 100, 255), "3 - Medium trees"),
+            4: (QColor(255, 140, 0, 255), "4 - Large trees"),
+            5: (QColor(220, 50, 50, 255), "5 - Multi-layered / Old Growth"),
+            0: (QColor(150, 150, 150, 255), "No Data")
+        }
+        apply_discrete_colors(layer, stand_colors)
 
-    open_et_path = "/opt/dev/gis/OpenET/8ac409f632cecc4ec3f62d12807823a7-ec15122101886c12354db14775427dde_getPixels.tiff"
-    open_et, path = clip_raster_to_mask(open_et_path, huc_layer, forestry_dir)
-    # add_layer_to_group(open_et, tree_map_group)
-    set_layer_state(open_et, False, False)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_BALIVE', None)
+    if layer is not None:
+        # print_raster_value_counts(layer)
+        # counts = raster_value_counts(layer)
+        classes_balive = [
+            (0, 60, 1, QColor(0, 0, 200, 255), "Sparse <60"),
+            (60, 120, 2, QColor(0, 200, 0, 255), "Healthy 60-120"),
+            (120, 180, 3, QColor(255, 180, 80, 255), "Dense 120-180"),
+            (180, 9999, 4, QColor(220, 50, 50, 255), "Extreme >180")
+        ]
+        classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_balive)
+        tree_map_layers[classified_layer.name()+'_Classified'] = classified_layer
 
-    classes_tpa = [
-        (0, 50, 1, QColor(200, 200, 200, 80), "Low <50"),
-        (50, 100, 2, QColor(255, 180, 80, 255), "Medium 50-100"),
-        (100, 9999, 3, QColor(220, 50, 50, 255), "High >100")
-    ]
-    tpa_dead_layer = reclassify_raster(clipped_tree_map_tpa_dead, forestry_dir, classes=classes_tpa)
-    tpa_dead_layer.setOpacity(1.0)
-    # add_layer_to_group(tpa_dead_layer, tree_map_group)
-    set_layer_state(tpa_dead_layer, False, False)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_TPA_DEAD', None)
+    if layer is not None:
+        classes_tpa = [
+            (0, 50, 1, QColor(200, 200, 200, 80), "Low <50"),
+            (50, 100, 2, QColor(255, 180, 80, 255), "Medium 50-100"),
+            (100, 9999, 3, QColor(220, 50, 50, 255), "High >100")
+        ]
+        classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_tpa)
+        tree_map_layers[classified_layer.name() + '_Classified'] = classified_layer
 
-    tree_map_tpa_live_raster_path =  "/opt/dev/gis/TreeMap/TreeMap2022_CONUS_TPA_LIVE/TreeMap2022_CONUS_TPA_LIVE.tif"
-    clipped_tree_map_tpa_live, path = clip_raster_to_mask(tree_map_tpa_live_raster_path, huc_layer, forestry_dir)
-    # add_layer_to_group(clipped_tree_map_tpa_live, tree_map_group)
-    set_layer_state(clipped_tree_map_tpa_live, False, False)
+    tree_map_group = create_group("TreeMap 2022", position=0, existing_layer=huc12_layer)
+    for key, layer in tree_map_layers.items():
+        add_layer_to_group(layer, tree_map_group)
+        set_layer_state(layer, False, False)
+        layer.triggerRepaint()
+        # layer.setOpacity(1.0)'
+
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_FLDTYPCD', None)
+    if layer is not None:
+        set_layer_state(layer, True, False)
+        layer.triggerRepaint()
+
+    # tree_map_group.setVisible(True)  # turn on visibility
+    if tree_map_group:
+        tree_map_group.setItemVisibilityChecked(True)  # This checks the box
+        tree_map_group.setExpanded(True)
+        # tree_map_group.triggerRepaint()
+
+
+def build_open_et_layers(forestry_dir, huc_layer, huc12_layer):
+    month = 5
+    open_et_layers = []
+    for year in range(2018, 2027):
+        open_et_path = f"/opt/dev/gis/OpenET/stoner_mesa_{month:02d}_{year}.tiff"
+        try:
+            open_et, path = clip_raster_to_mask(open_et_path, huc_layer, forestry_dir)
+            open_et_layers.append(open_et)
+        except QgsProcessingException:
+            print(f"⚠️  Skipping {year} - file not found: {open_et_path}")
+            continue  # or pass
+    normalize_grayscale_rasters(open_et_layers)
+
+    open_et_group = create_group("OpenET Stoner Mesa", position=0)
+    for layer in open_et_layers:
+        add_layer_to_group(layer, open_et_group,)
+        set_layer_state(layer, False, False)
 
