@@ -26,7 +26,8 @@ from api import df_utils
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
 import wx
-from source.nrcs_snotel import get_snotel_data, get_snotel_stations, stations_in_county, stations_in_state, stations_with_name
+from source.nrcs_snotel import (get_snotel_data, get_snotel_stations, stations_in_county, stations_in_state,
+                                stations_with_name, get_snotel_sensors_with_dates, print_full_summary)
 import source.usgs_gage as usgs
 import pandas as pd
 
@@ -95,6 +96,8 @@ class Snotel(ChartFrame):
         for station in station_matches:
             station_id = station.get('station_id', '')
             state = station.get('state', '')
+            summary = get_snotel_sensors_with_dates(station_id, state)
+            print(f"{name} {station_id}: {print_full_summary(summary)}")
             file_name = name.replace(" ", "_")
             file_name += '.csv'
             df = get_snotel_data(station_id, state, file_name=file_name)
@@ -170,6 +173,24 @@ class Snotel(ChartFrame):
             df_snotel = self.df_el_diente
         elif self.snotel_name == 'Lizard Head Pass':
             df_snotel = self.df_lizard_head
+        else:
+            df_snotel = self.df_lizard_head
+
+        time_series = [
+            (df_snotel, 'air_temperature_minimum', 'royalblue'),
+        ]
+        self.line_chart = LineChart(
+            time_series,
+            title='',
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
+            show_x_labels = True,
+            percentage=0.20,
+            y_units='°F',
+            # y_max=85,
+            # y_min=60
+        )
+        self.line_chart.set_end_date(graph_end_date)
+        self.charts.append(self.line_chart)
 
         time_series = [
             # (df_snotel, 'air_temperature_average', 'darkgreen'),
@@ -191,7 +212,7 @@ class Snotel(ChartFrame):
 
         time_series = [
             # (df_snotel, 'snow_depth', 'darkgreen'),
-            (df_snotel, 'snow_water_equivalent', 'royalblue'),
+            (df_snotel, 'snow_water_equivalent', 'darkgreen'),
         ]
         self.line_chart = LineChart(
             time_series,
