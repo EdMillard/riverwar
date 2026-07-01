@@ -31,13 +31,17 @@ from graphs.front_range import FrontRange
 from graphs.grand_valley import GrandValley
 from graphs.uncompahgre import Uncompahgre
 from graphs.san_juan import SanJuan
+from graphs.dolores import Dolores
+from graphs.snotel import Snotel
 from graphs.imperial import Imperial
+from graphs.lower_colorado import LowerColorado
 from graphs.supply_v_demand import SupplyVDemand
 from graphs.reservoir_chart_frame import ReservoirChartFrame
 from graphs.reservoirs_reality import ReservoirsReality
 from graphs.time_series_chart_frame import TimeSeriesChartFrame
 from graphs.reservoirs_big3 import ReservoirsBig3
 from reservoirs.reservoir import ReservoirRegistry
+
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 os.environ['MPLBACKEND'] = 'Agg'
@@ -78,8 +82,20 @@ def san_juan(notebook_frame:NotebookFrame):
     frame = SanJuan(notebook_frame)
     frame.Show()
 
+def dolores(notebook_frame:NotebookFrame):
+    frame = Dolores(notebook_frame)
+    frame.Show()
+
+def snotel(notebook_frame:NotebookFrame):
+    frame = Snotel(notebook_frame)
+    frame.Show()
+
 def imperial(notebook_frame:NotebookFrame):
     frame = Imperial(notebook_frame)
+    frame.Show()
+
+def lower_colorado(notebook_frame:NotebookFrame):
+    frame = LowerColorado(notebook_frame)
     frame.Show()
 
 def reservoir_chart(notebook_frame:NotebookFrame):
@@ -94,9 +110,9 @@ def flow_chart(notebook_frame:NotebookFrame):
     frame = FlowChartFrame(notebook_frame)
     frame.Show()
 
+
 # ==================== RUN ====================
 if __name__ == "__main__":
-
     callables = [
         ("Reservoir", reservoir_chart),
         ("Reservoir Reality", reservoir_reality_chart),
@@ -127,8 +143,10 @@ if __name__ == "__main__":
     # grand_valley(nb)
     # uncompahgre(nb)
     # san_juan(nb)
-    imperial(nb)
-
+    # dolores(nb)
+    snotel(nb)
+    # imperial(nb)
+    # lower_colorado(nb)
 
     nb.Show()
     app.MainLoop()
