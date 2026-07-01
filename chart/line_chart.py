@@ -95,8 +95,8 @@ class LineChart(Chart):
 
         self.create_line_chart(self.ax)
 
-        left_margin = 0.07
-        right_margin = 0.95
+        left_margin = 0.05
+        right_margin = 0.98
         top_margin = 0.90 if self.title and self.title.strip() else 0.99
         bottom_margin = 0.12 if self.show_x_labels else 0.03
 
