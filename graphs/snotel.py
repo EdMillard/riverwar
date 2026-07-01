@@ -45,8 +45,25 @@ class Snotel(ChartFrame):
         self.inflow_outflow_chart = None
         self.version = 0.1
 
+        self.snotel_name = 'Lizard Head Pass'
+
         self.end_date = date.today()
-        self.start_date = self.end_date.replace(year=self.end_date.year - 15)
+        if self.snotel_name == 'Black Mesa':
+            num_years = 14
+        elif self.snotel_name == 'Sharkstooth':
+            num_years = 22
+        elif self.snotel_name == 'Lone Cone':
+            num_years = 46
+        elif self.snotel_name == 'Scotch Creek':
+            num_years = 40      # Scotch Creek
+        elif self.snotel_name == 'El Diente':
+            num_years = 40
+        elif self.snotel_name == 'Lizard Head Pass':
+            num_years = 46
+        else:
+            num_years = 46
+
+        self.start_date = self.end_date.replace(year=self.end_date.year - num_years)
         self.df_daily:Optional[pd.DataFrame] = None
         self.water_year_info = None
 
@@ -127,11 +144,11 @@ class Snotel(ChartFrame):
         time_series = [
             (self.df_daily, 'Dolores River Below Rico, CO', 'royalblue'),
             (self.df_daily, 'Dolores River at Dolores, CO', 'darkred'),
-            (self.df_daily, 'Lost Canyon Creek Near Dolores, CO', 'darkgreen')
+            # (self.df_daily, 'Lost Canyon Creek Near Dolores, CO', 'darkgreen')
         ]
         self.line_chart = LineChart(
             time_series,
-            title='',
+            title=f'Dolores River - {self.snotel_name} SNOTEL',
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = False,
             percentage=0.20,
@@ -141,10 +158,40 @@ class Snotel(ChartFrame):
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
+        if self.snotel_name == 'Black Mesa':
+            df_snotel = self.df_black_mesa
+        elif self.snotel_name == 'Sharkstooth':
+            df_snotel = self.df_sharkstooth
+        elif self.snotel_name == 'Lone Cone':
+            df_snotel = self.df_lone_cone
+        elif self.snotel_name == 'Scotch Creek':
+            df_snotel = self.df_scotch_creek
+        elif self.snotel_name == 'El Diente':
+            df_snotel = self.df_el_diente
+        elif self.snotel_name == 'Lizard Head Pass':
+            df_snotel = self.df_lizard_head
+
         time_series = [
-            (self.df_black_mesa, 'air_temperature_average', 'darkgreen'),
-            (self.df_black_mesa, 'air_temperature_minimum', 'royalblue'),
-            (self.df_black_mesa, 'air_temperature_maximum', 'darkred'),
+            # (df_snotel, 'air_temperature_average', 'darkgreen'),
+            # (df_snotel, 'air_temperature_minimum', 'royalblue'),
+            (df_snotel, 'air_temperature_maximum', 'darkred'),
+        ]
+        self.line_chart = LineChart(
+            time_series,
+            title='',
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
+            show_x_labels = True,
+            percentage=0.20,
+            y_units='°F',
+            # y_max=85,
+            # y_min=60
+        )
+        self.line_chart.set_end_date(graph_end_date)
+        self.charts.append(self.line_chart)
+
+        time_series = [
+            # (df_snotel, 'snow_depth', 'darkgreen'),
+            (df_snotel, 'snow_water_equivalent', 'royalblue'),
         ]
         self.line_chart = LineChart(
             time_series,
@@ -152,29 +199,14 @@ class Snotel(ChartFrame):
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = False,
             percentage=0.20,
-            y_units='CFS',
-        )
-        self.line_chart.set_end_date(graph_end_date)
-        self.charts.append(self.line_chart)
-
-        time_series = [
-            (self.df_black_mesa, 'snow_depth', 'darkgreen'),
-            (self.df_black_mesa, 'snow_water_equivalent', 'royalblue'),
-        ]
-        self.line_chart = LineChart(
-            time_series,
-            title='',
-            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            show_x_labels = True,
-            percentage=0.20,
-            y_units='CFS',
+            y_units='in',
             y_min=0.0
         )
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
         time_series = [
-            (self.df_black_mesa, 'precipitation_accumulation', 'royalblue'),
+            (df_snotel, 'precipitation_accumulation', 'royalblue'),
         ]
         self.line_chart = LineChart(
             time_series,
@@ -182,7 +214,7 @@ class Snotel(ChartFrame):
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = True,
             percentage=0.20,
-            y_units='CFS',
+            y_units='in',
             y_min=0.0
         )
         self.line_chart.set_end_date(graph_end_date)
