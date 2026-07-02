@@ -23,7 +23,7 @@ class LineChart(Chart):
                  end_date: date | None = None,
                  show_x_labels: bool = True,
                  y_label: str = "",
-                 y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS', '°F', '°C', 'in', 'ft', 'mm'] = 'MAF',
+                 y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS', '°F', '°C', 'in', 'ft', 'mm', '%'] = 'MAF',
                  y_divisor: float | None = None,
                  y_max: Optional[float] = None,
                  y_min: Optional[float] = None
@@ -197,5 +197,6 @@ class LineChart(Chart):
             '°C': 1,
             'in': 1,
             'mm': 1,
+            '%': 1,
         }
         return unit_map.get(units, 1.0)

@@ -1,84 +1,208 @@
 import requests
 import pandas as pd
 import io
-#from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from bs4 import BeautifulSoup
+from datetime import datetime
 
-'''
-WTEQ    Snow Water Equivalent       inches
-SNWD    Snow Depth                  inches
-PREC    Precipitation Accumulation  inches
-PRCP    Precipitation Increment     inches
-PRCPSA  Precipitation Increment (Snow-Adjusted) inches
+ELEMENT_DESCRIPTIONS = {
+    # Snow / Precip
+    "WTEQ": "Snow Water Equivalent",
+    "SNWD": "Snow Depth",
+    "PREC": "Precipitation Accumulation",
+    "PRCP": "Precipitation Increment",
+    "PRCPSA": "Precipitation Increment (Snow-Adjusted)",
+    "PRCPMTD": "Precipitation Month-to-Date",
+    "WTEQX": "Snow Water Equivalent (Max or Derived)",
+    "SNDN": "Snow Density",
+    "SNRR": "Snow Rain Ratio",
 
-Temperature Parameters
-TAVG    Air Temperature Average     °F
-TMAX    Air Temperature Maximum     °F
-TMIN    Air Temperature Minimum     °F
-TOBS    Air Temperature Observed    °F
+    # Temperature
+    "TAVG": "Air Temperature Average",
+    "TMAX": "Air Temperature Maximum",
+    "TMIN": "Air Temperature Minimum",
+    "TOBS": "Air Temperature Observed",
+    "PTEMP": "Panel Temperature",
 
-Soil Parameters (available at many enhanced sites)
-SMS                     Soil Moisture Percent                           %
-STO / STV / STX / STN   Soil Temperature (Observed / Avg / Max / Min)   °F
-SMO / SMV etc.          Soil Moisture (Bars)                            inches of Mercury
+    # Soil
+    "SMS": "Soil Moisture Percent",
+    "SMO": "Soil Moisture (Bars)",
+    "SMV": "Soil Moisture (Volumetric)",
+    "SMN": "Soil Moisture (Minimum)",
+    "SMX": "Soil Moisture (Maximum)",
+    "STO": "Soil Temperature Observed",
+    "STV": "Soil Temperature Average",
+    "STX": "Soil Temperature Maximum",
+    "STN": "Soil Temperature Minimum",
 
-Other Common Meteorological Parameters
-RHUM / RHUMV    Relative Humidity (or Average)  %
-SRAD / SRADV    Solar Radiation (or Average)    watt/m²
-WSPD / WSPDV    Wind Speed (or Average)         mph
-WDIR / WDIRV    Wind Direction (or Average)     degrees
-PRES            Barometric Pressure             inches of Mercury
-BATT            Battery Voltage                 volts
+    # Solar / Radiation
+    "SRAD": "Solar Radiation",
+    "SRADV": "Solar Radiation Average",
+    "SRADT": "Solar Radiation Total",
+    "SRADX": "Solar Radiation Maximum",
+    "NTRDV": "Net Solar Radiation Average",
+    "PARV": "Photosynthetically Active Radiation",
+    "SWOTV": "Shortwave Outgoing Total",        # Albedo
+    "SWINV": "Shortwave Incoming",
+    "LWINV": "Longwave Incoming",
+    "LWOTV": "Longwave Outgoing Total",         # Albedo
 
-Additional / Less Common CodesEVAP — Evaporation (inches)
-DPTP — Dew Point Temperature (°F)
-PARV — Photosynthetically Active Radiation
-NTRDV etc. — Net Solar Radiation
-WTEMP — Water Temperature (°F)
-Various streamflow, reservoir, and other specialized codes (less common on standard SNOTEL)
+    # Wind
+    "WSPDV": "Wind Speed Average",
+    "WSPD": "Wind Speed",
+    "WSPDX": "Wind Speed Maximum",
+    "WDIRV": "Wind Direction Average",
+    "WDIR": "Wind Direction",
 
-Notes:Not every station measures every parameter. Core ones (WTEQ, SNWD, PREC, temperatures) are on almost all sites; soil moisture, wind, radiation, etc., vary.
-Data is available at different time scales: Daily (_D), Hourly (_H), Monthly (_m), Water Year (_wy), etc.
-You request these via the AWDB REST API, SOAP Web Service, or tools like the NRCS interactive map / Report Generator.
+    # Humidity / Pressure / Battery
+    "RHUM": "Relative Humidity",
+    "RHUMV": "Relative Humidity Average",
+    "RHUMX": "Relative Humidity Maximum",
+    "RHUMN": "Relative Humidity Minimum",
+    "PRES": "Barometric Pressure",
+    "BATT": "Battery Voltage",
+    "BATX": "Battery Voltage (Auxiliary)",
 
-Official Reference: The complete list is in the AWDB Web Service User Guide (PDF).  nrcs.usda.gov
-'''
+    # Diagnostics
+    "DIAG": "Diagnostic / Status",
+}
 
-def get_snotel_data(snotel_id:str, state:str, file_name:Optional[str]=None):
-    file_path = Path('data/NRCS/SNOTEL')
-    file_path.mkdir(parents=True, exist_ok=True)
-    file_path = file_path / f"{file_name}"
+
+def get_snotel_data(snotel_id: str,
+                    state: str,
+                    elements: List[str],
+                    duration: str = "daily",
+                    begin_date: str = "1980-01-01",
+                    end_date: Optional[str] = None,
+                    file_name: Optional[str] = None):
+    """
+    Fetch SNOTEL data.
+    - Request uses original element names (with -2, -8 etc.)
+    - Column names are cleaned AFTER downloading.
+    - No hyphens in final column names.
+    - Date is first column.
+    """
+    if end_date is None:
+        end_date = datetime.now().strftime("%Y-%m-%d")
+
+    # Cache
+    file_path = Path('data/NRCS/SNOTEL') / f"{file_name or f'{snotel_id}_{state}_{duration}.csv'}"
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
     if file_path.exists():
-        df = pd.read_csv(file_path)
-        return df
+        print(f"✅ Loading cached {duration} data for {snotel_id}:{state}")
+        return pd.read_csv(file_path, parse_dates=['Date'])
 
+    # ==================== REQUEST (NO CLEANING HERE) ====================
     url = (
-        "https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customSingleStationReport/daily/"
-        f"{snotel_id}:{state}:SNTL|id=%22%22|name/POR_BEGIN,POR_END/"
-        "TAVG::value,TMAX::value,TMIN::value,WTEQ::value,SNWD::value,PREC::value"
+        "https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customSingleStationReport/"
+        f"{duration}/{snotel_id}:{state}:SNTL|id=%22%22|name/"
+        f"{begin_date},{end_date}/{','.join(elements)}"
     )
 
-    print("Downloading from NRCS...")
-    response = requests.get(url, timeout=30)
+    print(f"🌐 Downloading {duration} data for {snotel_id}:{state}...")
+
+    response = requests.get(url, timeout=90)
     response.raise_for_status()
     text = response.text
 
-    # Auto-detect header line that starts with "Date"
+    # Find header row
     lines = text.splitlines()
-    header_idx = None
-    for i, line in enumerate(lines):
-        if line.strip().startswith("Date,"):
-            header_idx = i
-            break
+    header_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("Date,")), None)
 
     if header_idx is None:
-        print("Could not find Date header. First 100 chars:")
-        print(text[:1000])
+        print("⚠️ Could not find Date header.")
+        print(text[:500])
         return pd.DataFrame()
 
-    print(f"✅ Header found at line {header_idx}")
+    # Read data
+    df = pd.read_csv(
+        io.StringIO(text),
+        skiprows=header_idx,
+        na_values=['*', ''],
+        parse_dates=['Date']
+    )
+
+    # ==================== CLEAN COLUMNS ONLY AFTER DOWNLOAD ====================
+    def clean_name(col: str) -> str:
+        col = str(col).strip()
+
+        # Remove units in ()
+        if '(' in col:
+            col = col.split('(')[0].strip()
+
+        # Soil Moisture: SMS:-2 → 2in, SMS:-20 → 20in
+        if 'SMS' in col.upper():
+            match = re.search(r'-?(\d+)', col)
+            if match:
+                return f"{match.group(1)}in"
+
+        # General cleaning - remove ALL hyphens
+        col = (col.replace(' ', '_')
+               .replace('-', '')  # Remove every hyphen
+               .replace('.', '')
+               .replace(':', ''))
+
+        col = col.lower()
+        return 'Date' if col == 'date' else col
+
+    df.columns = [clean_name(col) for col in df.columns]
+
+    # Put Date first
+    if 'Date' in df.columns:
+        date_col = df.pop('Date')
+        df.insert(0, 'Date', date_col)
+
+    print(f"✅ Loaded {len(df)} {duration} rows")
+    print("Final columns:", df.columns.tolist())
+    print(df.head(3))
+
+    df.to_csv(file_path, index=False)
+    return df
+
+def get_snotel_hourly_data(snotel_id: str, state: str, file_name: Optional[str] = None):
+    file_path = Path('data/NRCS/SNOTEL')
+    file_path.mkdir(parents=True, exist_ok=True)
+    file_path = file_path / f"{file_name or f'{snotel_id}_{state}_hourly.csv'}"
+
+    if file_path.exists():
+        print(f"✅ Loading cached hourly data for {snotel_id}:{state}")
+        df = pd.read_csv(file_path, parse_dates=['Date'])
+        df = df.set_index('Date')
+        return df
+
+    begin_date = "1980-01-01"
+    end_date = "2026-07-02"
+
+    elements = [
+        "WSPDV::value",
+        "WSPDX::value",
+        "WDIRV::value",
+        "SWINV::value",
+        "SWOTV::value",
+        "RHUMV::value"
+    ]
+
+    url = (
+        "https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customSingleStationReport/hourly/"
+        f"{snotel_id}:{state}:SNTL|id=%22%22|name/POR_BEGIN,POR_END/"
+        f"{begin_date},{end_date}/"
+        f"{','.join(elements)}"
+    )
+
+    print(f"🌐 Downloading HOURLY enhanced data for {snotel_id}:{state}...")
+    response = requests.get(url, timeout=90)
+    response.raise_for_status()
+    text = response.text
+
+    lines = text.splitlines()
+    header_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("Date,")), None)
+
+    if header_idx is None:
+        print("No Date header found. First 500 chars:")
+        print(text[:500])
+        return pd.DataFrame()
 
     df = pd.read_csv(
         io.StringIO(text),
@@ -87,26 +211,17 @@ def get_snotel_data(snotel_id:str, state:str, file_name:Optional[str]=None):
         parse_dates=['Date']
     )
 
-    # Clean column names
     df.columns = [col.strip().split('(')[0].strip().lower().replace(' ', '_')
                   for col in df.columns]
     df = df.rename(columns={'date': 'Date'})
     df = df.set_index('Date')
 
-    # start_date = "2024-01-01"
-    # end_date = None
-    # if end_date is None:
-    #     end_date = datetime.today().strftime("%Y-%m-%d")
-    # df = df[(df.index >= start_date) & (df.index <= end_date)]
-
-    print(f"✅ Successfully loaded {len(df)} rows")
-
-    print(df.head())
+    print(f"✅ Loaded {len(df)} hourly rows")
+    print("Columns:", df.columns.tolist())
+    print(df.tail(5))
 
     df.to_csv(file_path)
-
     return df
-
 
 def get_snotel_stations(file_name:Optional[str]=None)->Optional[pd.DataFrame]:
     file_path = Path('data/NRCS/SNOTEL')
@@ -266,174 +381,99 @@ def stations_with_huc(stations: pd.DataFrame, huc_substring: str) -> list[dict]:
     # Return full records as list of dicts
     return matching_stations.to_dict('records')
 
+def print_full_summary(df: pd.DataFrame, title: str = "Sensor Summary"):
+    """Print the entire DataFrame without truncation."""
+    with pd.option_context(
+        'display.max_rows', None,           # Show all rows
+        'display.max_columns', None,        # Show all columns
+        'display.width', None,              # No line wrapping
+        'display.max_colwidth', None        # Full column content
+    ):
+        print(title)
+        print(df)
+        print(f"\nTotal sensors: {len(df)}")
 
-def get_snotel_sensors(station_id: str, state: str,
-                       begin_date: Optional[str] = None,
-                       end_date: Optional[str] = None) -> pd.DataFrame:
-    """
-    Get all available sensors/elements for a SNOTEL station using the AWDB REST API.
-
-    Example station: station_id="302", state="OR"  → triplet "302:OR:SNTL"
-
-    Returns a DataFrame with columns like:
-    elementCd, name, unitCd, heightDepth (for soil), etc.
-    """
-    triplet = f"{station_id}:{state}:SNTL"
-
-    url = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/stationElements"
-
-    params = {
-        "stationTriplet": triplet,
-        "beginDate": begin_date or "",  # empty = all historical
-        "endDate": end_date or ""
-    }
-
-    print(f"Querying sensors for {triplet}...")
-    response = requests.get(url, params=params, timeout=30)
-    response.raise_for_status()
-
-    data = response.json()
-
-    if not data:
-        print("No sensor data returned.")
+def parse_station_elements(data: list) -> pd.DataFrame:
+    if not data or len(data) == 0:
         return pd.DataFrame()
 
-    # Normalize the JSON response into a DataFrame
-    df = pd.json_normalize(data)
+    station = data[0]
+    elements = station.get('stationElements', [])
 
-    # Rename/clean common columns for readability
-    rename_map = {
-        'elementCd': 'element_code',
-        'name': 'element_name',
-        'unitCd': 'unit',
-        'heightDepth.height': 'height',
-        'heightDepth.depth': 'depth_inches',  # negative = below ground
-        'heightDepth.unitCd': 'height_depth_unit',
-    }
-    df = df.rename(columns=rename_map)
+    if not elements:
+        return pd.DataFrame()
 
-    # Helpful flags
-    df['is_soil'] = df['element_code'].str.contains('SM|SMS|STO|ST', na=False)
-    df['is_wind'] = df['element_code'].str.contains('WSPD|WDIR|WSPDV', na=False)
-    df['is_solar'] = df['element_code'].str.contains('SRAD|NTRAD', na=False)
+    records = []
+    for el in elements:
+        code = el.get('elementCode')
+        records.append({
+            'element_code': code,
+            'description': ELEMENT_DESCRIPTIONS.get(code, 'Unknown'),
+            'begin_date': el.get('beginDate'),
+            'end_date': el.get('endDate'),
+            'duration': el.get('durationName'),
+            'ordinal': el.get('ordinal'),
+            'unit': el.get('storedUnitCode'),
+            'derived': el.get('derivedData', False),
+        })
 
-    print(f"✅ Found {len(df)} available elements for {triplet}")
-    print(df[['element_code', 'element_name', 'unit', 'depth_inches',
-              'is_soil', 'is_wind', 'is_solar']].head(20))
+    df = pd.DataFrame(records)
+    if 'begin_date' in df.columns:
+        df['begin_date'] = pd.to_datetime(df['begin_date'], errors='coerce')
+        df = df.sort_values(by='begin_date').reset_index(drop=True)
 
     return df
 
-
-from pathlib import Path
-import pandas as pd
-import requests
-import io
-from typing import Optional
-
-
-def get_snotel_sensors_with_dates(
+def get_snotel_station_elements(
         station_id: str,
         state: str,
         data_dir: str = "data/NRCS/SNOTEL/sensors"
 ) -> pd.DataFrame:
-    """
-    Cached sensor list with strict filtering.
-    Only returns sensors that actually have data.
-    """
     path = Path(data_dir)
     path.mkdir(parents=True, exist_ok=True)
-    file_path = path / f"{station_id}_{state.upper()}.csv"
+    file_path = path / f"{station_id}_{state.upper()}_elements.csv"
 
     if file_path.exists():
-        print(f"✅ Loading cached sensor data for {station_id}:{state}")
-        return pd.read_csv(file_path, parse_dates=['sensor_start_date'])
+        print(f"✅ Loading cached for {station_id}:{state}")
+        df = pd.read_csv(file_path, parse_dates=['begin_date'])
+    else:
+        triplet = f"{station_id}:{state}:SNTL"
+        url = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations"
 
-    # === FETCH ===
-    triplet = f"{station_id}:{state}:SNTL"
+        params = {
+            "stationTriplets": triplet,
+            "returnForecastPointMetadata": "false",
+            "returnReservoirMetadata": "false",
+            "returnStationElements": "true",
+            "activeOnly": "true"
+        }
 
-    elements = [
-        "WTEQ::value", "SNWD::value", "PREC::value", "PRCP::value", "PRCPSA::value",
-        "TAVG::value", "TMAX::value", "TMIN::value", "TOBS::value",
-        "SMS::value", "SMO::value", "STO::value", "STV::value",
-        "SRADV::value", "SRADT::value",
-        "WSPDV::value", "WDIRV::value", "RHUMV::value", "PRES::value",
-        "BATT::value"
-    ]
+        print(f"🌐 Querying for {triplet}...")
+        response = requests.get(url, params=params, headers={"accept": "application/json"}, timeout=30)
 
-    url = (
-        "https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customSingleStationReport/daily/"
-        f"{triplet}|id=%22%22|name/POR_BEGIN,POR_END/"
-        f"{','.join(elements)}"
-    )
+        if not response.ok:
+            print(f"❌ Error {response.status_code}")
+            return pd.DataFrame()
 
-    print(f"🌐 Downloading for {triplet}...")
-    response = requests.get(url, timeout=45)
-    response.raise_for_status()
+        data = response.json()
+        df = parse_station_elements(data)
 
-    text = response.text
-    lines = text.splitlines()
+        if not df.empty:
+            df.to_csv(file_path, index=False)
+            print(f"💾 Saved to {file_path}")
 
-    station_por_begin = station_por_end = None
-    for line in lines[:40]:
-        if "POR_BEGIN" in line:
-            station_por_begin = line.split(',')[-1].strip()
-        if "POR_END" in line:
-            station_por_end = line.split(',')[-1].strip()
+    if df.empty:
+        print("No sensors found.")
+        return df
 
-    header_idx = next((i for i, line in enumerate(lines) if line.strip().startswith("Date,")), None)
-    if header_idx is None:
-        print("No data header found.")
-        return pd.DataFrame()
+    # Ensure description column exists (for old cache files)
+    if 'description' not in df.columns:
+        df['description'] = df['element_code'].map(ELEMENT_DESCRIPTIONS).fillna("Unknown")
 
-    df = pd.read_csv(io.StringIO(text), skiprows=header_idx, na_values=['*', ''])
+    print(f"\n=== Sensors for Station {station_id}:{state} ===")
+    print(f"Total installed sensors: {len(df)}")
 
-    records = []
-    for col in df.columns:
-        if col.lower() == 'date':
-            continue
+    with pd.option_context('display.max_rows', None, 'display.max_colwidth', 60):
+        print(df[['element_code', 'description', 'begin_date', 'duration', 'unit']])
 
-        clean_name = col.split('(')[0].strip()
-        element_code = clean_name.split('::')[0] if '::' in clean_name else clean_name
-
-        valid_mask = df[col].notna()
-        num_valid = valid_mask.sum()
-
-        if num_valid == 0:
-            continue  # Strict filter - must have at least 1 real value
-
-        first_valid_idx = valid_mask.idxmax()
-        sensor_start = pd.to_datetime(df.loc[first_valid_idx, 'Date']).date()
-
-        records.append({
-            'element_code': element_code,
-            'full_column': col,
-            'sensor_start_date': sensor_start,
-            'observations': int(num_valid),
-            'is_soil': any(x in element_code for x in ['SMS', 'SMO', 'STO', 'STV', 'STX', 'STN']),
-            'is_wind': any(x in element_code for x in ['WSPD', 'WDIR']),
-            'is_solar': any(x in element_code for x in ['SRAD', 'NTRD', 'PAR']),
-        })
-
-    summary = pd.DataFrame(records)
-    if not summary.empty:
-        summary = summary.sort_values(by='sensor_start_date').reset_index(drop=True)
-
-    # Add metadata
-    summary['station_id'] = station_id
-    summary['state'] = state.upper()
-    summary['station_por_begin'] = station_por_begin
-    summary['station_por_end'] = station_por_end
-
-    # Save cache
-    summary.to_csv(file_path, index=False)
-    print(f"💾 Saved to: {file_path}")
-
-    # Final report with accurate count
-    print(f"\n=== Station {triplet} ===")
-    print(f"Period of Record: {station_por_begin} to {station_por_end}")
-    print(f"Active sensors: {len(summary)}")  # This is now guaranteed correct
-
-    with pd.option_context('display.max_rows', None, 'display.max_colwidth', None):
-        print(summary)
-
-    return summary
+    return df

@@ -19,13 +19,20 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pathlib import Path
+import os
 from data_sets.data_set import DataSetRegistry
 from reservoirs.reservoir import ReservoirRegistry
 
 class RiverWar():
-    def __init__(self, reservoir_registry:ReservoirRegistry, dataset_registry:DataSetRegistry):
+    def __init__(self):
+        SCRIPT_DIR = Path(__file__).resolve().parent
+        PROJECT_ROOT = SCRIPT_DIR.parent  # Go up one level (adjust .parent if needed)
+        os.chdir(PROJECT_ROOT)
+        print(f"Set Project Directory: {PROJECT_ROOT}")
         super().__init__()
-        self.reservoir:ReservoirRegistry = reservoir_registry
-        self.dataset:DataSetRegistry = dataset_registry
+
+        self.reservoir:ReservoirRegistry = ReservoirRegistry("reservoirs")
+        self.dataset:DataSetRegistry = DataSetRegistry("data_sets")
 
 
