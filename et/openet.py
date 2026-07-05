@@ -1,14 +1,77 @@
+"""
+Copyright (c) 2026 Ed Millard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+import calendar
 import requests
 import os
 import math
+import time
 import gzip
+from pathlib import Path
 import pandas as pd
 import geopandas as gpd
-from pandas.core.interchange.dataframe_protocol import DataFrame
+from typing import Optional, Tuple, Dict, List
+import ee
 from shapely.geometry import Polygon
-from typing import Optional, Tuple, Dict
 
+# OpemET API testing:
+#    https://openet-api.org/
 
+'''
+ALEXI/DisALEXI (Atmosphere-Land Exchange Inverse / Disaggregation ALEXI): Two-source energy balance model using thermal infrared data. 
+    Strong for partitioning evaporation/transpiration and handling varied conditions.
+eeMETRIC (Google Earth Engine implementation of METRIC): High-resolution energy balance model with internalized calibration. 
+    Good at capturing actual ET under stress.
+geeSEBAL (Google Earth Engine implementation of SEBAL): Surface energy balance algorithm. 
+    Effective for mapping ET across landscapes using thermal and optical data.
+PT-JPL (Priestley-Taylor Jet Propulsion Laboratory): Simplified Priestley-Taylor approach. 
+    Computationally efficient; originally designed for broader/global applications with fewer assumptions in some components.
+SIMS (Satellite Irrigation Management Support): Reflectance-based crop coefficient approach using NDVI and crop type info. 
+    Excellent for well-watered agricultural/irrigation contexts.
+SSEBop (Operational Simplified Surface Energy Balance): Simplified energy balance model. 
+    Operational focus, relatively robust and less computationally intensive.
+    
+Ensemble: Arithmetic mean of the models after removing outliers (using Median Absolute Deviation/MAD method, keeping at least 4 models). 
+This reduces uncertainty, smooths individual biases, and generally outperforms any single model across many metrics and landscapes.
+========
+Performance for Forests (Evergreen & Mixed)Accuracy 
+is lower in forests than in croplands across all models and the ensemble, with higher relative errors (due to lower absolute ET 
+rates in natural systems) and greater inter-model variability. 
+etdata.org
+
+Key findings from major assessments (e.g., Volk et al. 2024 and related studies):Positive bias (overestimation) is common in 
+evergreen and mixed forests. Ensemble bias factor is roughly 1.20–1.25 for monthly data (models range ~1.05–1.35). 
+Most models overestimate, especially in evergreen forests:
+
+eeMETRIC often shows the least bias in evergreen forest flux tower sites (e.g., slope closer to 1.0 and lower MBE).
+DisALEXI and eeMETRIC sometimes agree better with ground data in mixed forests than the plain ensemble.
+PT-JPL tends to have higher errors in evergreen forests.
+Ensemble frequently has the best or near-best MAE and RMSE (error magnitude) even in forests, though bias remains an issue. 
+It performs well overall for many natural land covers.
+
+Relative errors in forests are higher (e.g., ~35% or more in some assessments) vs. ~10–17% in croplands during growing season. 
+Absolute errors (mm) can still be reasonable.
+Non-growing season and complex topography/cloudy conditions increase uncertainty for all models.
+'''
 def account_status(api_key:str):
     header = {"Authorization": api_key}
 
@@ -86,49 +149,106 @@ def raster_timeseries_point(api_key: str, lat:float, lon:float)->Dict:
         content = resp.json()
     return content
 
-def geotiff_composite_monthly(api_key: str, gdf:gpd.GeoDataFrame)->str:
+def geotiff_composite_monthly(api_key: str, gdf: gpd.GeoDataFrame, date_range: List[str]) -> str:
     header = {"Authorization": api_key}
 
-    geom = gdf.geometry.iloc[0]  # or gdf.geometry[0] if it's a Series
+    geom = gdf.geometry.iloc[0]
+
+    # Force single polygon and remove duplicate closing point
+    if geom.geom_type == 'MultiPolygon':
+        geom = max(geom.geoms, key=lambda g: g.area)
+
+    # Build coordinates WITHOUT the closing duplicate
     geometry = []
-    for x, y in list(geom.exterior.coords)[:-1]:  # ← slice off the last (duplicate) point
+    for x, y in list(geom.exterior.coords)[:-1]:  # ← This slice removes the last point
         geometry.extend([round(x, 8), round(y, 8)])
-    '''
-      "geometry": [
-        -121.00747,
-        44.2442,
-        -121.00747,
-        44.24742,
-        -121.00295,
-        44.24742,
-        -121.00295,
-        44.24422
-      ],
-    '''
+
+    print(f"Sending {len(geometry) // 2} points")  # Should be 4 for a rectangle
+
     args = {
-        "date_range": [
-            "2025-05-01",
-            "2025-06-30"
-        ],
+        "date_range": date_range,
+        # "geometry": [-108.29420188, 37.60804556, -108.29420188, 37.72136553, -108.15115862, 37.72136553, -108.15115862, 37.60804556],
         "geometry": geometry,
+        # "model": "ensemble",
         "model": "PTJPL",
         "variable": "ET",
+        # "crs": "EPSG:4326",
         "reference_et": "gridMET",
         "reducer": "mean",
         "units": "mm"
     }
 
     resp = requests.post(
-        headers=header,
+        url="https://openet-api.org/raster/geotiff/composite",
         json=args,
-        url="https://openet-api.org/raster/geotiff/composite"
+        headers=header
     )
-    print(resp.json())
-    url = ""
+
+    print(f"Status: {resp.status_code}")
     if resp.status_code == 200:
         content = resp.json()
-        url = content.get("url", "")
-    return url
+        url = content.get("url") or content.get("task_url", "")
+        print(f"Task URL: {url}")
+        return url
+    else:
+        print("Error:", resp.text)
+        resp.raise_for_status()
+        return ""
+
+def download_openet_tiff(
+        task_url: str,
+        output_path: Path = None,
+        poll_interval: int = 10,
+        timeout: int = 600
+) -> Path:
+    if output_path is None:
+        output_path = Path(f"openet_{int(time.time())}.tif")
+    elif output_path.is_dir():
+        output_path = output_path / f"openet_{int(time.time())}.tif"
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    start = time.time()
+    while True:
+        if time.time() - start > timeout:
+            raise TimeoutError("Task timed out")
+
+        r = requests.get(task_url, stream=True)
+
+        # If it's binary TIFF (Content-Type image/tiff or direct download)
+        if r.headers.get('content-type', '').startswith('image') or len(r.content) > 10000:
+            with open(output_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192 * 4):
+                    f.write(chunk)
+            print(f"✅ Saved directly: {output_path}")
+            return output_path
+
+        # Otherwise assume JSON status
+        try:
+            data = r.json()
+            status = data.get('status')
+            if status == 'completed':
+                dl_url = data.get('download_url') or data.get('url')
+                if dl_url:
+                    print(f"Downloading from: {dl_url}")
+                    with requests.get(dl_url, stream=True) as resp:
+                        resp.raise_for_status()
+                        with open(output_path, 'wb') as f:
+                            for chunk in resp.iter_content(chunk_size=8192 * 4):
+                                f.write(chunk)
+                    print(f"✅ Saved: {output_path}")
+                    return output_path
+            elif status in ['failed', 'error']:
+                raise Exception(f"Task failed: {data}")
+            print(f"Status: {status}... waiting")
+        except:
+            # If not JSON, treat as direct binary
+            with open(output_path, 'wb') as f:
+                f.write(r.content)
+            print(f"✅ Saved binary: {output_path}")
+            return output_path
+
+        time.sleep(poll_interval)
 
 def polygons(api_key:str = None):
     header = {"Authorization": api_key}
@@ -359,6 +479,43 @@ def export_stack(apu_key: str = None):
         url="https://openet-api.org/raster/export/stack"
     )
     print(resp.json())
+
+def export_multipolygon(api_key: str, gdf: gpd.GeoDataFrame, date_range: List[str]) -> str:
+    header = {"Authorization": api_key}
+
+    geom = gdf.geometry.iloc[0]
+    if geom.geom_type == 'MultiPolygon':
+        geom = max(geom.geoms, key=lambda g: g.area)
+
+    # One polygon as list of [lon, lat] pairs, closed
+    polygon = []
+    for x, y in list(geom.exterior.coords):
+        polygon.append([round(x, 8), round(y, 8)])
+
+    args = {
+        "date_range": date_range,
+        "interval": "monthly",           # Required for this endpoint
+        "geometry": [polygon],           # List of polygons (even for one)
+        "model": "PTJPL",
+        "variable": "ET",
+        "reference_et": "gridMET",
+        "units": "mm"
+        # "file_format": "GeoTIFF"   # May not be needed here
+    }
+
+    resp = requests.post(
+        url="https://openet-api.org/raster/export/multipolygon",
+        json=args,
+        headers=header
+    )
+
+    print(f"Status: {resp.status_code}")
+    if resp.status_code == 200:
+        print(resp.json())
+        return resp.json().get("url") or "Check response for task_url"
+    else:
+        print("Error:", resp.text)
+        return ""
 
 def export_multipolygons(api_key: str = None):
     header = {"Authorization": api_key}
@@ -643,3 +800,44 @@ def load_rectangle_csv_to_gdf(file_path:str) -> Tuple[gpd.GeoDataFrame, float]:
     print(f"📏 Rectangle Area: {area_acres:,.2f} acres")
 
     return gdf, area_acres
+
+
+def days_in_month(year: int, month: int) -> int:
+    """Return the number of days in a given month/year."""
+    if month < 1 or month > 12:
+        raise ValueError("Month must be between 1 and 12")
+    return calendar.monthrange(year, month)[1]
+
+def open_et():
+    api_key = os.getenv("OPENET_API_KEY")
+    account_status(api_key)
+
+    # study_area_name = 'stoner_mesa'
+    study_area_name = 'lizard_head'
+
+    path:str = f'/opt/dev/gis/OpenET/{study_area_name}_study_area.csv'
+    # path:str = '/opt/dev/gis/OpenET/lizard_head_study_area.csv'
+    df:pd.DataFrame = pd.read_csv(path)
+    gdf, area_acres = load_rectangle_csv_to_gdf(path)
+
+    year = 2024
+    month = 7
+    last_day = days_in_month(year, month)
+    date_range = [
+        f"{year}-{month:02d}-01",
+        f"{year}-{month:02d}-{last_day:02d}"
+    ]
+    url = geotiff_composite_monthly(api_key, gdf, date_range)
+    if url:
+        print(f"geotiff_composite_monthly: {date_range} {url}")
+        download_openet_tiff(url, Path(f"/opt/dev/gis/OpenET/{study_area_name}/{study_area_name}_{month:02d}_{year}.tiff"))
+
+    # data = openet.raster_timeseries_point(api_key, 37.6080455554, -108.2942018753)
+
+    pass
+
+if __name__ == "__main__":
+    # ee.Authenticate()                                 # One time only, usually
+    ee.Initialize(project='winter-heat-497923')
+    # print(ee.Image('USGS/SRTMGL1_003').getInfo())     # Test image to verify Earth Engine authentication
+    open_et()
