@@ -25,7 +25,6 @@ import matplotlib
 import os
 from graphs.chart_frame import NotebookFrame
 from colorado.river_war import RiverWar
-from data_sets.data_set import DataSetRegistry
 from graphs.flow_chart_frame import FlowChartFrame
 from graphs.front_range import FrontRange
 from graphs.grand_valley import GrandValley
@@ -122,9 +121,6 @@ if __name__ == "__main__":
         ("Inflow Outflow", time_series_chart),
     ]
 
-    reservoir_registry = ReservoirRegistry("reservoirs")
-    dataset_registry = DataSetRegistry("data_sets")
-
     # print("\nLoaded Reservoirs:")
     # for name in reservoir_registry.list_all():
     #     print(f"   • {name}")
@@ -132,7 +128,7 @@ if __name__ == "__main__":
 
     app = wx.App(False)
 
-    river_war = RiverWar(reservoir_registry, dataset_registry)
+    river_war = RiverWar()
     nb = NotebookFrame(callables, river_war)
 
     # reservoir_chart(nb)
