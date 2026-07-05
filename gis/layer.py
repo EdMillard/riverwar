@@ -89,9 +89,8 @@ def remove_features_by_attribute(layer: QgsVectorLayer, field_name: str, value=N
 
     return count
 
-def create_group(group_name, position:Optional[int]=None, existing_layer=None):
+def create_group(group_name, position:Optional[int]=None, visible=False, existing_layer=None, layers=None, layer_dict=None, ):
     root = QgsProject.instance().layerTreeRoot()
-
     existing = root.findGroup(group_name)
     if existing:
         root.removeChildNode(existing)
@@ -100,15 +99,30 @@ def create_group(group_name, position:Optional[int]=None, existing_layer=None):
         existing_layer_node = root.findLayer(existing_layer.id())
         if existing_layer_node:
             group = root.insertGroup(root.children().index(existing_layer_node), group_name)
+        else:
+            print(f"Existing group invalid {group_name}")
+            return None
     elif position is None:
         group = root.addGroup(group_name)
     else:
         group = root.insertGroup(0, group_name)
 
+    if layer_dict is not None:
+        print(f"Add Layers to Group {group_name}")
+        for key, layer in layer_dict.items():
+            add_layer_to_group(layer, group)
+            set_layer_state(layer, visible, False)
+            layer.triggerRepaint()
+            # layer.setOpacity(1.0)'
+    elif layers is not None:
+        print(f"Add Layers to Group {group_name}")
+        for layer in layers:
+            add_layer_to_group(layer, group)
+            set_layer_state(layer, visible, False)
+            layer.triggerRepaint()
+            # layer.setOpacity(1.0)'
     group.setExpanded(False)
-    group.setItemVisibilityChecked(False)
-
-    print(f"✅ Created collapsed group at top: '{group_name}'")
+    group.setItemVisibilityChecked(visible)
     return group
 
 def add_layer_to_group(layer, group):
@@ -117,8 +131,8 @@ def add_layer_to_group(layer, group):
     root = QgsProject.instance().layerTreeRoot()
     root.removeLayer(layer)
 
-    group.setExpanded(False)
-    group.setItemVisibilityChecked(False)
+    # group.setExpanded(False)
+    # group.setItemVisibilityChecked(False)
 
 def get_symbol(layer):
     renderer = layer.renderer()
@@ -126,6 +140,36 @@ def get_symbol(layer):
         if hasattr(renderer, 'symbol') and renderer.symbol() is not None:
             return renderer.symbol()   # type: ignore[attr-defined]
     return None
+
+def force_collapse(layer):
+    if layer is not None:
+        root = QgsProject.instance().layerTreeRoot()
+        node = root.findLayer(layer.id())
+        if node:
+            node.setExpanded(False)
+            for child in node.children():
+                child.setExpanded(False)
+            iface.layerTreeView().refreshLayerSymbology(layer.id())
+            # iface.layerTreeView().collapseAll()
+
+def force_group_visibility(group, visible:bool = True):
+    # Set visibility
+    group.setItemVisibilityChecked(visible)
+
+    # Force UI refresh for groups
+    view = iface.layerTreeView()
+    view.update()  # important for groups
+    iface.mapCanvas().refresh()
+
+    # Alternative strong refresh
+    view.refreshLayerSymbology("")  # dummy to trigger full refresh
+
+def set_layer_state(layer, visible:bool, expanded:bool):
+    root = QgsProject.instance().layerTreeRoot()
+    layer_node = root.findLayer(layer.id())
+    if layer_node:
+        layer_node.setItemVisibilityChecked(visible)  # Hidden
+        layer_node.setExpanded(expanded)
 
 def load_gpkg_with_ogr(gpkg_path: str, layer_name: str, display_name: str = None, group=None):
     print(f'Loading {gpkg_path}')
@@ -153,13 +197,6 @@ def load_gpkg_with_ogr(gpkg_path: str, layer_name: str, display_name: str = None
     print(f"Loaded gpkg {gpkg_path}")
 
     return qgis_layer
-
-def set_layer_state(layer, visible:bool, expanded:bool):
-    root = QgsProject.instance().layerTreeRoot()
-    layer_node = root.findLayer(layer.id())
-    if layer_node:
-        layer_node.setItemVisibilityChecked(visible)  # Hidden
-        layer_node.setExpanded(expanded)
 
 # Not used
 def reproject_layer(forestry_dir:Path, layer, new_name=None):

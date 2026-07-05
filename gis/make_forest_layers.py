@@ -642,6 +642,10 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
     tree_map_layers = {}
     tree_map_files = [
         'TreeMap2022_CONUS_BALIVE',
+        'TreeMap2022_CONUS_FLDTYPCD',   # Recommended
+    ]
+    tree_map_files_full = [
+        'TreeMap2022_CONUS_BALIVE',
         "TreeMap2022_CONUS_CANOPYPCT",
 
         'TreeMap2022_CONUS_FLDTYPCD',   # Recommended
@@ -661,16 +665,17 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
     ]
     for raster_file in tree_map_files:
         raster_path =  f"/opt/dev/gis/TreeMap/{raster_file}/{raster_file}.tif"
-        layer, path = clip_raster_to_mask(raster_path, huc_layer, forestry_dir)
-        tree_map_layers[raster_file] = layer
+        layer_name = raster_file.replace('TreeMap2022_CONUS_', '')
+        layer, path = clip_raster_to_mask(raster_path, huc_layer, forestry_dir, output_name=layer_name)
+        tree_map_layers[layer_name] = layer
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_FLDTYPCD', None)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('FLDTYPCD', None)
     if layer is not None:
         present_types = list_vegtypes_in_layer(layer, forest_types)
         style_clipped_layer(layer, present_types)
         set_layer_state(layer, True, False)
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_STDSZCD', None)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('STDSZCD', None)
     if layer is not None:
         # print_raster_value_counts(layer)
         # counts = raster_value_counts(layer)
@@ -684,12 +689,12 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
         }
         apply_discrete_colors(layer, stand_colors)
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_BALIVE', None)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('BALIVE', None)
     if layer is not None:
         # print_raster_value_counts(layer)
         # counts = raster_value_counts(layer)
         classes_balive = [
-            (0, 60, 1, QColor(0, 0, 200, 255), "Sparse <60"),
+            (0, 60, 1, QColor(0, 80, 0, 255), "Sparse <60"),
             (60, 120, 2, QColor(0, 200, 0, 255), "Healthy 60-120"),
             (120, 180, 3, QColor(255, 180, 80, 255), "Dense 120-180"),
             (180, 9999, 4, QColor(220, 50, 50, 255), "Extreme >180")
@@ -697,7 +702,7 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
         classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_balive)
         tree_map_layers[classified_layer.name()+'_Classified'] = classified_layer
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_TPA_DEAD', None)
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TPA_DEAD', None)
     if layer is not None:
         classes_tpa = [
             (0, 50, 1, QColor(200, 200, 200, 80), "Low <50"),
@@ -707,23 +712,7 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
         classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_tpa)
         tree_map_layers[classified_layer.name() + '_Classified'] = classified_layer
 
-    tree_map_group = create_group("TreeMap 2022", position=0, existing_layer=huc12_layer)
-    for key, layer in tree_map_layers.items():
-        add_layer_to_group(layer, tree_map_group)
-        set_layer_state(layer, False, False)
-        layer.triggerRepaint()
-        # layer.setOpacity(1.0)'
-
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TreeMap2022_CONUS_FLDTYPCD', None)
-    if layer is not None:
-        set_layer_state(layer, True, False)
-        layer.triggerRepaint()
-
-    # tree_map_group.setVisible(True)  # turn on visibility
-    if tree_map_group:
-        tree_map_group.setItemVisibilityChecked(True)  # This checks the box
-        tree_map_group.setExpanded(True)
-        # tree_map_group.triggerRepaint()
+    return tree_map_layers
 
 
 def build_open_et_layers(forestry_dir, huc_layer, huc12_layer):

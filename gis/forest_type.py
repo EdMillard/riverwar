@@ -45,11 +45,11 @@ forest_types = {
     182: {"name": "Rocky Mountain Juniper", "color": (139, 69, 19)},   # brown
     183: {"name": "Western Juniper", "color": (150, 150, 150)},
     184: {"name": "Juniper Woodland", "color": (139, 69, 19)},
-    185: {"name": "Pinyon Juniper Woodland", "color": (139, 69, 19)},
+    185: {"name": "Pinyon Juniper Woodland", "color": (0, 80, 0)},
 
     201: {"name": "Douglas-fir", "color": (0, 180, 140)},
 
-    221: {"name": "Ponderosa Pine", "color": (170, 0, 0)},
+    221: {"name": "Ponderosa Pine", "color": (139, 69, 19)},
 
     222: {"name": "Incense Cedar", "color": (150, 150, 150)},
     223: {"name": "Jeffrey Pine / Coulter Pine / Bigcone Douglas-fir", "color": (150, 150, 150)},

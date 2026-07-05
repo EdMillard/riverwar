@@ -26,7 +26,8 @@ from pathlib import Path
 import importlib
 import sys
 import os
-from qgis.core import QgsVectorLayer, QgsProject
+from typing import Optional
+from qgis.core import QgsVectorLayer, QgsProject, QgsRasterLayer
 from qgis.PyQt.QtGui import QColor
 from qgis.utils import iface
 import processing   # type: ignore
@@ -57,7 +58,7 @@ def reload_modules():
 reload_modules()
 
 from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vector_layer, clip_to_mask, create_group, \
-    add_layer_to_group, remove_features_by_attribute_fast, load_gpkg_with_ogr
+    add_layer_to_group, remove_features_by_attribute_fast, load_gpkg_with_ogr, force_collapse, force_group_visibility
 from gis.contours import build_elevation_layers
 from gis.make_forest_layers import build_forest_layers, build_tree_map_layers, build_open_et_layers
 from gis.wildfire import build_wildfires
@@ -231,24 +232,30 @@ def extract_huc12_in_huc8(gpkg_path: str, huc_name: str):
 
     return final_layer
 
-def build_hydrology():
+def build_hydrology()->list:
+    layers = []
     nhd_gpkg_path = "/opt/dev/gis/NHD/NHD_H_14030002_HU8_GPKG.gpkg"
 
     group = create_group("Hydrology", position=0)
 
     water_body_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDWaterbody", group=group)
     symbol = get_symbol(water_body_layer)
-    symbol.setColor(QColor(90, 90, 255))
+    symbol.setColor(QColor(165, 191, 221))
+    layers.append(water_body_layer)
+
+    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea", group=group)
+    symbol = get_symbol(river_layer)
+    symbol.symbolLayer(0).setStrokeColor(QColor(60, 60, 221))
+    symbol.symbolLayer(0).setStrokeWidth(0.4)
+    layers.append(river_layer)
 
     flow_line_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDFlowline", group=group)
     remove_features_by_attribute_fast(flow_line_layer, "gnis_name")
     symbol = get_symbol(flow_line_layer)
-    symbol.setColor(QColor(64, 64, 255))
+    symbol.setColor(QColor(60, 60, 221))
+    layers.append(flow_line_layer)
 
-    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea", group=group)
-    symbol = get_symbol(river_layer)
-    symbol.symbolLayer(0).setStrokeColor(QColor(64, 64, 255))
-    symbol.symbolLayer(0).setStrokeWidth(0.4)
+    return layers
 
 def build_weather_stations(huc8_layer):
     temp_weather_station_layer = load_vector_layer("/opt/dev/gis/CO_DWR/ClimateStationPOR.zip", "Teno Weather Stations", QColor(255, 0, 0))
@@ -271,11 +278,15 @@ def build(huc_name:str):
     huc4_path = f"{wbd_gpkg_path}|layername=WBDHU4"
     huc4_layer = QgsVectorLayer(huc4_path, "WBDHU4", "ogr")
     QgsProject.instance().addMapLayer(huc4_layer)
+    symbol = get_symbol(huc4_layer)
+    symbol.setColor(QColor(60, 60, 60))
 
     wbd_huc8 = load_huc8_from_wbd("/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg")  # Load Upper Colorado HU2, HUC8
     huc8_layer = extract_and_reproject_huc8(wbd_huc8, huc_name)
     remove_layer(wbd_huc8)
     huc12_layer = extract_huc12_in_huc8(wbd_gpkg_path, huc_name)
+    symbol = get_symbol(huc12_layer)
+    symbol.setColor(QColor(200, 200, 150))
 
     # temp_protected_area_layer = load_vector_layer("/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz", "Temp Protected Areas", QColor(100, 255, 100))
     # protected_area_layer, protected_area_path = clip_to_mask(temp_protected_area_layer, huc8_layer, forestry_dir, "Protected Areas")
@@ -283,15 +294,24 @@ def build(huc_name:str):
 
     # build_forest_layers(forestry_dir, huc8_layer, huc_name)
     # build_open_et_layers(forestry_dir, huc8_layer, huc12_layer)
-    build_tree_map_layers(forestry_dir, huc8_layer, huc12_layer)
+
+    tree_map_layers = build_tree_map_layers(forestry_dir, huc8_layer, huc4_layer)
 
     # build_wildfires()
 
     # build_elevation_layers(forestry_dir, huc8_layer)
 
-    build_hydrology()
+    hydrology_layers = build_hydrology()
 
     build_weather_stations(huc8_layer)
+
+    tree_map_group = create_group("TreeMap 2022", position=0, existing_layer=huc12_layer, layer_dict=tree_map_layers)
+    hydrology_group = create_group("NHD Hydrology", visible=True, position=0, existing_layer=huc12_layer, layers=hydrology_layers)
+    force_group_visibility(hydrology_group)
+
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('FLDTYPCD', None)
+    if layer is not None:
+        force_collapse(layer)
 
     return huc8_layer
 
