@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from datetime import date, datetime
+from datetime import date
 from typing import List, Optional, Tuple
 from colorado.river_war import RiverWar
 from api import df_utils
@@ -51,6 +51,7 @@ class Snotel(ChartFrame):
         self.smooth_days = 5
 
         self.snotel_name = 'Lizard Head Pass'
+        self.snotel_name = 'El Diente'
         # self.snotel_name = 'Niwot'
         # self.snotel_name = 'Berthoud Summit'
 
@@ -137,7 +138,7 @@ class Snotel(ChartFrame):
             # df_summary = get_snotel_sensors_with_dates(station_id, state)
             print_full_summary(df_summary, title=f"{name} Sensor Summary:")
             self.num_years = Snotel.get_sensor_history_years(df_summary)
-            # self.num_years = 10
+            self.num_years += 46
             self.start_date = self.end_date.replace(year=self.end_date.year - self.num_years)
             begin_date = self.start_date.strftime("%Y-%m-%d")
             # begin_date = "2026-01-01"
@@ -219,11 +220,10 @@ class Snotel(ChartFrame):
     def load_data(self) -> Optional[date]:
         self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])
 
-        usgs.daily_to_df(self.df_daily, '09165000', 'Dolores River Below Rico, CO', self.start_date, self.end_date)
-        usgs.daily_to_df(self.df_daily, '09166950', 'Lost Canyon Creek Near Dolores, CO', self.start_date, self.end_date)
-        usgs.daily_to_df(self.df_daily, '09166500', 'Dolores River at Dolores, CO', self.start_date, self.end_date)
-
-        df = pd.read_csv("data/OpenMeteo/rico_37.7_-108.0_1940-01-01_2026-07-10_daily.csv")
+        lizard_hwad = 'data/OpenMeteo/lizard_head_37.799991_-107.933968_1940-01-01_2026-07-10_daily.csv'
+        el_diente = 'data/OpenMeteo/el_diente_37.79_-108.02_1940-01-01_2026-07-10_daily.csv'
+        rico = "data/OpenMeteo/rico_37.7_-108.0_1940-01-01_2026-07-10_daily.csv"
+        df = pd.read_csv(el_diente)
         self.df_open_meteo = df.rename(columns={'time': 'Date'})
 
         self.df_open_et = openet_json_file_to_dataframe('/opt/dev/gis/OpenET/lizard_head/lizard_head_2016-08-01_2026-06-30_ensemble_in_daily.json',)
@@ -253,6 +253,29 @@ class Snotel(ChartFrame):
     def load_charts(self):
         graph_end_date = date.today()
 
+        title = f'Dolores River - {self.snotel_name} SNOTEL'
+
+        # self.river_graph(graph_end_date, title=title)
+
+        self.precipitation_swe_graph(graph_end_date, title=title)
+
+        # self.soil_moisture_graph(graph_end_date)
+
+        # self.open_et_graph(graph_end_date)
+
+        self.precipitation_increment_graph(graph_end_date)
+
+        self.air_temperature_graph(graph_end_date, "air_temperature_maximum", "temperature_2m_max", title="")
+        self.air_temperature_graph(graph_end_date, "air_temperature_average", "temperature_2m_mean", show_x_labels=True)
+        self.air_temperature_graph(graph_end_date, "air_temperature_minimum", "temperature_2m_min")
+
+        # self.soil_temperature_graph(graph_end_date)
+
+    def river_graph(self, graph_end_date, title:str=""):
+        usgs.daily_to_df(self.df_daily, '09165000', 'Dolores River Below Rico, CO', self.start_date, self.end_date)
+        usgs.daily_to_df(self.df_daily, '09166950', 'Lost Canyon Creek Near Dolores, CO', self.start_date, self.end_date)
+        usgs.daily_to_df(self.df_daily, '09166500', 'Dolores River at Dolores, CO', self.start_date, self.end_date)
+
         time_series = [
             (self.df_daily, 'Dolores River at Dolores, CO', 'darkred'),
             (self.df_daily, 'Dolores River Below Rico, CO', 'royalblue'),
@@ -260,7 +283,7 @@ class Snotel(ChartFrame):
         ]
         self.line_chart = LineChart(
             time_series,
-            title=f'Dolores River - {self.snotel_name} SNOTEL',
+            title=title,
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
             show_x_labels = False,
             percentage=0.20,
@@ -270,40 +293,7 @@ class Snotel(ChartFrame):
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
-        time_series = [
-            # (self.df_snotel, 'snow_depth', 'darkgreen'),
-            (self.df_snotel, 'precipitation_accumulation', 'royalblue'),
-            (self.df_snotel, 'snow_water_equivalent', 'darkgreen'),
-        ]
-        self.line_chart = LineChart(
-            time_series,
-            title='',
-            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            show_x_labels = True,
-            percentage=0.20,
-            y_units='in',
-            y_min=0.0
-        )
-        self.line_chart.set_end_date(graph_end_date)
-        self.charts.append(self.line_chart)
-
-        time_series = [
-            (self.df_snotel, 'soil_moisture_percent_2in', 'royalblue'),
-            (self.df_snotel, 'soil_moisture_percent_8in', 'darkgreen'),
-            (self.df_snotel, 'soil_moisture_percent_20in', 'darkred'),
-        ]
-        self.line_chart = LineChart(
-            time_series,
-            title='',
-            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            show_x_labels = False,
-            percentage=0.20,
-            y_units='%',
-            # y_min=0.0
-        )
-        self.line_chart.set_end_date(graph_end_date)
-        self.charts.append(self.line_chart)
-
+    def open_et_graph(self, graph_end_date, show_x_labels:bool = False, title:str=""):
         time_series = [
             #(self.df_open_et, f'eeMETRIC_smooth_{self.smooth_days}d', 'royalblue'),
             (self.df_open_et, f'DisALEXI_smooth_{self.smooth_days}d', 'darkred'),
@@ -312,23 +302,42 @@ class Snotel(ChartFrame):
         ]
         self.line_chart = LineChart(
             time_series,
-            title='',
+            title=title,
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            show_x_labels = True,
+            show_x_labels=show_x_labels,
             percentage=0.20,
             y_units='in',
         )
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
+    def precipitation_swe_graph(self, graph_end_date, show_x_labels:bool = False, title:str=""):
+        time_series = [
+            # (self.df_snotel, 'snow_depth', 'darkgreen'),
+            (self.df_snotel, 'precipitation_accumulation', 'royalblue'),
+            (self.df_snotel, 'snow_water_equivalent', 'darkgreen'),
+        ]
+        self.line_chart = LineChart(
+            time_series,
+            title=title,
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
+            show_x_labels = show_x_labels,
+            percentage=0.20,
+            y_units='in',
+            y_min=0.0
+        )
+        self.line_chart.set_end_date(graph_end_date)
+        self.charts.append(self.line_chart)
+
+    def precipitation_increment_graph(self, graph_end_date, show_x_labels: bool = False, title: str = ""):
         time_series = [
             (self.df_snotel, 'precipitation_increment', 'goldenrod'),
         ]
         self.line_chart = LineChart(
             time_series,
-            title='',
+            title=title,
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            show_x_labels = False,
+            show_x_labels=show_x_labels,
             percentage=0.20,
             y_units='in',
             y_max=2
@@ -336,24 +345,22 @@ class Snotel(ChartFrame):
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
-        # 'air_temperature_minimum',
-        # 'air_temperature_maximum',
-        # 'air_temperature_observed',
+    def air_temperature_graph(self, graph_end_date, snotel_name:str, open_meteo_name:str,  show_x_labels:bool = False, title:str=""):
         rolling_avg_days = 5
-        self.df_snotel[f'air_temperature_average_{rolling_avg_days}d'] = (
-            self.df_snotel['air_temperature_average']
+        self.df_snotel[f'{snotel_name}_{rolling_avg_days}d'] = (
+            self.df_snotel[snotel_name]
             .rolling(window=rolling_avg_days, center=True, min_periods=3)
             .mean()
         )
         time_series = [
-            (self.df_snotel, f'air_temperature_average_{rolling_avg_days}d', 'royalblue'),
-            (self.df_open_meteo, f'temperature_2m_mean', 'darkred'),
+            (self.df_open_meteo, open_meteo_name, 'darkred'),
+            (self.df_snotel, f'{snotel_name}_{rolling_avg_days}d', 'royalblue'),
         ]
         self.line_chart = LineChart(
             time_series,
-            title='',
+            title=title,
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            show_x_labels = False,
+            show_x_labels=show_x_labels,
             percentage=0.20,
             y_units='°F',
             # y_max=85,
@@ -362,6 +369,25 @@ class Snotel(ChartFrame):
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
+    def soil_moisture_graph(self, graph_end_date, show_x_labels:bool = False, title:str=""):
+        time_series = [
+            (self.df_snotel, 'soil_moisture_percent_2in', 'royalblue'),
+            (self.df_snotel, 'soil_moisture_percent_8in', 'darkgreen'),
+            (self.df_snotel, 'soil_moisture_percent_20in', 'darkred'),
+        ]
+        self.line_chart = LineChart(
+            time_series,
+            title=title,
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
+            show_x_labels = show_x_labels,
+            percentage=0.20,
+            y_units='%',
+            # y_min=0.0
+        )
+        self.line_chart.set_end_date(graph_end_date)
+        self.charts.append(self.line_chart)
+
+    def soil_temperature_graph(self, graph_end_date, show_x_labels:bool = False, title:str=""):
         time_series = [
             (self.df_snotel, 'soil_temperature_observed_2in', 'royalblue'),
             (self.df_snotel, 'soil_temperature_observed_8in', 'darkgreen'),
@@ -369,16 +395,15 @@ class Snotel(ChartFrame):
         ]
         self.line_chart = LineChart(
             time_series,
-            title='',
+            title=title,
             start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
-            show_x_labels = False,
+            show_x_labels = show_x_labels,
             percentage=0.20,
             y_units='°F',
             y_min=22
         )
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
-
 
 from datetime import datetime
 
