@@ -116,8 +116,8 @@ class Chart:
         data_max = max(all_values)
         data_range = data_max - data_min if data_max > data_min else 1.0
 
-        # ==================== TICK STRATEGY ====================
-        if data_range <= 1.0:                    # Very small values (0 to 0.5)
+        # Tick strategy (your existing logic)
+        if data_range <= 1.0:
             major_step = 0.1
             minor_step = 0.05
         elif data_range <= 5.0:
@@ -140,7 +140,6 @@ class Chart:
         ax.yaxis.set_major_locator(MultipleLocator(major_step))
         ax.yaxis.set_minor_locator(MultipleLocator(minor_step))
 
-        # Force better decimal formatting for small values
         if data_range <= 5.0:
             ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
         elif data_range <= 20.0:
@@ -149,6 +148,9 @@ class Chart:
         # Tick appearance
         ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
         ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
+
+        ax.grid(True, which='major', axis='y', linestyle='-', linewidth=1.2, color='black', alpha=0.7)
+        ax.grid(True, which='minor', axis='y', linestyle='--', linewidth=0.6, color='gray', alpha=0.5)
 
         if data_min >= 0:
             ax.set_ylim(ymin=0)
