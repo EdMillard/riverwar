@@ -19,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from reservoirs.reservoir import Reservoir
 import wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 from matplotlib.axes import Axes
@@ -27,6 +26,7 @@ from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
 import numpy as np
 from PIL import Image
+import pandas as pd
 import io
 from datetime import date, timedelta
 from typing import List, Optional, Literal
@@ -45,6 +45,8 @@ class Chart:
         self.percentage = percentage
         self.canvas = None
         self.panel = None
+
+        self.data_series = None
 
         self.report_name = ''
 
@@ -87,10 +89,69 @@ class Chart:
             return f'{x / self.y_divisor:,.2f}'
 
     def setup_yaxis(self, ax):
-        """Y-axis setup - label is just the units (MAF, TAF, etc.)"""
+        """Smart Y-axis with good label visibility on small values."""
         ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')
         formatter = ticker.FuncFormatter(self.scaled_formatter)
         ax.yaxis.set_major_formatter(formatter)
+
+        if not self.data_series:
+            return
+
+        # Get data range
+        all_values = []
+        for item in self.data_series:
+            if len(item) == 4:
+                df, col, _, _ = item
+            else:
+                df, col, _ = item
+            if col in df.columns:
+                vals = pd.to_numeric(df[col], errors='coerce').dropna()
+                if not vals.empty:
+                    all_values.extend(vals)
+
+        if not all_values:
+            return
+
+        data_min = min(all_values)
+        data_max = max(all_values)
+        data_range = data_max - data_min if data_max > data_min else 1.0
+
+        # ==================== TICK STRATEGY ====================
+        if data_range <= 1.0:                    # Very small values (0 to 0.5)
+            major_step = 0.1
+            minor_step = 0.05
+        elif data_range <= 5.0:
+            major_step = 0.5
+            minor_step = 0.1
+        elif data_range <= 20.0:
+            major_step = 1.0
+            minor_step = 0.25
+        elif data_range <= 50.0:
+            major_step = 5.0
+            minor_step = 1.0
+        elif data_range <= 200.0:
+            major_step = 10.0
+            minor_step = 2.0
+        else:
+            major_step = round(data_range / 8 / 10) * 10 or 100
+            minor_step = major_step / 5
+
+        from matplotlib.ticker import MultipleLocator
+        ax.yaxis.set_major_locator(MultipleLocator(major_step))
+        ax.yaxis.set_minor_locator(MultipleLocator(minor_step))
+
+        # Force better decimal formatting for small values
+        if data_range <= 5.0:
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+        elif data_range <= 20.0:
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
+
+        # Tick appearance
+        ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
+        ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
+
+        if data_min >= 0:
+            ax.set_ylim(ymin=0)
 
     def create_chart(self, ax: Axes, title: str):
         pass
