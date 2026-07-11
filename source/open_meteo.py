@@ -24,6 +24,31 @@ import pandas as pd
 from pathlib import Path
 from datetime import datetime
 
+'''
+Temperature & Related
+    temperature_2m_max / temperature_2m_min / temperature_2m_mean
+    apparent_temperature_max / apparent_temperature_min / apparent_temperature_mean
+    dewpoint_2m
+    relative_humidity_2m_max / relative_humidity_2m_min / relative_humidity_2m_mean
+    
+Precipitation & Moisture
+    precipitation_sum (total mm or inch)
+    rain_sum, snowfall_sum
+    precipitation_hours
+    et0_fao_evapotranspiration (reference evapotranspiration)
+    
+Snow & Soil
+    snow_depth_max / snow_depth_mean
+    soil_temperature_0_to_7cm_mean (and other depths)
+    soil_moisture_0_to_7cm_mean (and other depths)
+    
+Other Useful
+    shortwave_radiation_sum (solar radiation)
+    wind_speed_10m_max / wind_gusts_10m_max
+    wind_direction_10m_dominant
+    sunshine_duration (hours)
+'''
+
 def get_historical_weather(lat, lon, start_date="1980-01-01", end_date="2025-12-31"):
     url = "https://archive-api.open-meteo.com/v1/archive"
     params = {
@@ -91,15 +116,15 @@ if __name__ == "__main__":
     # lon = -108.0
 
     # Lizard head SNOTEL
-    name = "lizard_head"
-    lat = 37.799991
-    lon = -107.933968
+    # name = "lizard_head"
+    # lat = 37.799991
+    # lon = -107.933968
 
     #
     # El Diente SNOTEL
-    # name = "el_diente"
-    # lat = 37.79
-    # lon = -108.02
+    name = "el_diente"
+    lat = 37.79
+    lon = -108.02
 
     get_location_info(lat, lon)
 
