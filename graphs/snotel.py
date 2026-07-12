@@ -255,26 +255,26 @@ class Snotel(ChartFrame):
 
         title = f'Dolores River - {self.snotel_name} SNOTEL'
 
-        # self.river_graph(graph_end_date, title=title)
+        self.river_graph(graph_end_date, title=title)
 
-        self.precipitation_swe_graph(graph_end_date, title=title)
+        self.precipitation_swe_graph(graph_end_date, show_x_labels=True)
 
         # self.soil_moisture_graph(graph_end_date)
 
         # self.open_et_graph(graph_end_date)
 
-        self.precipitation_increment_graph(graph_end_date)
+        # self.precipitation_increment_graph(graph_end_date)
 
-        self.air_temperature_graph(graph_end_date, "air_temperature_maximum", "temperature_2m_max", title="")
+        # self.air_temperature_graph(graph_end_date, "air_temperature_maximum", "temperature_2m_max", title="")
         self.air_temperature_graph(graph_end_date, "air_temperature_average", "temperature_2m_mean", show_x_labels=True)
-        self.air_temperature_graph(graph_end_date, "air_temperature_minimum", "temperature_2m_min")
+        # self.air_temperature_graph(graph_end_date, "air_temperature_minimum", "temperature_2m_min")
 
         # self.soil_temperature_graph(graph_end_date)
 
     def river_graph(self, graph_end_date, title:str=""):
         usgs.daily_to_df(self.df_daily, '09165000', 'Dolores River Below Rico, CO', self.start_date, self.end_date)
-        usgs.daily_to_df(self.df_daily, '09166950', 'Lost Canyon Creek Near Dolores, CO', self.start_date, self.end_date)
         usgs.daily_to_df(self.df_daily, '09166500', 'Dolores River at Dolores, CO', self.start_date, self.end_date)
+        # usgs.daily_to_df(self.df_daily, '09166950', 'Lost Canyon Creek Near Dolores, CO', self.start_date, self.end_date)
 
         time_series = [
             (self.df_daily, 'Dolores River at Dolores, CO', 'darkred'),
@@ -311,9 +311,45 @@ class Snotel(ChartFrame):
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
+    @staticmethod
+    def accumulate_precipitation(
+            df: pd.DataFrame,
+            precip_col: str = 'precipitation_sum',
+            date_col: str = 'Date',
+            reset_month: int = 10,
+            reset_day: int = 1,
+            output_col: str = 'precipitation_accumulation'
+    ) -> pd.DataFrame:
+        """
+        Accumulate daily precipitation, resetting on a specific month/day each year.
+
+        Default: Water year (resets on October 1)
+        """
+        df = df.copy()
+        df[date_col] = pd.to_datetime(df[date_col])
+        df = df.sort_values(date_col).reset_index(drop=True)
+
+        # Create water year / custom year identifier
+        def get_custom_year(dt):
+            if dt.month < reset_month or (dt.month == reset_month and dt.day < reset_day):
+                return dt.year - 1
+            return dt.year
+
+        df['CustomYear'] = df[date_col].apply(get_custom_year)
+
+        # Cumulative sum within each custom year
+        df[output_col] = df.groupby('CustomYear')[precip_col].cumsum()
+
+        # Optional: drop helper column
+        # df = df.drop(columns=['CustomYear'])
+
+        return df
+
     def precipitation_swe_graph(self, graph_end_date, show_x_labels:bool = False, title:str=""):
+        self.df_open_meteo = Snotel.accumulate_precipitation(self.df_open_meteo)
         time_series = [
             # (self.df_snotel, 'snow_depth', 'darkgreen'),
+            (self.df_open_meteo, 'precipitation_accumulation', 'darkred'),
             (self.df_snotel, 'precipitation_accumulation', 'royalblue'),
             (self.df_snotel, 'snow_water_equivalent', 'darkgreen'),
         ]
@@ -331,6 +367,7 @@ class Snotel(ChartFrame):
 
     def precipitation_increment_graph(self, graph_end_date, show_x_labels: bool = False, title: str = ""):
         time_series = [
+            (self.df_open_meteo, 'precipitation_sum', 'darkgreen'),
             (self.df_snotel, 'precipitation_increment', 'goldenrod'),
         ]
         self.line_chart = LineChart(
@@ -340,7 +377,7 @@ class Snotel(ChartFrame):
             show_x_labels=show_x_labels,
             percentage=0.20,
             y_units='in',
-            y_max=2
+            # y_max=2
         )
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
