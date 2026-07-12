@@ -23,6 +23,9 @@ SOFTWARE.
 
 # Treemap download
 # https://data.fs.usda.gov/geodata/rastergateway/treemap/index.php
+# https://data.fs.usda.gov/geodata/edw/datasets.php
+# https://data-usfs.hub.arcgis.com/datasets/f8fb12b1bab44c11b1bee96562cc4773
+# https://data.fs.usda.gov/geodata/rastergateway/treecanopycover/
 #
 from osgeo import gdal
 import numpy as np
@@ -644,7 +647,7 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
         'TreeMap2022_CONUS_BALIVE',
         'TreeMap2022_CONUS_FLDTYPCD',   # Recommended
     ]
-    tree_map_files_full = [
+    tree_map_files_all = [
         'TreeMap2022_CONUS_BALIVE',
         "TreeMap2022_CONUS_CANOPYPCT",
 

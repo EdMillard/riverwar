@@ -58,7 +58,8 @@ def reload_modules():
 reload_modules()
 
 from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vector_layer, clip_to_mask, create_group, \
-    add_layer_to_group, remove_features_by_attribute_fast, load_gpkg_with_ogr, force_collapse, force_group_visibility
+    add_layer_to_group, remove_features_by_attribute_fast, load_gpkg_with_ogr, force_collapse, force_group_visibility, \
+    load_gdb_layer
 from gis.contours import build_elevation_layers
 from gis.make_forest_layers import build_forest_layers, build_tree_map_layers, build_open_et_layers
 from gis.wildfire import build_wildfires
@@ -268,6 +269,99 @@ def build_weather_stations(huc8_layer):
         symbol.setSize(2)
         symbol.setOpacity(0.9)
 
+from qgis.core import QgsVectorLayer, QgsProcessingFeedback, QgsFeatureRequest
+import processing
+
+def clip_to_mask_fast(source_layer, mask_layer, project_dir, output_name):
+    """
+    Fast clipping using spatial index.
+    """
+    if source_layer is None or mask_layer is None:
+        print("❌ Invalid input layer")
+        return None, None
+
+    output_path = os.path.join(project_dir, f"{output_name}_clipped.gpkg")
+
+    # Use 'native:clip' with better parameters or fallback to intersection
+    params = {
+        'INPUT': source_layer,
+        'OVERLAY': mask_layer,
+        'OUTPUT': output_path
+    }
+
+    print(f"Clipping {source_layer.featureCount():,} features... (this may take a while)")
+
+    try:
+        result = processing.run("native:clip", params, feedback=QgsProcessingFeedback())
+        clipped_layer = QgsVectorLayer(output_path, output_name, "ogr")
+
+        if clipped_layer.isValid():
+            print(f"✅ Clipped successfully: {clipped_layer.featureCount():,} features")
+            QgsProject.instance().addMapLayer(clipped_layer)
+            return clipped_layer, output_path
+        else:
+            print("❌ Clipped layer is invalid")
+            return None, None
+    except Exception as e:
+        print(f"❌ Clipping error: {e}")
+        return None, None
+
+def fix_geometries(layer):
+    """Fix invalid geometries in a layer."""
+    if layer is None or not layer.isValid():
+        print("❌ Invalid layer")
+        return None
+
+    params = {
+        'INPUT': layer,
+        'OUTPUT': 'memory:Fixed_' + layer.name()
+    }
+
+    result = processing.run("native:fixgeometries", params)
+    fixed_layer = result['OUTPUT']
+
+    print(f"✅ Fixed geometries. Original features: {layer.featureCount()}, Fixed: {fixed_layer.featureCount()}")
+    return fixed_layer
+
+def load_vector_layer_masked(name: str, path: str, mask_layer, project_dir, color: QColor = QColor(100, 255, 100)):
+    """
+    Load vector layer (including .gdb), clip to mask, with better error handling.
+    """
+    if not path or not os.path.exists(path):
+        print(f"❌ Path does not exist: {path}")
+        return None
+
+    # Load the layer
+    if path.lower().endswith('.gdb') or '.gdb' in path.lower():
+        print(f"🔄 Loading from GDB: {name}")
+        temp_layer = load_gdb_layer(path, name)
+    else:
+        print(f"🔄 Loading vector layer: {name}")
+        temp_layer = load_vector_layer(path, "Temp_" + name, color)
+
+    if temp_layer is None or not temp_layer.isValid():
+        print(f"❌ Failed to load layer: {name}")
+        return None
+
+    print(f"✅ Layer loaded successfully: {name} ({temp_layer.featureCount()} features)")
+
+    # Clip to mask
+    try:
+        vector_layer, protected_area_path = clip_to_mask(temp_layer, mask_layer, project_dir, name)
+        print(f"✅ Clipping completed for {name}")
+    except Exception as e:
+        print(f"❌ Error during clipping: {e}")
+        vector_layer = None
+
+    # Clean up temporary layer
+    if temp_layer:
+        try:
+            remove_layer(temp_layer)
+        except:
+            pass
+
+    return vector_layer
+
 def build(huc_name:str):
     # co_counties = load_vector_layer('/opt/dev/gis/Gov/GOVTUNIT_Colorado_State_Shape.zip', 'GU_CountyOrEquivalent.shp', QColor(140, 0, 140))
 
@@ -288,6 +382,10 @@ def build(huc_name:str):
     symbol = get_symbol(huc12_layer)
     symbol.setColor(QColor(200, 200, 150))
 
+    timber_harvest_layer = load_vector_layer_masked("Actv_TimberHarvest", "/opt/dev/gis/USFS/Actv_TimberHarvest.gdb",
+                                                    huc8_layer, forestry_dir, QColor(180, 0, 180))
+    protected_area_layer = load_vector_layer_masked("Protected Areas", "/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz",
+                                                    huc8_layer, forestry_dir, QColor(100, 255, 100))
     # temp_protected_area_layer = load_vector_layer("/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz", "Temp Protected Areas", QColor(100, 255, 100))
     # protected_area_layer, protected_area_path = clip_to_mask(temp_protected_area_layer, huc8_layer, forestry_dir, "Protected Areas")
     # remove_layer(temp_protected_area_layer)

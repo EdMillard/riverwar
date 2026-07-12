@@ -238,6 +238,56 @@ def reproject_layer(forestry_dir:Path, layer, new_name=None):
     print(f"✅ Added: {new_name}")
     return reproj_layer
 
+
+def list_gdb_layers(gdb_path):
+    if not os.path.exists(gdb_path):
+        print("❌ Path not found")
+        return
+
+    # Temporary layer to inspect the GDB
+    vlayer = QgsVectorLayer(gdb_path, "temp", "ogr")
+
+    if vlayer.isValid():
+        sublayers = vlayer.dataProvider().subLayers()
+        print(f"\n✅ Layers in {gdb_path}:")
+        for sublayer in sublayers:
+            # Format is usually: "LayerName|...|geometryType"
+            name = sublayer.split('|')[0]
+            print(f"   • {name}")
+    else:
+        print("❌ Could not open GDB")
+        print("Error:", vlayer.error().message())
+
+def load_gdb_layer(gdb_path: str, layer_name: str, display_name: str = None):
+    """
+    Load a specific layer from a File Geodatabase (.gdb) into QGIS.
+
+    Parameters:
+        gdb_path (str): Full path to the .gdb folder
+        layer_name (str): Name of the layer inside the GDB
+        display_name (str): Name to show in the Layers panel (optional)
+    """
+    list_gdb_layers(gdb_path)
+    if not os.path.exists(gdb_path):
+        raise FileNotFoundError(f"GDB not found: {gdb_path}")
+
+    if display_name is None:
+        display_name = layer_name
+
+    # Build the connection string
+    uri = f"{gdb_path}|layername={layer_name}"
+
+    layer = QgsVectorLayer(uri, display_name, "ogr")
+
+    if layer.isValid():
+        QgsProject.instance().addMapLayer(layer)
+        print(f"✅ Loaded: {display_name}")
+        return layer
+    else:
+        print(f"❌ Failed to load: {layer_name}")
+        print("   Error:", layer.error().message())
+        return None
+
 def load_vector_layer(path: str, name: str = None, color: QColor = QColor(40, 40, 40)):
     if not os.path.exists(path):
         raise Exception(f"❌ File not found: {path}")
