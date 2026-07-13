@@ -26,12 +26,14 @@ import importlib
 import sys
 import os
 from typing import Optional, List
-from qgis.core import QgsVectorLayer, QgsProject, QgsRasterLayer, QgsProcessingException, QgsFeature, QgsProcessingFeedback
+from qgis.core import (QgsVectorLayer, QgsProject, QgsRasterLayer, QgsProcessingException, QgsFeature, QgsProcessingFeedback,
+                       QgsSingleSymbolRenderer, QgsMarkerSymbol, QgsLineSymbol, QgsFillSymbol, QgsWkbTypes)
 from qgis.PyQt.QtGui import QColor
 from qgis.utils import iface
 from PyQt5.QtCore import QDate, QDateTime
 import datetime
 from collections import defaultdict
+from osgeo import ogr
 import processing   # type: ignore
 
 # https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/GovtUnit/
@@ -69,7 +71,6 @@ from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vec
     load_gdb_layer
 from gis.contours import build_elevation_layers
 from gis.make_forest_layers import build_forest_layers, build_tree_map_layers, build_open_et_layers
-from gis.wildfire import build_wildfires
 
 # ====================== GLOBAL PROJECT SETTINGS ======================
 # TARGET_CRS = "EPSG:5070"
@@ -244,20 +245,18 @@ def build_hydrology()->list:
     layers = []
     nhd_gpkg_path = "/opt/dev/gis/NHD/NHD_H_14030002_HU8_GPKG.gpkg"
 
-    group = create_group("Hydrology", position=0)
-
-    water_body_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDWaterbody", group=group)
+    water_body_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDWaterbody")
     symbol = get_symbol(water_body_layer)
     symbol.setColor(QColor(165, 191, 221))
     layers.append(water_body_layer)
 
-    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea", group=group)
+    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea")
     symbol = get_symbol(river_layer)
     symbol.symbolLayer(0).setStrokeColor(QColor(60, 60, 221))
     symbol.symbolLayer(0).setStrokeWidth(0.4)
     layers.append(river_layer)
 
-    flow_line_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDFlowline", group=group)
+    flow_line_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDFlowline")
     remove_features_by_attribute_fast(flow_line_layer, "gnis_name")
     symbol = get_symbol(flow_line_layer)
     symbol.setColor(QColor(60, 60, 221))
@@ -272,9 +271,21 @@ def build_weather_stations(huc8_layer):
     weather_station_layer.setOpacity(1.0)
     symbol = get_symbol(weather_station_layer)
     if symbol:
-        symbol.setColor(QColor(255, 0, 0))
-        symbol.setSize(2)
+        symbol.setColor(QColor(0, 255, 255))
+        symbol.setSize(1.5)
         symbol.setOpacity(0.9)
+
+def reset_layer_parent_to_root():
+    """Reset new layers to be added to the project root"""
+    root = QgsProject.instance().layerTreeRoot()
+
+    # Main fix
+    iface.layerTreeView().setCurrentLayer(None)  # deselect any group
+
+    # Force root as default
+    root.setCustomProperty("addLayersToGroup", False)
+
+    print("✅ Default parent reset to Root (new layers will go to top level)")
 
 def clip_to_mask_fast(source_layer, mask_layer, project_dir, output_name):
     """
@@ -356,13 +367,15 @@ def _parse_date(val):
                 continue
     return None
 
-def split_layer_by_date(layer:QgsVectorLayer,
-                        date_field:str='DATE_COMPLETED',
-                        fallback_field:str='DATE_AWARDED',
-                        divider_dates:Optional[list]=None,
-                        base_name=None)->Optional[List[QgsVectorLayer]]:
+def split_layer_by_date(layer: QgsVectorLayer,
+                        date_field: str = 'DATE_COMPLETED',
+                        fallback_field: str = 'DATE_AWARDED',
+                        divider_dates: Optional[list] = None,
+                        base_name=None,
+                        base_color: QColor = QColor(255, 0, 255)) -> Optional[List[QgsVectorLayer]]:
     """
-    Split layer by date with proper bin/label alignment. Handles QDateTime safely.
+    Split layer by date. Newest decade = full base_color brightness.
+    Older decades get progressively darker (down to 20% brightness).
     """
     if layer is None or not layer.isValid():
         print("❌ Invalid input layer")
@@ -393,7 +406,7 @@ def split_layer_by_date(layer:QgsVectorLayer,
         end_year = ((max_date.year // 10) * 10) + 10
 
         bin_starts = [datetime.date(y, 1, 1) for y in range(start_year, end_year + 11, 10)]
-        bin_labels = [f"{y}s" for y in range(start_year, end_year + 11, 10)]  # Fixed: same length as starts
+        bin_labels = [f"{y}s" for y in range(start_year, end_year + 11, 10)]
     else:
         # Custom dividers
         bin_starts = []
@@ -404,7 +417,7 @@ def split_layer_by_date(layer:QgsVectorLayer,
         bin_starts = sorted(set(bin_starts))
         bin_labels = [d.strftime('%Y') for d in bin_starts]
 
-    # Build bin ranges (last bin goes to far future)
+    # Build bin ranges
     bins = []
     for i in range(len(bin_starts)):
         start = bin_starts[i]
@@ -424,9 +437,9 @@ def split_layer_by_date(layer:QgsVectorLayer,
                 grouped[label].append(feat)
                 break
 
-    # Create layers (newest → oldest with fading opacity)
+    # Create layers - newest to oldest with color ramp
     created_layers = []
-    sorted_bins = sorted(bins, key=lambda x: x[0], reverse=True)
+    sorted_bins = sorted(bins, key=lambda x: x[0], reverse=True)  # Newest first
     n = len(sorted_bins)
 
     for i, (start, end, label) in enumerate(sorted_bins):
@@ -434,9 +447,16 @@ def split_layer_by_date(layer:QgsVectorLayer,
         if not features:
             continue
 
-        opacity = 1.0 - (i / max(n - 1, 1) * 0.9) if n > 1 else 1.0
+        # Brightness from 100% (newest) to 20% (oldest)
+        factor = 1.0 - (i / max(n - 1, 1) * 0.8)   # 1.0 → 0.2
 
-        new_layer = QgsVectorLayer("Polygon", f"{base_name} {label}", "memory")
+        # Scale color
+        r = int(base_color.red() * factor)
+        g = int(base_color.green() * factor)
+        b = int(base_color.blue() * factor)
+        color = QColor(r, g, b)
+
+        new_layer = QgsVectorLayer("Polygon", f"{label}", "memory")
         new_layer.setCrs(layer.crs())
         provider = new_layer.dataProvider()
         provider.addAttributes(layer.fields())
@@ -449,22 +469,27 @@ def split_layer_by_date(layer:QgsVectorLayer,
             provider.addFeature(new_feat)
 
         new_layer.updateExtents()
-        new_layer.setOpacity(opacity)
+
+        # Apply solid color (no opacity ramp)
+        renderer = QgsSingleSymbolRenderer.defaultRenderer(new_layer.geometryType())
+        symbol = renderer.symbol()
+        symbol.setColor(color)
+        new_layer.setRenderer(renderer)
 
         QgsProject.instance().addMapLayer(new_layer)
         created_layers.append(new_layer)
 
-        print(f"✅ Created: {base_name} {label} | Features: {len(features):,} | Opacity: {opacity:.2f}")
+        print(f"✅ Created: {base_name} {label} | Features: {len(features):,} | Color: {color.name()} ({factor:.0%} brightness)")
 
     print(f"\n✅ Split complete. {len(created_layers)} layers created.")
     return created_layers
 
-
-def load_vector_layer_masked(name: str, path: str, mask_layer:QgsVectorLayer, project_dir: Path,
-                             color: QColor = QColor(100, 255, 100))->Optional[QgsVectorLayer]:
+def load_vector_layer_masked(name: str, path: str, mask_layer: QgsVectorLayer, project_dir: Path,
+                             color: QColor = QColor(100, 255, 100),
+                             layer_name: str = None) -> Optional[QgsVectorLayer]:
     """
-    Load vector layer (shapefile, GDB, GeoPackage, etc.) and clip to mask.
-    Uses a cached .gpkg version if available.
+    General purpose loader + clip + color.
+    You can optionally pass the internal layer_name for GDBs/GPKGs.
     """
     if not path or not os.path.exists(path):
         print(f"❌ Path does not exist: {path}")
@@ -475,92 +500,175 @@ def load_vector_layer_masked(name: str, path: str, mask_layer:QgsVectorLayer, pr
     clipped_name = f"{name}.gpkg"
     clipped_path = os.path.join(project_dir, clipped_name)
 
-    # === Try cached clipped version ===
+    # Try cached
     if os.path.exists(clipped_path):
         print(f"🔄 Found cached: {clipped_name}")
         vector_layer = QgsVectorLayer(clipped_path, name, "ogr")
         if vector_layer.isValid() and vector_layer.featureCount() > 0:
-            print(f"✅ Loaded cached layer: {name} ({vector_layer.featureCount():,} features)")
+            apply_solid_color(vector_layer, color)
             QgsProject.instance().addMapLayer(vector_layer)
             return vector_layer
-        else:
-            print("⚠️ Cached file invalid or empty → will re-clip")
 
     # === Load original ===
+    lower_path = path.lower()
 
-    if ".gdb" in path.lower() or "gdb.":
-        print(f"🔄 Loading gdb: {name} {path} {path.lower()}")
-        temp_layer = load_gdb_layer(path, name)  # assume this exists elsewhere
+    if lower_path.endswith('.gpkg'):
+        internal_layer = layer_name or "Perimeters"
+        temp_layer = load_gpkg_with_ogr(path, layer_name=internal_layer, display_name=f"Temp_{name}")
+
+    elif lower_path.endswith('.gdb.zip'):
+        internal_layer = layer_name or "Perimeters"
+        uri = f"/vsizip/{path}|layername={internal_layer}"
+        temp_layer = QgsVectorLayer(uri, f"Temp_{name}", "ogr")
+
+    elif ".gdb" in lower_path:
+        internal_layer = layer_name or "Perimeters"
+        temp_layer = load_gdb_layer(path, internal_layer)
     else:
-        print(f"🔄 Loading shape file: {name} {path} {path.lower()}")
         temp_layer = QgsVectorLayer(path, f"Temp_{name}", "ogr")
 
     if not temp_layer or not temp_layer.isValid():
-        print(f"❌ Failed to load original layer: {name}")
+        print(f"❌ Failed to load original: {name}")
         return None
 
     print(f"   Original: {temp_layer.featureCount():,} features")
 
-    # Fix geometries
+    # Fix geometries + Clip (unchanged from before)
     try:
-        fixed = processing.run("native:fixgeometries", {
-            'INPUT': temp_layer,
-            'OUTPUT': 'memory:Fixed'
-        })['OUTPUT']
-        print(f"   Fixed geometries: {fixed.featureCount():,} features")
-    except Exception:
+        fixed = processing.run("native:fixgeometries", {'INPUT': temp_layer, 'OUTPUT': 'memory:Fixed'})['OUTPUT']
+    except:
         fixed = temp_layer
-        print("   Geometry fixing skipped")
 
-    # Clip to mask
     try:
-        print("   Clipping to mask...")
         result = processing.run("native:clip", {
             'INPUT': fixed,
             'OVERLAY': mask_layer,
             'OUTPUT': clipped_path
         })
         vector_layer = QgsVectorLayer(clipped_path, name, "ogr")
-
-        if vector_layer.isValid() and vector_layer.featureCount() > 0:
-            print(f"✅ Clipped & saved: {vector_layer.featureCount():,} features")
-            QgsProject.instance().addMapLayer(vector_layer)
-            return vector_layer
-        else:
-            print("❌ Clipped layer invalid or empty")
-    except QgsProcessingException as e:
-        print(f"❌ Clipping failed: {e}")
     except Exception as e:
-        print(f"❌ Unexpected error during clip: {e}")
+        print(f"❌ Clipping failed: {e}")
+        return None
 
-    # Cleanup temporary layer
-    if 'temp_layer' in locals() and temp_layer and temp_layer != fixed:
-        try:
-            remove_layer(temp_layer)  # assume you have this helper
-        except Exception:
-            pass
+    if vector_layer.isValid() and vector_layer.featureCount() > 0:
+        apply_solid_color(vector_layer, color)
+        QgsProject.instance().addMapLayer(vector_layer)
+        print(f"✅ Loaded + clipped: {name} ({vector_layer.featureCount():,} features)")
+        return vector_layer
 
     return None
 
-def build_disturbance(project_dir:Path, huc_layer:QgsVectorLayer):
+def apply_solid_color(layer: QgsVectorLayer, color: QColor):
+    """Apply a solid color to the layer based on geometry type."""
+    geom_type = layer.geometryType()
+
+    if geom_type == QgsWkbTypes.PointGeometry:
+        symbol = QgsMarkerSymbol.createSimple({
+            'color': color.name(),
+            'size': '2.5',
+            'outline_color': 'black',
+            'outline_width': '0.2'
+        })
+    elif geom_type == QgsWkbTypes.LineGeometry:
+        symbol = QgsLineSymbol.createSimple({
+            'color': color.name(),
+            'width': '1.8'
+        })
+    else:  # Polygon
+        symbol = QgsFillSymbol.createSimple({
+            'color': color.name(),
+            'outline_color': 'black',
+            'outline_width': '0.4'
+        })
+
+    renderer = QgsSingleSymbolRenderer(symbol)
+    layer.setRenderer(renderer)
+    layer.triggerRepaint()
+
+def inspect_gpkg_layers(gpkg_path: str):
+    print(f"\n🔍 Inspecting: {os.path.basename(gpkg_path)}")
+    ds = ogr.Open(gpkg_path)
+    if ds is None:
+        print("   ❌ Could not open with OGR")
+        return
+
+    for i in range(ds.GetLayerCount()):
+        layer = ds.GetLayer(i)
+        print(f"   Layer {i}: '{layer.GetName()}'  ({layer.GetFeatureCount()} features)")
+
+def build_wildfires(huc_layer=None, project_dir: Path = None)->List[QgsVectorLayer]:
+    # https://data-nifc.opendata.arcgis.com/search?tags=historic_wildlandfire_opendata%2CCategory
+    # WFIGS
+    # https://data-nifc.opendata.arcgis.com/datasets/5e72b1699bf74eefb3f3aff6f4ba5511_0/explore?location=39.663857%2C-107.050782%2C8
+    # https://data.usgs.gov/datacatalog/data/USGS:61aa537dd34eb622f699df81
+
+    # Current fires
+    # https://data-nifc.opendata.arcgis.com/datasets/nifc::wfigs-current-interagency-fire-perimeters/about
+
+    layers = []
+
+    # Very latest perimeters
+    layer =load_vector_layer_masked(
+        name="Wildfires Current",
+        path='/opt/dev/gis/wildfire/WFIGS_Interagency_Perimeters_Current_-6952035509289917377.gdb.zip',
+        mask_layer=huc_layer,
+        project_dir=project_dir,
+        color=QColor(255, 128, 0),
+        layer_name="Perimeters"  # ← pass it here when needed
+    )
+    layers.append(layer)
+
+    # Recent perimeters
+    layer = load_vector_layer_masked(
+        name="Wildfires Recent",
+        path='/opt/dev/gis/wildfire/WFIGS_Interagency_Perimeters_-6137106134146866405.gpkg',
+        mask_layer=huc_layer,
+        project_dir=project_dir,
+        color=QColor(255, 0, 0),
+        layer_name="Perimeters",
+    )
+    layers.append(layer)
+
+    # Historical
+    layer = load_vector_layer_masked(
+        name="InteragencyFirePerimeterHistory",
+        path='/opt/dev/gis/wildfire/InterAgencyFirePerimeterHistory_All_Years_View_5907997263350188958.gpkg',
+        mask_layer=huc_layer,
+        project_dir=project_dir,
+        color=QColor(200, 0, 0)
+    )
+    layers.append(layer)
+
+    create_group("Fire", visible=True, position=0, existing_layer=huc_layer, layers=layers)
+
+    return layers
+
+
+def build_disturbance(project_dir:Path, huc_layer:QgsVectorLayer)->List[QgsVectorLayer]:
+
+    layers = []
+    layer = load_vector_layer_masked("Actv_HazFuelTrt_PL", "/opt/dev/gis/USFS/Actv_HazFuelTrt_PL.gdb",
+                                                   huc_layer, project_dir, QColor(180, 0, 180))
+    layers.append(layer)
+
+    layer = load_vector_layer_masked("Actv_SilvReforest", "/opt/dev/gis/USFS/Actv_SilvReforest/S_USA.Actv_SilvReforest.shp",
+                                                   huc_layer, project_dir, QColor(0, 180, 0))
+    layers.append(layer)
+
+    # layer = load_vector_layer_masked("Fires", "/opt/dev/gis/USFS/RDS-2013-0009.6_Data_Format2_GDB.zip",
+    #                                                 huc_layer, project_dir, QColor(0, 180, 0))
+    layers.append(layer)
+    create_group("Disturbance", visible=True, position=0, existing_layer=huc_layer, layers=layers)
+
     timber_harvest_layer = load_vector_layer_masked("Actv_TimberHarvest", "/opt/dev/gis/USFS/Actv_TimberHarvest.gdb",
                                                    huc_layer, project_dir, QColor(180, 0, 180))
     layers = split_layer_by_date(timber_harvest_layer)
+    layers.append(timber_harvest_layer)
+    create_group("Timber Harvest", visible=True, position=0, existing_layer=huc_layer, layers=layers)
 
-    # hazard_fuel_treatment_layer = load_vector_layer_masked("Actv_HazFuelTrt_PL", "/opt/dev/gis/USFS/Actv_HazFuelTrt_PL.gdb",
-    #                                                huc_layer, project_dir, QColor(180, 0, 180))
+    build_wildfires(huc_layer, project_dir)
 
-    # silva_reforest_treatment_layer = load_vector_layer_masked("Actv_SilvReforest", "/opt/dev/gis/USFS/Actv_SilvReforest/S_USA.Actv_SilvReforest.shp",
-    #                                                huc_layer, project_dir, QColor(0, 180, 0))
-
-    # protected_area_layer = load_vector_layer_masked("Protected Areas", "/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz",
-    #                                                huc_layer, project_dir, QColor(100, 255, 100))
-
-    # small_fire_layer = load_vector_layer_masked("Fires", "/opt/dev/gis/USFS/RDS-2013-0009.6_Data_Format2_GDB.zip",
-    #                                                 huc_layer, project_dir, QColor(0, 180, 0))
-
-    # build_wildfires()
-
+    return layers
 
 def build(huc_name:str):
     # co_counties = load_vector_layer('/opt/dev/gis/Gov/GOVTUNIT_Colorado_State_Shape.zip', 'GU_CountyOrEquivalent.shp', QColor(140, 0, 140))
@@ -582,29 +690,30 @@ def build(huc_name:str):
     symbol = get_symbol(huc12_layer)
     symbol.setColor(QColor(200, 200, 150))
 
+    hydrology_layers = build_hydrology()
+    hydrology_group = create_group("NHD Hydrology", visible=True, position=0, existing_layer=huc12_layer, layers=hydrology_layers)
+    reset_layer_parent_to_root()
+
     # build_forest_layers(forestry_dir, huc8_layer, huc_name)
 
     # build_open_et_layers(forestry_dir, huc8_layer, huc12_layer)
 
     tree_map_layers = build_tree_map_layers(forestry_dir, huc8_layer, huc4_layer)
 
-    build_disturbance(forestry_dir, huc8_layer)
+    build_disturbance(forestry_dir, huc12_layer)
+
+    protected_area_layer = load_vector_layer_masked("Protected Areas", "/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz",
+                                                   huc12_layer, forestry_dir, QColor(100, 255, 100))
 
     # build_elevation_layers(forestry_dir, huc8_layer)
 
-    hydrology_layers = build_hydrology()
-
-    build_weather_stations(huc8_layer)
-
-    tree_map_group = create_group("TreeMap 2022", position=0, existing_layer=huc12_layer, layer_dict=tree_map_layers)
-    hydrology_group = create_group("NHD Hydrology", visible=True, position=0, existing_layer=huc12_layer, layers=hydrology_layers)
-    force_group_visibility(hydrology_group)
-
-
-
+    create_group("TreeMap 2022", position=0, existing_layer=huc12_layer, layer_dict=tree_map_layers)
     layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('FLDTYPCD', None)
     if layer is not None:
         force_collapse(layer)
+
+
+    build_weather_stations(huc8_layer)
 
     return huc8_layer
 
