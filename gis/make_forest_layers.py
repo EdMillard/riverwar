@@ -26,6 +26,7 @@ SOFTWARE.
 # https://data.fs.usda.gov/geodata/edw/datasets.php
 # https://data-usfs.hub.arcgis.com/datasets/f8fb12b1bab44c11b1bee96562cc4773
 # https://data.fs.usda.gov/geodata/rastergateway/treecanopycover/
+# https://zenodo.org/records/19509367
 #
 from osgeo import gdal
 import numpy as np
@@ -646,6 +647,8 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
     tree_map_files = [
         'TreeMap2022_CONUS_BALIVE',
         'TreeMap2022_CONUS_FLDTYPCD',   # Recommended
+        'TreeMap2022_CONUS_SDIsum',
+        'TreeMap2016_SDIPCT_RMRS',
     ]
     tree_map_files_all = [
         'TreeMap2022_CONUS_BALIVE',
@@ -668,7 +671,11 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
     ]
     for raster_file in tree_map_files:
         raster_path =  f"/opt/dev/gis/TreeMap/{raster_file}/{raster_file}.tif"
-        layer_name = raster_file.replace('TreeMap2022_CONUS_', '')
+        if "2022" in raster_file:
+            layer_name = raster_file.replace('TreeMap2022_CONUS_', '')
+        elif "2016" in raster_file:
+            layer_name = raster_file.replace('TreeMap2016_', '')
+
         layer, path = clip_raster_to_mask(raster_path, huc_layer, forestry_dir, output_name=layer_name)
         tree_map_layers[layer_name] = layer
 
@@ -691,6 +698,20 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
             0: (QColor(150, 150, 150, 255), "No Data")
         }
         apply_discrete_colors(layer, stand_colors)
+
+    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('SDIPCT_RMRS', None)
+    if layer is not None:
+        # print_raster_value_counts(layer)
+        # counts = raster_value_counts(layer)
+        classes_balive = [
+            (0, 35, 1, QColor(0, 80, 0, 255), "Understocked <35"),
+            (35, 60, 2, QColor(0, 200, 0, 255), "Normal 35-60"),
+            (60, 80, 3, QColor(255, 180, 80, 255), "Moderately overstocked 60-80"),
+            (80, 100, 4, QColor(220, 50, 50, 255), "Heavily overstocked 80-100"),
+            (100, 999, 5, QColor(255, 0, 00, 255), "Severely overstocked > 00")
+        ]
+        classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_balive)
+        tree_map_layers[classified_layer.name()+'_Classified'] = classified_layer
 
     layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('BALIVE', None)
     if layer is not None:
