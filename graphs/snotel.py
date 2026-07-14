@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from datetime import date
+from datetime import datetime
 from typing import List, Optional, Tuple
 from colorado.river_war import RiverWar
 from api import df_utils
@@ -33,6 +34,9 @@ from source.nrcs_snotel import (get_snotel_data, get_snotel_stations, stations_i
                                 get_snotel_hourly_data, get_snotel_station_elements)
 import source.usgs_gage as usgs
 import pandas as pd
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -96,159 +100,6 @@ class Snotel(ChartFrame):
         super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=None, page_name='San Juan')
         self.right_axis_annotations()
 
-    @staticmethod
-    def get_sensor_history_years(sensors_df: pd.DataFrame) -> int:
-        """
-        Returns years of history from the oldest sensor.
-        Works with both old Report Generator format and new REST format.
-        """
-        if sensors_df.empty:
-            return 0
-
-        # Support both column names
-        date_col = None
-        for col in ['sensor_start_date', 'begin_date']:
-            if col in sensors_df.columns:
-                date_col = col
-                break
-
-        if date_col is None:
-            print("No date column found in sensor DataFrame.")
-            return 0
-
-        earliest_date = pd.to_datetime(sensors_df[date_col]).min()
-        current_year = datetime.now().year
-
-        years_back = current_year - earliest_date.year
-
-        print(f"Earliest sensor date: {earliest_date.date()}")
-        print(f"Years of history: {years_back}")
-
-        return years_back
-
-    def right_axis_annotations(self):
-        pass
-
-    def load_snotel_station(self, stations:pd.DataFrame, name)->Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
-        station_matches = stations_with_name(stations, name)
-        for station in station_matches:
-            station_id = station.get('station_id', '')
-            state = station.get('state', '')
-            df_summary = get_snotel_station_elements(station_id, state)
-            # df_summary = get_snotel_sensors_with_dates(station_id, state)
-            print_full_summary(df_summary, title=f"{name} Sensor Summary:")
-            self.num_years = Snotel.get_sensor_history_years(df_summary)
-            self.num_years += 46
-            self.start_date = self.end_date.replace(year=self.end_date.year - self.num_years)
-            begin_date = self.start_date.strftime("%Y-%m-%d")
-            # begin_date = "2026-01-01"
-            # end_date = "2026-07-02"
-            file_name = name.replace(" ", "_")
-            daily_file_name = file_name +  '_daily.csv'
-            elements = [
-                "TAVG::value", "TMAX::value", "TMIN::value", "TOBS::value",
-                "WTEQ::value", "SNWD::value", "PREC::value", "PRCP::value",
-                "SMS:-2:value", "SMS:-8:value", "SMS:-20:value",
-                "STO:-2:value", "STO:-8:value", "STO:-20:value"
-            ]
-            df = get_snotel_data(station_id, state, elements, "daily", begin_date=begin_date, file_name=daily_file_name)
-
-            hourly_file_name = file_name + '_hourly.csv'
-            elements = [
-                "WSPDV::value",
-                "WSPDX::value",
-                "WDIRV::value",
-                # "SWINV::value",
-                "SWOTV:-2:value",     # Albedo, New 7-31-2024 on Lizard Head
-                # "RHUMV::value"
-                "RHUM::value"
-            ]
-            df_hourly = get_snotel_data(station_id, state, elements, "hourly", file_name=hourly_file_name)
-            return df, df_summary
-
-        print(f'load_snotel_station {name} not found')
-        return None
-
-    @staticmethod
-    def smooth_openet_daily(df: pd.DataFrame, window: int = 3, model_cols=None) -> pd.DataFrame:
-        """
-        Apply running average to daily ET columns.
-        """
-        df = df.copy()
-        df = df.sort_values('Date').reset_index(drop=True)
-
-        if model_cols is None:
-            # Auto-detect ET columns (everything except Date)
-            model_cols = [col for col in df.columns if col != 'Date']
-
-        for col in model_cols:
-            df[f'{col}_smooth_{window}d'] = df[col].rolling(window=window, min_periods=1, center=True).mean()
-
-        return df
-
-    # Recommended Corrections (based on studies in CO/Utah Rockies)Situation
-    # Suggested Correction        Notes
-    # eeMETRIC alone in dense forest
-    #         Multiply by 0.75 – 0.85 during Jul–Aug      Most common adjustment
-    # eeMETRIC + DisALEXI hybrid
-    #         Weight 60–70% eeMETRIC,30–40% DisALEXI      Good compromise
-    # Using Ensemble
-    #         Light correction: 0.90 – 0.95               Ensemble already reduces the bias
-    # Winter months
-    #         Usually no correction or slight upward
-    #        eeMETRIC can be low in winter
-    @staticmethod
-    def apply_bias_correction(df):
-        df = df.copy()
-
-        # Extract month
-        df['month'] = pd.to_datetime(df['Date']).dt.month
-
-        # Bias correction factor
-        df['eeMETRIC_adj'] = df['eeMETRIC'].copy()
-
-        # Strong correction in peak summer for forests
-        summer_mask = df['month'].isin([7, 8])
-        df.loc[summer_mask, 'eeMETRIC_adj'] = df.loc[summer_mask, 'eeMETRIC'] * 0.82  # 0.78-0.85 range is typical
-
-        # Optional: lighter correction in June/September
-        shoulder_mask = df['month'].isin([6, 9])
-        df.loc[shoulder_mask, 'eeMETRIC_adj'] = df.loc[shoulder_mask, 'eeMETRIC'] * 0.92
-
-        return df
-
-    def load_data(self) -> Optional[date]:
-        self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])
-
-        lizard_hwad = 'data/OpenMeteo/lizard_head_37.799991_-107.933968_1940-01-01_2026-07-10_daily.csv'
-        el_diente = 'data/OpenMeteo/el_diente_37.79_-108.02_1940-01-01_2026-07-10_daily.csv'
-        rico = "data/OpenMeteo/rico_37.7_-108.0_1940-01-01_2026-07-10_daily.csv"
-        df = pd.read_csv(el_diente)
-        self.df_open_meteo = df.rename(columns={'time': 'Date'})
-
-        self.df_open_et = openet_json_file_to_dataframe('/opt/dev/gis/OpenET/lizard_head/lizard_head_2016-08-01_2026-06-30_ensemble_in_daily.json',)
-        paths = [
-            '/opt/dev/gis/OpenET/lizard_head/lizard_head_2016-08-01_2026-06-30_eeMETRIC_in_daily.json',
-            '/opt/dev/gis/OpenET/lizard_head/lizard_head_2016-08-01_2026-06-30_DisALEXI_in_daily.json',
-        ]
-
-        for path in paths:
-            self.df_open_et = openet_json_file_to_dataframe(path, self.df_open_et)
-
-        self.df_open_et = Snotel.smooth_openet_daily(self.df_open_et, self.smooth_days)
-
-        self.load_reservoirs()
-
-    def load_reservoirs(self) -> Optional[date]:
-        date_time_as_date = None
-        start = self.start_date
-        current = self.end_date
-        end = self.end_date
-
-        for reservoir_list in self.reservoir_lists:
-            for reservoir in reservoir_list:
-                reservoir.load_data(None, start, current, end)
-        return date_time_as_date
 
     def load_charts(self):
         graph_end_date = date.today()
@@ -442,12 +293,160 @@ class Snotel(ChartFrame):
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
-from datetime import datetime
+    @staticmethod
+    def get_sensor_history_years(sensors_df: pd.DataFrame) -> int:
+        """
+        Returns years of history from the oldest sensor.
+        Works with both old Report Generator format and new REST format.
+        """
+        if sensors_df.empty:
+            return 0
 
-import pandas as pd
-import numpy as np
-from scipy import stats
-import matplotlib.pyplot as plt
+        # Support both column names
+        date_col = None
+        for col in ['sensor_start_date', 'begin_date']:
+            if col in sensors_df.columns:
+                date_col = col
+                break
+
+        if date_col is None:
+            print("No date column found in sensor DataFrame.")
+            return 0
+
+        earliest_date = pd.to_datetime(sensors_df[date_col]).min()
+        current_year = datetime.now().year
+
+        years_back = current_year - earliest_date.year
+
+        print(f"Earliest sensor date: {earliest_date.date()}")
+        print(f"Years of history: {years_back}")
+
+        return years_back
+
+    def right_axis_annotations(self):
+        pass
+
+    def load_snotel_station(self, stations:pd.DataFrame, name)->Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
+        station_matches = stations_with_name(stations, name)
+        for station in station_matches:
+            station_id = station.get('station_id', '')
+            state = station.get('state', '')
+            df_summary = get_snotel_station_elements(station_id, state)
+            # df_summary = get_snotel_sensors_with_dates(station_id, state)
+            print_full_summary(df_summary, title=f"{name} Sensor Summary:")
+            self.num_years = Snotel.get_sensor_history_years(df_summary)
+            self.num_years += 46
+            self.start_date = self.end_date.replace(year=self.end_date.year - self.num_years)
+            begin_date = self.start_date.strftime("%Y-%m-%d")
+            # begin_date = "2026-01-01"
+            # end_date = "2026-07-02"
+            file_name = name.replace(" ", "_")
+            daily_file_name = file_name +  '_daily.csv'
+            elements = [
+                "TAVG::value", "TMAX::value", "TMIN::value", "TOBS::value",
+                "WTEQ::value", "SNWD::value", "PREC::value", "PRCP::value",
+                "SMS:-2:value", "SMS:-8:value", "SMS:-20:value",
+                "STO:-2:value", "STO:-8:value", "STO:-20:value"
+            ]
+            df = get_snotel_data(station_id, state, elements, "daily", begin_date=begin_date, file_name=daily_file_name)
+
+            hourly_file_name = file_name + '_hourly.csv'
+            elements = [
+                "WSPDV::value",
+                "WSPDX::value",
+                "WDIRV::value",
+                # "SWINV::value",
+                "SWOTV:-2:value",     # Albedo, New 7-31-2024 on Lizard Head
+                # "RHUMV::value"
+                "RHUM::value"
+            ]
+            df_hourly = get_snotel_data(station_id, state, elements, "hourly", file_name=hourly_file_name)
+            return df, df_summary
+
+        print(f'load_snotel_station {name} not found')
+        return None
+
+    @staticmethod
+    def smooth_openet_daily(df: pd.DataFrame, window: int = 3, model_cols=None) -> pd.DataFrame:
+        """
+        Apply running average to daily ET columns.
+        """
+        df = df.copy()
+        df = df.sort_values('Date').reset_index(drop=True)
+
+        if model_cols is None:
+            # Auto-detect ET columns (everything except Date)
+            model_cols = [col for col in df.columns if col != 'Date']
+
+        for col in model_cols:
+            df[f'{col}_smooth_{window}d'] = df[col].rolling(window=window, min_periods=1, center=True).mean()
+
+        return df
+
+    # Recommended Corrections (based on studies in CO/Utah Rockies)Situation
+    # Suggested Correction        Notes
+    # eeMETRIC alone in dense forest
+    #         Multiply by 0.75 – 0.85 during Jul–Aug      Most common adjustment
+    # eeMETRIC + DisALEXI hybrid
+    #         Weight 60–70% eeMETRIC,30–40% DisALEXI      Good compromise
+    # Using Ensemble
+    #         Light correction: 0.90 – 0.95               Ensemble already reduces the bias
+    # Winter months
+    #         Usually no correction or slight upward
+    #        eeMETRIC can be low in winter
+    @staticmethod
+    def apply_bias_correction(df):
+        df = df.copy()
+
+        # Extract month
+        df['month'] = pd.to_datetime(df['Date']).dt.month
+
+        # Bias correction factor
+        df['eeMETRIC_adj'] = df['eeMETRIC'].copy()
+
+        # Strong correction in peak summer for forests
+        summer_mask = df['month'].isin([7, 8])
+        df.loc[summer_mask, 'eeMETRIC_adj'] = df.loc[summer_mask, 'eeMETRIC'] * 0.82  # 0.78-0.85 range is typical
+
+        # Optional: lighter correction in June/September
+        shoulder_mask = df['month'].isin([6, 9])
+        df.loc[shoulder_mask, 'eeMETRIC_adj'] = df.loc[shoulder_mask, 'eeMETRIC'] * 0.92
+
+        return df
+
+    def load_data(self) -> Optional[date]:
+        self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])
+
+        lizard_hwad = 'data/OpenMeteo/lizard_head_37.799991_-107.933968_1940-01-01_2026-07-10_daily.csv'
+        el_diente = 'data/OpenMeteo/el_diente_37.79_-108.02_1940-01-01_2026-07-10_daily.csv'
+        rico = "data/OpenMeteo/rico_37.7_-108.0_1940-01-01_2026-07-10_daily.csv"
+        df = pd.read_csv(el_diente)
+        self.df_open_meteo = df.rename(columns={'time': 'Date'})
+
+        self.df_open_et = openet_json_file_to_dataframe('/opt/dev/gis/OpenET/lizard_head/lizard_head_2016-08-01_2026-06-30_ensemble_in_daily.json',)
+        paths = [
+            '/opt/dev/gis/OpenET/lizard_head/lizard_head_2016-08-01_2026-06-30_eeMETRIC_in_daily.json',
+            '/opt/dev/gis/OpenET/lizard_head/lizard_head_2016-08-01_2026-06-30_DisALEXI_in_daily.json',
+        ]
+
+        for path in paths:
+            self.df_open_et = openet_json_file_to_dataframe(path, self.df_open_et)
+
+        self.df_open_et = Snotel.smooth_openet_daily(self.df_open_et, self.smooth_days)
+
+        self.load_reservoirs()
+
+    def load_reservoirs(self) -> Optional[date]:
+        date_time_as_date = None
+        start = self.start_date
+        current = self.end_date
+        end = self.end_date
+
+        for reservoir_list in self.reservoir_lists:
+            for reservoir in reservoir_list:
+                reservoir.load_data(None, start, current, end)
+        return date_time_as_date
+
 
 
 def analyze_lizard_head_temp_with_correction(csv_path: str):
@@ -472,7 +471,12 @@ def analyze_lizard_head_temp_with_correction(csv_path: str):
     temp_series = df['TAVG'].dropna()
 
     # Water year
-    df['WaterYear'] = df.index.year.where(df.index.month < 10, df.index.year + 1)
+    df['WaterYear'] = (
+        pd.DatetimeIndex(df.index).year.where(
+            pd.DatetimeIndex(df.index).month < 10,
+            pd.DatetimeIndex(df.index).year + 1
+        )
+    )
     water_year = df.groupby('WaterYear')['TAVG'].mean()
 
     # === Sensor upgrade correction (approximate) ===
@@ -528,7 +532,12 @@ def analyze_snotel_temperature(csv_path: str, temp_col: str = 'TAVG',
     annual = df['Temp'].resample('YE').mean()
 
     # Water year (Oct-Sep)
-    df['WaterYear'] = df.index.year.where(df.index.month < 10, df.index.year + 1)
+    df['WaterYear'] = (
+        pd.DatetimeIndex(df.index).year.where(
+            pd.DatetimeIndex(df.index).month < 10,
+            pd.DatetimeIndex(df.index).year + 1
+        )
+    )
     water_year = df.groupby('WaterYear')['Temp'].mean()
 
     # === Trend calculations ===
@@ -539,7 +548,8 @@ def analyze_snotel_temperature(csv_path: str, temp_col: str = 'TAVG',
         print(f"  R²: {r_value ** 2:.3f}")
         return slope, p_value
 
-    compute_trend(annual.index.year, annual.values, "Calendar Year")
+    series = annual.index.to_series()
+    compute_trend(series.year, annual.values, "Calendar Year")
     compute_trend(water_year.index, water_year.values, "Water Year")
 
     # Simple step change check (sensor upgrade ~2004, possible 1993)
@@ -555,7 +565,8 @@ def analyze_snotel_temperature(csv_path: str, temp_col: str = 'TAVG',
 
     # === Plot ===
     plt.figure(figsize=(11, 6))
-    plt.plot(annual.index.year, annual.values, label='Annual Avg Temp', alpha=0.8, marker='o', markersize=4)
+    series = annual.index.to_series()
+    plt.plot(series.year, annual.values, label='Annual Avg Temp', alpha=0.8, marker='o', markersize=4)
     plt.plot(water_year.index, water_year.values, label='Water Year Avg Temp', alpha=0.6, linestyle='--')
 
     # Trend line (water year)
