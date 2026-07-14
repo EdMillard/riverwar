@@ -37,6 +37,7 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -335,7 +336,7 @@ class Snotel(ChartFrame):
             # df_summary = get_snotel_sensors_with_dates(station_id, state)
             print_full_summary(df_summary, title=f"{name} Sensor Summary:")
             self.num_years = Snotel.get_sensor_history_years(df_summary)
-            self.num_years += 46
+            self.num_years = 7
             self.start_date = self.end_date.replace(year=self.end_date.year - self.num_years)
             begin_date = self.start_date.strftime("%Y-%m-%d")
             # begin_date = "2026-01-01"
@@ -446,145 +447,6 @@ class Snotel(ChartFrame):
             for reservoir in reservoir_list:
                 reservoir.load_data(None, start, current, end)
         return date_time_as_date
-
-
-
-def analyze_lizard_head_temp_with_correction(csv_path: str):
-    """
-    Analyze Lizard Head SNOTEL temperature with sensor upgrade correction.
-    """
-    df = pd.read_csv(csv_path, parse_dates=['Date'])
-    df = df.set_index('Date').sort_index()
-
-    # Rename long columns
-    rename_map = {
-        'air_temperature_average': 'TAVG',
-        'air_temperature_maximum': 'TMAX',
-        'air_temperature_minimum': 'TMIN',
-        'air_temperature_observed': 'TOBS'
-    }
-    df = df.rename(columns=rename_map)
-
-    if 'TAVG' not in df.columns:
-        df['TAVG'] = (df['TMAX'] + df['TMIN']) / 2
-
-    temp_series = df['TAVG'].dropna()
-
-    # Water year
-    df['WaterYear'] = (
-        pd.DatetimeIndex(df.index).year.where(
-            pd.DatetimeIndex(df.index).month < 10,
-            pd.DatetimeIndex(df.index).year + 1
-        )
-    )
-    water_year = df.groupby('WaterYear')['TAVG'].mean()
-
-    # === Sensor upgrade correction (approximate) ===
-    # Based on known inhomogeneity ~2004 at many SNOTEL sites
-    # New sensor tends to read warmer at cold temps → we apply a simple adjustment to pre-upgrade data
-    pre_upgrade = water_year[water_year.index < 2004]
-    post_upgrade = water_year[water_year.index >= 2004]
-
-    if not pre_upgrade.empty and not post_upgrade.empty:
-        offset = pre_upgrade.mean() - post_upgrade.mean() * 0.7  # rough empirical adjustment
-        water_year_corrected = water_year.copy()
-        water_year_corrected[water_year_corrected.index < 2004] += offset
-        print(f"Applied approximate sensor correction offset: {offset:.2f} °F to pre-2004 data")
-    else:
-        water_year_corrected = water_year
-
-    # Trend on corrected series
-    years = water_year_corrected.index.values
-    temps = water_year_corrected.values
-    slope, intercept, r, p, se = stats.linregress(years, temps)
-    print(f"\nWater Year Trend (with correction):")
-    print(f"  Slope: {slope:.3f} °F/year (p = {p:.4f})")
-    print(f"  R²: {r ** 2:.3f}")
-
-    # Plot
-    plt.figure(figsize=(11, 6))
-    plt.plot(water_year.index, water_year.values, 'b-', alpha=0.6, label='Raw Water Year Avg')
-    plt.plot(water_year_corrected.index, water_year_corrected.values, 'g-', label='Corrected')
-    plt.plot(years, intercept + slope * years, 'r--', label=f'Trend: {slope:.3f} °F/yr')
-    plt.axvline(2004, color='orange', linestyle='--', alpha=0.7, label='~2004 sensor upgrade')
-    plt.title('Lizard Head Pass - Temperature Trend with Sensor Correction')
-    plt.xlabel('Water Year')
-    plt.ylabel('Temperature (°F)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    return water_year, water_year_corrected
-
-def analyze_snotel_temperature(csv_path: str, temp_col: str = 'TAVG',
-                               date_col: str = 'Date', title: str = "Lizard Head Pass Temperature Trend"):
-    """
-    Load SNOTEL CSV and perform temperature trend analysis.
-    """
-    # Load data
-    df = pd.read_csv(csv_path, parse_dates=[date_col])
-    df = df.rename(columns={date_col: 'Date', temp_col: 'Temp'})
-    df['Date'] = pd.to_datetime(df['Date'])
-    df = df.set_index('Date').sort_index()
-
-    # Resample to annual (calendar year) and water year
-    annual = df['Temp'].resample('YE').mean()
-
-    # Water year (Oct-Sep)
-    df['WaterYear'] = (
-        pd.DatetimeIndex(df.index).year.where(
-            pd.DatetimeIndex(df.index).month < 10,
-            pd.DatetimeIndex(df.index).year + 1
-        )
-    )
-    water_year = df.groupby('WaterYear')['Temp'].mean()
-
-    # === Trend calculations ===
-    def compute_trend(years, temps, label):
-        slope, intercept, r_value, p_value, std_err = stats.linregress(years, temps)
-        print(f"\n{label} Trend:")
-        print(f"  Slope: {slope:.3f} °F/year (p-value: {p_value:.4f})")
-        print(f"  R²: {r_value ** 2:.3f}")
-        return slope, p_value
-
-    series = annual.index.to_series()
-    compute_trend(series.year, annual.values, "Calendar Year")
-    compute_trend(water_year.index, water_year.values, "Water Year")
-
-    # Simple step change check (sensor upgrade ~2004, possible 1993)
-    def check_step(series, year, label):
-        pre = series[series.index < year]
-        post = series[series.index >= year]
-        if len(pre) > 5 and len(post) > 5:
-            t_stat, p_val = stats.ttest_ind(pre, post, equal_var=False)
-            print(f"Step around {year} ({label}): pre mean={pre.mean():.2f}, post={post.mean():.2f}, p={p_val:.4f}")
-
-    check_step(annual, 1993, "1993 possible anomaly")
-    check_step(annual, 2004, "2004 sensor upgrade")
-
-    # === Plot ===
-    plt.figure(figsize=(11, 6))
-    series = annual.index.to_series()
-    plt.plot(series.year, annual.values, label='Annual Avg Temp', alpha=0.8, marker='o', markersize=4)
-    plt.plot(water_year.index, water_year.values, label='Water Year Avg Temp', alpha=0.6, linestyle='--')
-
-    # Trend line (water year)
-    years = water_year.index.values
-    slope, intercept = np.polyfit(years, water_year.values, 1)
-    plt.plot(years, intercept + slope * years, 'r--', label=f'Trend: {slope:.3f} °F/yr')
-
-    plt.axvline(1993, color='gray', linestyle='--', alpha=0.5, label='~1993')
-    plt.axvline(2004, color='orange', linestyle='--', alpha=0.5, label='~2004 sensor upgrade')
-    plt.title(title)
-    plt.xlabel('Year')
-    plt.ylabel('Temperature (°F)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    return annual, water_year
 
 if __name__ == "__main__":
     app = wx.App(False)
