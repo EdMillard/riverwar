@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from datetime import date
-from typing import Optional
+from typing import Optional, Tuple
 from colorado.river_war import RiverWar
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.line_chart import LineChart
@@ -30,75 +30,10 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
+from source.nrcs_snotel import (get_snotel_data, get_snotel_stations,
+                                stations_with_name, print_full_summary, get_sensor_history_years,
+                                get_snotel_hourly_data, get_snotel_station_elements)
 
-
-def analyze_lizard_head_temp_with_correction(csv_path: str):
-    """
-    Analyze Lizard Head SNOTEL temperature with sensor upgrade correction.
-    """
-    df = pd.read_csv(csv_path, parse_dates=['Date'])
-    df = df.set_index('Date').sort_index()
-
-    # Rename long columns
-    rename_map = {
-        'air_temperature_average': 'TAVG',
-        'air_temperature_maximum': 'TMAX',
-        'air_temperature_minimum': 'TMIN',
-        'air_temperature_observed': 'TOBS'
-    }
-    df = df.rename(columns=rename_map)
-
-    if 'TAVG' not in df.columns:
-        df['TAVG'] = (df['TMAX'] + df['TMIN']) / 2
-
-    temp_series = df['TAVG'].dropna()
-
-    # Water year
-    df['WaterYear'] = (
-        pd.DatetimeIndex(df.index).year.where(
-            pd.DatetimeIndex(df.index).month < 10,
-            pd.DatetimeIndex(df.index).year + 1
-        )
-    )
-    water_year = df.groupby('WaterYear')['TAVG'].mean()
-
-    # === Sensor upgrade correction (approximate) ===
-    # Based on known inhomogeneity ~2004 at many SNOTEL sites
-    # New sensor tends to read warmer at cold temps → we apply a simple adjustment to pre-upgrade data
-    pre_upgrade = water_year[water_year.index < 2004]
-    post_upgrade = water_year[water_year.index >= 2004]
-
-    if not pre_upgrade.empty and not post_upgrade.empty:
-        offset = pre_upgrade.mean() - post_upgrade.mean() * 0.7  # rough empirical adjustment
-        water_year_corrected = water_year.copy()
-        water_year_corrected[water_year_corrected.index < 2004] += offset
-        print(f"Applied approximate sensor correction offset: {offset:.2f} °F to pre-2004 data")
-    else:
-        water_year_corrected = water_year
-
-    # Trend on corrected series
-    years = water_year_corrected.index.values
-    temps = water_year_corrected.values
-    slope, intercept, r, p, se = stats.linregress(years, temps)
-    print(f"\nWater Year Trend (with correction):")
-    print(f"  Slope: {slope:.3f} °F/year (p = {p:.4f})")
-    print(f"  R²: {r ** 2:.3f}")
-
-    # Plot
-    plt.figure(figsize=(11, 6))
-    plt.plot(water_year.index, water_year.values, 'b-', alpha=0.6, label='Raw Water Year Avg')
-    plt.plot(water_year_corrected.index, water_year_corrected.values, 'g-', label='Corrected')
-    plt.plot(years, intercept + slope * years, 'r--', label=f'Trend: {slope:.3f} °F/yr')
-    plt.axvline(2004, color='orange', linestyle='--', alpha=0.7, label='~2004 sensor upgrade')
-    plt.title('Lizard Head Pass - Temperature Trend with Sensor Correction')
-    plt.xlabel('Water Year')
-    plt.ylabel('Temperature (°F)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
-
-    return water_year, water_year_corrected
 
 
 class TemperatureChartFrame(ChartFrame):
@@ -108,33 +43,79 @@ class TemperatureChartFrame(ChartFrame):
 
     def __init__(self,
                  notebook_frame: NotebookFrame,
-                 csv_path: str,
-                 temp_col: str = 'TMAX',
-                 page_name: str = "Temperature Analysis"):
-        self.csv_path = csv_path
-        self.temp_col = temp_col
-        self.snotel_name = 'El Diente'
+                 snotel_name: str):
+        self.snotel_name = snotel_name
         self.start_date = date.today()
         self.end_date = date.today()
+
+        # self.snotel_name = 'El Diente'
+        # self.snotel_name = 'Black Mesa'
+        # self.snotel_name = 'Scotch Creek'
+        # self.snotel_name = 'Sharkstooth'
+        # self.snotel_name = 'Lone Cone'
+        # self.snotel_name = 'Lizard Head'
+
+        self.end_date = date.today()
+        stations = get_snotel_stations("stations.csv")
+        self.df_snotel, self.df_snotel_summary = self.load_snotel_station(stations, self.snotel_name)
 
         super().__init__(
            notebook_frame=notebook_frame,
            reservoir_lists=None,
            reports=None,
-           page_name=page_name
+           page_name=snotel_name
         )
+
+
+    def load_snotel_station(self, stations:pd.DataFrame, name)->Optional[Tuple[pd.DataFrame, pd.DataFrame]]:
+        station_matches = stations_with_name(stations, name)
+        for station in station_matches:
+            station_id = station.get('station_id', '')
+            state = station.get('state', '')
+            df_summary = get_snotel_station_elements(station_id, state)
+            # df_summary = get_snotel_sensors_with_dates(station_id, state)
+            print_full_summary(df_summary, title=f"{name} Sensor Summary:")
+            self.num_years = get_sensor_history_years(df_summary)
+            # self.num_years = 7
+            self.start_date = self.end_date.replace(year=self.end_date.year - self.num_years)
+            begin_date = self.start_date.strftime("%Y-%m-%d")
+            # begin_date = "2026-01-01"
+            # end_date = "2026-07-02"
+            file_name = name.replace(" ", "_")
+            daily_file_name = file_name +  '_daily.csv'
+            elements = [
+                "TAVG::value", "TMAX::value", "TMIN::value", "TOBS::value",
+                "WTEQ::value", "SNWD::value", "PREC::value", "PRCP::value",
+                "SMS:-2:value", "SMS:-8:value", "SMS:-20:value",
+                "STO:-2:value", "STO:-8:value", "STO:-20:value"
+            ]
+            df = get_snotel_data(station_id, state, elements, "daily", begin_date=begin_date, file_name=daily_file_name)
+
+            hourly_file_name = file_name + '_hourly.csv'
+            elements = [
+                "WSPDV::value",
+                "WSPDX::value",
+                "WDIRV::value",
+                # "SWINV::value",
+                "SWOTV:-2:value",     # Albedo, New 7-31-2024 on Lizard Head
+                # "RHUMV::value"
+                "RHUM::value"
+            ]
+            df_hourly = get_snotel_data(station_id, state, elements, "hourly", file_name=hourly_file_name)
+            return df, df_summary
+
+        print(f'load_snotel_station {name} not found')
+        return None
 
     def load_data(self) -> Optional[pd.DataFrame]:
         """
         Load raw SNOTEL data and build a master DataFrame with multiple variables.
         """
-        df_snotel = pd.read_csv(self.csv_path, parse_dates=['Date'])
-
         # Start with first variable (creates the base df)
         self.df = TemperatureChartFrame.analyze_snotel_variable(
-            df_snotel=df_snotel,
-            existing_df=None,           # First call
-            variable=self.temp_col,     # or hard-code 'TMAX' etc.
+            df_snotel=self.df_snotel,
+            existing_df=None,
+            variable='TMAX',
             year_start_month=10,
             min_days_per_year=300,
             compute_trend=True,
@@ -143,7 +124,7 @@ class TemperatureChartFrame(ChartFrame):
 
         # Add more variables (they merge into self.df)
         self.df = TemperatureChartFrame.analyze_snotel_variable(
-            df_snotel=df_snotel,
+            df_snotel=self.df_snotel,
             existing_df=self.df,
             variable='TMIN',
             year_start_month=10,
@@ -152,17 +133,14 @@ class TemperatureChartFrame(ChartFrame):
             agg='mean'
         )
 
-        # Example: add more variables easily
-        # self.df = TemperatureChartFrame.analyze_snotel_variable(df_snotel, self.df, 'TAVG')
-        # self.df = TemperatureChartFrame.analyze_snotel_variable(df_snotel, self.df, 'WTEQ')
-
-        # Set start/end dates from the master DataFrame
-        if not self.df.empty:
-            self.start_date = self.df['Date'].iloc[0].date()
-            self.end_date = self.df['Date'].iloc[-1].date()
-        else:
-            self.start_date = date.today()
-            self.end_date = date.today()
+        if 0:
+            # Set start/end dates from the master DataFrame
+            if not self.df.empty:
+                self.start_date = self.df['Date'].iloc[0].date()
+                self.end_date = self.df['Date'].iloc[-1].date()
+            else:
+                self.start_date = date.today()
+                self.end_date = date.today()
 
         return self.df
 
@@ -205,12 +183,10 @@ class TemperatureChartFrame(ChartFrame):
             for reservoir in reservoir_list:
                 reservoir.load_data(None, start, current, end)
         return date_time_as_date
-
-
     @staticmethod
     def analyze_snotel_variable(
-            df_snotel: pd.DataFrame,                    # Raw SNOTEL daily data
-            existing_df: Optional[pd.DataFrame] = None, # Master DataFrame to merge into
+            df_snotel: pd.DataFrame,
+            existing_df: Optional[pd.DataFrame] = None,
             variable: str = 'TAVG',
             year_start_month: int = 10,
             min_days_per_year: int = 300,
@@ -218,9 +194,9 @@ class TemperatureChartFrame(ChartFrame):
             agg: str = 'mean'
     ) -> pd.DataFrame:
         """
-        Compute yearly stats + trend for a variable and merge into existing_df.
+        Keeps all full years + the most recent (possibly partial) year.
         """
-        # === Normalize variable name ===
+        # Normalize variable name
         short_to_long = {
             'TMAX': 'air_temperature_maximum',
             'TAVG': 'air_temperature_average',
@@ -245,11 +221,16 @@ class TemperatureChartFrame(ChartFrame):
         if long_var not in df_snotel.columns:
             raise KeyError(f"Column '{long_var}' (from '{short_var}') not found.")
 
-        # === Process raw data ===
+        # Process raw data
         df = df_snotel.copy()
         df = df.rename(columns={long_var: 'Value'})
-        df['Date'] = pd.to_datetime(df['Date'])
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df['Value'] = pd.to_numeric(df['Value'], errors='coerce')
+        df = df.dropna(subset=['Date', 'Value']).copy()
         df = df.set_index('Date').sort_index()
+
+        if df.empty:
+            raise ValueError(f"No valid data for '{short_var}'.")
 
         def get_year(d):
             if d.month >= year_start_month:
@@ -271,15 +252,24 @@ class TemperatureChartFrame(ChartFrame):
         else:
             raise ValueError(f"Unsupported aggregation: {agg}")
 
-        # Filter incomplete years
         days_per_year = df.groupby('Year').size()
-        valid_years = days_per_year[days_per_year >= min_days_per_year].index
-        yearly = yearly.loc[valid_years]
+
+        if not days_per_year.empty:
+            max_year = days_per_year.index.max()
+
+            # Keep:
+            # - All years that meet the minimum days requirement
+            # - PLUS the most recent year (even if partial)
+            valid_years = days_per_year[
+                (days_per_year >= min_days_per_year) | (days_per_year.index == max_year)
+            ].index
+
+            yearly = yearly.loc[valid_years]
 
         if yearly.empty:
-            raise ValueError("No valid years found after filtering.")
+            raise ValueError(f"No valid years for '{short_var}'.")
 
-        # === Linear trend (safely initialized) ===
+        # Linear trend
         slope = intercept = r_squared = p_value = std_err = None
         trend_series = pd.Series(index=yearly.index, dtype=float)
 
@@ -290,14 +280,14 @@ class TemperatureChartFrame(ChartFrame):
             trend_series = intercept + slope * yearly.index
             r_squared = r_value ** 2
 
-        # === New data for this variable ===
+        # Build new data
         new_data = pd.DataFrame({
             'Date': pd.to_datetime(yearly.index.astype(str) + '-01-01'),
             short_var: yearly.values,
             f"{short_var}_Trend": trend_series.values
         })
 
-        # === Merge into master DataFrame ===
+        # Merge into master
         if existing_df is not None and not existing_df.empty:
             master = existing_df.copy()
             master = pd.merge(master, new_data, on='Date', how='outer')
@@ -306,14 +296,16 @@ class TemperatureChartFrame(ChartFrame):
             master = new_data.copy()
 
         # Metadata
-        master.attrs['variable'] = short_var
-        master.attrs['year_start_month'] = year_start_month
-        master.attrs['agg'] = agg
-        master.attrs['slope'] = slope
-        master.attrs['intercept'] = intercept
-        master.attrs['r_squared'] = r_squared
-        master.attrs['p_value'] = p_value
-        master.attrs['std_err'] = std_err
+        master.attrs.update({
+            'variable': short_var,
+            'year_start_month': year_start_month,
+            'agg': agg,
+            'slope': slope,
+            'intercept': intercept,
+            'r_squared': r_squared,
+            'p_value': p_value,
+            'std_err': std_err
+        })
 
         return master
 
@@ -385,16 +377,83 @@ if __name__ == "__main__":
     river_war = RiverWar()
     notebook_frame = NotebookFrame([], river_war)
 
-    temperature_page = TemperatureChartFrame(
-        notebook_frame=notebook_frame,
-        csv_path="data/NRCS/SNOTEL/El_Diente_daily.csv",
-    )
-
-    temperature_page = TemperatureChartFrame(
-        notebook_frame=notebook_frame,
-        csv_path="data/NRCS/SNOTEL/El_Diente_daily.csv",
-    )
-
+    TemperatureChartFrame(notebook_frame=notebook_frame, snotel_name='Lizard Head')
+    TemperatureChartFrame( notebook_frame=notebook_frame,snotel_name='El Diente')
+    TemperatureChartFrame( notebook_frame=notebook_frame,snotel_name='Lone Cone')
+    TemperatureChartFrame( notebook_frame=notebook_frame,snotel_name='Scotch Creek')
+    TemperatureChartFrame( notebook_frame=notebook_frame,snotel_name='Sharkstooth')
+    TemperatureChartFrame( notebook_frame=notebook_frame,snotel_name='Black Mesa')
 
     notebook_frame.Show()
     app.MainLoop()
+
+
+    # Not used
+
+    def analyze_lizard_head_temp_with_correction(csv_path: str):
+        """
+        Analyze Lizard Head SNOTEL temperature with sensor upgrade correction.
+        """
+        df = pd.read_csv(csv_path, parse_dates=['Date'])
+        df = df.set_index('Date').sort_index()
+
+        # Rename long columns
+        rename_map = {
+            'air_temperature_average': 'TAVG',
+            'air_temperature_maximum': 'TMAX',
+            'air_temperature_minimum': 'TMIN',
+            'air_temperature_observed': 'TOBS'
+        }
+        df = df.rename(columns=rename_map)
+
+        if 'TAVG' not in df.columns:
+            df['TAVG'] = (df['TMAX'] + df['TMIN']) / 2
+
+        temp_series = df['TAVG'].dropna()
+
+        # Water year
+        df['WaterYear'] = (
+            pd.DatetimeIndex(df.index).year.where(
+                pd.DatetimeIndex(df.index).month < 10,
+                pd.DatetimeIndex(df.index).year + 1
+            )
+        )
+        water_year = df.groupby('WaterYear')['TAVG'].mean()
+
+        # === Sensor upgrade correction (approximate) ===
+        # Based on known inhomogeneity ~2004 at many SNOTEL sites
+        # New sensor tends to read warmer at cold temps → we apply a simple adjustment to pre-upgrade data
+        pre_upgrade = water_year[water_year.index < 2004]
+        post_upgrade = water_year[water_year.index >= 2004]
+
+        if not pre_upgrade.empty and not post_upgrade.empty:
+            offset = pre_upgrade.mean() - post_upgrade.mean() * 0.7  # rough empirical adjustment
+            water_year_corrected = water_year.copy()
+            water_year_corrected[water_year_corrected.index < 2004] += offset
+            print(f"Applied approximate sensor correction offset: {offset:.2f} °F to pre-2004 data")
+        else:
+            water_year_corrected = water_year
+
+        # Trend on corrected series
+        years = water_year_corrected.index.values
+        temps = water_year_corrected.values
+        slope, intercept, r, p, se = stats.linregress(years, temps)
+        print(f"\nWater Year Trend (with correction):")
+        print(f"  Slope: {slope:.3f} °F/year (p = {p:.4f})")
+        print(f"  R²: {r ** 2:.3f}")
+
+        # Plot
+        plt.figure(figsize=(11, 6))
+        plt.plot(water_year.index, water_year.values, 'b-', alpha=0.6, label='Raw Water Year Avg')
+        plt.plot(water_year_corrected.index, water_year_corrected.values, 'g-', label='Corrected')
+        plt.plot(years, intercept + slope * years, 'r--', label=f'Trend: {slope:.3f} °F/yr')
+        plt.axvline(2004, color='orange', linestyle='--', alpha=0.7, label='~2004 sensor upgrade')
+        plt.title('Lizard Head Pass - Temperature Trend with Sensor Correction')
+        plt.xlabel('Water Year')
+        plt.ylabel('Temperature (°F)')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+
+        return water_year, water_year_corrected

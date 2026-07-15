@@ -30,7 +30,7 @@ from chart.line_chart import LineChart
 from et.openet import openet_json_file_to_dataframe
 import wx
 from source.nrcs_snotel import (get_snotel_data, get_snotel_stations, stations_in_county, stations_in_state,
-                                stations_with_name, print_full_summary,
+                                stations_with_name, print_full_summary, get_sensor_history_years,
                                 get_snotel_hourly_data, get_snotel_station_elements)
 import source.usgs_gage as usgs
 import pandas as pd
@@ -294,36 +294,6 @@ class Snotel(ChartFrame):
         self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
-    @staticmethod
-    def get_sensor_history_years(sensors_df: pd.DataFrame) -> int:
-        """
-        Returns years of history from the oldest sensor.
-        Works with both old Report Generator format and new REST format.
-        """
-        if sensors_df.empty:
-            return 0
-
-        # Support both column names
-        date_col = None
-        for col in ['sensor_start_date', 'begin_date']:
-            if col in sensors_df.columns:
-                date_col = col
-                break
-
-        if date_col is None:
-            print("No date column found in sensor DataFrame.")
-            return 0
-
-        earliest_date = pd.to_datetime(sensors_df[date_col]).min()
-        current_year = datetime.now().year
-
-        years_back = current_year - earliest_date.year
-
-        print(f"Earliest sensor date: {earliest_date.date()}")
-        print(f"Years of history: {years_back}")
-
-        return years_back
-
     def right_axis_annotations(self):
         pass
 
@@ -335,7 +305,7 @@ class Snotel(ChartFrame):
             df_summary = get_snotel_station_elements(station_id, state)
             # df_summary = get_snotel_sensors_with_dates(station_id, state)
             print_full_summary(df_summary, title=f"{name} Sensor Summary:")
-            self.num_years = Snotel.get_sensor_history_years(df_summary)
+            self.num_years = get_sensor_history_years(df_summary)
             self.num_years = 7
             self.start_date = self.end_date.replace(year=self.end_date.year - self.num_years)
             begin_date = self.start_date.strftime("%Y-%m-%d")

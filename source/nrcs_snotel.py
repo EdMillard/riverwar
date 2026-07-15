@@ -477,3 +477,32 @@ def get_snotel_station_elements(
         print(df[['element_code', 'description', 'begin_date', 'duration', 'unit']])
 
     return df
+
+def get_sensor_history_years(sensors_df: pd.DataFrame) -> int:
+    """
+    Returns years of history from the oldest sensor.
+    Works with both old Report Generator format and new REST format.
+    """
+    if sensors_df.empty:
+        return 0
+
+    # Support both column names
+    date_col = None
+    for col in ['sensor_start_date', 'begin_date']:
+        if col in sensors_df.columns:
+            date_col = col
+            break
+
+    if date_col is None:
+        print("No date column found in sensor DataFrame.")
+        return 0
+
+    earliest_date = pd.to_datetime(sensors_df[date_col]).min()
+    current_year = datetime.now().year
+
+    years_back = current_year - earliest_date.year
+
+    print(f"Earliest sensor date: {earliest_date.date()}")
+    print(f"Years of history: {years_back}")
+
+    return years_back
