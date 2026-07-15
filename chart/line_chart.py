@@ -233,15 +233,24 @@ class LineChart(Chart):
             return
 
         all_dates = []
+        all_values = []
+
         for item in self.data_series:
-            # Always 3-tuple now
-            df, col, color = item
+            # Support both 3-tuple and 4-tuple
+            if len(item) == 4:
+                df, col, color, linestyle = item
+            else:
+                df, col, color = item
+                linestyle = None
 
             if df.empty or col not in df.columns:
                 continue
 
             df[col] = pd.to_numeric(df[col], errors='coerce')
+            valid = df[col].dropna()
+
             all_dates.extend(df['Date'].dropna().tolist())
+            all_values.extend(valid.tolist())
 
             # Nice label for color-by-year mode
             if self.color_by_year and '_year' in df.columns:
@@ -254,26 +263,23 @@ class LineChart(Chart):
                     label=plot_label,
                     linewidth=1.7 if self.color_by_year else 2.2,
                     color=color,
-                    linestyle='-',
+                    linestyle=linestyle or '-',
                     alpha=0.82 if self.color_by_year else 1.0)
 
-        if not all_dates:
+        if not all_dates or not all_values:
             return
 
         # ==================== X-AXIS ====================
-        if self.overlay_years:
-            if self.overlay_date_map:
-                ref_dates = list(self.overlay_date_map.values())
-                ax.set_xlim(min(ref_dates), max(ref_dates))
+        if self.overlay_years and self.overlay_date_map:
+            ref_dates = list(self.overlay_date_map.values())
+            ax.set_xlim(min(ref_dates), max(ref_dates))
             ax.xaxis.set_major_locator(mdates.MonthLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
         else:
-            # Original behavior
             data_min = min(all_dates)
             data_max = max(all_dates)
             x_start = self.start_date if self.start_date is not None else data_min
             x_end = self.end_date if self.end_date is not None else data_max
-
             ax.set_xlim(x_start, x_end)
 
             ax.xaxis.set_major_locator(mdates.YearLocator())
@@ -289,8 +295,8 @@ class LineChart(Chart):
 
                     ax.xaxis.set_minor_formatter(month_first_letter)
 
-        # Common tick styling
-        ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, rotation=0, pad=2)
+        # Tick styling
+        ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, pad=2)
         ax.tick_params(axis='x', which='major', length=6, width=1.2, labelsize=10, pad=4)
 
         if not self.show_x_labels:
@@ -299,21 +305,37 @@ class LineChart(Chart):
         if self.title and str(self.title).strip():
             ax.set_title(self.title, fontsize=14, fontweight='bold', pad=6)
 
-        # ==================== GRID & Y-AXIS (unchanged) ====================
+        # Grid
         ax.grid(True, which='major', linestyle='-', linewidth=1.0, color='gray', alpha=1, zorder=0)
         ax.grid(True, which='minor', linestyle='--', linewidth=0.7, color='gray', alpha=0.75, zorder=0)
         ax.grid(True, axis='y', linestyle='--', alpha=0.7, zorder=0)
-
         ax.axhline(y=0, color='black', linewidth=1.0, linestyle='-', alpha=1, zorder=3)
 
         self.setup_yaxis(ax)
 
+        # ==================== Y-LIMITS - TIGHTER AUTO SCALE ====================
+        data_min = min(all_values)
+        data_max = max(all_values)
+        data_range = data_max - data_min
+        pad = max(data_range * 0.04, 1.5)  # Reduced padding (4%)
+
+        auto_min = data_min - pad
+        auto_max = data_max + pad
+
+        # Temperature-friendly floor
+        if self.y_units in ('°F', '°C'):
+            auto_min = max(auto_min, -5)
+
+        # Honor explicit limits, otherwise use calculated padded range
         if self.y_max is not None and self.y_min is not None:
             ax.set_ylim(self.y_min, self.y_max)
         elif self.y_max is not None:
-            ax.set_ylim(ymax=self.y_max)
+            ax.set_ylim(auto_min, self.y_max)
         elif self.y_min is not None:
-            ax.set_ylim(ymin=self.y_min)
+            ax.set_ylim(self.y_min, auto_max)
+        else:
+            # Default: clean padded auto-scale
+            ax.set_ylim(auto_min, auto_max)
 
         ax.legend(fontsize=9 if self.color_by_year else 10.5, loc='best',
                   ncol=2 if self.color_by_year else 1)

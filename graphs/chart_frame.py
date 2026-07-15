@@ -131,8 +131,8 @@ class ChartFrame(wx.Panel):
         self.chart_panel.Bind(wx.EVT_SIZE, self.on_chart_panel_resize)
 
         self.current_time_from_usbr = None
-        if self.reservoir_lists:
-            self.current_time_from_usbr = self.load_data()
+        # if self.reservoir_lists:
+        self.current_time_from_usbr = self.load_data()
 
         self.load_charts()
         self.layout_charts()

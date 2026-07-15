@@ -24,31 +24,13 @@ from datetime import date
 from typing import Optional
 from colorado.river_war import RiverWar
 from graphs.chart_frame import ChartFrame, NotebookFrame
+from chart.line_chart import LineChart
 import wx
 import pandas as pd
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
-def load_data(self) -> Optional[date]:
-    # self.df_daily: pd.DataFrame = df_utils.create_daily_df(self.start_date, self.end_date, [])
-
-    lizard_hwad = 'data/OpenMeteo/lizard_head_37.799991_-107.933968_1940-01-01_2026-07-10_daily.csv'
-    el_diente = 'data/OpenMeteo/el_diente_37.79_-108.02_1940-01-01_2026-07-10_daily.csv'
-    rico = "data/OpenMeteo/rico_37.7_-108.0_1940-01-01_2026-07-10_daily.csv"
-    df = pd.read_csv(el_diente)
-    self.df_open_meteo = df.rename(columns={'time': 'Date'})
-
-def load_reservoirs(self) -> Optional[date]:
-    date_time_as_date = None
-    start = self.start_date
-    current = self.end_date
-    end = self.end_date
-
-    for reservoir_list in self.reservoir_lists:
-        for reservoir in reservoir_list:
-            reservoir.load_data(None, start, current, end)
-    return date_time_as_date
 
 def analyze_lizard_head_temp_with_correction(csv_path: str):
     """
@@ -127,44 +109,213 @@ class TemperatureChartFrame(ChartFrame):
     def __init__(self,
                  notebook_frame: NotebookFrame,
                  csv_path: str,
-                 temp_col: str = 'air_temperature_average',  # added
+                 temp_col: str = 'TMAX',
                  page_name: str = "Temperature Analysis"):
-        self.notebook_frame = notebook_frame
-        # super().__init__(
-        #    notebook_frame=notebook_frame,
-        #    reservoir_lists=None,
-        #    reports=None,
-        #    page_name=page_name
-        # )
-
         self.csv_path = csv_path
         self.temp_col = temp_col
+        self.snotel_name = 'El Diente'
+        self.start_date = date.today()
+        self.end_date = date.today()
 
-        self.create_all_temperature_pages()
-
-    def create_all_temperature_pages(self):
-        """Create three separate notebook pages for TMAX, TAVG, TMIN."""
-        self._create_temp_page('TMAX', "Maximum Temperature")
-        self._create_temp_page('TAVG', "Average Temperature")
-        self._create_temp_page('TMIN', "Minimum Temperature")
-
-    def _create_temp_page(self, temp_col: str, page_title: str):
-        """Create one temperature analysis page."""
-        from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-
-        yearly, fig = self.analyze_snotel_temperature(
-            csv_path=self.csv_path,
-            temp_col=temp_col,
-            year_start_month=1  # 1 = Jan (default), change to 10 for water year
+        super().__init__(
+           notebook_frame=notebook_frame,
+           reservoir_lists=None,
+           reports=None,
+           page_name=page_name
         )
 
-        page = wx.Panel(self.notebook_frame.notebook)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        canvas = FigureCanvas(page, -1, fig)
-        sizer.Add(canvas, 1, wx.EXPAND | wx.ALL, 5)
-        page.SetSizer(sizer)
+    def load_data(self) -> Optional[pd.DataFrame]:
+        """
+        Load raw SNOTEL data and build a master DataFrame with multiple variables.
+        """
+        df_snotel = pd.read_csv(self.csv_path, parse_dates=['Date'])
 
-        self.notebook_frame.notebook.AddPage(page, page_title)
+        # Start with first variable (creates the base df)
+        self.df = TemperatureChartFrame.analyze_snotel_variable(
+            df_snotel=df_snotel,
+            existing_df=None,           # First call
+            variable=self.temp_col,     # or hard-code 'TMAX' etc.
+            year_start_month=10,
+            min_days_per_year=300,
+            compute_trend=True,
+            agg='mean'
+        )
+
+        # Add more variables (they merge into self.df)
+        self.df = TemperatureChartFrame.analyze_snotel_variable(
+            df_snotel=df_snotel,
+            existing_df=self.df,
+            variable='TMIN',
+            year_start_month=10,
+            min_days_per_year=300,
+            compute_trend=True,
+            agg='mean'
+        )
+
+        # Example: add more variables easily
+        # self.df = TemperatureChartFrame.analyze_snotel_variable(df_snotel, self.df, 'TAVG')
+        # self.df = TemperatureChartFrame.analyze_snotel_variable(df_snotel, self.df, 'WTEQ')
+
+        # Set start/end dates from the master DataFrame
+        if not self.df.empty:
+            self.start_date = self.df['Date'].iloc[0].date()
+            self.end_date = self.df['Date'].iloc[-1].date()
+        else:
+            self.start_date = date.today()
+            self.end_date = date.today()
+
+        return self.df
+
+    def load_charts(self):
+        graph_end_date = date.today()
+
+        title = f'Dolores River - {self.snotel_name} SNOTEL'
+
+        time_series = [
+            (self.df, 'TMAX', 'royalblue'),
+            (self.df, 'TMAX_Trend', 'red'),
+        ]
+        self.create_line_chart(time_series, title=title)
+
+        time_series = [
+            (self.df, 'TMIN', 'royalblue'),
+            (self.df, 'TMIN_Trend', 'red'),
+        ]
+        self.create_line_chart(time_series)
+
+    def create_line_chart(self, time_series:list, title:str=""):
+        line_chart = LineChart(
+            time_series,
+            title=title,
+            start_date=self.start_date, current_date=self.end_date, end_date=self.end_date,
+            show_x_labels=True,
+            percentage=0.20,
+            y_units='°F',
+        )
+        # self.line_chart.set_end_date(graph_end_date)
+        self.charts.append(line_chart)
+
+    def load_reservoirs(self) -> Optional[date]:
+        date_time_as_date = None
+        start = self.start_date
+        current = self.end_date
+        end = self.end_date
+
+        for reservoir_list in self.reservoir_lists:
+            for reservoir in reservoir_list:
+                reservoir.load_data(None, start, current, end)
+        return date_time_as_date
+
+
+    @staticmethod
+    def analyze_snotel_variable(
+            df_snotel: pd.DataFrame,                    # Raw SNOTEL daily data
+            existing_df: Optional[pd.DataFrame] = None, # Master DataFrame to merge into
+            variable: str = 'TAVG',
+            year_start_month: int = 10,
+            min_days_per_year: int = 300,
+            compute_trend: bool = True,
+            agg: str = 'mean'
+    ) -> pd.DataFrame:
+        """
+        Compute yearly stats + trend for a variable and merge into existing_df.
+        """
+        # === Normalize variable name ===
+        short_to_long = {
+            'TMAX': 'air_temperature_maximum',
+            'TAVG': 'air_temperature_average',
+            'TMIN': 'air_temperature_minimum',
+            'TOBS': 'air_temperature_observed',
+            'WTEQ': 'snow_water_equivalent',
+            'PREC': 'precipitation',
+            'SNWD': 'snow_depth',
+        }
+        long_to_short = {v: k for k, v in short_to_long.items()}
+
+        if variable in short_to_long:
+            short_var = variable
+            long_var = short_to_long[variable]
+        elif variable in long_to_short:
+            short_var = long_to_short[variable]
+            long_var = variable
+        else:
+            short_var = variable
+            long_var = variable
+
+        if long_var not in df_snotel.columns:
+            raise KeyError(f"Column '{long_var}' (from '{short_var}') not found.")
+
+        # === Process raw data ===
+        df = df_snotel.copy()
+        df = df.rename(columns={long_var: 'Value'})
+        df['Date'] = pd.to_datetime(df['Date'])
+        df = df.set_index('Date').sort_index()
+
+        def get_year(d):
+            if d.month >= year_start_month:
+                return d.year
+            else:
+                return d.year - 1
+
+        df['Year'] = df.index.map(get_year)
+
+        # Aggregate
+        if agg == 'mean':
+            yearly = df.groupby('Year')['Value'].mean()
+        elif agg == 'max':
+            yearly = df.groupby('Year')['Value'].max()
+        elif agg == 'min':
+            yearly = df.groupby('Year')['Value'].min()
+        elif agg == 'sum':
+            yearly = df.groupby('Year')['Value'].sum()
+        else:
+            raise ValueError(f"Unsupported aggregation: {agg}")
+
+        # Filter incomplete years
+        days_per_year = df.groupby('Year').size()
+        valid_years = days_per_year[days_per_year >= min_days_per_year].index
+        yearly = yearly.loc[valid_years]
+
+        if yearly.empty:
+            raise ValueError("No valid years found after filtering.")
+
+        # === Linear trend (safely initialized) ===
+        slope = intercept = r_squared = p_value = std_err = None
+        trend_series = pd.Series(index=yearly.index, dtype=float)
+
+        if compute_trend and len(yearly) >= 3:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(
+                yearly.index, yearly.values
+            )
+            trend_series = intercept + slope * yearly.index
+            r_squared = r_value ** 2
+
+        # === New data for this variable ===
+        new_data = pd.DataFrame({
+            'Date': pd.to_datetime(yearly.index.astype(str) + '-01-01'),
+            short_var: yearly.values,
+            f"{short_var}_Trend": trend_series.values
+        })
+
+        # === Merge into master DataFrame ===
+        if existing_df is not None and not existing_df.empty:
+            master = existing_df.copy()
+            master = pd.merge(master, new_data, on='Date', how='outer')
+            master = master.sort_values('Date').reset_index(drop=True)
+        else:
+            master = new_data.copy()
+
+        # Metadata
+        master.attrs['variable'] = short_var
+        master.attrs['year_start_month'] = year_start_month
+        master.attrs['agg'] = agg
+        master.attrs['slope'] = slope
+        master.attrs['intercept'] = intercept
+        master.attrs['r_squared'] = r_squared
+        master.attrs['p_value'] = p_value
+        master.attrs['std_err'] = std_err
+
+        return master
 
     def analyze_snotel_temperature(self, csv_path: str, temp_col: str = 'air_temperature_average', year_start_month: int = 1):
         df = pd.read_csv(csv_path, parse_dates=['Date'])
@@ -233,6 +384,11 @@ if __name__ == "__main__":
 
     river_war = RiverWar()
     notebook_frame = NotebookFrame([], river_war)
+
+    temperature_page = TemperatureChartFrame(
+        notebook_frame=notebook_frame,
+        csv_path="data/NRCS/SNOTEL/El_Diente_daily.csv",
+    )
 
     temperature_page = TemperatureChartFrame(
         notebook_frame=notebook_frame,
