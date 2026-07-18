@@ -35,6 +35,34 @@ from qgis.utils import iface
 import zipfile
 import tempfile
 from typing import Optional, List
+from qgis.core import QgsApplication
+
+def zoom_to_layer(layer):
+    if layer and layer.isValid():
+        extent = layer.extent()
+        # extent.scale(1.12)  # Slightly larger view
+        canvas = iface.mapCanvas()  # type: ignore[attr-defined]
+        canvas.setExtent(extent)
+        canvas.refresh()
+    else:
+        print(f"⚠️ Could not zoom to {layer.name()}")
+
+def refresh_display(pause: float = 0.03):
+    """Force QGIS GUI and map to update"""
+    QgsApplication.processEvents()
+
+    canvas = iface.mapCanvas()
+    canvas.refresh()
+    canvas.repaint()
+
+    # Safely repaint all layers
+    root = QgsProject.instance().layerTreeRoot()
+    for tree_layer in root.findLayers():           # this is the correct way
+        layer = tree_layer.layer()
+        if layer:
+            layer.triggerRepaint()
+
+    time.sleep(pause)
 
 def reset_layer_parent_to_root():
     """Reset new layers to be added to the project root"""
@@ -46,7 +74,7 @@ def reset_layer_parent_to_root():
     # Force root as default
     root.setCustomProperty("addLayersToGroup", False)
 
-    print("✅ Default parent reset to Root (new layers will go to top level)")
+    # print("✅ Default parent reset to Root (new layers will go to top level)")
 
 def clip_to_mask_fast(source_layer, mask_layer, project_dir, output_name):
     """
@@ -73,7 +101,7 @@ def clip_to_mask_fast(source_layer, mask_layer, project_dir, output_name):
         clipped_layer = QgsVectorLayer(output_path, output_name, "ogr")
 
         if clipped_layer.isValid():
-            print(f"✅ Clipped successfully: {clipped_layer.featureCount():,} features")
+            print(f"✅ Successfully Clipped : {clipped_layer.featureCount():,} features")
             QgsProject.instance().addMapLayer(clipped_layer)
             return clipped_layer, output_path
         else:
@@ -250,7 +278,7 @@ def load_vector_layer_masked(name: str, path: str, mask_layer: QgsVectorLayer, p
                              layer_name: str = None) -> Optional[QgsVectorLayer]:
     """
     General purpose loader + clip + color.
-    You can optionally pass the internal layer_name for GDBs/GPKGs.
+    Works with .gpkg, .gdb (unzipped), and zipped GDBs.
     """
     if not path or not os.path.exists(path):
         print(f"❌ Path does not exist: {path}")
@@ -261,7 +289,7 @@ def load_vector_layer_masked(name: str, path: str, mask_layer: QgsVectorLayer, p
     clipped_name = f"{name}.gpkg"
     clipped_path = os.path.join(project_dir, clipped_name)
 
-    # Try cached
+    # Try cached version first
     if os.path.exists(clipped_path):
         print(f"🔄 Found cached: {clipped_name}")
         vector_layer = QgsVectorLayer(clipped_path, name, "ogr")
@@ -270,21 +298,39 @@ def load_vector_layer_masked(name: str, path: str, mask_layer: QgsVectorLayer, p
             QgsProject.instance().addMapLayer(vector_layer)
             return vector_layer
 
-    # === Load original ===
-    lower_path = path.lower()
+    # === Load original layer ===
+    p = Path(path)
+    lower = str(p).lower()
 
-    if lower_path.endswith('.gpkg'):
-        internal_layer = layer_name or "Perimeters"
-        temp_layer = load_gpkg_with_ogr(path, layer_name=internal_layer, display_name=f"Temp_{name}")
+    print(f"Loading original: {path}")
 
-    elif lower_path.endswith('.gdb.zip'):
-        internal_layer = layer_name or "Perimeters"
-        uri = f"/vsizip/{path}|layername={internal_layer}"
+    if lower.endswith('.gpkg'):
+        # Auto-detect first layer if none provided
+        internal = layer_name
+        if not internal:
+            ds = ogr.Open(path)
+            if ds and ds.GetLayerCount() > 0:
+                internal = ds.GetLayer(0).GetName()
+            ds = None
+        temp_layer = load_gpkg_with_ogr(path, internal, f"Temp_{name}")
+
+    elif lower.endswith('.zip') and '.gdb' in lower:   # zipped GDB
+        internal = layer_name or "Perimeters"
+        uri = f"/vsizip/{path}|layername={internal}"
         temp_layer = QgsVectorLayer(uri, f"Temp_{name}", "ogr")
 
-    elif ".gdb" in lower_path:
-        internal_layer = layer_name or "Perimeters"
-        temp_layer = load_gdb_layer(path, internal_layer)
+    elif p.suffix.lower() == '.gdb' or '.gdb' in str(p):   # unzipped GDB folder
+        internal = layer_name
+        if not internal:
+            print("⚠️ For .gdb you should pass layer_name= (internal name)")
+            # Auto-pick first layer
+            ds = ogr.Open(str(p))
+            if ds and ds.GetLayerCount() > 0:
+                internal = ds.GetLayer(0).GetName()
+                print(f"   Auto-selected: {internal}")
+            ds = None
+        temp_layer = load_gdb_layer(path, internal, f"Temp_{name}")
+
     else:
         temp_layer = QgsVectorLayer(path, f"Temp_{name}", "ogr")
 
@@ -294,7 +340,7 @@ def load_vector_layer_masked(name: str, path: str, mask_layer: QgsVectorLayer, p
 
     print(f"   Original: {temp_layer.featureCount():,} features")
 
-    # Fix geometries + Clip (unchanged from before)
+    # === Fix geometries + Clip ===
     try:
         fixed = processing.run("native:fixgeometries", {'INPUT': temp_layer, 'OUTPUT': 'memory:Fixed'})['OUTPUT']
     except:
@@ -317,6 +363,7 @@ def load_vector_layer_masked(name: str, path: str, mask_layer: QgsVectorLayer, p
         print(f"✅ Loaded + clipped: {name} ({vector_layer.featureCount():,} features)")
         return vector_layer
 
+    print("❌ Final layer invalid or empty")
     return None
 
 def apply_solid_color(layer: QgsVectorLayer, color: QColor):
@@ -357,35 +404,29 @@ def inspect_gpkg_layers(gpkg_path: str):
         layer = ds.GetLayer(i)
         print(f"   Layer {i}: '{layer.GetName()}'  ({layer.GetFeatureCount()} features)")
 
-def remove_features_by_attribute_fast(layer: QgsVectorLayer, field_name: str, value=None):
-    """
-    Remove features by attribute - modifies layer in place, no duplication.
-    """
+
+def remove_features_by_attribute_fast(layer: QgsVectorLayer, field_name: str = "gnis_name"):
+    """Simple & reliable filter for NHD flowlines"""
     if not layer or not layer.isValid():
         print("❌ Invalid layer")
-        return 0
+        return layer
 
-    layer.startEditing()
+    # Create a new memory layer with only features that HAVE a gnis_name
+    expression = f'"{field_name}" IS NOT NULL AND "{field_name}" != \'\''
 
-    if value is None:
-        expression = f'"{field_name}" IS NULL'
-    else:
-        expression = f'"{field_name}" = {value}' if isinstance(value, (int, float)) else f'"{field_name}" = \'{value}\''
+    result = processing.run("native:extractbyexpression", {
+        'INPUT': layer,
+        'EXPRESSION': expression,
+        'OUTPUT': 'memory:Flowlines_With_Name'
+    })['OUTPUT']
 
-    request = QgsFeatureRequest().setFilterExpression(expression)
-    to_delete = [f.id() for f in layer.getFeatures(request)]
+    print(f"✅ Kept {result.featureCount():,} features with {field_name}")
 
-    if to_delete:
-        layer.deleteFeatures(to_delete)
-        layer.commitChanges()
-        print(f"✅ Removed {len(to_delete)} features where {field_name} = {value}")
-    else:
-        layer.rollBack()
-        print(f"No features to remove where {field_name} = {value}")
+    # Optional: replace the original layer in the project
+    # QgsProject.instance().removeMapLayer(layer.id())
+    # QgsProject.instance().addMapLayer(result)
 
-    # Force refresh
-    layer.triggerRepaint()
-    return len(to_delete)
+    return result
 
 def remove_features_by_attribute(layer: QgsVectorLayer, field_name: str, value=None):
     """
@@ -433,14 +474,14 @@ def create_group(group_name, position:Optional[int]=None, visible=False, existin
         group = root.insertGroup(0, group_name)
 
     if layer_dict is not None:
-        print(f"Add Layers to Group {group_name}")
+        # print(f"Add Layers to Group {group_name}")
         for key, layer in layer_dict.items():
             add_layer_to_group(layer, group)
             set_layer_state(layer, visible, False)
             layer.triggerRepaint()
             # layer.setOpacity(1.0)'
     elif layers is not None:
-        print(f"Add Layers to Group {group_name}")
+        # print(f"Add Layers to Group {group_name}")
         for layer in layers:
             add_layer_to_group(layer, group)
             set_layer_state(layer, visible, False)
@@ -496,31 +537,64 @@ def set_layer_state(layer, visible:bool, expanded:bool):
         layer_node.setItemVisibilityChecked(visible)  # Hidden
         layer_node.setExpanded(expanded)
 
+
 def load_gpkg_with_ogr(gpkg_path: str, layer_name: str, display_name: str = None, group=None):
-    print(f'Loading {gpkg_path}')
-    ds = ogr.Open(gpkg_path)
+    """
+    Load a (possibly zipped) GeoPackage layer into QGIS.
+    """
+    print(f'Loading {gpkg_path} | layer: {layer_name}')
+
+    # Handle zipped GeoPackages
+    if gpkg_path.lower().endswith('.zip'):
+        # Use GDAL Virtual File System for zip
+        zip_path = f"/vsizip/{os.path.abspath(gpkg_path)}"
+        # Usually the .gpkg is inside with same basename or we need to find it
+        gpkg_inside = None
+        ds = ogr.Open(zip_path)
+        if ds:
+            # Try to find the .gpkg file inside the zip
+            for i in range(ds.GetLayerCount()):
+                lyr = ds.GetLayer(i)
+                if lyr:
+                    gpkg_inside = lyr.GetName()  # often works
+                    break
+        if not gpkg_inside:
+            # Common fallback: same name as zip but .gpkg
+            base = os.path.splitext(os.path.basename(gpkg_path))[0]
+            gpkg_inside = f"{base}.gpkg"
+
+        open_path = f"{zip_path}/{gpkg_inside}"
+    else:
+        open_path = gpkg_path
+
+    # Open with OGR first (for validation)
+    ds = ogr.Open(open_path)
     if ds is None:
-        print("❌ Failed to open GPKG with OGR")
+        print("❌ Failed to open with OGR")
         return None
 
-    qgis_layer = QgsVectorLayer(f"{gpkg_path}|layername={layer_name}", display_name or layer_name, "ogr")
+    # Create QGIS layer
+    uri = f"{open_path}|layername={layer_name}"
+    qgis_layer = QgsVectorLayer(uri, display_name or layer_name, "ogr")
 
     if not qgis_layer.isValid():
-        print("❌ QGIS layer invalid")
+        print("❌ QGIS layer is invalid")
+        print("   Error:", qgis_layer.error().message())
         return None
 
+    # Add to project (with the group hack you mentioned)
+    project = QgsProject.instance()
+    root = project.layerTreeRoot()
+
     if group:
-        # This is a known bizarre hack required for features to draw correctly by removing them from root first
-        # then adding them to root, then adding them to the group
-        root = QgsProject.instance().layerTreeRoot()
+        # Remove from root first (important for some rendering issues)
         root.removeLayer(qgis_layer)
-        QgsProject.instance().addMapLayer(qgis_layer)
+        project.addMapLayer(qgis_layer, False)  # add without legend
         group.addLayer(qgis_layer)
     else:
-        QgsProject.instance().addMapLayer(qgis_layer)
+        project.addMapLayer(qgis_layer)
 
-    print(f"Loaded gpkg {gpkg_path}")
-
+    print(f"✅ Successfully loaded: {display_name or layer_name}")
     return qgis_layer
 
 # Not used
@@ -593,30 +667,33 @@ def list_gdb_layers(gdb_path: str):
         print("❌ Still failed")
         print("Error:", vlayer.error().message())
         return []
+
+
 def load_gdb_layer(gdb_path: str, layer_name: str, display_name: str = None):
-    """
-    Load a layer from the USFS zipped GDB.
-    """
+    gdb_path = str(Path(gdb_path).resolve())
+
+    if not Path(gdb_path).exists():
+        print(f"❌ GDB folder not found: {gdb_path}")
+        return None
+
     if display_name is None:
         display_name = layer_name
 
-    if not os.path.exists(gdb_path):
-        raise FileNotFoundError(f"GDB not found: {gdb_path}")
-
-    # Specific path for this dataset
-    inner_gdb = "Data/FPA_FOD_20221014.gdb"
-    uri = f"/vsizip/{gdb_path}/{inner_gdb}|layername={layer_name}"
+    # Clean URI - no vsizip, no inner Data/ folder
+    uri = f"{gdb_path}|layername={layer_name}"
+    print(f"Opening with URI: {uri}")
 
     layer = QgsVectorLayer(uri, display_name, "ogr")
 
     if layer.isValid():
         QgsProject.instance().addMapLayer(layer)
-        print(f"✅ Loaded: {display_name}  ({layer.featureCount():,} features)")
+        print(f"✅ SUCCESS: {display_name} ({layer.featureCount():,} features)")
         return layer
     else:
-        print(f"❌ Failed to load: {layer_name}")
+        print(f"❌ Failed to load '{layer_name}'")
         print("   Error:", layer.error().message())
-        print("   URI used:", uri)
+        # Show what layers actually exist
+        list_gdb_layers(gdb_path)
         return None
 
 def load_vector_layer(path: str, name: str = None, color: QColor = QColor(40, 40, 40)):
@@ -628,7 +705,7 @@ def load_vector_layer(path: str, name: str = None, color: QColor = QColor(40, 40
     actual_path = path
 
     if path.lower().endswith('.zip'):
-        print(f"📦 Zip file detected: {path}")
+        # print(f"📦 Zip file detected: {path}")
 
         # Use a persistent temp folder instead of TemporaryDirectory
         tmpdir = Path("/tmp/qgis_extract") / Path(path).stem
@@ -642,7 +719,7 @@ def load_vector_layer(path: str, name: str = None, color: QColor = QColor(40, 40
             raise Exception("❌ No .shp file found inside the zip!")
 
         actual_path = str(shp_files[0])
-        print(f"   Extracted to: {actual_path}")
+        # print(f"   Extracted to: {actual_path}")
 
     # Load with QGIS directly (skip OGR for now)
     qgis_layer = QgsVectorLayer(actual_path, layer_name, "ogr")
@@ -774,7 +851,7 @@ def clip_to_mask(
 
     output_path = output_dir / f"{output_name}.{'tif' if is_raster else 'gpkg'}"
 
-    print(f"Clipping {'raster' if is_raster else 'vector'} to mask...")
+    # print(f"Clipping {'raster' if is_raster else 'vector'} to mask...")
 
     # Reproject mask if needed
     if mask_layer.crs().authid() != target_crs:
@@ -818,7 +895,7 @@ def clip_to_mask(
 
     if clipped_layer.isValid():
         QgsProject.instance().addMapLayer(clipped_layer)
-        print(f"✅ Clipped successfully: {output_name} ({clipped_layer.featureCount()} features)")
+        # print(f"✅ Clipped successfully: {output_name} ({clipped_layer.featureCount()} features)")
         return clipped_layer, str(output_path)
     else:
         raise Exception(f"❌ Failed to clip layer: {output_name}")
@@ -887,7 +964,7 @@ def clip_raster_to_mask(
 
     output_path = output_dir / f"{output_name}.tif"
 
-    print(f"Clipping raster: {Path(input_raster_path).name}")
+    # print(f"Clipping raster: {Path(input_raster_path).name}")
 
     # Reproject mask if needed
     if mask_layer.crs().authid() != target_crs:
@@ -915,7 +992,7 @@ def clip_raster_to_mask(
 
     if clipped_layer.isValid():
         QgsProject.instance().addMapLayer(clipped_layer)
-        print(f"✅ Clipped raster added: {output_name}")
+        # print(f"✅ Clipped raster added: {output_name}")
         return clipped_layer, result['OUTPUT']
     else:
         raise Exception(f"❌ Failed to clip raster: {input_raster_path}")
@@ -925,7 +1002,7 @@ def remove_layer(layer):
     if layer is None:
         print("❌ No layer provided")
         return False
-    print(f"✅ Removed layer: {layer.name()}")
+    # print(f"✅ Removed layer: {layer.name()}")
     QgsProject.instance().removeMapLayer(layer.id())
     return True
 
@@ -945,5 +1022,5 @@ def reset_qgis():
     iface.mapCanvas().refresh()  # type: ignore[attr-defined]
     time.sleep(0.8)  # longer wait
 
-    print("✅ Thorough reset complete — project should be empty")
+    # print("✅ Thorough reset complete — project should be empty")
 

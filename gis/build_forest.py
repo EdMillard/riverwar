@@ -25,10 +25,10 @@ from pathlib import Path
 import importlib
 import sys
 import os
+import requests
 from typing import Optional, List
 from qgis.core import (QgsVectorLayer, QgsProject, QgsRasterLayer)
 from qgis.PyQt.QtGui import QColor
-from qgis.utils import iface
 import processing   # type: ignore
 
 # https://rockyweb.usgs.gov/vdelivery/Datasets/Staged/GovtUnit/
@@ -49,7 +49,6 @@ def reload_modules():
         'gis.make_forest_layers',
         'gis.forest_type',
         'gis.contours',
-        'gis.wildfires',
         'et.openet',
     ]
     for mod in modules_to_reload:
@@ -61,11 +60,12 @@ def reload_modules():
     print("Modules Loaded")
 reload_modules()
 
+import gis.layer as gis_layer
 from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vector_layer, clip_to_mask, create_group, \
     remove_features_by_attribute_fast, load_gpkg_with_ogr, force_collapse, \
     load_vector_layer_masked, split_layer_by_date, reset_layer_parent_to_root
 from gis.contours import build_elevation_layers
-from gis.make_forest_layers import build_forest_layers, build_tree_map_layers, build_open_et_layers
+from gis.make_forest_layers import build_forest_layers, build_tree_map_layers, build_open_et_layers, build_zenodo_layers
 
 # ====================== GLOBAL PROJECT SETTINGS ======================
 # TARGET_CRS = "EPSG:5070"
@@ -73,7 +73,12 @@ TARGET_CRS = "EPSG:4269"
 wbd_gpkg_path = '/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg'
 
 base_path:Path = Path("/opt/dev/gis/")
-huc8_name =  "Upper Dolores"
+# huc8_name =  "Upper Dolores"
+# huc8_name =  "Upper Gunnison"
+# huc8_name =  "Uncompaghre"
+huc8_name =  "San Miguel"
+# huc8_name =  "Animas"
+
 huc8_dir_name = "HUC8" + '_' + huc8_name.replace(" ", "_")
 forestry_dir = base_path / huc8_dir_name
 forestry_dir.mkdir(parents=True, exist_ok=True)
@@ -134,14 +139,14 @@ def load_huc8_from_wbd(gpkg_path: str, huc_name: str = None, huc8_code: str = No
     print(f"✅ Loaded HUC8 layer: {huc_layer.name()} ({huc_layer.featureCount()} features)")
     return huc_layer
 
-def extract_and_reproject_huc8(wbd_layer, huc_name: str):
+def extract_and_reproject_huc8(wbd_layer, huc_name: str)->tuple[Optional[QgsVectorLayer], str]:
     """
     Takes the big WBD HUC8 layer, keeps only the named HUC8,
     reprojects it to TARGET_CRS, and returns a clean single-feature layer named "HUC8".
     """
     if wbd_layer is None:
         print("❌ No WBD layer provided")
-        return None
+        return None, ""
 
     print(f"Extracting HUC: '{huc_name}' from {wbd_layer.featureCount()} features...")
 
@@ -152,14 +157,17 @@ def extract_and_reproject_huc8(wbd_layer, huc_name: str):
     selected_count = wbd_layer.selectedFeatureCount()
     if selected_count == 0:
         print(f"❌ No HUC8 found with name '{huc_name}'")
-        return None
+        return None, ""
     if selected_count > 1:
         print(f"⚠️ Found {selected_count} features matching '{huc_name}' — using first one")
+    feature = wbd_layer.selectedFeatures()[0]
+    huc8 = feature['huc8']
+    print(f"Found {huc_name} {huc8}")
 
     # Save only the selected feature
     params = {
         'INPUT': wbd_layer,
-        'OUTPUT': 'memory:Single_HUC8'
+        'OUTPUT': f'memory:{huc_name}'
     }
     result = processing.run("native:saveselectedfeatures", params)
     single_huc = result['OUTPUT']
@@ -176,7 +184,7 @@ def extract_and_reproject_huc8(wbd_layer, huc_name: str):
 
     print(f"✅ Successfully created: HUC8 ({TARGET_CRS}, {final_layer.featureCount()} features)")
 
-    return final_layer
+    return final_layer, huc8
 
 def extract_huc12_in_huc8(gpkg_path: str, huc_name: str):
     """
@@ -236,31 +244,81 @@ def extract_huc12_in_huc8(gpkg_path: str, huc_name: str):
 
     return final_layer
 
-def build_hydrology()->list:
+def build_hydrology(huc8: str) -> list:
     layers = []
-    nhd_gpkg_path = "/opt/dev/gis/NHD/NHD_H_14030002_HU8_GPKG.gpkg"
 
-    water_body_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDWaterbody")
-    symbol = get_symbol(water_body_layer)
-    symbol.setColor(QColor(165, 191, 221))
-    layers.append(water_body_layer)
+    nhd_base: Path = Path("/opt/dev/gis/NHD/")
+    nhd_base.mkdir(parents=True, exist_ok=True)
 
-    river_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDArea")
-    symbol = get_symbol(river_layer)
-    symbol.symbolLayer(0).setStrokeColor(QColor(60, 60, 221))
-    symbol.symbolLayer(0).setStrokeWidth(0.4)
-    layers.append(river_layer)
+    zip_filename = f"NHD_H_{huc8}_HU8_GPKG.zip"
+    local_zip_path = nhd_base / zip_filename  # corrected path
 
-    flow_line_layer = load_gpkg_with_ogr(nhd_gpkg_path, "NHDFlowline")
-    remove_features_by_attribute_fast(flow_line_layer, "gnis_name")
-    symbol = get_symbol(flow_line_layer)
-    symbol.setColor(QColor(60, 60, 221))
-    layers.append(flow_line_layer)
+    url = f"https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHD/HU8/GPKG/{zip_filename}"
 
+    # === Download if file doesn't exist ===
+    if not local_zip_path.exists():
+        print(f"📥 Downloading {zip_filename} ...")
+        try:
+            r = requests.get(url, stream=True, timeout=120)
+            r.raise_for_status()
+
+            with open(local_zip_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192 * 4):
+                    f.write(chunk)
+            print(f"✅ Downloaded: {local_zip_path}")
+        except Exception as e:
+            print(f"❌ Download failed: {e}")
+            return layers
+    else:
+        print(f"✅ Using cached file: {local_zip_path}")
+
+    # === Load and style layers ===
+
+    # 1. Waterbodies
+    water_body_layer = load_gpkg_with_ogr(str(local_zip_path), "NHDWaterbody", f"{huc8} - Waterbodies")
+    if water_body_layer:
+        symbol = get_symbol(water_body_layer)
+        symbol.setColor(QColor(165, 191, 221))
+        layers.append(water_body_layer)
+
+    # 2. NHDArea (rivers/lakes polygons)
+    river_layer = load_gpkg_with_ogr(str(local_zip_path), "NHDArea", f"{huc8} - Rivers/Areas")
+    if river_layer:
+        symbol = get_symbol(river_layer)
+        symbol.symbolLayer(0).setStrokeColor(QColor(60, 60, 221))
+        symbol.symbolLayer(0).setStrokeWidth(0.4)
+        layers.append(river_layer)
+
+    # 3. Flowlines
+    flow_line_layer = load_gpkg_with_ogr(str(local_zip_path), "NHDFlowline", f"{huc8} - Flowlines")
+    if flow_line_layer:
+        # After loading the flow_line_layer
+        print("Original flowlines:", flow_line_layer.featureCount())
+
+        # Create filtered layer (keep only named ones)
+        filtered_layer = processing.run("native:extractbyexpression", {
+            'INPUT': flow_line_layer,
+            'EXPRESSION': '"gnis_name" IS NOT NULL AND "gnis_name" != \'\'',
+            'OUTPUT': 'memory:NHDFlowline_Major'
+        })['OUTPUT']
+
+        print("Filtered to named flowlines:", filtered_layer.featureCount())
+
+        # Add the filtered layer to the project
+        QgsProject.instance().addMapLayer(filtered_layer)
+        remove_layer(flow_line_layer)
+
+        # Style it
+        symbol = get_symbol(filtered_layer)
+        symbol.setColor(QColor(60, 60, 221))
+
+        layers.append(filtered_layer)
+
+    print(f"✅ build_hydrology completed for HUC8 {huc8} — {len(layers)} layers loaded")
     return layers
 
 def build_weather_stations(huc8_layer):
-    temp_weather_station_layer = load_vector_layer("/opt/dev/gis/CO_DWR/ClimateStationPOR.zip", "Teno Weather Stations", QColor(255, 0, 0))
+    temp_weather_station_layer = load_vector_layer("/opt/dev/gis/CO_DWR/ClimateStationPOR.zip", "Temp Weather Stations", QColor(255, 0, 0))
     weather_station_layer, weather_station_path = clip_to_mask(temp_weather_station_layer, huc8_layer, forestry_dir, "Weather Stations")
     remove_layer(temp_weather_station_layer)
     weather_station_layer.setOpacity(1.0)
@@ -291,7 +349,10 @@ def build_wildfires(huc_layer=None, project_dir: Path = None)->List[QgsVectorLay
         color=QColor(255, 128, 0),
         layer_name="Perimeters"  # ← pass it here when needed
     )
-    layers.append(layer)
+    if layer:
+        layers.append(layer)
+    else:
+        print("build WFIGS_Interagency_Perimeters_Current failed")
 
     # Recent perimeters
     layer = load_vector_layer_masked(
@@ -302,7 +363,10 @@ def build_wildfires(huc_layer=None, project_dir: Path = None)->List[QgsVectorLay
         color=QColor(255, 0, 0),
         layer_name="Perimeters",
     )
-    layers.append(layer)
+    if layer:
+        layers.append(layer)
+    else:
+        print("build WFIGS_Interagency_Perimeters failed")
 
     # Historical
     layer = load_vector_layer_masked(
@@ -312,7 +376,10 @@ def build_wildfires(huc_layer=None, project_dir: Path = None)->List[QgsVectorLay
         project_dir=project_dir,
         color=QColor(200, 0, 0)
     )
-    layers.append(layer)
+    if layer:
+        layers.append(layer)
+    else:
+        print("build InterAgencyFirePerimeterHistory_All_Years failed")
 
     create_group("Fire", visible=True, position=0, existing_layer=huc_layer, layers=layers)
 
@@ -323,22 +390,35 @@ def build_disturbance(project_dir:Path, huc_layer:QgsVectorLayer)->List[QgsVecto
     layers = []
     layer = load_vector_layer_masked("Actv_HazFuelTrt_PL", "/opt/dev/gis/USFS/Actv_HazFuelTrt_PL.gdb",
                                                    huc_layer, project_dir, QColor(180, 0, 180))
-    layers.append(layer)
+    if layer:
+        layers.append(layer)
+    else:
+        print("build Actv_HazFuelTrt_PL failed")
 
     layer = load_vector_layer_masked("Actv_SilvReforest", "/opt/dev/gis/USFS/Actv_SilvReforest/S_USA.Actv_SilvReforest.shp",
                                                    huc_layer, project_dir, QColor(0, 180, 0))
-    layers.append(layer)
+    if layer:
+        layers.append(layer)
+    else:
+        print("build Actv_SilvReforest failed")
 
     # layer = load_vector_layer_masked("Fires", "/opt/dev/gis/USFS/RDS-2013-0009.6_Data_Format2_GDB.zip",
-    #                                                 huc_layer, project_dir, QColor(0, 180, 0))
-    layers.append(layer)
+    #                                                  huc_layer, project_dir, QColor(0, 180, 0))
+    # layers.append(layer)
     create_group("Disturbance", visible=True, position=0, existing_layer=huc_layer, layers=layers)
 
     timber_harvest_layer = load_vector_layer_masked("Actv_TimberHarvest", "/opt/dev/gis/USFS/Actv_TimberHarvest.gdb",
                                                    huc_layer, project_dir, QColor(180, 0, 180))
-    layers = split_layer_by_date(timber_harvest_layer)
-    layers.append(timber_harvest_layer)
-    create_group("Timber Harvest", visible=True, position=0, existing_layer=huc_layer, layers=layers)
+    if timber_harvest_layer:
+        layers = split_layer_by_date(timber_harvest_layer)
+        for layer in layers:
+            symbol = get_symbol(layer)
+            symbol.symbolLayer(0).setStrokeWidth(0.4)
+        layers.append(timber_harvest_layer)
+        create_group("Timber Harvest", visible=True, position=0, existing_layer=huc_layer, layers=layers)
+    else:
+        print("build Actv_TimberHarvest failed")
+
 
     build_wildfires(huc_layer, project_dir)
 
@@ -358,34 +438,45 @@ def build(huc_name:str):
     symbol.setColor(QColor(60, 60, 60))
 
     wbd_huc8 = load_huc8_from_wbd("/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg")  # Load Upper Colorado HU2, HUC8
-    huc8_layer = extract_and_reproject_huc8(wbd_huc8, huc_name)
+    huc8_layer, huc8 = extract_and_reproject_huc8(wbd_huc8, huc_name)
     remove_layer(wbd_huc8)
     huc12_layer = extract_huc12_in_huc8(wbd_gpkg_path, huc_name)
     symbol = get_symbol(huc12_layer)
     symbol.setColor(QColor(200, 200, 150))
-
-    hydrology_layers = build_hydrology()
-    create_group("NHD Hydrology", visible=True, position=0, existing_layer=huc12_layer, layers=hydrology_layers)
-    reset_layer_parent_to_root()
+    gis_layer.zoom_to_layer(huc8_layer)
+    gis_layer.refresh_display()
 
     # build_forest_layers(forestry_dir, huc8_layer, huc_name)
 
     # build_open_et_layers(forestry_dir, huc8_layer, huc12_layer)
 
+    zenodo_layers = build_zenodo_layers(forestry_dir, huc8_layer, huc4_layer)
     tree_map_layers = build_tree_map_layers(forestry_dir, huc8_layer, huc4_layer)
+    gis_layer.zoom_to_layer(huc8_layer)
+    gis_layer.refresh_display()
 
     build_disturbance(forestry_dir, huc12_layer)
+    gis_layer.zoom_to_layer(huc8_layer)
+    gis_layer.refresh_display()
 
     load_vector_layer_masked("Protected Areas", "/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz",
                                                    huc12_layer, forestry_dir, QColor(100, 255, 100))
 
     # build_elevation_layers(forestry_dir, huc8_layer)
 
+    create_group("Zenodo SDI 2022", position=0, existing_layer=huc12_layer, layer_dict=zenodo_layers)
+
+
     create_group("TreeMap 2022", position=0, existing_layer=huc12_layer, layer_dict=tree_map_layers)
     layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('FLDTYPCD', None)
     if layer is not None:
         force_collapse(layer)
+    gis_layer.zoom_to_layer(huc8_layer)
+    gis_layer.refresh_display()
 
+    hydrology_layers = build_hydrology(huc8)
+    create_group("NHD Hydrology", visible=True, position=0, layers=hydrology_layers)
+    reset_layer_parent_to_root()
 
     build_weather_stations(huc8_layer)
 
@@ -395,11 +486,4 @@ reset_qgis()
 
 print(f"\n=== Starting {huc8_name} Build ===")
 huc8_layer = build(huc8_name)
-if huc8_layer and huc8_layer.isValid():
-    extent = huc8_layer.extent()
-    # extent.scale(1.12)  # Slightly larger view
-    canvas = iface.mapCanvas()  # type: ignore[attr-defined]
-    canvas.setExtent(extent)
-    canvas.refresh()
-else:
-    print("⚠️ Could not zoom to HUC8")
+gis_layer.zoom_to_layer(huc8_layer)

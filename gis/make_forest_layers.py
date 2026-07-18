@@ -46,7 +46,7 @@ def list_vegtypes_in_layer(input_item, forest_types: dict):
     List vegetation types present in a raster.
     Works with either a file path (str/Path) or a QgsRasterLayer.
     """
-    print(f"\n=== Vegetation Types Present ===")
+    # print(f"\n=== Vegetation Types Present ===")
 
     # Handle both path and layer
     if isinstance(input_item, (str, Path)):
@@ -71,10 +71,10 @@ def list_vegtypes_in_layer(input_item, forest_types: dict):
         if nodata is not None and val == nodata:
             continue
         info = forest_types.get(val, {"name": f"Unknown Code {val}", "color": (150, 150, 150)})
-        print(f"   {val:4d}  →  {info['name']}")
+        # print(f"   {val:4d}  →  {info['name']}")
         present.append((val, info["name"]))
 
-    print(f"\nTotal unique types found in '{layer_name}': {len(present)}\n")
+    # print(f"\nTotal unique types found in '{layer_name}': {len(present)}\n")
     ds = None  # close dataset
     return present
 
@@ -149,14 +149,14 @@ def style_clipped_layer(clipped_veg_layer: QgsRasterLayer, present_types: list):
         print("❌ Clipped layer is not valid for styling")
         return
 
-    print(f"🎨 Applying palette to layer: {clipped_veg_layer.name()}")
+    # print(f"🎨 Applying palette to layer: {clipped_veg_layer.name()}")
 
     classes = []
     for code, _ in present_types:
         info = forest_types.get(code, {"name": f"Unknown {code}", "color": (150, 150, 150)})
         color = QColor(*info["color"])
         classes.append(QgsPalettedRasterRenderer.Class(code, color, info["name"]))
-        print(f"   {code} → {info['name']} {info['color']}")
+        # print(f"   {code} → {info['name']} {info['color']}")
 
     renderer = QgsPalettedRasterRenderer(clipped_veg_layer.dataProvider(), 1, classes)
     clipped_veg_layer.setRenderer(renderer)
@@ -643,14 +643,14 @@ def create_high_canopy_low_et_risk(
 
 def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
 
-    tree_map_layers = {}
-    tree_map_files = [
+    layers = {}
+    files = [
         'TreeMap2022_CONUS_BALIVE',
         'TreeMap2022_CONUS_FLDTYPCD',   # Recommended
         'TreeMap2022_CONUS_SDIsum',
         'TreeMap2016_SDIPCT_RMRS',
     ]
-    tree_map_files_all = [
+    files_all = [
         'TreeMap2022_CONUS_BALIVE',
         "TreeMap2022_CONUS_CANOPYPCT",
 
@@ -669,7 +669,7 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
         'TreeMap2022_CONUS_VOLCFNET_D',
         'TreeMap2022_CONUS_VOLCFNET_L',
     ]
-    for raster_file in tree_map_files:
+    for raster_file in files:
         raster_path =  f"/opt/dev/gis/TreeMap/{raster_file}/{raster_file}.tif"
         if "2022" in raster_file:
             layer_name = raster_file.replace('TreeMap2022_CONUS_', '')
@@ -677,15 +677,15 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
             layer_name = raster_file.replace('TreeMap2016_', '')
 
         layer, path = clip_raster_to_mask(raster_path, huc_layer, forestry_dir, output_name=layer_name)
-        tree_map_layers[layer_name] = layer
+        layers[layer_name] = layer
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('FLDTYPCD', None)
+    layer:Optional[QgsRasterLayer, None] = layers.get('FLDTYPCD', None)
     if layer is not None:
         present_types = list_vegtypes_in_layer(layer, forest_types)
         style_clipped_layer(layer, present_types)
         set_layer_state(layer, True, False)
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('STDSZCD', None)
+    layer:Optional[QgsRasterLayer, None] = layers.get('STDSZCD', None)
     if layer is not None:
         # print_raster_value_counts(layer)
         # counts = raster_value_counts(layer)
@@ -699,7 +699,7 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
         }
         apply_discrete_colors(layer, stand_colors)
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('SDIPCT_RMRS', None)
+    layer:Optional[QgsRasterLayer, None] = layers.get('SDIPCT_RMRS', None)
     if layer is not None:
         # print_raster_value_counts(layer)
         # counts = raster_value_counts(layer)
@@ -708,12 +708,12 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
             (35, 60, 2, QColor(0, 200, 0, 255), "Normal 35-60"),
             (60, 80, 3, QColor(255, 180, 80, 255), "Moderately overstocked 60-80"),
             (80, 100, 4, QColor(220, 50, 50, 255), "Heavily overstocked 80-100"),
-            (100, 999, 5, QColor(255, 0, 00, 255), "Severely overstocked > 00")
+            (100, 999, 5, QColor(255, 0, 00, 255), "Severely overstocked > 100")
         ]
         classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_balive)
-        tree_map_layers[classified_layer.name()+'_Classified'] = classified_layer
+        layers[classified_layer.name()+'_Classified'] = classified_layer
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('BALIVE', None)
+    layer:Optional[QgsRasterLayer, None] = layers.get('BALIVE', None)
     if layer is not None:
         # print_raster_value_counts(layer)
         # counts = raster_value_counts(layer)
@@ -724,9 +724,9 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
             (180, 9999, 4, QColor(220, 50, 50, 255), "Extreme >180")
         ]
         classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_balive)
-        tree_map_layers[classified_layer.name()+'_Classified'] = classified_layer
+        layers[classified_layer.name()+'_Classified'] = classified_layer
 
-    layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('TPA_DEAD', None)
+    layer:Optional[QgsRasterLayer, None] = layers.get('TPA_DEAD', None)
     if layer is not None:
         classes_tpa = [
             (0, 50, 1, QColor(200, 200, 200, 80), "Low <50"),
@@ -734,9 +734,39 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
             (100, 9999, 3, QColor(220, 50, 50, 255), "High >100")
         ]
         classified_layer = reclassify_raster(layer, forestry_dir, classes=classes_tpa)
-        tree_map_layers[classified_layer.name() + '_Classified'] = classified_layer
+        layers[classified_layer.name() + '_Classified'] = classified_layer
 
-    return tree_map_layers
+    return layers
+
+def build_zenodo_layers(forestry_dir: Path, huc_layer, huc12_layer):
+    layers = {}
+    files = [
+        'Maximum_Stand_Density_Index_2022',
+        'Relative_Density_2022',
+        'Stand_Density_Index_2022',
+    ]
+    for raster_file in files:
+        raster_path =  f"/opt/dev/gis/TreeMap/Zenodo_SDI_2022/{raster_file}.tif"
+        layer_name = raster_file.replace('_2022', '')
+        layer, path = clip_raster_to_mask(raster_path, huc_layer, forestry_dir, output_name=layer_name)
+        layers[layer_name] = layer
+
+    layer:Optional[QgsRasterLayer, None] = layers.get('Relative_Density', None)
+    if layer is not None:
+        # print_raster_value_counts(layer)
+        # counts = raster_value_counts(layer)
+        classes = [
+            (0.00, 0.35, 1, QColor(0, 110, 60, 255), "Very Low (< 0.35)"),  # Deep green
+            (0.35, 0.50, 2, QColor(60, 170, 80, 255), "Low (0.35–0.50)"),  # Medium green
+            (0.50, 0.65, 3, QColor(180, 220, 100, 255), "Moderate (0.50–0.65)"), # Light yellow-green (not bright yellow)
+            (0.65, 0.80, 4, QColor(255, 190, 60, 255), "High (0.65–0.80)"),  # Orange-amber - transition to stress
+            (0.80, 1.00, 5, QColor(220, 40, 40, 255), "Very High (0.80–1.00)"),  # Clear red
+            (1.00, 10.0, 6, QColor(240, 0, 240, 255), "Severe / Overstocked (> 1.00)")  # Purple for extreme
+        ]
+        classified_layer = reclassify_raster(layer, forestry_dir, classes=classes)
+        layers[classified_layer.name()+'_Classified'] = classified_layer
+
+    return layers
 
 
 def build_open_et_layers(forestry_dir, huc_layer, huc12_layer):
