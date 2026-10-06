@@ -50,6 +50,7 @@ def reload_modules():
         'gis.forest_type',
         'gis.contours',
         'et.openet',
+        'gis.dem'
     ]
     for mod in modules_to_reload:
         if mod in sys.modules:
@@ -66,6 +67,7 @@ from gis.layer import remove_layer, reset_qgis, get_symbol, ensure_crs, load_vec
     load_vector_layer_masked, split_layer_by_date, reset_layer_parent_to_root
 from gis.contours import build_elevation_layers
 from gis.make_forest_layers import build_forest_layers, build_tree_map_layers, build_open_et_layers, build_zenodo_layers
+from gis.dem import build_dem_from_huc
 
 # ====================== GLOBAL PROJECT SETTINGS ======================
 # TARGET_CRS = "EPSG:5070"
@@ -73,10 +75,10 @@ TARGET_CRS = "EPSG:4269"
 wbd_gpkg_path = '/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg'
 
 base_path:Path = Path("/opt/dev/gis/")
-# huc8_name =  "Upper Dolores"
+huc8_name =  "Upper Dolores"
 # huc8_name =  "Upper Gunnison"
-# huc8_name =  "Uncompaghre"
-huc8_name =  "San Miguel"
+# huc8_name =  "Uncompahgre"
+# huc8_name =  "San Miguel"
 # huc8_name =  "Animas"
 
 huc8_dir_name = "HUC8" + '_' + huc8_name.replace(" ", "_")
@@ -437,42 +439,46 @@ def build(huc_name:str):
     symbol = get_symbol(huc4_layer)
     symbol.setColor(QColor(60, 60, 60))
 
+    # huc6_path = f"{wbd_gpkg_path}|layername=WBDHU6"
+    # huc6_layer = QgsVectorLayer(huc6_path, "WBDHU6", "ogr")
+    # QgsProject.instance().addMapLayer(huc6_layer)
+    # symbol = get_symbol(huc6_layer)
+    # symbol.setColor(QColor(90, 90, 90))
+
     wbd_huc8 = load_huc8_from_wbd("/opt/dev/gis/WBD/WBD_14_HU2_GPKG.gpkg")  # Load Upper Colorado HU2, HUC8
     huc8_layer, huc8 = extract_and_reproject_huc8(wbd_huc8, huc_name)
     remove_layer(wbd_huc8)
     huc12_layer = extract_huc12_in_huc8(wbd_gpkg_path, huc_name)
     symbol = get_symbol(huc12_layer)
     symbol.setColor(QColor(200, 200, 150))
+
     gis_layer.zoom_to_layer(huc8_layer)
     gis_layer.refresh_display()
+
+    # build_dem_from_huc(huc8_layer, "/opt/dev/gis/USGS_DEM",  str(forestry_dir))
 
     # build_forest_layers(forestry_dir, huc8_layer, huc_name)
 
     # build_open_et_layers(forestry_dir, huc8_layer, huc12_layer)
 
-    zenodo_layers = build_zenodo_layers(forestry_dir, huc8_layer, huc4_layer)
+    # zenodo_layers = build_zenodo_layers(forestry_dir, huc8_layer, huc4_layer)
     tree_map_layers = build_tree_map_layers(forestry_dir, huc8_layer, huc4_layer)
     gis_layer.zoom_to_layer(huc8_layer)
-    gis_layer.refresh_display()
 
-    build_disturbance(forestry_dir, huc12_layer)
+    # build_disturbance(forestry_dir, huc12_layer)
     gis_layer.zoom_to_layer(huc8_layer)
-    gis_layer.refresh_display()
 
-    load_vector_layer_masked("Protected Areas", "/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz",
-                                                   huc12_layer, forestry_dir, QColor(100, 255, 100))
+    # load_vector_layer_masked("Protected Areas", "/opt/dev/gis/PAD/PADUS4_1Designation_StateCO.kmz",
+    #                                                huc12_layer, forestry_dir, QColor(100, 255, 100))
 
     # build_elevation_layers(forestry_dir, huc8_layer)
 
-    create_group("Zenodo SDI 2022", position=0, existing_layer=huc12_layer, layer_dict=zenodo_layers)
-
+    # create_group("Zenodo SDI 2022", position=0, existing_layer=huc12_layer, layer_dict=zenodo_layers)
 
     create_group("TreeMap 2022", position=0, existing_layer=huc12_layer, layer_dict=tree_map_layers)
     layer:Optional[QgsRasterLayer, None] = tree_map_layers.get('FLDTYPCD', None)
     if layer is not None:
         force_collapse(layer)
-    gis_layer.zoom_to_layer(huc8_layer)
-    gis_layer.refresh_display()
 
     hydrology_layers = build_hydrology(huc8)
     create_group("NHD Hydrology", visible=True, position=0, layers=hydrology_layers)

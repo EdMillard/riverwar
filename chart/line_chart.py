@@ -30,6 +30,7 @@ class LineChart(Chart):
                  current_date: date | None = None,
                  end_date: date | None = None,
                  show_x_labels: bool = True,
+                 show_right_labels: bool = False,
                  y_label: str = "",
                  y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS', '°F', '°C', 'in', 'ft', 'mm', '%'] = 'MAF',
                  y_divisor: float | None = None,
@@ -47,6 +48,7 @@ class LineChart(Chart):
         self.data_series = data_series
         self.title = title
         self.show_x_labels = show_x_labels
+        self.show_right_labels = show_right_labels
         self.y_label = y_label.strip()
         self.y_units = y_units
         self.y_max = y_max
@@ -216,7 +218,11 @@ class LineChart(Chart):
         self.create_line_chart(self.ax)
 
         left_margin = 0.05
-        right_margin = 0.98
+        if self.show_right_labels:
+            right_margin = 0.96
+        else:
+            right_margin = 0.98
+
         top_margin = 0.90 if self.title and self.title.strip() else 0.99
         bottom_margin = 0.12 if self.show_x_labels else 0.03
 

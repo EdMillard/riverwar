@@ -22,10 +22,11 @@ SOFTWARE.
 """
 # from colorado.graph_inflow_outflow import InflowOutflowChart
 from graphs.graph_reservoirs import ReservoirChart
+import wx
+from colorado.river_war import RiverWar
 from graphs.chart_frame import ChartFrame, NotebookFrame
 import colorado.lb as lb
 from reservoirs.reservoir import Reservoir
-
 from reservoirs.imperial import Imperial
 # from reservoirs.roosevelt import Roosevelt
 from reservoirs.srp import SRP
@@ -181,3 +182,14 @@ class ReservoirsReality(ChartFrame):
         #    self.reservoirs, start_date=start, current_date=current, end_date=end
         # )
         # self.charts.append(inflow_chart)
+
+if __name__ == "__main__":
+    app = wx.App(False)
+
+    river_war = RiverWar()
+    notebook_frame = NotebookFrame([], river_war)
+
+    ReservoirsReality( notebook_frame=notebook_frame)
+
+    notebook_frame.Show()
+    app.MainLoop()

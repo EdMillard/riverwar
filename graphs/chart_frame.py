@@ -251,14 +251,18 @@ class ChartFrame(wx.Panel):
         separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
 
-        self.start_nav = MonthYearNavigator(top_toolbar, date(2025, 10, 1), self.on_date_changed, name="start")
+        now = datetime.now()
+        water_year_start_date = date(now.year - 1, now.month, 1)
+        water_year_end_date = Chart.last_day_of_month(now.year+2, now.month)
+
+        self.start_nav = MonthYearNavigator(top_toolbar, water_year_start_date, self.on_date_changed, name="start")
         tb_sizer.Add(self.start_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
         separator = wx.StaticText(top_toolbar, label="-")
         separator.SetFont(wx.Font(14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
         tb_sizer.Add(separator, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, border=6)
 
-        self.end_nav = MonthYearNavigator(top_toolbar, Chart.last_day_of_month(2026, 9), self.on_date_changed, name="end")
+        self.end_nav = MonthYearNavigator(top_toolbar, water_year_end_date, self.on_date_changed, name="end")
         tb_sizer.Add(self.end_nav, 0, wx.ALIGN_CENTER_VERTICAL)
 
         separator = wx.StaticText(top_toolbar, label="]")
@@ -569,7 +573,7 @@ class ChartFrame(wx.Panel):
         )
 
     @staticmethod
-    def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
+    def find_directories_with_file(root_dir: str, filename: str, suffix: str='') -> List[str]:
         """Return list of directories containing the given filename."""
         root = Path(root_dir)
         if not root.exists():
@@ -581,14 +585,14 @@ class ChartFrame(wx.Panel):
                 if (dir_path / filename).is_file():
                     matching_dirs.append(str(dir_path.resolve()))
 
-        return ChartFrame.filter_and_sort_usbr_reports(matching_dirs)
+        return ChartFrame.filter_and_sort_usbr_reports(matching_dirs, suffix=suffix)
 
     @staticmethod
-    def filter_and_sort_usbr_reports(paths):
+    def filter_and_sort_usbr_reports(paths, suffix=''):
         def get_sort_key(path_str):
             path = str(path_str)
-            # Extract year and month code (only for main reports)
-            match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})$', path)  # Note: $ ensures nothing after month code
+            # Extract year and month code; suffix must match exactly at end of path
+            match = re.search(rf'/(\d{{4}})/([A-Z]{{3}}\d{{2}}){re.escape(suffix)}$', path)
             if not match:
                 return datetime.min, path
 
@@ -602,8 +606,8 @@ class ChartFrame(wx.Panel):
 
             return dt, path
 
-        # First filter: keep only paths that do NOT have _XXX after the month/year
-        filtered = [p for p in paths if re.search(r'/(\d{4})/[A-Z]{3}\d{2}$', str(p))]
+        # Keep only paths that end with /YYYY/MONYY plus the given suffix
+        pattern = re.compile(rf'/(\d{{4}})/[A-Z]{{3}}\d{{2}}{re.escape(suffix)}$')
+        filtered = [p for p in paths if pattern.search(str(p))]
 
-        # Then sort chronologically
         return sorted(filtered, key=get_sort_key)

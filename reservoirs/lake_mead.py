@@ -45,7 +45,7 @@ from sheet import sheet
 
 class LakeMead(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None, month=1):
-        headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.MEAD_ABOVE_1000, lb.MEAD_MOST,
+        headers:List[str] = [lb.DIAMOND_CREEK_WY, lb.MEAD_INFLOW, lb.MEAD, lb.MEAD_ABOVE_975, lb.MEAD_MOST,
                              lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION,
                              lb.MEAD_RELEASE, lb.MEAD_RELEASE_CFS]
         super().__init__('Lake Mead', headers, catalog_id= 4370, upstream=upstream, month=month)
@@ -64,17 +64,17 @@ class LakeMead(Reservoir):
         self.power_head_target_feet = 1035
         self.power_head_target_af = 6637508
 
-        # self.power_head_min_feet = 1000
-        # self.power_head_min_af = 4_475_301
+        self.mead_consult_feet = 1010
+        self.mead_consult_af = 5_054_082
 
         self.special_levels = [
-            (1050, 7_682_878, "Level 2"),
-            (1025, 5_981_122, "Level 3"),
+            (1010, 5_054_082, "Consult"),
+            # (1025, 5_981_122, "Level 3"),
             # (1000, 4_475_301, "'24 ROD")]
             (950, 2005585, "No power")]
 
-        self.power_head_min_feet = 1000
-        self.power_head_min_af = 4_475_301
+        self.power_head_min_feet = 975
+        self.power_head_min_af = 3_155_885
 
         # self.power_head_min_feet = 950
         # self.power_head_min_af = 2005585
@@ -120,7 +120,7 @@ class LakeMead(Reservoir):
         self.pump_parts = [("SNWA Actual", self.snwa_actual_af, Reservoir.snwa_pump_actual_color),
                            ("SNWA Projected", self.snwa_projected_af, Reservoir.snwa_pump_projected_color)]
 
-        df_utils.subtract_constant(self.df_daily, lb.MEAD, lb.MEAD_ABOVE_1000, self.power_head_min_af)
+        df_utils.subtract_constant(self.df_daily, lb.MEAD, lb.MEAD_ABOVE_975, self.power_head_min_af)
         if self.df_24_month is not None:
             Reservoir.interpolate_monthly_storage_to_daily(self.df_24_month, self.df_daily,
                                                            monthly_value_col='End Of Month Storage', daily_target_col=lb.MEAD_MOST)

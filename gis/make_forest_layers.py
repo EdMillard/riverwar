@@ -639,8 +639,6 @@ def create_high_canopy_low_et_risk(
 #     et_threshold=150   # adjust based on your ET units
 # )
 
-
-
 def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
 
     layers = {}
@@ -675,12 +673,13 @@ def build_tree_map_layers(forestry_dir: Path, huc_layer, huc12_layer):
             layer_name = raster_file.replace('TreeMap2022_CONUS_', '')
         elif "2016" in raster_file:
             layer_name = raster_file.replace('TreeMap2016_', '')
-
+        print(f'Treenao {layer_name}')
         layer, path = clip_raster_to_mask(raster_path, huc_layer, forestry_dir, output_name=layer_name)
         layers[layer_name] = layer
 
     layer:Optional[QgsRasterLayer, None] = layers.get('FLDTYPCD', None)
     if layer is not None:
+        print('Build FLDTYPCD')
         present_types = list_vegtypes_in_layer(layer, forest_types)
         style_clipped_layer(layer, present_types)
         set_layer_state(layer, True, False)

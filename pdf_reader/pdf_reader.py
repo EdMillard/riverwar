@@ -9,7 +9,7 @@ import pandas as pd
 import re
 import warnings
 from typing import Optional
-import time
+from colorado.river_war import RiverWar
 import requests
 import math
 
@@ -656,7 +656,7 @@ def safe_bbox_intersection_area(ba, bb):
 
 def download_usbr_24mo_reports(
         base_url: str = "https://www.usbr.gov/lc/region/g4000/24mo/",
-        download_dir: Path | str = "../data/USBR_24Month_Reports",
+        download_dir: Path | str = "data/USBR_24Month_Reports",
         years: Optional[List[int]] = None,
         months: Optional[List[str]] = None,
         delay: float = 0.5
@@ -692,8 +692,8 @@ def download_usbr_24mo_reports(
     for year in years:
         year_dir = download_dir / str(year)
         year_dir.mkdir(exist_ok=True)
-
         for month in months:
+            found_a_file = False
             base_name = f"{month}{str(year)[-2:]}"  # e.g., MAR26
 
             files_to_try = [
@@ -709,7 +709,8 @@ def download_usbr_24mo_reports(
                 local_path = year_dir / filename
 
                 if local_path.exists():
-                    print(f"✓ Already exists: {year}/{filename}")
+                    # print(f"✓ Already exists: {year}/{filename}")
+                    found_a_file = True
                     if not 'Chart' in filename:
                         out_path = Path(local_path.with_suffix(''))
                         # FIXME - RESTORE THIS
@@ -728,18 +729,22 @@ def download_usbr_24mo_reports(
                     if r.status_code == 200 and len(r.content) > 5000:
                         local_path.write_bytes(r.content)
                         print("✅ Done")
+                        found_a_file = True
                     else:
-                        print("Not found")
-                        return
+                        print(f"Not found {filename}")
+                        # return
                 except Exception as e:
                     print(f"Failed: {e}")
 
-                time.sleep(delay)
-
+                # time.sleep(delay)
+            if not found_a_file:
+                break
     print("\n✅ Download process complete!")
 
 
 if __name__ == "__main__":
+    river_war = RiverWar()
+
     years = [2026]
     download_usbr_24mo_reports(years=years)
     # https://www.usbr.gov/lc/region/g4000/24mo/index.html

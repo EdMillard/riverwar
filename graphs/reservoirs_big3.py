@@ -22,7 +22,9 @@ SOFTWARE.
 """
 from pathlib import Path
 from datetime import datetime
+import re
 import wx
+from colorado.river_war import RiverWar
 from chart.chart import Chart
 from datetime import date
 import api.df_utils as df_utils
@@ -33,8 +35,8 @@ import colorado.ub as ub
 from reservoirs.lake_mead import LakeMead
 from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
-from source.crbfc import request_esplist, request_forecast
-from typing import Dict
+from pdf_reader.pdf_reader import download_usbr_24mo_reports
+# from source.crbfc import request_esplist, request_forecast
 
 arrow_fg = wx.Colour(150, 150, 150)
 
@@ -47,7 +49,8 @@ GIF_LOOP_ENABLED = False
 class ReservoirsBig3(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         self.name = 'Big 3 Reservoirs'
-        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
+        #reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
+        reports_min = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv', suffix="_MIN")
 
         flaming_gorge = FlamingGorge()
         lake_powell = LakePowell(upstream=[flaming_gorge])
@@ -61,8 +64,53 @@ class ReservoirsBig3(ChartFrame):
             lake_powell,
             lake_mead,
         ]
-        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports, page_name=self.name)
+        super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports_min, page_name=self.name)
         self.right_axis_annotations()
+
+    @staticmethod
+    def annotate_level(ax, y, feet, color, draw_text=True, left_of_axis=True, draw_line=True):
+        """Draw an optional level line and label on the right y-axis.
+
+        y is the plotted coordinate (for example acre_feet - min_capacity).
+        feet is the elevation shown in the label.
+        left_of_axis=True:  right-justified text just to the left of the right y-axis
+        left_of_axis=False: left-justified text just to the right of the right y-axis
+        """
+        if draw_line:
+            ax.axhline(
+                y=y,
+                color=color,
+                linestyle='--',
+                linewidth=1.5,
+                alpha=0.85,
+                zorder=3,
+            )
+
+        if not draw_text:
+            return
+
+        if left_of_axis:
+            x, ha = 0.995, 'right'
+        else:
+            x, ha = 1.005, 'left'
+
+        ax.text(
+            x, y,
+            str(feet),
+            transform=ax.get_yaxis_transform(),
+            va='center',
+            ha=ha,
+            fontsize=10,
+            color=color,
+            fontweight='bold',
+            clip_on=False,
+            bbox=dict(
+                boxstyle="round,pad=0.3",
+                facecolor="white",
+                alpha=1,
+                edgecolor=color,
+            ),
+        )
 
     def right_axis_annotations(self):
         for reservoirs in self.reservoir_lists:
@@ -77,93 +125,38 @@ class ReservoirsBig3(ChartFrame):
                                 if isinstance(item, (list, tuple)) and len(item) >= 3:
                                     if item[0] == 'Safe Power Head':
                                         min_capacity = item[2]
-                                        # Add text annotation to the left of the right spine
-                                        ax.text(
-                                            0.995, 0.0,
-                                            f"{item[1]}'",
-                                            transform=ax.get_yaxis_transform(),
-                                            va='center',
-                                            ha='right',
-                                            fontsize=10,
-                                            color='royalblue',
-                                            fontweight='bold',
-                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=1,
-                                                      edgecolor='royalblue')
-                                        )
-                            elevation_3525 = getattr(reservoir, 'elevation_3525_af', 0)
-                            if elevation_3525:
+                                        ReservoirsBig3.annotate_level(ax, 0.0, str(round(item[1])),
+                                                                      'royalblue', draw_text=True, draw_line=True,
+                                                                      left_of_axis=True)
+
+                            elevation_3510_ft = getattr(reservoir, 'power_head_target_feet', 0)
+                            elevation_3510_af = getattr(reservoir, 'power_head_target_af', 0)
+                            if elevation_3510_af:
                                 ax = self.line_chart.ax
-                                ax.axhline(
-                                    y=elevation_3525-min_capacity,
-                                    color='royalblue',
-                                    linestyle='--',
-                                    linewidth=1.5,
-                                    alpha=0.85,
-                                    zorder=3
-                                )
-                                ax.text(
-                                    0.995, elevation_3525-min_capacity,
-                                    f"3525'",
-                                    transform=ax.get_yaxis_transform(),
-                                    va='center',
-                                    ha='right',
-                                    fontsize=10,
-                                    color='royalblue',
-                                    fontweight='bold',
-                                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=1,
-                                              edgecolor='royalblue')
-                                )
+                                ReservoirsBig3.annotate_level(ax, elevation_3510_af-min_capacity, elevation_3510_ft,
+                                                              'royalblue', draw_text=True, left_of_axis=True)
+
                 elif  reservoir.name == 'Lake Mead':
-                    crit_points = getattr(reservoir, 'critical_elevations_feet', [])
-                    if crit_points:
-                        min_capacity = 0
-                        if hasattr(self.line_chart, 'ax') and self.line_chart.ax is not None:
-                            ax = self.line_chart.ax
+                    if hasattr(self.line_chart, 'ax') and self.line_chart.ax is not None:
+                        ax = self.line_chart.ax
+                        mead_consult_feet = getattr(reservoir, 'mead_consult_feet', 0)
+                        mead_consult_af = getattr(reservoir, 'mead_consult_af', 0)
+                        min_capacity = getattr(reservoir, 'power_head_min_af', 0)
+                        ReservoirsBig3.annotate_level(ax, mead_consult_af - min_capacity, mead_consult_feet,
+                                                      'darkred', draw_text=True, left_of_axis=False)
+
+                        crit_points = getattr(reservoir, 'critical_elevations_feet', [])
+                        if crit_points:
                             for item in crit_points:
                                 if isinstance(item, (list, tuple)) and len(item) >= 3:
                                     if item[0] == 'Safe Power Head':
-                                        min_capacity = item[2]
-
-                                        # Add text annotation to the right of the right spine
-                                        ax.text(
-                                            1.005, 0.0,
-                                            f"{item[1]}'",
-                                            transform=ax.get_yaxis_transform(),
-                                            va='center',
-                                            ha='left',
-                                            fontsize=10,
-                                            color='darkred',
-                                            fontweight='bold',
-                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8,
-                                                      edgecolor='darkred')
-                                        )
+                                        ReservoirsBig3.annotate_level(ax, 0.0, f"{item[1]}'",'darkred',
+                                                                      draw_text=True, draw_line=False, left_of_axis=False)
                                     else:
                                         cap_maf = (item[2] - min_capacity)
                                         elevation_ft = item[1]
-
-                                        # Dashed horizontal line across the entire plot
-                                        ax.axhline(
-                                            y=cap_maf,
-                                            color='darkred',
-                                            linestyle='--',
-                                            linewidth=1.5,
-                                            alpha=0.85,
-                                            zorder=3
-                                        )
-
-                                        # Add text annotation to the right of the right spine
-                                        ax.text(
-                                            1.005, cap_maf,
-                                            f"{elevation_ft}'",
-                                            transform=ax.get_yaxis_transform(),
-                                            va='center',
-                                            ha='left',
-                                            fontsize=10,
-                                            color='darkred',
-                                            fontweight='bold',
-                                            bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8,
-                                                      edgecolor='darkred')
-                                        )
+                                        ReservoirsBig3.annotate_level(ax, cap_maf, elevation_ft,
+                                                                      'darkred', draw_text=True, left_of_axis=False)
 
     def load_charts(self):
         do_adjustment = False
@@ -183,7 +176,7 @@ class ReservoirsBig3(ChartFrame):
                         reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + powell_df['Cut Powell Release']
                         reservoir.df_daily[ub.POWELL_MOST] = reservoir.df_daily[ub.POWELL_MOST] + fg_df['Flaming Gorge DROA']
                     time_series.append((reservoir.df_daily, ub.POWELL_MOST, '#a0a0ff', 'solid'))
-                    time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3500, 'dodgerblue'))
+                    time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3490, 'dodgerblue'))
                     prev_path = previous_month_path(Path(reservoir.report_path))
                     df_24_month_prev, df_24_wy_prev = reservoir.load_24_month(prev_path, reservoir.name)
                     reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
@@ -192,7 +185,7 @@ class ReservoirsBig3(ChartFrame):
                     if do_adjustment:
                         reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
                     time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0', 'solid'))
-                    time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_1000, 'darkred'))
+                    time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_975, 'darkred'))
                 elif reservoir.name == 'Flaming Gorge':
                     fg_df = reservoir.df_daily
                     if do_adjustment:
@@ -213,10 +206,11 @@ class ReservoirsBig3(ChartFrame):
             time_series,
             title=f'Colorado River {self.name} Storage Above Critical Elevations - May 24 Month - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
-            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
-            show_x_labels = False
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
+            show_x_labels = True,
+            show_right_labels = True
         )
-        self.line_chart.set_end_date(graph_end_date)
+        # self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
         time_series = []
@@ -231,13 +225,13 @@ class ReservoirsBig3(ChartFrame):
         self.inflow_outflow_chart = LineChart(
             time_series,
             title='',
-            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
             show_x_labels = False,
-            percentage=0.2,
+            percentage=0.5,
             y_min=0,
             y_units='CFS',
         )
-        self.inflow_outflow_chart.set_end_date(graph_end_date)
+        # self.inflow_outflow_chart.set_end_date(graph_end_date)
         # self.charts.append(self.inflow_outflow_chart)
 
         time_series = [
@@ -249,12 +243,13 @@ class ReservoirsBig3(ChartFrame):
         line_chart = LineChart(
             time_series, title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
-            percentage=0.2,
+            show_x_labels=False,
+            percentage=0.25,
             y_units='CFS',
             y_max=10_500,
         )
-        line_chart.set_end_date(graph_end_date)
-        self.charts.append(line_chart)
+        # line_chart.set_end_date(graph_end_date)
+        # self.charts.append(line_chart)
 
         '''
         time_series = [
@@ -269,7 +264,6 @@ class ReservoirsBig3(ChartFrame):
         line_chart.set_end_date(graph_end_date)
         self.charts.append(line_chart)
         '''
-
         time_series = []
         for reservoirs in self.reservoir_lists:
             for reservoir in reversed(reservoirs):
@@ -283,14 +277,14 @@ class ReservoirsBig3(ChartFrame):
         self.inflow_outflow_chart = LineChart(
             time_series,
             title='',
-            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date.month,
+            start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
             show_x_labels = False,
-            percentage=0.2,
+            percentage=0.25,
             y_min=1_000,
             y_units='CFS',
         )
-        self.inflow_outflow_chart.set_end_date(graph_end_date)
-        self.charts.append(self.inflow_outflow_chart)
+        # self.inflow_outflow_chart.set_end_date(graph_end_date)
+        # self.charts.append(self.inflow_outflow_chart)
 
 def previous_month_path(path: Path) -> Path:
     """
@@ -301,12 +295,10 @@ def previous_month_path(path: Path) -> Path:
     """
     path_str = str(path)
 
-    # Match the year and month code (e.g. 2026/APR26)
-    import re
-    match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})$', path_str)
+    # Match year and month code (e.g. 2026/APR26), ignoring an optional _SUFFIX such as _MIN
+    match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})(?:_.*)?$', path_str)
     if not match:
         raise ValueError(f"Could not find month-year pattern in path: {path}")
-
     year_str = match.group(1)
     month_code = match.group(2)  # e.g. APR26
 
@@ -330,3 +322,16 @@ def previous_month_path(path: Path) -> Path:
 
     return Path(new_path_str)
 
+if __name__ == "__main__":
+    app = wx.App(False)
+
+    river_war = RiverWar()
+    notebook_frame = NotebookFrame([], river_war)
+
+    years = [2026]
+    download_usbr_24mo_reports(years=years)
+
+    ReservoirsBig3( notebook_frame=notebook_frame)
+
+    notebook_frame.Show()
+    app.MainLoop()

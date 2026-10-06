@@ -37,7 +37,7 @@ import warnings
 # https://www.cbrfc.noaa.gov/dbdata/station/espgraph/espgraph_hc.html?id=GLDA3&year=2026
 class LakePowell(Reservoir):
     def __init__(self, upstream:Optional[List[Reservoir]]=None):
-        headers:List[str] = [ub.POWELL_WY, ub.POWELL_MOST, ub.POWELL_ABOVE_3500,
+        headers:List[str] = [ub.POWELL_WY, ub.POWELL_MOST, ub.POWELL_ABOVE_3490,
                              ub.POWELL_EVAPORATION_WY, ub.POWELL_ELEVATION_WY,
                              ub.GLEN_CANYON_WY,
                              ub.POWELL_INFLOW, ub.POWELL_INFLOW_CFS,
@@ -71,11 +71,9 @@ class LakePowell(Reservoir):
         self.power_head_target_feet = 3510
         self.power_head_target_af = self.af_for_elevation(self.power_head_target_feet)
 
-        self.power_head_min_feet = 3500
+        self.power_head_min_feet = 3490.0
         self.power_head_min_af = self.af_for_elevation(self.power_head_min_feet)
 
-        self.turbine_intake_feet = 3490.0
-        self.turbine_intake_af = self.af_for_elevation(self.turbine_intake_feet)
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 
@@ -134,7 +132,7 @@ class LakePowell(Reservoir):
         # self.df_monthly = df
         # df_diff = df_utils.subtract_dataframes(self.df_monthly, self.df_24_month)
 
-        df_utils.subtract_constant(self.df_daily, ub.POWELL_WY, ub.POWELL_ABOVE_3500, self.power_head_min_af)
+        df_utils.subtract_constant(self.df_daily, ub.POWELL_WY, ub.POWELL_ABOVE_3490, self.power_head_min_af)
         self.get_projection(self.df_24_month, ub.POWELL_MOST)
 
 
