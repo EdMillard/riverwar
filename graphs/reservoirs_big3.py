@@ -208,7 +208,9 @@ class ReservoirsBig3(ChartFrame):
                 f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
             show_x_labels = True,
-            show_right_labels = True
+            show_right_labels = True,
+            y_min = -800000,
+            y_max = 5_800_000
         )
         # self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)

@@ -49,6 +49,8 @@ class LakeMead(Reservoir):
                              lb.LAKE_MEAD_CUL, lb.MEAD_ELEVATION,
                              lb.MEAD_RELEASE, lb.MEAD_RELEASE_CFS]
         super().__init__('Lake Mead', headers, catalog_id= 4370, upstream=upstream, month=month)
+        self.show_elevations = True
+
         self.start_year = 1937
 
         # Elevations
@@ -71,7 +73,7 @@ class LakeMead(Reservoir):
             (1010, 5_054_082, "Consult"),
             # (1025, 5_981_122, "Level 3"),
             # (1000, 4_475_301, "'24 ROD")]
-            (950, 2005585, "No power")]
+            (950, 2005585, "Power")]
 
         self.power_head_min_feet = 975
         self.power_head_min_af = 3_155_885

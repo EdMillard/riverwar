@@ -44,7 +44,7 @@ class LakePowell(Reservoir):
                              ub.POWELL_INFLOW_UNREGULATED, ub.POWELL_INFLOW_UNREGULATED_CFS,
                              ub.POWELL_RELEASE, ub.POWELL_RELEASE_CFS]
         super().__init__('Lake Powell', headers, catalog_id = 2362, upstream=upstream)
-
+        self.show_elevations = True
 
         self.start_year = 1964
         self.usgs_release_gage_id:str = '09380000'

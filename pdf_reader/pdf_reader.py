@@ -653,6 +653,16 @@ def safe_bbox_intersection_area(ba, bb):
         return 0.0
     return utils.bbox_intersection_area(ba, bb) / area_a
 
+def process_files(local_path:Path)->bool:
+        out_path = Path(local_path.with_suffix(''))
+        if not out_path.exists():
+            # extract_reservoir_tables(local_path, Path('tmp/'))
+            reservoir_page_names = get_reservoir_names(local_path)
+            # extract_reservoir_tables(local_path, str(out_path))
+            reservoirs = read_reservoir_camelot(local_path, out_path, reservoir_page_names)
+            # usbr_24_month_to_csv(reservoirs, out_path)
+            return True
+        return False
 
 def download_usbr_24mo_reports(
         base_url: str = "https://www.usbr.gov/lc/region/g4000/24mo/",
@@ -708,35 +718,46 @@ def download_usbr_24mo_reports(
                 file_url = year_url + filename
                 local_path = year_dir / filename
 
-                if local_path.exists():
-                    # print(f"✓ Already exists: {year}/{filename}")
+                if not local_path.exists():
+                    try:
+                        print(f"Downloading: {year}/{filename} ... {file_url} ", end="")
+                        r = session.get(file_url, timeout=30)
+                        if r.status_code == 200 and len(r.content) > 5000:
+                            local_path.write_bytes(r.content)
+                            print("✅ Done")
+                            found_a_file = True
+                        else:
+                            print(f"Not found {filename}")
+                            if filename == f"{base_name}.pdf":
+                                filename = f"{base_name}_6.pdf"
+                                file_url = year_url + filename
+                                local_path = year_dir / filename
+
+                                r = session.get(file_url, timeout=30)
+                                if r.status_code == 200 and len(r.content) > 5000:
+                                    local_path.write_bytes(r.content)
+                                    print("✅ Done")
+                                    process_files(local_path)
+                                    found_a_file = True
+
+                                filename = f"{base_name}_7.pdf"
+                                file_url = year_url + filename
+                                local_path = year_dir / filename
+                                r = session.get(file_url, timeout=30)
+                                if r.status_code == 200 and len(r.content) > 5000:
+                                    local_path.write_bytes(r.content)
+                                    print("✅ Done")
+                                    process_files(local_path)
+                                    found_a_file = True
+                                    continue
+                    except Exception as e:
+                        print(f"Failed: {e}")
+
+                    if local_path.exists():
+                        if not 'Chart' in filename:
+                            process_files(local_path)
+                else:
                     found_a_file = True
-                    if not 'Chart' in filename:
-                        out_path = Path(local_path.with_suffix(''))
-                        # FIXME - RESTORE THIS
-                        if not out_path.exists():
-                            # extract_reservoir_tables(local_path, Path('tmp/'))
-                            reservoir_page_names = get_reservoir_names(local_path)
-                            # extract_reservoir_tables(local_path, str(out_path))
-                            reservoirs = read_reservoir_camelot(local_path, out_path, reservoir_page_names)
-                            # usbr_24_month_to_csv(reservoirs, out_path)
-                    continue
-
-                try:
-                    print(f"Downloading: {year}/{filename} ... {file_url} ", end="")
-                    r = session.get(file_url, timeout=30)
-
-                    if r.status_code == 200 and len(r.content) > 5000:
-                        local_path.write_bytes(r.content)
-                        print("✅ Done")
-                        found_a_file = True
-                    else:
-                        print(f"Not found {filename}")
-                        # return
-                except Exception as e:
-                    print(f"Failed: {e}")
-
-                # time.sleep(delay)
             if not found_a_file:
                 break
     print("\n✅ Download process complete!")

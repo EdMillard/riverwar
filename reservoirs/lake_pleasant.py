@@ -41,6 +41,7 @@ from data_sets.data_set import DataSet
 import colorado.allb as all_b
 import pandas as pd
 from api.registry import Registry
+import colorado.lb as lb
 
 selenium_driver = None
 
@@ -48,6 +49,7 @@ class LakePleasant(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Lake Pleasant', headers, upstream=upstream)
+        self.custom_color = lb.AZ_COLOR
 
         self.df_daily:pd.DataFrame = LakePleasant.from_adwr_csv(self.name)
 

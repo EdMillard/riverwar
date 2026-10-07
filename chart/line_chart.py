@@ -2,6 +2,8 @@ from reservoirs.reservoir import Reservoir
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 import matplotlib.cm as cm
+import math
+from matplotlib.ticker import MultipleLocator, FuncFormatter
 import pandas as pd
 from datetime import date
 from typing import List, Optional, Tuple, Literal, Union
@@ -319,20 +321,18 @@ class LineChart(Chart):
 
         self.setup_yaxis(ax)
 
-        # ==================== Y-LIMITS - TIGHTER AUTO SCALE ====================
+        # ==================== Y-LIMITS - ROUND AUTO SCALE ====================
         data_min = min(all_values)
         data_max = max(all_values)
         data_range = data_max - data_min
-        pad = max(data_range * 0.04, 1.5)  # Reduced padding (4%)
+        pad = max(data_range * 0.04, 0.05 if self.y_units == 'MAF' else 1.5)
 
         auto_min = data_min - pad
         auto_max = data_max + pad
 
-        # Temperature-friendly floor
         if self.y_units in ('°F', '°C'):
             auto_min = max(auto_min, -5)
 
-        # Honor explicit limits, otherwise use calculated padded range
         if self.y_max is not None and self.y_min is not None:
             ax.set_ylim(self.y_min, self.y_max)
         elif self.y_max is not None:
@@ -340,8 +340,39 @@ class LineChart(Chart):
         elif self.y_min is not None:
             ax.set_ylim(self.y_min, auto_max)
         else:
-            # Default: clean padded auto-scale
             ax.set_ylim(auto_min, auto_max)
+
+        if self.y_units in ('MAF', 'TAF', 'AF') and self.y_divisor:
+            y0, y1 = ax.get_ylim()
+            span = (y1 - y0) / self.y_divisor
+            if span > 0:
+                if span <= 20:
+                    step = 1
+                elif span <= 40:
+                    step = 2
+                else:
+                    raw_step = span / 8
+                    magnitude = 10 ** math.floor(math.log10(raw_step))
+                    step = magnitude
+                    for mult in (1, 2, 5, 10):
+                        if mult * magnitude >= raw_step:
+                            step = mult * magnitude
+                            break
+
+                major = step * self.y_divisor
+                minor = 0.1 * self.y_divisor
+
+                ax.yaxis.set_major_locator(MultipleLocator(major))
+                ax.yaxis.set_minor_locator(MultipleLocator(minor))
+
+                ax.yaxis.set_major_locator(MultipleLocator(major))
+                ax.yaxis.set_minor_locator(MultipleLocator(minor))
+                ax.tick_params(axis='y', which='minor', length=3, width=0.6)
+
+                decimals = 0 if step >= 1 else 1
+                ax.yaxis.set_major_formatter(
+                    FuncFormatter(lambda v, pos, d=decimals, div=self.y_divisor: f"{v / div:.{d}f}")
+                )
 
         ax.legend(fontsize=9 if self.color_by_year else 10.5, loc='best',
                   ncol=2 if self.color_by_year else 1)

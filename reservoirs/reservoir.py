@@ -50,7 +50,7 @@ from source.water_year_info import WaterYearInfo
 class Reservoir:
     high_power_pool_color = "lightblue"
     low_power_pool_color = "cornflowerblue"
-    non_power_pool_color = '#ffbbff'
+    non_power_pool_color = '#B0A4D6'
 
     outflow_actual_color = 'red'
     outflow_projected_color = '#FF746C'
@@ -87,6 +87,8 @@ class Reservoir:
         start_year = self.water_year = 2026
         self.start_year_data = 0
         self.water_year_info = self.get_water_year_info(start_year, month=month)
+        self.show_elevations = False
+        self.custom_color = 0
 
         # USBR RISE ID's
         #
@@ -318,7 +320,6 @@ class Reservoir:
             daily = cdss.structures_divrec(None, wdid, water_year_info, water_class_num=water_class_num,
                                               analyze=analyze)
             df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=title)
-            pass
 
     def load_data_daily(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
         water_year_info = self.water_year_info
@@ -429,7 +430,10 @@ class Reservoir:
         if self.report_end_date is not None:
             end_year = self.report_end_date.year
         if not end_year or end_year > date.today().year:
-            end_year = date.today().year
+            if self.water_year_month == 1 or date.today().month < self.water_year_month:
+                end_year = date.today().year
+            else:
+                end_year = date.today().year+1
 
         for year in range(start_year, end_year+1):
             self.water_year_info = self.get_water_year_info(year, month=self.water_year_month)
@@ -459,8 +463,11 @@ class Reservoir:
         # print(f'relative time: {when}')
         if when == 'match':
             daily_elevation_ft = self.usbr_rise_load_daily(usbr_rise_id, column_name)
-            date_time = daily_elevation_ft['dt'][-1]
-            elevation_feet = daily_elevation_ft['val'][-1]
+            if len(daily_elevation_ft) > 0:
+                date_time = daily_elevation_ft['dt'][-1]
+                elevation_feet = daily_elevation_ft['val'][-1]
+            else:
+                pass
         elif when =='less':
             # actual for month
             date_time = self.date_time
@@ -554,20 +561,21 @@ class Reservoir:
         return result
 
     def print_storage(self, daily_storage_af):
-        current_dt = daily_storage_af['dt'][-1]
-        one_month_ago_dt = Reservoir.months_earlier(current_dt)
-        self.storage_one_month_ago = Reservoir.get_value_at_time(daily_storage_af, one_month_ago_dt)
-        one_month_delta = self.active_capacity_af - self.storage_one_month_ago
+        if 0 and len(daily_storage_af) > 0:
+            current_dt = daily_storage_af['dt'][-1]
+            one_month_ago_dt = Reservoir.months_earlier(current_dt)
+            self.storage_one_month_ago = Reservoir.get_value_at_time(daily_storage_af, one_month_ago_dt)
+            one_month_delta = self.active_capacity_af - self.storage_one_month_ago
 
-        two_months_ago_dt = Reservoir.months_earlier(current_dt, months=2)
-        self.storage_two_months_ago = Reservoir.get_value_at_time(daily_storage_af, two_months_ago_dt)
-        two_month_delta = self.active_capacity_af - self.storage_two_months_ago
+            two_months_ago_dt = Reservoir.months_earlier(current_dt, months=2)
+            self.storage_two_months_ago = Reservoir.get_value_at_time(daily_storage_af, two_months_ago_dt)
+            two_month_delta = self.active_capacity_af - self.storage_two_months_ago
 
-        three_months_ago_dt = Reservoir.months_earlier(current_dt, months=3)
-        storage_three_months_ago = Reservoir.get_value_at_time(daily_storage_af, three_months_ago_dt)
-        three_month_delta = self.active_capacity_af - storage_three_months_ago
+            three_months_ago_dt = Reservoir.months_earlier(current_dt, months=3)
+            storage_three_months_ago = Reservoir.get_value_at_time(daily_storage_af, three_months_ago_dt)
+            three_month_delta = self.active_capacity_af - storage_three_months_ago
 
-        print(f'{self.name.ljust(16)} Storage {self.active_capacity_af/1_000_000:5.3f} MAF 1 mo {one_month_delta:9.0f}  2 mo {two_month_delta:9.0f} 3 mo {three_month_delta:9.0f}')
+            print(f'{self.name.ljust(16)} Storage {self.active_capacity_af/1_000_000:5.3f} MAF 1 mo {one_month_delta:9.0f}  2 mo {two_month_delta:9.0f} 3 mo {three_month_delta:9.0f}')
 
     def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->Tuple[float, np.ndarray]:
         active_capacity_af = 0

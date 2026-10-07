@@ -37,14 +37,15 @@ from reservoirs.horseshoe import Horseshoe
 from reservoirs.saguaro import Saguaro
 from reservoirs.canyon import Canyon
 from reservoirs.apache import Apache
+import colorado.lb as lb
 
 _url = "https://streamflow.watershedconnection.com/dwr"
 
 class SRP(SRPReservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
-
         headers:List[str] = []
         super().__init__('SRP', headers, upstream=upstream)
+        self.custom_color = lb.AZ_COLOR
         self.catalog_id = 0
 
         self.df_daily:pd.DataFrame = SRPReservoir.from_srp_csv(self.name)

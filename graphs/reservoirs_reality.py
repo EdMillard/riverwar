@@ -31,6 +31,7 @@ from reservoirs.imperial import Imperial
 # from reservoirs.roosevelt import Roosevelt
 from reservoirs.srp import SRP
 from reservoirs.lake_pleasant import LakePleasant
+from reservoirs.mwd import MWD
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
 from reservoirs.aquifers import Aquifers
@@ -85,13 +86,15 @@ class ReservoirsReality(ChartFrame):
         lake_havasu = LakeHavasu(upstream=[lake_mohave])
         imperial = Imperial(upstream=[lake_havasu])
         lake_pleasant = LakePleasant(upstream=[])
+        mwd = MWD(upstream=[])
+
         # roosevelt = Roosevelt(upstream=[])
         srp = SRP(upstream=[])
         aquifers = Aquifers(upstream=[])
 
         self.reservoirs = [
-            imperial, aquifers, srp, lake_pleasant, lake_havasu, lake_mohave,
-            lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa
+            imperial, aquifers, srp, lake_pleasant, mwd, lake_havasu, lake_mohave,
+            lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point
         ]
 
         self.usbr_lower_basin_reservoirs = [
@@ -99,12 +102,12 @@ class ReservoirsReality(ChartFrame):
         ]
 
         self.crsp_reservoirs = [
-            lake_powell, flaming_gorge, navajo, blue_mesa
+            lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point
         ]
 
         self.reservoir_totals = [
-            ('USBR Lower Basin Reservoirs', self.usbr_lower_basin_reservoirs),
-            ('CRSP Reservoirs', self.crsp_reservoirs)
+            ('USBR Lower Basin', self.usbr_lower_basin_reservoirs),
+            ('CRSP', self.crsp_reservoirs)
         ]
 
         dillon = Dillon()
