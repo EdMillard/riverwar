@@ -222,7 +222,8 @@ def telemetry_station_daily_to_df(df:pd.DataFrame, abbrev:str, name:str, measure
     for year in range(start_date.year, end_date.year + 1):
         water_year_info = get_water_year_info(year, month=month)
         time_series = telemetry_station_time_series(None, abbrev, measurement, water_year_info=water_year_info, alias=name)
-        df_utils.fill_df_from_structured_array(df, time_series, date_column_name='Date', value_column_name=name)
+        if time_series is not None:
+            df_utils.fill_df_from_structured_array(df, time_series, date_column_name='Date', value_column_name=name)
 
 def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=None, update=False, alias='',
                                   start_date=None, end_date=None):
@@ -243,6 +244,10 @@ def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=Non
         if water_year_info is not None and water_year_info.is_current_water_year:
             last_date = time_series[-1][0]
             update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
+        else:
+            last = pd.Timestamp(time_series[-1][0]).date()
+            end = pd.Timestamp(water_year_info.end_date).date()
+            update = end > last
         print_last_value(abbrev, time_series, alias=alias)
         if not update:
             return time_series
@@ -346,6 +351,10 @@ def surface_waters_day(logger, abbrev, water_year_info, meas_type=None, update=F
         if water_year_info is not None and water_year_info.is_current_water_year:
             last_date = time_series[-1][0]
             update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
+        else:
+            last = pd.Timestamp(time_series[-1][0]).date()
+            end = pd.Timestamp(water_year_info.end_date).date()
+            update = end > last
         print_last_value(abbrev, time_series, alias=alias)
         if not update:
             return time_series
@@ -450,6 +459,10 @@ def structures_divrec(logger, wdid:str, water_year_info, meas_type:str='divrecda
         if water_year_info is not None and water_year_info.is_current_water_year:
             last_date = time_series[-1][0]
             update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
+        else:
+            last = pd.Timestamp(time_series[-1][0]).date()
+            end = pd.Timestamp(water_year_info.end_date).date()
+            update = end > last
         # print_last_value(wdid, time_series, alias=alias)
         if not update:
             return time_series

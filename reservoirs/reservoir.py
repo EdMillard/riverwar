@@ -604,7 +604,8 @@ class Reservoir:
         if usbr_rise_id:
             daily_release = self.usbr_rise_load_daily(usbr_rise_id, column_name)
             # date_time = daily_release['dt'][-1]
-            release = daily_release['val'][-1]
+            if len(daily_release):
+                release = daily_release['val'][-1]
 
         return release
 

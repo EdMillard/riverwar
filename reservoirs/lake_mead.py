@@ -63,26 +63,27 @@ class LakeMead(Reservoir):
         self.full_af = 27620294
 
         # Critical
-        self.power_head_target_feet = 1035
-        self.power_head_target_af = 6637508
+        self.power_high_head_target_feet = 1035
+        self.power_high_head_target_af = 6637508
 
         self.mead_consult_feet = 1010
         self.mead_consult_af = 5_054_082
 
         self.special_levels = [
-            (1010, 5_054_082, "Consult"),
+            (self.power_high_head_target_feet, self.power_high_head_target_af, ""),
             # (1025, 5_981_122, "Level 3"),
+            (self.mead_consult_feet, self.mead_consult_af, "Consult"),
             # (1000, 4_475_301, "'24 ROD")]
-            (950, 2005585, "Power")]
+        ]
 
-        self.power_head_min_feet = 975
-        self.power_head_min_af = 3_155_885
+        self.power_head_target_feet = 975
+        self.power_head_target_af = 3_155_885
 
         # self.power_head_min_feet = 950
         # self.power_head_min_af = 2005585
 
-        self.turbine_intake_feet = 950
-        self.turbine_intake_af = 2005585
+        self.power_head_min_feet = 950
+        self.power_head_min_af = 2005585
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 

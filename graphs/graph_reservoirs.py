@@ -108,8 +108,9 @@ class ReservoirChart(BarChart):
         reserved_width = 0.26
         main_width = 0.55
         font_size = 10
-        font_size_inside_bar = 14
-        format_maf = 2
+        font_size_above_bar = 11
+        font_size_inside_bar = 13
+        format_maf = 3
 
         # ==================== RESERVED BARS ====================
         for i, r in enumerate(reservoirs):
@@ -331,8 +332,8 @@ class ReservoirChart(BarChart):
                 label_y = full_maf
                 offset_y = 9.5
 
-            # Acre-feet (practical) — centered
-            ax.annotate(f'{practical_available_maf:.{format_maf}f}',
+            # Acre-feet and percent full centered over top of bar
+            ax.annotate(f'{practical_available_maf:.{format_maf}f}  {percent_practical}%',
                         xy=(x_pos[i], label_y),
                         xytext=(0, offset_y),
                         textcoords="offset points",
@@ -340,12 +341,13 @@ class ReservoirChart(BarChart):
                         fontsize=font_size, fontweight='bold', color='darkred')
 
             # Percentage — right justified at elevation position
-            ax.annotate(f'{percent_practical}%',
-                        xy=(x_pos[i] + main_width * 0.52 - 0.12, label_y),
-                        xytext=(0, offset_y),
-                        textcoords="offset points",
-                        ha='left', va='bottom',
-                        fontsize=font_size, fontweight='bold', color='darkred')
+            if 0:
+                ax.annotate(f'',
+                            xy=(x_pos[i] + main_width * 0.52 - 0.12, label_y),
+                            xytext=(0, offset_y),
+                            textcoords="offset points",
+                            ha='left', va='bottom',
+                            fontsize=font_size, fontweight='bold', color='darkred')
 
         # ==================== ANNOTATIONS ====================
         # Totals
@@ -358,8 +360,12 @@ class ReservoirChart(BarChart):
                 if cap_maf <= current_maf[i]:
                     ax.plot(x_pos[i] + main_width/2 - 0.035, cap_maf, marker='<', markersize=8.5,
                             color='black', markeredgecolor='black', markerfacecolor='white')
-                    ax.annotate(f'{elev_ft:,.0f}\'\n{label}',
-                                xy=(x_pos[i] + main_width*0.52 + 0.04, cap_maf),
+                    if label:
+                        s = f'{elev_ft:,.0f}\'\n{label}'
+                    else:
+                        s = f'{elev_ft:,.0f}\''
+
+                    ax.annotate(s, xy=(x_pos[i] + main_width*0.52 + 0.04, cap_maf),
                                 ha='left', va='center',
                                 fontsize=font_size,
                                 fontweight='bold',
@@ -392,47 +398,48 @@ class ReservoirChart(BarChart):
                         practical_available_maf = practical_available_af / 1_000_000
 
             # === Two-line annotation with " of" ===
-            if has_critical and abs(practical_available_maf - current_maf_val) > 0.001:
-                top_line = f'{practical_available_maf:.{format_maf}f} of'
-                bottom_line = f'{current_maf_val:.{format_maf}f}'
+            if r.show_elevations:
+                if has_critical and abs(practical_available_maf - current_maf_val) > 0.001:
+                    top_line = f'{practical_available_maf:.{format_maf}f} of'
+                    bottom_line = f'{current_maf_val:.{format_maf}f}'
 
-                ax.annotate(f'{top_line}\n{bottom_line}',
-                            xy=(x_pos[i], current_maf_val),
-                            xytext=(0, 1.0),           # adjust height if needed
-                            textcoords="offset points",
-                            ha='center',
-                            va='bottom',
-                            fontsize=font_size,
-                            fontweight='bold',
-                            color='black',
-                            linespacing=1.08,
-                            bbox=dict(boxstyle="round",
-                                      edgecolor='none',
-                                      facecolor="white",
-                                      pad=0,
-                                      alpha=1)
-                            )
-            else:
-                # Single line fallback
-                if r.annotation_drawn_in_bar > 0 and r.annotation_drawn_in_bar == current_maf_val:
-                    pass
-                else:
-                    ax.annotate(f'{current_maf_val:.{format_maf}f}',
+                    ax.annotate(f'{top_line}\n{bottom_line}',
                                 xy=(x_pos[i], current_maf_val),
-                                xytext=(0, 0.6),
+                                xytext=(0, 1.0),           # adjust height if needed
                                 textcoords="offset points",
-                                ha='center', va='bottom',
-                                fontsize=font_size,
+                                ha='center',
+                                va='bottom',
+                                fontsize=font_size_above_bar,
                                 fontweight='bold',
                                 color='black',
+                                linespacing=1.08,
                                 bbox=dict(boxstyle="round",
                                           edgecolor='none',
                                           facecolor="white",
                                           pad=0,
                                           alpha=1)
                                 )
+                else:
+                    # Single line fallback
+                    if r.annotation_drawn_in_bar > 0 and r.annotation_drawn_in_bar == current_maf_val:
+                        pass
+                    else:
+                        ax.annotate(f'{current_maf_val:.{format_maf}f}',
+                                    xy=(x_pos[i], current_maf_val),
+                                    xytext=(0, 0.6),
+                                    textcoords="offset points",
+                                    ha='center', va='bottom',
+                                    fontsize=font_size,
+                                    fontweight='bold',
+                                    color='black',
+                                    bbox=dict(boxstyle="round",
+                                              edgecolor='none',
+                                              facecolor="white",
+                                              pad=0,
+                                              alpha=1)
+                                    )
 
-            # === Current elevation on the right (always shown) ===
+            # === Current elevation on the right ===
             if r.show_elevations and  elevations_feet[i]:
                 ax.annotate(f'{elevations_feet[i]:,.2f}\'',
                             xy=(x_pos[i] + main_width * 0.52, current_maf_val),
@@ -479,7 +486,7 @@ class ReservoirChart(BarChart):
         if self.reserved_zones:
             ics_patches = [mpatches.Patch(color=c, label=l) for c, l in self.reserved_zones]
             leg = ax.legend(handles=ics_patches, title="ICS 2025 EoY",
-                            loc='upper right', bbox_to_anchor=(0.4, 1.0),
+                            loc='upper right', bbox_to_anchor=(0.5, 1.0),
                             fontsize=9, title_fontsize=10, framealpha=0.95)
             ax.add_artist(leg)
 
@@ -490,7 +497,7 @@ class ReservoirChart(BarChart):
                 mpatches.Patch(color=lb.PHX_COLOR, label='Phoenix AMA')
             ]
             ax.legend(handles=aquifer_patches, title="AZ Aquifer LTSC 2023 EOY",
-                      loc='upper left', bbox_to_anchor=(0.15, 1.0),
+                      loc='upper left', bbox_to_anchor=(0.1, 1.0),
                       fontsize=9, title_fontsize=10, framealpha=0.95)
 
         ax.set_xlim(-0.65, len(names) - 0.35)
