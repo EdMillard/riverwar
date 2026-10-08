@@ -34,8 +34,8 @@ class Lemon(Reservoir):
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 0
-        self.full_af = 0
+        self.full_feet = 8_148
+        self.full_af = 40_146
 
         # Critical
         self.power_head_target_feet = 0

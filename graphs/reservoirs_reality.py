@@ -152,12 +152,14 @@ from reservoirs.wolford import Wolford
 from reservoirs.ridgway import Ridgway
 from reservoirs.jordanelle import Jordanelle
 from reservoirs.big_sandy import BigSandy
-# from reservoirs.gross import Gross
-# from reservoirs.groundhog import Groundhog
-from reservoirs.lemon import Lemon
-from reservoirs.grand_lake import GrandLake
-# from reservoirs.shadow_mountain import ShadowMountain
 from reservoirs.heron import Heron
+from reservoirs.moon_lake import MoonLake
+from reservoirs.joes_valley import JoesValley
+from reservoirs.groundhog import Groundhog
+from reservoirs.lemon import Lemon
+from reservoirs.shadow_mountain import ShadowMountain
+# from reservoirs.gross import Gross
+# from reservoirs.grand_lake import GrandLake       # Not useful
 
 class ReservoirsReality(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
@@ -199,8 +201,8 @@ class ReservoirsReality(ChartFrame):
         ]
 
         self.reservoir_totals = [
-            ('USBR Lower Basin', self.usbr_lower_basin_reservoirs),
-            ('CRSP', self.crsp_reservoirs)
+            (self.usbr_lower_basin_reservoirs, 'USBR Lower Basin', lb.AZ_COLOR),
+            (self.crsp_reservoirs, 'CRSP', )
         ]
 
         # Participating Units
@@ -209,7 +211,6 @@ class ReservoirsReality(ChartFrame):
         lake_nighthorse = LakeNighthorse(upstream=[])
         taylor_park = TaylorPark(upstream=[])
         vallecito = Vallecito(upstream=[])
-        green_mountain = GreenMountain(upstream=[])
         ruedi = Ruedi(upstream=[])
         paonia = Paonia(upstream=[])
         ridgeway = Ridgway(upstream=[])
@@ -228,8 +229,8 @@ class ReservoirsReality(ChartFrame):
         strawberry = Strawberry(upstream=[])
         starvation = Starvation(upstream=[])
         jordanelle = Jordanelle(upstream=[])
+        joes_valley = JoesValley(upstream=[])
         # Upper Stillwater
-        # Joes Valley
         # Huntington North
         # Steinaker
         # Red Fleet
@@ -242,28 +243,31 @@ class ReservoirsReality(ChartFrame):
         dillon = Dillon()
         lake_granby = LakeGranby(upstream=[])
         wolford = Wolford(upstream=[])
+        green_mountain = GreenMountain(upstream=[])
+        groundhog = Groundhog()
+        shadow_mountain = ShadowMountain(upstream=[])
+        moon_lake = MoonLake(upstream=[])
         # gross = Gross()
-        # groundhog = Groundhog()1
-        grand_lake = GrandLake(upstream=[])
-        # shadow_mountain = ShadowMountain(upstream=[])
+        # Grand is a big 66,000 af natural lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
+        # so this isnt really good for anything
+        # grand_lake = GrandLake(upstream=[])
 
         self.participating_units = [
-            strawberry, fontenelle, jordanelle,
-            mcphee,  starvation, lake_nighthorse, vallecito, taylor_park, ruedi,
-            lemon, heron, ridgeway, paonia, big_sandy,
+            strawberry, heron, fontenelle, jordanelle,
+            mcphee,  starvation, vallecito, lake_nighthorse, taylor_park, ruedi, joes_valley,
+            ridgeway, lemon, big_sandy, paonia
         ]
 
         self.ub_reservoirs = [
             lake_granby, dillon, green_mountain,
-            grand_lake,
-            # shadow_mountain, groundhog, gross,
-            wolford
+            wolford, moon_lake, groundhog, shadow_mountain,
+            # gross,
         ]
+
         # reservoir_lists = [self.reservoirs]
         reservoir_lists = [self.reservoirs, self.participating_units, self.ub_reservoirs]
 
         super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name=self.name)
-
 
     def load_charts(self):
         start = self.start_nav.current_date
@@ -295,6 +299,7 @@ class ReservoirsReality(ChartFrame):
             power_head_zones=power_head_zones, reserved_names=reserved_zones, aquifer_zones=aquifer_zones
         )
         self.charts.append(reservoir_chart)
+
 
         reservoir_chart = ReservoirChart(
             self.participating_units, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,

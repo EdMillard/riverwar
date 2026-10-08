@@ -33,6 +33,8 @@ class GrandLake(Reservoir):
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
+        # This is the full lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
+        # so this isnt really good for anything
         self.full_feet = 8_367
         self.full_af = 68_600
 
@@ -40,9 +42,8 @@ class GrandLake(Reservoir):
         self.power_head_target_feet = 0
         self.power_head_target_af = 0
 
-        self.power_head_min_feet = 6_855
-        self.power_head_min_af = 152_000
-
+        self.power_head_min_feet = 0
+        self.power_head_min_af = 0
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0

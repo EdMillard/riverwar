@@ -45,8 +45,8 @@ class Heron(Reservoir):
         self.dead_pool_feet = 0
         self.dead_pool_af = 0
 
-        self.full_feet = 0
-        self.full_af = 0
+        self.full_feet = 7_186.1
+        self.full_af =  401_320
 
         # Critical
         self.power_head_target_feet = 0

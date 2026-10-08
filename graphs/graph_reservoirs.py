@@ -123,7 +123,7 @@ class ReservoirChart(BarChart):
             main_bar_maf = current_maf[i]
             reserved_bottom = main_bar_maf - total_reserved_maf
 
-            # ==================== RESERVED STACKED BARS (original) ====================
+            # ==================== RESERVED STACKED BARS ====================
             current_bottom = reserved_bottom
             for owner, amount, color in reserved_parts:
                 if amount > 0:
@@ -247,15 +247,17 @@ class ReservoirChart(BarChart):
                     break
                 bar = ax.bar(x_pos[i], draw_h, width=main_width, bottom=bottom,
                              color=color, alpha=0.85, edgecolor='navy')[0]
+                x = bar.get_x() + bar.get_width() / 2
 
-                if draw_h >= 0.1:
-                    r.annotation_drawn_in_bar = draw_h
-                    ax.annotate(f'{draw_h:.{format_maf}f}',
-                                xy=(bar.get_x() + bar.get_width()/2, bottom + draw_h/2),
-                                ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
-                else:
-                    r.annotation_drawn_in_bar = 0.0
+                # Current Storage annotation
+                #
+                r.annotation_drawn_in_bar = draw_h
+                y = bottom + draw_h / 2
+                ax.annotate(f'{draw_h:.{format_maf}f}',xy=(x, y),
+                            ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
 
+                # Critical Elevation annotation
+                #
                 if "Above Highest Critical" not in label and r.show_elevations:
                     ax.annotate(f'{elev:,.0f}\'',
                                 xy=(x_pos[i] + main_width*0.52, bottom + draw_h),
@@ -290,7 +292,7 @@ class ReservoirChart(BarChart):
             empty = full_maf - curr_maf
             if empty <= 0: continue
 
-            # Teacup bar (visual height unchanged)
+            # Teacup bar
             container = ax.bar(x_pos[i], empty, width=main_width, bottom=curr_maf,
                                color='white', alpha=0.0,
                                edgecolor=teacup_color, linewidth=teacup_linewidth)
@@ -339,15 +341,6 @@ class ReservoirChart(BarChart):
                         textcoords="offset points",
                         ha='center', va='bottom',
                         fontsize=font_size, fontweight='bold', color='darkred')
-
-            # Percentage — right justified at elevation position
-            if 0:
-                ax.annotate(f'',
-                            xy=(x_pos[i] + main_width * 0.52 - 0.12, label_y),
-                            xytext=(0, offset_y),
-                            textcoords="offset points",
-                            ha='left', va='bottom',
-                            fontsize=font_size, fontweight='bold', color='darkred')
 
         # ==================== ANNOTATIONS ====================
         # Totals
@@ -509,53 +502,70 @@ class ReservoirChart(BarChart):
         self.final_layout(ax, title, names, x_pos)
 
     def add_total_annotations(self):
-        if self.reservoir_totals is not None:
-            totals = []
-            for name, reservoir_list in self.reservoir_totals:
-                active_capacity_total = 0
-                accessible_total = 0
-                limited_access_total = 0
-                for r in reservoir_list:
-                    active_capacity_af = getattr(r, 'active_capacity_af', 0)
-                    limited_access = 0
-                    crit_points = getattr(r, 'critical_elevations_feet', [])
-                    for crit in crit_points:
-                        if crit[0] == 'Safe Power Head':
-                            limited_access = crit[2]
-                            # print(f'{r.name} {crit[0]} {crit[1]} {crit[2]}')
+        if not self.reservoir_totals:
+            return
 
-                    active_capacity_total += active_capacity_af
-                    if active_capacity_af >= limited_access:
-                        accessible = active_capacity_af - limited_access
-                        accessible_total += accessible
-                        limited_access_total += limited_access
-                    else:
-                        limited_access_total += active_capacity_af
-                totals.append((name, accessible_total, limited_access_total, active_capacity_total))
-                lines = []
-                format_maf = 2
-                lines.append(f' {accessible_total/1_000_000:6.{format_maf}f} MAF {name}')
-                lines.append(f' {limited_access_total/1_000_000:6.{format_maf}f} MAF   Inaccessible')
+        inaccessible_color = '#bdbdbd'
+        inaccessible_text = 'black'
 
-                if name.startswith('CRSP'):
-                    x = 0.7
-                else:
-                    x = 0.3
-                y = 0.8
-                text_block = "\n".join(lines)
-                self.ax.text(
-                    x=x, y=y, s=text_block,
-                    transform=self.ax.transAxes,
-                    fontsize=16,
-                    fontfamily='monospace',
-                    fontweight='semibold',
-                    ha='left', va='top',
-                    zorder=15,
-                    bbox=dict(
-                        boxstyle="round,pad=0.6",
-                        facecolor="white",
-                        edgecolor="#aaaaaa",      # light gray, matches typical legend border
-                        alpha=0.95,
-                        linewidth=1.1
-                    )
-                )
+        anchors = [(0.30, 0.80), (0.70, 0.80)]
+
+        for i, item in enumerate(self.reservoir_totals):
+            reservoir_list = item[0]
+            name = item[1]
+            accessible_color = item[2] if len(item) > 2 else '#2e7d32'
+            x, y = anchors[i] if i < len(anchors) else anchors[-1]
+
+            accessible_total = 0
+            limited_access_total = 0
+            below_critical_total = 0
+
+            for r in reservoir_list:
+                active_capacity_af = getattr(r, 'active_capacity_af', 0)
+                limited_access = 0
+                below_critical = 0
+                for crit in getattr(r, 'critical_elevations_feet', []):
+                    if crit[0] == 'Min Power Head':
+                        below_critical = crit[2]
+                    elif crit[0] == 'Safe Power Head':
+                        limited_access = crit[2]
+
+                if active_capacity_af > below_critical > limited_access:
+                    accessible_total += active_capacity_af - below_critical
+                elif active_capacity_af >= limited_access:
+                    accessible_total += active_capacity_af - limited_access
+
+                if below_critical >= limited_access:
+                    below_critical_total += below_critical - limited_access
+
+                limited_access_total += limited_access
+            rows = [
+                (accessible_total / 1_000_000, '', Reservoir.high_power_pool_color, 'black'),
+                (below_critical_total / 1_000_000, 'Below Critical', Reservoir.low_power_pool_color, 'gray'),
+                (limited_access_total / 1_000_000, 'Inaccessible', Reservoir.non_power_pool_color, 'gray'),
+            ]
+            handles = [
+                mpatches.Patch(facecolor=color, edgecolor='#555555', linewidth=0.8,
+                               label=f'{maf:4.2f} MAF {label}')
+                for maf, label, color, _ in rows
+            ]
+            leg = self.ax.legend(
+                handles=handles,
+                title=name,
+                loc='upper left',
+                bbox_to_anchor=(x, y),
+                fontsize=16,
+                title_fontsize=14,
+                framealpha=0.95,
+                handlelength=1.2,
+                handleheight=1.0,
+                borderpad=0.6,
+                labelspacing=0.4,
+            )
+            leg.get_title().set_fontweight('bold')
+            for text in leg.get_texts():
+                text.set_fontfamily('monospace')
+                text.set_fontweight('semibold')
+            for text, row in zip(leg.get_texts(), rows):
+                text.set_color(row[3])
+            self.ax.add_artist(leg)

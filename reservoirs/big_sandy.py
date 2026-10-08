@@ -42,9 +42,8 @@ class BigSandy(Reservoir):
         self.power_head_target_feet = 0
         self.power_head_target_af = 0
 
-        self.power_head_min_feet = 6_855
-        self.power_head_min_af = 152_000
-
+        self.power_head_min_feet = 0
+        self.power_head_min_af = 0
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0

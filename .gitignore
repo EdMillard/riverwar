@@ -2,6 +2,7 @@ LOTR
 comm
 cache
 data/
+img/
 pdf_reader/data
 .idea
 __pycache__/
