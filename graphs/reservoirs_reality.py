@@ -169,27 +169,30 @@ class ReservoirsReality(ChartFrame):
         notebook_frame.SetSize(current_size)
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
 
+        # Initial Units
         flaming_gorge = FlamingGorge()
         navajo = Navajo()
-
         blue_mesa = BlueMesa()
         morrow_point = MorrowPoint()
-        # crystal = Crystal()
+        crystal = Crystal()
         lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
+
+        # USBR Lower Basin
         lake_mead = LakeMead(upstream=[lake_powell])
         lake_mohave = LakeMohave(upstream=[lake_mead])
         lake_havasu = LakeHavasu(upstream=[lake_mohave])
+
+        # Lower Basin
         imperial = Imperial(upstream=[lake_havasu])
         lake_pleasant = LakePleasant(upstream=[])
         mwd = MWD(upstream=[])
-
         # roosevelt = Roosevelt(upstream=[])
         srp = SRP(upstream=[])
         aquifers = Aquifers(upstream=[])
 
         self.reservoirs = [
             imperial, aquifers, srp, lake_pleasant, mwd, lake_havasu, lake_mohave,
-            lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point
+            lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point, crystal
         ]
 
         self.usbr_lower_basin_reservoirs = [
@@ -296,7 +299,7 @@ class ReservoirsReality(ChartFrame):
         reservoir_chart = ReservoirChart(
             self.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=14.0,
             reservoir_totals=self.reservoir_totals,
-            power_head_zones=power_head_zones, reserved_names=reserved_zones, aquifer_zones=aquifer_zones
+            reserved_names=reserved_zones, aquifer_zones=aquifer_zones
         )
         self.charts.append(reservoir_chart)
 

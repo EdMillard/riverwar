@@ -58,6 +58,12 @@ class FlamingGorge(Reservoir):
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0
+
+        self.special_levels = [
+            (self.power_head_target_feet, self.power_head_target_af, ""),
+            (self.power_head_min_feet, self.power_head_min_af, ""),
+        ]
+
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 

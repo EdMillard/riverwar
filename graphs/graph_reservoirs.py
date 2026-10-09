@@ -88,31 +88,8 @@ class ReservoirChart(BarChart):
         self.fig = fig
         return fig
 
-    def create_reservoir_chart(self, ax, title):
-        if not self.reservoirs:
-            raise ValueError("Reservoir list cannot be empty")
-
-        active_reservoirs = []
-        for r in self.reservoirs:
-            if getattr(r, 'active_capacity_af', 0) > 0:
-                active_reservoirs.append(r)
-            else:
-                print(f"reservoir inactive {r.name}")
-
-        reservoirs = active_reservoirs
-        names = [r.name for r in reservoirs]
-        current_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
-        elevations_feet = [r.elevation_feet for r in reservoirs]
-
-        x_pos = np.arange(len(names))
-        reserved_width = 0.26
-        main_width = 0.55
-        font_size = 10
-        font_size_above_bar = 11
-        font_size_inside_bar = 13
-        format_maf = 3
-
-        # ==================== RESERVED BARS ====================
+    @staticmethod
+    def create_reserved_bars(ax, reservoirs, font_size, format_maf, current_maf, x_pos, main_width, reserved_width):
         for i, r in enumerate(reservoirs):
             reserved_parts = getattr(r, 'reserved_parts', [])
             if not reserved_parts:
@@ -213,70 +190,8 @@ class ReservoirChart(BarChart):
                             fontsize=font_size, fontweight='bold', color='red',
                             linespacing=0.95, zorder=12)
 
-        # ==================== MAIN STACKED BARS ====================
-        for i, r in enumerate(reservoirs):
-            current_cap_maf = current_maf[i]
-            if current_cap_maf <= 0:
-                continue
-
-            crit_points = getattr(r, 'critical_elevations_feet', [])
-            zones = []
-            prev = 0.0
-            for item in crit_points:
-                if isinstance(item, (list, tuple)) and len(item) >= 4:
-                    name, elev, cap_af, color = item[:4]
-                    cap = cap_af / 1_000_000
-                    if cap > prev:
-                        zones.append((cap - prev, color, name, cap, elev))
-                        prev = cap
-
-            no_elevation_available = getattr(r, 'no_elevation_available', [])
-
-            if r.custom_color:
-                top_color = r.custom_color
-            else:
-                top_color = Reservoir.high_power_pool_color
-            if current_cap_maf > prev:
-                zones.append((current_cap_maf - prev, top_color, 'Above Highest Critical',
-                              current_cap_maf, elevations_feet[i]))
-
-            bottom = 0.0
-            for h, color, label, total_cap, elev in zones:
-                draw_h = min(h, current_cap_maf - bottom)
-                if draw_h <= 0:
-                    break
-                bar = ax.bar(x_pos[i], draw_h, width=main_width, bottom=bottom,
-                             color=color, alpha=0.85, edgecolor='navy')[0]
-                x = bar.get_x() + bar.get_width() / 2
-
-                # Current Storage annotation
-                #
-                r.annotation_drawn_in_bar = draw_h
-                y = bottom + draw_h / 2
-                ax.annotate(f'{draw_h:.{format_maf}f}',xy=(x, y),
-                            ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
-
-                # Critical Elevation annotation
-                #
-                if "Above Highest Critical" not in label and r.show_elevations:
-                    ax.annotate(f'{elev:,.0f}\'',
-                                xy=(x_pos[i] + main_width*0.52, bottom + draw_h),
-                                ha='left', va='center',
-                                fontsize=font_size,
-                                fontweight='bold',
-                                color='darkblue',
-                                bbox=dict(boxstyle="square",
-                                          facecolor="white",
-                                          edgecolor="none",
-                                          pad=0,
-                                          alpha=1)
-                                )
-
-                bottom += draw_h
-                if bottom >= current_cap_maf:
-                    break
-
-        # ==================== TEACUP HOLLOW BAR ====================
+    @staticmethod
+    def create_teacup_bars(ax, reservoirs, font_size, format_maf, x_pos, y_max, main_width, min_full_af_to_draw):
         teacup_color = '#1f1f1f'
         teacup_alpha = 0.40
         teacup_linewidth = 1.5
@@ -293,16 +208,17 @@ class ReservoirChart(BarChart):
             if empty <= 0: continue
 
             # Teacup bar
-            container = ax.bar(x_pos[i], empty, width=main_width, bottom=curr_maf,
-                               color='white', alpha=0.0,
-                               edgecolor=teacup_color, linewidth=teacup_linewidth)
+            if full_af > min_full_af_to_draw:
+                container = ax.bar(x_pos[i], empty, width=main_width, bottom=curr_maf,
+                                   color='white', alpha=0.0,
+                                   edgecolor=teacup_color, linewidth=teacup_linewidth)
 
-            for patch in container:
-                patch.set_alpha(teacup_alpha)
+                for patch in container:
+                    patch.set_alpha(teacup_alpha)
 
-            top_y = min(full_maf, self.y_max)
-            ax.plot([x_pos[i]-main_width/2, x_pos[i]+main_width/2], [top_y, top_y],
-                    color=teacup_color, linewidth=teacup_linewidth, alpha=teacup_alpha)
+                top_y = min(full_maf, y_max)
+                ax.plot([x_pos[i] - main_width / 2, x_pos[i] + main_width / 2], [top_y, top_y],
+                        color=teacup_color, linewidth=teacup_linewidth, alpha=teacup_alpha)
 
             # ==================== PRACTICAL AVAILABLE ABOVE LOWEST NON-ZERO CRITICAL ====================
             lowest_crit_cap_af = 0
@@ -327,9 +243,9 @@ class ReservoirChart(BarChart):
                 if practical_available_af > 0 else 100
 
             # Positioning
-            if full_maf > self.y_max:
-                label_y = self.y_max
-                offset_y = 1.5
+            if full_maf > y_max:
+                label_y = y_max
+                offset_y = 0.5
             else:
                 label_y = full_maf
                 offset_y = 9.5
@@ -342,6 +258,111 @@ class ReservoirChart(BarChart):
                         ha='center', va='bottom',
                         fontsize=font_size, fontweight='bold', color='darkred')
 
+    def create_reservoir_chart(self, ax, title):
+        if not self.reservoirs:
+            raise ValueError("Reservoir list cannot be empty")
+
+        active_reservoirs = []
+        for r in self.reservoirs:
+            if getattr(r, 'active_capacity_af', 0) > 0:
+                active_reservoirs.append(r)
+            else:
+                print(f"reservoir inactive {r.name}")
+
+        reservoirs = active_reservoirs
+        names = [r.name for r in reservoirs]
+        current_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]
+        elevations_feet = [r.elevation_feet for r in reservoirs]
+
+        x_pos = np.arange(len(names))
+        reserved_width = 0.26
+        main_width = 0.55
+        font_size = 10
+        font_size_above_bar = 11
+        font_size_inside_bar = 13
+        format_maf = 3
+        min_full_af_to_draw = 160_000
+
+        # ==================== RESERVED BARS ====================
+        ReservoirChart.create_reserved_bars(ax, reservoirs, font_size, format_maf, current_maf, x_pos,
+                                            main_width, reserved_width)
+
+        # ==================== MAIN STACKED BARS ====================
+        for i, r in enumerate(reservoirs):
+            full_af = getattr(r, 'full_af', None)
+            if full_af is None:
+                continue
+
+            current_cap_maf = current_maf[i]
+            if current_cap_maf <= 0:
+                continue
+
+            crit_points = getattr(r, 'critical_elevations_feet', [])
+            zones = []
+            prev = 0.0
+            for item in crit_points:
+                if isinstance(item, (list, tuple)) and len(item) >= 4:
+                    name, elev, cap_af, color = item[:4]
+                    cap = cap_af / 1_000_000
+                    if cap > prev:
+                        zones.append((cap - prev, color, name, cap, elev))
+                        prev = cap
+
+            if r.custom_color:
+                top_color = r.custom_color
+            else:
+                top_color = Reservoir.high_power_pool_color
+            if current_cap_maf > prev:
+                zones.append((current_cap_maf - prev, top_color, 'Above Highest Critical',
+                              current_cap_maf, elevations_feet[i]))
+
+            bottom = 0.0
+            for h, color, label, total_cap, elev in zones:
+                draw_h = min(h, current_cap_maf - bottom)
+                if draw_h <= 0:
+                    break
+                annotation_value = draw_h
+                if 0 < full_af < min_full_af_to_draw:
+                    draw_h = 0
+                bar = ax.bar(x_pos[i], draw_h, width=main_width, bottom=bottom,
+                             color=color, alpha=0.85, edgecolor='navy')[0]
+                x = bar.get_x() + bar.get_width() / 2
+
+                # Current Storage annotation
+                #
+                r.annotation_drawn_in_bar = draw_h
+                y = bottom + draw_h / 2
+                if 0 < full_af < min_full_af_to_draw:
+                    y += 0.08
+                ax.annotate(f'{annotation_value:.{format_maf}f}',xy=(x, y),
+                            ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
+                if 0 < full_af < min_full_af_to_draw:
+                    break
+
+                # Critical Elevation annotation
+                #
+                if 0 and "Above Highest Critical" not in label and r.show_elevations:
+                    ax.annotate(f'{elev:,.0f}\'',
+                                xy=(x_pos[i] + main_width*0.52, bottom + draw_h),
+                                ha='left', va='center',
+                                fontsize=font_size,
+                                fontweight='bold',
+                                color='darkblue',
+                                bbox=dict(boxstyle="square",
+                                          facecolor="white",
+                                          edgecolor="none",
+                                          pad=0,
+                                          alpha=1)
+                                )
+
+                bottom += draw_h
+                if bottom >= current_cap_maf:
+                    break
+
+        # ==================== TEACUP HOLLOW BAR ====================
+        ReservoirChart.create_teacup_bars(ax, reservoirs, font_size, format_maf, x_pos, self.y_max,
+                                          main_width, min_full_af_to_draw)
+
         # ==================== ANNOTATIONS ====================
         # Totals
         self.add_total_annotations()
@@ -351,14 +372,14 @@ class ReservoirChart(BarChart):
             for elev_ft, cap_af, label in getattr(r, 'special_levels', []):
                 cap_maf = cap_af / 1_000_000
                 if cap_maf <= current_maf[i]:
-                    ax.plot(x_pos[i] + main_width/2 - 0.035, cap_maf, marker='<', markersize=8.5,
+                    ax.plot(x_pos[i] + main_width/2 - 0.025, cap_maf, marker='<', markersize=8.5,
                             color='black', markeredgecolor='black', markerfacecolor='white')
                     if label:
                         s = f'{elev_ft:,.0f}\'\n{label}'
                     else:
                         s = f'{elev_ft:,.0f}\''
 
-                    ax.annotate(s, xy=(x_pos[i] + main_width*0.52 + 0.04, cap_maf),
+                    ax.annotate(s, xy=(x_pos[i] + main_width*0.52 + 0.015, cap_maf),
                                 ha='left', va='center',
                                 fontsize=font_size,
                                 fontweight='bold',
@@ -391,7 +412,7 @@ class ReservoirChart(BarChart):
                         practical_available_maf = practical_available_af / 1_000_000
 
             # === Two-line annotation with " of" ===
-            if r.show_elevations:
+            if 0 and r.show_elevations:
                 if has_critical and abs(practical_available_maf - current_maf_val) > 0.001:
                     top_line = f'{practical_available_maf:.{format_maf}f} of'
                     bottom_line = f'{current_maf_val:.{format_maf}f}'
@@ -479,7 +500,7 @@ class ReservoirChart(BarChart):
         if self.reserved_zones:
             ics_patches = [mpatches.Patch(color=c, label=l) for c, l in self.reserved_zones]
             leg = ax.legend(handles=ics_patches, title="ICS 2025 EoY",
-                            loc='upper right', bbox_to_anchor=(0.5, 1.0),
+                            loc='upper right', bbox_to_anchor=(0.4, 1.0),
                             fontsize=9, title_fontsize=10, framealpha=0.95)
             ax.add_artist(leg)
 
@@ -508,7 +529,7 @@ class ReservoirChart(BarChart):
         inaccessible_color = '#bdbdbd'
         inaccessible_text = 'black'
 
-        anchors = [(0.30, 0.80), (0.70, 0.80)]
+        anchors = [(0.25, 0.80), (0.70, 0.80)]
 
         for i, item in enumerate(self.reservoir_totals):
             reservoir_list = item[0]

@@ -37,12 +37,11 @@ class Crystal(Reservoir):
         self.full_af = 26_000
 
         # Critical
-        self.power_head_target_feet = 6700  #  Inactive Conservation Pool
-        self.power_head_target_af = 12_891
+        self.power_head_target_feet = 0
+        self.power_head_target_af = 0
 
-        self.power_head_min_feet = 0
-        self.power_head_min_af = 0
-
+        self.power_head_min_feet = 0          # 6_700  #  Inactive Conservation Pool
+        self.power_head_min_af = 0            # 12_891
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0
