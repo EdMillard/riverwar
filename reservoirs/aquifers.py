@@ -62,7 +62,7 @@ class LTSC:
 class Aquifers(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = [lb.AQUIFER, lb.AQUIFER_INFLOW, lb.AQUIFER_RELEASE]
-        super().__init__('AZ Aquifers', headers, upstream=upstream)
+        super().__init__('Aquifers', headers, upstream=upstream)
         self.custom_color = lb.AZ_COLOR
         self.catalog_id = 0
         self.start_year = 1989
@@ -76,6 +76,14 @@ class Aquifers(Reservoir):
 
         ltsc_total = LTSC(self.path, 'total', self.out_headers)
         self.active_capacity_af = ltsc_total.stored + ltsc_total.cut_to_aquifer
+        snwa_az_aquifer = 613_000
+        snwa_ca_aquifer = 330_000
+        snwa_nv_aquifer = 342_000
+        self.custom_bar = [("AZ LTSC", self.active_capacity_af-snwa_az_aquifer, lb.AZ_COLOR),
+                           ("SNWA AZ", snwa_az_aquifer, lb.NV_COLOR),
+                           ("SNWA NV", snwa_nv_aquifer, lb.NV_COLOR),
+                           ("SNWA CA", snwa_ca_aquifer, lb.NV_COLOR),
+                           ]
 
         ltscs:List[LTSC] = [LTSC(self.path, 'phx', self.out_headers),
                             LTSC(self.path, 'pin', self.out_headers),
