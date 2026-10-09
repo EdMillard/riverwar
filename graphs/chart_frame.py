@@ -120,6 +120,7 @@ class ChartFrame(wx.Panel):
 
         if self.reports:
             self.toolbar = self._init_toolbar(self.reports)
+            self.toolbar.Hide()
             self.main_sizer.Add(self.toolbar, 0, wx.EXPAND | wx.ALL, border=2)
         else:
             self.create_toolbar()

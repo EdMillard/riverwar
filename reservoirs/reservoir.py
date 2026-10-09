@@ -88,6 +88,7 @@ class Reservoir:
         self.start_year_data = 0
         self.water_year_info = self.get_water_year_info(start_year, month=month)
         self.show_elevations = False
+        self.show_in_chart = True
         self.custom_color = 0
 
         # USBR RISE ID's
@@ -467,7 +468,8 @@ class Reservoir:
                 date_time = daily_elevation_ft['dt'][-1]
                 elevation_feet = daily_elevation_ft['val'][-1]
             else:
-                pass
+                date_time = self.date_time
+                elevation_feet = self.elevation_feet    # Use orevious value
         elif when =='less':
             # actual for month
             date_time = self.date_time
@@ -585,7 +587,11 @@ class Reservoir:
             if usbr_rise_id:
                 daily_storage_af = self.usbr_rise_load_daily(usbr_rise_id, column_name)
                 # date_time = daily_storage_af['dt'][-1]
-                active_capacity_af = daily_storage_af['val'][-1]
+                if len(daily_storage_af):
+                    active_capacity_af = daily_storage_af['val'][-1]
+                else:
+                    print(f"No storage data for {self.name}")
+                    active_capacity_af = self.active_capacity_af # Use previous value
                 # sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
                 #                       title=column_name, month=month, divisor=divisor)
                 # active_capacity_af = self.get_value_by_year(self.water_year, column_name)

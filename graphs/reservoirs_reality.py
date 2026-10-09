@@ -74,6 +74,7 @@ Colorado
 | Dallas Creek | Ridgway | 84,230 |
 | Florida | Lemon | 39,792 |
 | Paonia | Paonia | 16,703 |
+
 | Smith Fork | Crawford | 14,395 |
 | Bostwick Park | Silver Jack | 13,520 |
 | Silt | Rifle Gap | about 12,200 |
@@ -90,9 +91,10 @@ Utah
 | Central Utah, Bonneville Unit | Upper Stillwater | 31,382 |
 | Central Utah, Bonneville Unit | Currant Creek | 15,460 |
 | Emery County | Joes Valley | 61,590 |
-| Emery County | Huntington North | 4,220 |
 | Vernal Unit | Steinaker | 34,455 |
 | Jensen Unit | Red Fleet | 25,700 |
+
+| Emery County | Huntington North | 4,220 |
 
 Wyoming and Wyoming–Utah
 
@@ -125,41 +127,60 @@ from reservoirs.imperial import Imperial
 from reservoirs.srp import SRP
 from reservoirs.lake_pleasant import LakePleasant
 from reservoirs.mwd import MWD
+from reservoirs.aquifers import Aquifers
+# Lower Colorado
 from reservoirs.lake_havasu import LakeHavasu
 from reservoirs.lake_mohave import LakeMohave
-from reservoirs.aquifers import Aquifers
 from reservoirs.lake_mead import LakeMead
+# CRSP
 from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
 from reservoirs.blue_mesa import BlueMesa
 from reservoirs.morrow_point import MorrowPoint
 from reservoirs.crystal import Crystal
 from reservoirs.navajo import Navajo
-
-from reservoirs.green_mountain import GreenMountain
-from reservoirs.lake_granby import LakeGranby
+# CO Participating
 from reservoirs.mcphee import Mcphee
 from reservoirs.lake_nighthorse import LakeNighthorse
-from reservoirs.fontenelle import Fontenelle
 from reservoirs.ruedi import Ruedi
 from reservoirs.taylor_park import TaylorPark
 from reservoirs.vallecito import Vallecito
+from reservoirs.ridgway import Ridgway
+from reservoirs.paonia import Paonia
+from reservoirs.lemon import Lemon
+from reservoirs.rifle_gap import RifleGap
+from reservoirs.crawford import Crawford
+from reservoirs.silver_jack import SilverJack
+
+# UT
 from reservoirs.starvation import Starvation
 from reservoirs.strawberry import Strawberry
-from reservoirs.dillon import Dillon
-from reservoirs.paonia import Paonia
-from reservoirs.wolford import Wolford
-from reservoirs.ridgway import Ridgway
 from reservoirs.jordanelle import Jordanelle
-from reservoirs.big_sandy import BigSandy
-from reservoirs.heron import Heron
-from reservoirs.moon_lake import MoonLake
 from reservoirs.joes_valley import JoesValley
+from reservoirs.steinaker import Steinaker
+from reservoirs.red_fleet import RedFleet
+from reservoirs.huntington_north import HuntingtonNorth
+# WY
+from reservoirs.fontenelle import Fontenelle
+from reservoirs.big_sandy import BigSandy
+from reservoirs.meeks_cabin import MeeksCabin
+from reservoirs.stateline import Stateline
+
+# NM
+from reservoirs.heron import Heron
+
+# CO
+from reservoirs.green_mountain import GreenMountain
+from reservoirs.lake_granby import LakeGranby
+from reservoirs.dillon import Dillon
+from reservoirs.wolford import Wolford
+from reservoirs.moon_lake import MoonLake
 from reservoirs.groundhog import Groundhog
-from reservoirs.lemon import Lemon
+from reservoirs.jackson_gulch import JacksonGulch
 from reservoirs.shadow_mountain import ShadowMountain
 # from reservoirs.gross import Gross
 # from reservoirs.grand_lake import GrandLake       # Not useful
+
 
 class ReservoirsReality(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
@@ -184,11 +205,11 @@ class ReservoirsReality(ChartFrame):
 
         # Lower Basin
         imperial = Imperial(upstream=[lake_havasu])
-        lake_pleasant = LakePleasant(upstream=[])
-        mwd = MWD(upstream=[])
+        lake_pleasant = LakePleasant()
+        mwd = MWD()
         # roosevelt = Roosevelt(upstream=[])
-        srp = SRP(upstream=[])
-        aquifers = Aquifers(upstream=[])
+        srp = SRP()
+        aquifers = Aquifers()
 
         self.reservoirs = [
             imperial, aquifers, srp, lake_pleasant, mwd, lake_havasu, lake_mohave,
@@ -210,33 +231,34 @@ class ReservoirsReality(ChartFrame):
 
         # Participating Units
         # CO
-        mcphee = Mcphee(upstream=[])
-        lake_nighthorse = LakeNighthorse(upstream=[])
-        taylor_park = TaylorPark(upstream=[])
-        vallecito = Vallecito(upstream=[])
-        ruedi = Ruedi(upstream=[])
-        paonia = Paonia(upstream=[])
-        ridgeway = Ridgway(upstream=[])
-        lemon = Lemon(upstream=[])
-        # Crawford
-        # Silver Jack
-        # Rifle Gap
+        mcphee = Mcphee()
+        lake_nighthorse = LakeNighthorse()
+        taylor_park = TaylorPark()
+        vallecito = Vallecito()
+        ruedi = Ruedi()
+        paonia = Paonia()
+        ridgeway = Ridgway()
+        lemon = Lemon()
+        rifle_gap = RifleGap()
+        crawford = Crawford()
+        silver_jack = SilverJack()
 
         # WY
-        fontenelle = Fontenelle(upstream=[])
+        fontenelle = Fontenelle()
         big_sandy = BigSandy()
-        # Meeks Cabin
-        # Stateline
+        meeks_cabin = MeeksCabin()
+        state_line = Stateline()
 
         # UT
-        strawberry = Strawberry(upstream=[])
-        starvation = Starvation(upstream=[])
-        jordanelle = Jordanelle(upstream=[])
-        joes_valley = JoesValley(upstream=[])
+        strawberry = Strawberry()
+        starvation = Starvation()
+        jordanelle = Jordanelle()
+        joes_valley = JoesValley()
+        steinaker = Steinaker()
+        red_fleet = RedFleet()
+        huntington_north = HuntingtonNorth()
         # Upper Stillwater
         # Huntington North
-        # Steinaker
-        # Red Fleet
 
         # NM
         heron = Heron(upstream=[])
@@ -244,12 +266,13 @@ class ReservoirsReality(ChartFrame):
         # Not USBR
         # CO
         dillon = Dillon()
-        lake_granby = LakeGranby(upstream=[])
-        wolford = Wolford(upstream=[])
-        green_mountain = GreenMountain(upstream=[])
+        lake_granby = LakeGranby()
+        wolford = Wolford()
+        green_mountain = GreenMountain()
         groundhog = Groundhog()
-        shadow_mountain = ShadowMountain(upstream=[])
-        moon_lake = MoonLake(upstream=[])
+        shadow_mountain = ShadowMountain()
+        moon_lake = MoonLake()
+        jackson_gulch = JacksonGulch()
         # gross = Gross()
         # Grand is a big 66,000 af natural lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
         # so this isnt really good for anything
@@ -258,12 +281,13 @@ class ReservoirsReality(ChartFrame):
         self.participating_units = [
             strawberry, heron, fontenelle, jordanelle,
             mcphee,  starvation, vallecito, lake_nighthorse, taylor_park, ruedi, joes_valley,
-            ridgeway, lemon, big_sandy, paonia
+            ridgeway, lemon, big_sandy, meeks_cabin, paonia, steinaker, red_fleet, state_line,
+            rifle_gap, crawford, silver_jack, huntington_north
         ]
 
         self.ub_reservoirs = [
             lake_granby, dillon, green_mountain,
-            wolford, moon_lake, groundhog, shadow_mountain,
+            wolford, moon_lake, groundhog, shadow_mountain, jackson_gulch
             # gross,
         ]
 
@@ -287,7 +311,8 @@ class ReservoirsReality(ChartFrame):
         aquifer_zones = [
             (lb.TUCSON_COLOR, 'Tucson AMA'),
             (lb.PINAL_COLOR, 'Pinal AMA'),
-            (lb.PHX_COLOR, 'Phoenix AMA')
+            (lb.PHX_COLOR, 'Phoenix AMA'),
+            (lb.CUT_COLOR, 'Cut to Aquifer')
         ]
 
         reserved_zones = [

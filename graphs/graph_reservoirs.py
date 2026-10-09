@@ -143,6 +143,8 @@ class ReservoirChart(BarChart):
     def create_main_bars(ax, reservoirs, font_size, font_size_inside_bar, format_maf, current_maf, x_pos,
                          main_width, elevations_feet, min_full_af_to_draw):
         for i, r in enumerate(reservoirs):
+            if not r.show_in_chart:
+                continue
             custom_bar = getattr(r, 'custom_bar', None)
             if custom_bar is not None:
                 # full_af = getattr(r, 'full_af', None)
@@ -223,6 +225,8 @@ class ReservoirChart(BarChart):
     @staticmethod
     def create_reserved_bars(ax, reservoirs, font_size, format_maf, current_maf, x_pos, main_width, reserved_width):
         for i, r in enumerate(reservoirs):
+            if not r.show_in_chart:
+                continue
             reserved_parts = getattr(r, 'reserved_parts', [])
             if not reserved_parts:
                 continue
@@ -329,6 +333,8 @@ class ReservoirChart(BarChart):
         teacup_linewidth = 1.5
 
         for i, r in enumerate(reservoirs):
+            if not r.show_in_chart:
+                continue
             curr_af = getattr(r, 'active_capacity_af', 0)
             full_af = getattr(r, 'full_af', None)
             if full_af is None or full_af <= curr_af or curr_af <= 0:
@@ -397,7 +403,8 @@ class ReservoirChart(BarChart):
         active_reservoirs = []
         for r in self.reservoirs:
             if getattr(r, 'active_capacity_af', 0) > 0:
-                active_reservoirs.append(r)
+                if r.show_in_chart:
+                    active_reservoirs.append(r)
             else:
                 print(f"reservoir inactive {r.name}")
 
@@ -413,11 +420,7 @@ class ReservoirChart(BarChart):
         font_size_above_bar = 11
         font_size_inside_bar = 13
         format_maf = 3
-        min_full_af_to_draw = 160_000
-
-        # ==================== RESERVED BARS ====================
-        ReservoirChart.create_reserved_bars(ax, reservoirs, font_size, format_maf, current_maf, x_pos,
-                                            main_width, reserved_width)
+        min_full_af_to_draw = 360_000
 
         # ==================== MAIN STACKED BARS ====================
         ReservoirChart.create_main_bars(ax, reservoirs, font_size, font_size_inside_bar, format_maf, current_maf, x_pos,
@@ -427,12 +430,18 @@ class ReservoirChart(BarChart):
         ReservoirChart.create_teacup_bars(ax, reservoirs, font_size, format_maf, x_pos, self.y_max,
                                           main_width, min_full_af_to_draw)
 
+        # ==================== RESERVED BARS ====================
+        ReservoirChart.create_reserved_bars(ax, reservoirs, font_size, format_maf, current_maf, x_pos,
+                                            main_width, reserved_width)
+
         # ==================== ANNOTATIONS ====================
         # Totals
         self.add_total_annotations()
 
         # Special levels
         for i, r in enumerate(reservoirs):
+            if not r.show_in_chart:
+                continue
             for elev_ft, cap_af, label in getattr(r, 'special_levels', []):
                 cap_maf = cap_af / 1_000_000
                 if cap_maf <= current_maf[i]:
@@ -517,18 +526,19 @@ class ReservoirChart(BarChart):
                                               alpha=1)
                                     )
 
-            # === Current elevation on the right ===
-            if r.show_elevations and  elevations_feet[i]:
+            # === Current elevation just above the bar ===
+            if r.show_elevations and elevations_feet[i]:
+                bar_top = current_maf_val
+                if getattr(r, 'custom_bar', None) and getattr(r, 'annotation_drawn_in_bar', 0):
+                    bar_top = r.annotation_drawn_in_bar
                 ax.annotate(f'{elevations_feet[i]:,.2f}\'',
-                            xy=(x_pos[i] + main_width * 0.52, current_maf_val),
-                            ha='left', va='center',
+                            xy=(x_pos[i], bar_top),
+                            xytext=(0, 2),
+                            textcoords='offset points',
+                            ha='center', va='bottom',
                             fontsize=font_size,
                             color='darkgreen',
-                            fontweight='bold',
-                            # bbox=dict(boxstyle="round,pad=0.25",
-                            #           facecolor="lightyellow",
-                            #           alpha=0.9)
-                            )
+                            fontweight='bold')
 
         # ==================== ANNOTATIONS ====================
         if self.power_head_zones:
@@ -586,44 +596,46 @@ class ReservoirChart(BarChart):
 
         self.final_layout(ax, title, names, x_pos)
 
+    @staticmethod
+    def reservoir_total(reservoir_list):
+        accessible_total = 0
+        limited_access_total = 0
+        below_critical_total = 0
+
+        for r in reservoir_list:
+            active_capacity_af = getattr(r, 'active_capacity_af', 0)
+            limited_access = 0
+            below_critical = 0
+            for crit in getattr(r, 'critical_elevations_feet', []):
+                if crit[0] == 'Min Power Head':
+                    below_critical = crit[2]
+                elif crit[0] == 'Safe Power Head':
+                    limited_access = crit[2]
+
+            if active_capacity_af > below_critical > limited_access:
+                accessible_total += active_capacity_af - below_critical
+            elif active_capacity_af >= limited_access:
+                accessible_total += active_capacity_af - limited_access
+
+            if below_critical >= limited_access:
+                below_critical_total += below_critical - limited_access
+
+            limited_access_total += limited_access
+
+        return accessible_total, below_critical_total, limited_access_total
+
     def add_total_annotations(self):
         if not self.reservoir_totals:
             return
 
-        inaccessible_color = '#bdbdbd'
-        inaccessible_text = 'black'
-
         anchors = [(0.25, 0.80), (0.70, 0.80)]
-
         for i, item in enumerate(self.reservoir_totals):
             reservoir_list = item[0]
             name = item[1]
-            accessible_color = item[2] if len(item) > 2 else '#2e7d32'
             x, y = anchors[i] if i < len(anchors) else anchors[-1]
 
-            accessible_total = 0
-            limited_access_total = 0
-            below_critical_total = 0
+            accessible_total, below_critical_total, limited_access_total = ReservoirChart.reservoir_total(reservoir_list)
 
-            for r in reservoir_list:
-                active_capacity_af = getattr(r, 'active_capacity_af', 0)
-                limited_access = 0
-                below_critical = 0
-                for crit in getattr(r, 'critical_elevations_feet', []):
-                    if crit[0] == 'Min Power Head':
-                        below_critical = crit[2]
-                    elif crit[0] == 'Safe Power Head':
-                        limited_access = crit[2]
-
-                if active_capacity_af > below_critical > limited_access:
-                    accessible_total += active_capacity_af - below_critical
-                elif active_capacity_af >= limited_access:
-                    accessible_total += active_capacity_af - limited_access
-
-                if below_critical >= limited_access:
-                    below_critical_total += below_critical - limited_access
-
-                limited_access_total += limited_access
             rows = [
                 (accessible_total / 1_000_000, '', Reservoir.high_power_pool_color, 'black'),
                 (below_critical_total / 1_000_000, 'Below Critical', Reservoir.low_power_pool_color, 'gray'),
