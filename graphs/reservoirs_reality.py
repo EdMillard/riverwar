@@ -114,6 +114,14 @@ New Mexico and Colorado–New Mexico
 | Navajo Indian Irrigation | uses Navajo Reservoir | Navajo is an initial CRSP unit, 1,696,000 active, not a participating-project reservoir |
 
 La Barge and Savery-Pot Hook were authorized and not built. Pine River Extension was deleted. Navajo-Gallup is a later participating project and is a pipeline from Navajo Reservoir, not a new storage reservoir.
+
+Denver Water
+https://www.denverwater.org/sites/default/files/water-watch-report.pdf
+
+MWD
+https://www.bewaterwise.com/reservoir-water-storage/2.2.4_reservoir_storage.pdf
+https://www.mwdh2o.com/management/general-manager/?query=Report
+
 '''
 # from colorado.graph_inflow_outflow import InflowOutflowChart
 from graphs.graph_reservoirs import ReservoirChart
@@ -172,12 +180,16 @@ from reservoirs.heron import Heron
 # CO
 from reservoirs.green_mountain import GreenMountain
 from reservoirs.lake_granby import LakeGranby
+from reservoirs.horsetooth import Horsetooth
+from reservoirs.carter_lake import CarterLake
 from reservoirs.dillon import Dillon
 from reservoirs.wolford import Wolford
 from reservoirs.moon_lake import MoonLake
 from reservoirs.groundhog import Groundhog
-from reservoirs.jackson_gulch import JacksonGulch
 from reservoirs.shadow_mountain import ShadowMountain
+from reservoirs.jackson_gulch import JacksonGulch
+from reservoirs.williams_fork import WilliamsFork
+
 # from reservoirs.gross import Gross
 # from reservoirs.grand_lake import GrandLake       # Not useful
 
@@ -269,10 +281,13 @@ class ReservoirsReality(ChartFrame):
         lake_granby = LakeGranby()
         wolford = Wolford()
         green_mountain = GreenMountain()
+        horsetooth = Horsetooth()
+        carter_lake = CarterLake()
         groundhog = Groundhog()
         shadow_mountain = ShadowMountain()
         moon_lake = MoonLake()
         jackson_gulch = JacksonGulch()
+        williams_fork = WilliamsFork()
         # gross = Gross()
         # Grand is a big 66,000 af natural lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
         # so this isnt really good for anything
@@ -286,7 +301,7 @@ class ReservoirsReality(ChartFrame):
         ]
 
         self.ub_reservoirs = [
-            lake_granby, dillon, green_mountain,
+            lake_granby, dillon, horsetooth, green_mountain, carter_lake, williams_fork,
             wolford, moon_lake, groundhog, shadow_mountain, jackson_gulch
             # gross,
         ]
