@@ -26,6 +26,7 @@ class RifleGap(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Rifle Gap', headers, catalog_id=8572, upstream=upstream)
+        self.show_in_chart = False
         self.start_year = 0
         # Elevations
         #

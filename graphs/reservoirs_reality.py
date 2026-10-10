@@ -167,6 +167,7 @@ from reservoirs.jordanelle import Jordanelle
 from reservoirs.joes_valley import JoesValley
 from reservoirs.steinaker import Steinaker
 from reservoirs.red_fleet import RedFleet
+from reservoirs.upper_stillwater import UpperStillwater
 from reservoirs.huntington_north import HuntingtonNorth
 # WY
 from reservoirs.fontenelle import Fontenelle
@@ -241,73 +242,76 @@ class ReservoirsReality(ChartFrame):
             (self.crsp_reservoirs, 'CRSP', )
         ]
 
-        # Participating Units
-        # CO
-        mcphee = Mcphee()
-        lake_nighthorse = LakeNighthorse()
-        taylor_park = TaylorPark()
-        vallecito = Vallecito()
-        ruedi = Ruedi()
-        paonia = Paonia()
-        ridgeway = Ridgway()
-        lemon = Lemon()
-        rifle_gap = RifleGap()
-        crawford = Crawford()
-        silver_jack = SilverJack()
+        self.show_upper_basin_reservoirs = True
+        if self.show_upper_basin_reservoirs:
+            # Participating Units
+            # CO
+            mcphee = Mcphee()
+            lake_nighthorse = LakeNighthorse()
+            taylor_park = TaylorPark()
+            vallecito = Vallecito()
+            ruedi = Ruedi()
+            paonia = Paonia()
+            ridgeway = Ridgway()
+            lemon = Lemon()
+            rifle_gap = RifleGap()
+            crawford = Crawford()
+            silver_jack = SilverJack()
 
-        # WY
-        fontenelle = Fontenelle()
-        big_sandy = BigSandy()
-        meeks_cabin = MeeksCabin()
-        state_line = Stateline()
+            # WY
+            fontenelle = Fontenelle()
+            big_sandy = BigSandy()
+            meeks_cabin = MeeksCabin()
+            state_line = Stateline()
 
-        # UT
-        strawberry = Strawberry()
-        starvation = Starvation()
-        jordanelle = Jordanelle()
-        joes_valley = JoesValley()
-        steinaker = Steinaker()
-        red_fleet = RedFleet()
-        huntington_north = HuntingtonNorth()
-        # Upper Stillwater
-        # Huntington North
+            # UT
+            strawberry = Strawberry()
+            starvation = Starvation()
+            jordanelle = Jordanelle()
+            joes_valley = JoesValley()
+            steinaker = Steinaker()
+            red_fleet = RedFleet()
+            huntington_north = HuntingtonNorth()
+            upper_stillwater = UpperStillwater()
 
-        # NM
-        heron = Heron(upstream=[])
+            # NM
+            heron = Heron(upstream=[])
 
-        # Not USBR
-        # CO
-        dillon = Dillon()
-        lake_granby = LakeGranby()
-        wolford = Wolford()
-        green_mountain = GreenMountain()
-        horsetooth = Horsetooth()
-        carter_lake = CarterLake()
-        groundhog = Groundhog()
-        shadow_mountain = ShadowMountain()
-        moon_lake = MoonLake()
-        jackson_gulch = JacksonGulch()
-        williams_fork = WilliamsFork()
-        # gross = Gross()
-        # Grand is a big 66,000 af natural lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
-        # so this isnt really good for anything
-        # grand_lake = GrandLake(upstream=[])
+            # Not USBR
+            # CO
+            dillon = Dillon()
+            lake_granby = LakeGranby()
+            wolford = Wolford()
+            green_mountain = GreenMountain()
+            horsetooth = Horsetooth()
+            carter_lake = CarterLake()
+            groundhog = Groundhog()
+            shadow_mountain = ShadowMountain()
+            moon_lake = MoonLake()
+            jackson_gulch = JacksonGulch()
+            williams_fork = WilliamsFork()
+            # gross = Gross()
+            # Grand is a big 66,000 af natural lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
+            # so this isnt really good for anything
+            # grand_lake = GrandLake(upstream=[])
 
-        self.participating_units = [
-            strawberry, heron, fontenelle, jordanelle,
-            mcphee,  starvation, vallecito, lake_nighthorse, taylor_park, ruedi, joes_valley,
-            ridgeway, lemon, big_sandy, meeks_cabin, paonia, steinaker, red_fleet, state_line,
-            rifle_gap, crawford, silver_jack, huntington_north
-        ]
+            self.participating_units = [
+                strawberry, heron, fontenelle, jordanelle,
+                mcphee,  starvation, vallecito, lake_nighthorse, taylor_park, ruedi, joes_valley,
+                ridgeway, lemon, big_sandy, upper_stillwater, meeks_cabin, paonia, steinaker, red_fleet, state_line,
+                rifle_gap, crawford, silver_jack, huntington_north
+            ]
 
-        self.ub_reservoirs = [
-            lake_granby, dillon, horsetooth, green_mountain, carter_lake, williams_fork,
-            wolford, moon_lake, groundhog, shadow_mountain, jackson_gulch
-            # gross,
-        ]
+            self.ub_reservoirs = [
+                lake_granby, dillon, horsetooth, green_mountain, carter_lake, williams_fork,
+                wolford, moon_lake, groundhog, shadow_mountain, jackson_gulch
+                # gross,
+            ]
 
-        # reservoir_lists = [self.reservoirs]
-        reservoir_lists = [self.reservoirs, self.participating_units, self.ub_reservoirs]
+        if self.show_upper_basin_reservoirs:
+            reservoir_lists = [self.reservoirs, self.participating_units, self.ub_reservoirs]
+        else:
+            reservoir_lists = [self.reservoirs]
 
         super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name=self.name)
 
@@ -343,18 +347,18 @@ class ReservoirsReality(ChartFrame):
         )
         self.charts.append(reservoir_chart)
 
+        if self.show_upper_basin_reservoirs:
+            reservoir_chart = ReservoirChart(
+                self.participating_units, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
+                percentage = 0.05
+            )
+            self.charts.append(reservoir_chart)
 
-        reservoir_chart = ReservoirChart(
-            self.participating_units, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
-            percentage = 0.05
-        )
-        self.charts.append(reservoir_chart)
-
-        reservoir_chart = ReservoirChart(
-            self.ub_reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
-            percentage = 0.05
-        )
-        self.charts.append(reservoir_chart)
+            reservoir_chart = ReservoirChart(
+                self.ub_reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
+                percentage = 0.05
+            )
+            self.charts.append(reservoir_chart)
 
         # inflow_chart = InflowOutflowChart(
         #    self.reservoirs, start_date=start, current_date=current, end_date=end

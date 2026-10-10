@@ -90,7 +90,9 @@ class Aquifers(Reservoir):
                             LTSC(self.path, 'tuc', self.out_headers)]
 
         ama_stored = 0
+        cut_to_aquifer = 0
         for ltsc in ltscs:
+            cut_to_aquifer += ltsc.cut_to_aquifer
             ama_stored += ltsc.stored
             if ltsc.name == 'phx':
                 color = lb.PHX_COLOR
@@ -101,6 +103,7 @@ class Aquifers(Reservoir):
             else:
                 color = '#0'
             self.reserved_parts.append((ltsc.name, ltsc.stored, color))
+        self.reserved_parts.insert(0, ("cut", cut_to_aquifer, lb.CUT_COLOR))
 
         # Elevations
         #

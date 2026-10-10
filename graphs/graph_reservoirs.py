@@ -180,7 +180,7 @@ class ReservoirChart(BarChart):
                               current_cap_maf, elevations_feet[i]))
 
             bottom = 0.0
-            for h, color, label, total_cap, elev in zones:
+            for n, (h, color, label, total_cap, elev) in enumerate(zones):
                 draw_h = min(h, current_cap_maf - bottom)
                 if draw_h <= 0:
                     break
@@ -196,11 +196,16 @@ class ReservoirChart(BarChart):
                 r.annotation_drawn_in_bar = draw_h
                 y = bottom + draw_h / 2
                 if 0 < full_af < min_full_af_to_draw:
-                    y += 0.08
-                ax.annotate(f'{annotation_value:.{format_maf}f}',xy=(x, y),
+                    is_last = (n == len(zones) - 1)
+                    if is_last:
+                        y += 0.08
+                        ax.annotate(f'{annotation_value:.{format_maf}f}',xy=(x, y),
+                                    ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
+                    else:
+                        continue
+                else:
+                    ax.annotate(f'{annotation_value:.{format_maf}f}', xy=(x, y),
                             ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
-                if 0 < full_af < min_full_af_to_draw:
-                    break
 
                 # Critical Elevation annotation
                 #
@@ -275,19 +280,19 @@ class ReservoirChart(BarChart):
 
                 mid_y = (reserved_bottom + dash_to_y) / 2
                 displayed_value = reserved_bottom - dash_to_y
+                if displayed_value > 0.000001:
+                    ax.add_patch(mpatches.Rectangle(
+                        (reserved_x - 0.115, mid_y - 0.115),
+                        0.23, 0.23,
+                        facecolor='white', edgecolor='none', zorder=6
+                    ))
 
-                ax.add_patch(mpatches.Rectangle(
-                    (reserved_x - 0.115, mid_y - 0.115),
-                    0.23, 0.23,
-                    facecolor='white', edgecolor='none', zorder=6
-                ))
-
-                ax.annotate(
-                    f'{displayed_value:.{format_maf}f}',
-                    xy=(reserved_x, mid_y),
-                    ha='center', va='center',
-                    fontsize=font_size, fontweight='bold', color='black', zorder=7
-                )
+                    ax.annotate(
+                        f'{displayed_value:.{format_maf}f}',
+                        xy=(reserved_x, mid_y),
+                        ha='center', va='center',
+                        fontsize=font_size, fontweight='bold', color='black', zorder=7
+                    )
 
                 ax.annotate(f'{total_reserved_maf:.{format_maf}f}',
                             xy=(x_pos[i] - (main_width/2) - (reserved_width/2), main_bar_maf),
@@ -420,7 +425,7 @@ class ReservoirChart(BarChart):
         font_size_above_bar = 11
         font_size_inside_bar = 13
         format_maf = 3
-        min_full_af_to_draw = 360_000
+        min_full_af_to_draw = 420_000
 
         # ==================== MAIN STACKED BARS ====================
         ReservoirChart.create_main_bars(ax, reservoirs, font_size, font_size_inside_bar, format_maf, current_maf, x_pos,
