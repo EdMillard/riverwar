@@ -26,6 +26,7 @@ class Stateline(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Stateline', headers, catalog_id=2453, upstream=upstream)
+        self.show_in_chart = False
         self.start_year = 0
         # Elevations
         #

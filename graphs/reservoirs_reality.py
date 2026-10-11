@@ -129,7 +129,7 @@ import wx
 from colorado.river_war import RiverWar
 from graphs.chart_frame import ChartFrame, NotebookFrame
 import colorado.lb as lb
-from reservoirs.reservoir import Reservoir
+from reservoirs.reservoir import Reservoir, ReservoirGroup
 from reservoirs.imperial import Imperial
 # from reservoirs.roosevelt import Roosevelt
 from reservoirs.srp import SRP
@@ -224,24 +224,6 @@ class ReservoirsReality(ChartFrame):
         srp = SRP()
         aquifers = Aquifers()
 
-        self.reservoirs = [
-            imperial, aquifers, srp, lake_pleasant, mwd, lake_havasu, lake_mohave,
-            lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point, crystal
-        ]
-
-        self.usbr_lower_basin_reservoirs = [
-            lake_havasu, lake_mohave, lake_mead
-        ]
-
-        self.crsp_reservoirs = [
-            lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point
-        ]
-
-        self.reservoir_totals = [
-            (self.usbr_lower_basin_reservoirs, 'USBR Lower Basin', lb.AZ_COLOR),
-            (self.crsp_reservoirs, 'CRSP', )
-        ]
-
         self.show_upper_basin_reservoirs = True
         if self.show_upper_basin_reservoirs:
             # Participating Units
@@ -294,22 +276,34 @@ class ReservoirsReality(ChartFrame):
             # Grand is a big 66,000 af natural lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
             # so this isnt really good for anything
             # grand_lake = GrandLake(upstream=[])
+            self.upper_colorado_states = ReservoirGroup('Upper Colorado',
+                                                   [lake_granby, dillon, horsetooth, green_mountain, carter_lake,
+                                                    williams_fork,
+                                                    wolford, moon_lake, groundhog, shadow_mountain, jackson_gulch],
+                                                        legend_position= (0.77, 1.0))
+            self.participating = ReservoirGroup('Participating',
+                        [strawberry, heron, fontenelle, jordanelle, mcphee,  starvation, vallecito, lake_nighthorse,
+                         taylor_park, ruedi, joes_valley, ridgeway, lemon, big_sandy, steinaker, upper_stillwater, meeks_cabin,
+                         red_fleet, paonia, state_line, rifle_gap, crawford, silver_jack, huntington_north],
+                                                legend_position= (0.77, 1.0))
+        else:
+            self.upper_colorado_states = ReservoirGroup('Upper Colorado', [])
+            self.participating = ReservoirGroup('Participating', [])
 
-            self.participating_units = [
-                strawberry, heron, fontenelle, jordanelle,
-                mcphee,  starvation, vallecito, lake_nighthorse, taylor_park, ruedi, joes_valley,
-                ridgeway, lemon, big_sandy, upper_stillwater, meeks_cabin, paonia, steinaker, red_fleet, state_line,
-                rifle_gap, crawford, silver_jack, huntington_north
-            ]
-
-            self.ub_reservoirs = [
-                lake_granby, dillon, horsetooth, green_mountain, carter_lake, williams_fork,
-                wolford, moon_lake, groundhog, shadow_mountain, jackson_gulch
-                # gross,
-            ]
-
+        self.lower_colorado_states = ReservoirGroup('Lower Colorado',
+                                                    [imperial, aquifers, srp, lake_pleasant, mwd])
+        self.lower_colorado_usbr = ReservoirGroup('USBR Lower Colorado',
+                                                  [lake_havasu, lake_mohave, lake_mead],
+                                                  legend_position= (0.25, 0.80))
+        self.crsp_initial_units = ReservoirGroup('CRSP Initial Units',
+                                                 [lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point, crystal],
+                                                 legend_position= (0.70, 0.80))
+        self.reservoirs = [
+            imperial, aquifers, srp, lake_pleasant, mwd, lake_havasu, lake_mohave,
+            lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point, crystal
+        ]
         if self.show_upper_basin_reservoirs:
-            reservoir_lists = [self.reservoirs, self.participating_units, self.ub_reservoirs]
+            reservoir_lists = [self.reservoirs, self.participating.reservoirs, self.upper_colorado_states.reservoirs]
         else:
             reservoir_lists = [self.reservoirs]
 
@@ -342,20 +336,22 @@ class ReservoirsReality(ChartFrame):
 
         reservoir_chart = ReservoirChart(
             self.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=14.0,
-            reservoir_totals=self.reservoir_totals,
+            reservoir_totals=[self.lower_colorado_usbr, self.crsp_initial_units],
             reserved_names=reserved_zones, aquifer_zones=aquifer_zones
         )
         self.charts.append(reservoir_chart)
 
         if self.show_upper_basin_reservoirs:
             reservoir_chart = ReservoirChart(
-                self.participating_units, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
+                self.participating.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
+                reservoir_totals = [self.participating],
                 percentage = 0.05
             )
             self.charts.append(reservoir_chart)
 
             reservoir_chart = ReservoirChart(
-                self.ub_reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
+                self.upper_colorado_states.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
+                reservoir_totals=[self.upper_colorado_states],
                 percentage = 0.05
             )
             self.charts.append(reservoir_chart)

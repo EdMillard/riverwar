@@ -22,7 +22,7 @@ SOFTWARE.
 from pathlib import Path
 import wx
 from typing import List, Tuple
-from reservoirs.reservoir import Reservoir
+from reservoirs.reservoir import Reservoir, ReservoirGroup
 import colorado.lb as lb
 from chart.chart import BarChart
 import numpy as np
@@ -47,14 +47,14 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 # ==================== RESERVOIR CHART ====================
 class ReservoirChart(BarChart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None,
-                 reservoir_totals:List[Tuple]=None,
+                 reservoir_totals:List[ReservoirGroup]=None,
                  power_head_zones:List[Tuple]=None, reserved_names:List[Tuple]=None, aquifer_zones:List[Tuple]=None,
                  y_max:float=14.0, percentage:float = 0.0):
         super().__init__(start_date, current_date, end_date, percentage=percentage)
         self.version = 0.4
         self.reservoirs = reservoirs
 
-        self.reservoir_totals = reservoir_totals
+        self.reservoir_totals:List[ReservoirGroup] = reservoir_totals
         self.power_head_zones = power_head_zones
         self.aquifer_zones = aquifer_zones
         self.reserved_zones = reserved_names
@@ -425,7 +425,7 @@ class ReservoirChart(BarChart):
         font_size_above_bar = 11
         font_size_inside_bar = 13
         format_maf = 3
-        min_full_af_to_draw = 420_000
+        min_full_af_to_draw = 350_000
 
         # ==================== MAIN STACKED BARS ====================
         ReservoirChart.create_main_bars(ax, reservoirs, font_size, font_size_inside_bar, format_maf, current_maf, x_pos,
@@ -601,73 +601,54 @@ class ReservoirChart(BarChart):
 
         self.final_layout(ax, title, names, x_pos)
 
-    @staticmethod
-    def reservoir_total(reservoir_list):
-        accessible_total = 0
-        limited_access_total = 0
-        below_critical_total = 0
-
-        for r in reservoir_list:
-            active_capacity_af = getattr(r, 'active_capacity_af', 0)
-            limited_access = 0
-            below_critical = 0
-            for crit in getattr(r, 'critical_elevations_feet', []):
-                if crit[0] == 'Min Power Head':
-                    below_critical = crit[2]
-                elif crit[0] == 'Safe Power Head':
-                    limited_access = crit[2]
-
-            if active_capacity_af > below_critical > limited_access:
-                accessible_total += active_capacity_af - below_critical
-            elif active_capacity_af >= limited_access:
-                accessible_total += active_capacity_af - limited_access
-
-            if below_critical >= limited_access:
-                below_critical_total += below_critical - limited_access
-
-            limited_access_total += limited_access
-
-        return accessible_total, below_critical_total, limited_access_total
-
     def add_total_annotations(self):
         if not self.reservoir_totals:
             return
 
-        anchors = [(0.25, 0.80), (0.70, 0.80)]
-        for i, item in enumerate(self.reservoir_totals):
-            reservoir_list = item[0]
-            name = item[1]
-            x, y = anchors[i] if i < len(anchors) else anchors[-1]
+        rows = []
+        num_groups_with_legends = 0
+        x, y = (0.77, 1.0)
+        for i, reservoir_group in enumerate(self.reservoir_totals):
+            name = reservoir_group.name
+            reservoir_group.reservoir_total()
+            if reservoir_group.legend_position is None:
+                continue
+            num_groups_with_legends += 1
+            x, y = reservoir_group.legend_position
+            rows.append((reservoir_group.accessible_total / 1_000_000, name, Reservoir.high_power_pool_color, 'black'))
+            #rows.append((reservoir_group.below_critical_total / 1_000_000, 'Below Critical', Reservoir.low_power_pool_color, 'gray')),
+            #rows.append((reservoir_group.limited_access_total / 1_000_000, 'Inaccessible', Reservoir.non_power_pool_color, 'gray')),
 
-            accessible_total, below_critical_total, limited_access_total = ReservoirChart.reservoir_total(reservoir_list)
+        title = ""
+        if num_groups_with_legends > 1:
+            accessible_total = 0
+            for i, reservoir_group in enumerate(self.reservoir_totals):
+                accessible_total += reservoir_group.accessible_total
+            rows.append((accessible_total / 1_000_000, "Total", Reservoir.high_power_pool_color, 'black'))
+            title = "System Water"
 
-            rows = [
-                (accessible_total / 1_000_000, '', Reservoir.high_power_pool_color, 'black'),
-                (below_critical_total / 1_000_000, 'Below Critical', Reservoir.low_power_pool_color, 'gray'),
-                (limited_access_total / 1_000_000, 'Inaccessible', Reservoir.non_power_pool_color, 'gray'),
-            ]
-            handles = [
-                mpatches.Patch(facecolor=color, edgecolor='#555555', linewidth=0.8,
-                               label=f'{maf:4.2f} MAF {label}')
-                for maf, label, color, _ in rows
-            ]
-            leg = self.ax.legend(
-                handles=handles,
-                title=name,
-                loc='upper left',
-                bbox_to_anchor=(x, y),
-                fontsize=16,
-                title_fontsize=14,
-                framealpha=0.95,
-                handlelength=1.2,
-                handleheight=1.0,
-                borderpad=0.6,
-                labelspacing=0.4,
-            )
-            leg.get_title().set_fontweight('bold')
-            for text in leg.get_texts():
-                text.set_fontfamily('monospace')
-                text.set_fontweight('semibold')
-            for text, row in zip(leg.get_texts(), rows):
-                text.set_color(row[3])
-            self.ax.add_artist(leg)
+        handles = [
+            mpatches.Patch(facecolor=color, edgecolor='#555555', linewidth=0.8,
+                           label=f'{maf:4.2f} MAF {label}')
+            for maf, label, color, _ in rows
+        ]
+        leg = self.ax.legend(
+            handles=handles,
+            title=title,
+            loc='upper left',
+            bbox_to_anchor=(x, y),
+            fontsize=16,
+            title_fontsize=14,
+            framealpha=0.95,
+            handlelength=1.2,
+            handleheight=1.0,
+            borderpad=0.6,
+            labelspacing=0.4,
+        )
+        leg.get_title().set_fontweight('bold')
+        for text in leg.get_texts():
+            text.set_fontfamily('monospace')
+            text.set_fontweight('semibold')
+        for text, row in zip(leg.get_texts(), rows):
+            text.set_color(row[3])
+        self.ax.add_artist(leg)

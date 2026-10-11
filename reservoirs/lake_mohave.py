@@ -43,8 +43,8 @@ class LakeMohave(Reservoir):
         self.full_af = 1_810_000
 
         # Critical
-        self.power_head_target_feet = 0
-        self.power_head_target_af = 0
+        self.power_head_target_feet = 630
+        self.power_head_target_af = 1_610_000
 
         self.power_head_min_feet = 0
         self.power_head_min_af = 0

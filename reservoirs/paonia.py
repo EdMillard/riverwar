@@ -26,6 +26,7 @@ class Paonia(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Paonia',headers,  catalog_id= 2401, upstream=upstream)
+        self.show_in_chart = False
         self.start_year = 1962
 
         # Elevations

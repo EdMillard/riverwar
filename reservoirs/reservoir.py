@@ -1252,3 +1252,40 @@ class SRPReservoir(Reservoir):
                                                          all_b.EVAPORATION,
                                                          all_b.INFLOW])
             return df
+
+class ReservoirGroup:
+    def __init__(self, name:str, reservoirs:List[Reservoir], legend_position:Optional[tuple|None]=None,):
+        self.name:str = name
+        self.legend_position:Optional[tuple|None] = legend_position
+        self.reservoirs:List[Reservoir] = reservoirs
+        self.accessible_total:float = 0
+        self.limited_access_total:float = 0
+        self.below_critical_total:float = 0
+        self.dead_pool_total:float = 0
+
+    def reservoir_total(self):
+        self.accessible_total = 0
+        self.limited_access_total = 0
+        self.below_critical_total = 0
+
+        for r in self.reservoirs:
+            active_capacity_af = getattr(r, 'active_capacity_af', 0)
+            limited_access = 0
+            below_critical = 0
+            for crit in getattr(r, 'critical_elevations_feet', []):
+                if crit[0] == 'Min Power Head':
+                    below_critical = crit[2]
+                elif crit[0] == 'Safe Power Head':
+                    limited_access = crit[2]
+
+            if active_capacity_af > below_critical > limited_access:
+                self.accessible_total += active_capacity_af - below_critical
+            elif active_capacity_af >= limited_access:
+                self.accessible_total += active_capacity_af - limited_access
+
+            if below_critical >= limited_access:
+                self.below_critical_total += below_critical - limited_access
+
+            self.limited_access_total += limited_access
+
+        return
