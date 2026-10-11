@@ -147,7 +147,6 @@ class ReservoirChart(BarChart):
                 continue
             custom_bar = getattr(r, 'custom_bar', None)
             if custom_bar is not None:
-                # full_af = getattr(r, 'full_af', None)
                 r.annotation_drawn_in_bar = ReservoirChart.create_custom_bars(
                     ax, custom_bar, font_size, font_size_inside_bar, format_maf, x_pos[i], main_width)
                 continue
@@ -192,26 +191,26 @@ class ReservoirChart(BarChart):
                 x = bar.get_x() + bar.get_width() / 2
 
                 # Current Storage annotation
-                #
                 r.annotation_drawn_in_bar = draw_h
                 y = bottom + draw_h / 2
                 if 0 < full_af < min_full_af_to_draw:
                     is_last = (n == len(zones) - 1)
                     if is_last:
                         y += 0.08
-                        ax.annotate(f'{annotation_value:.{format_maf}f}',xy=(x, y),
-                                    ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
+                        ax.annotate(f'{annotation_value:.{format_maf}f}', xy=(x, y),
+                                    ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold',
+                                    color='black')
                     else:
                         continue
                 else:
                     ax.annotate(f'{annotation_value:.{format_maf}f}', xy=(x, y),
-                            ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold', color='black')
+                                ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold',
+                                color='black')
 
                 # Critical Elevation annotation
-                #
                 if 0 and "Above Highest Critical" not in label and r.show_elevations:
                     ax.annotate(f'{elev:,.0f}\'',
-                                xy=(x_pos[i] + main_width*0.52, bottom + draw_h),
+                                xy=(x_pos[i] + main_width * 0.52, bottom + draw_h),
                                 ha='left', va='center',
                                 fontsize=font_size,
                                 fontweight='bold',
@@ -226,6 +225,94 @@ class ReservoirChart(BarChart):
                 bottom += draw_h
                 if bottom >= current_cap_maf:
                     break
+
+            # ==================== SPECIAL LEVELS WITH DASHED LINES ("above" / "below" / "both") ====================
+            special_levels = getattr(r, 'special_levels', [])
+            if special_levels:
+                normalized = []
+                for item in special_levels:
+                    if not isinstance(item, (list, tuple)) or len(item) < 3:
+                        continue
+                    elev_ft = item[0]
+                    cap_af = item[1]
+                    label = item[2]
+                    mode = item[3] if len(item) >= 4 else None
+                    if isinstance(mode, bool):  # backward compat with old True
+                        mode = "above" if mode else None
+                    if cap_af is None or cap_af <= 0:
+                        continue
+                    normalized.append((elev_ft, cap_af / 1_000_000, label, mode))
+
+                # Sort by capacity so "next up" is well-defined
+                normalized.sort(key=lambda t: t[1])
+
+                bar_top_maf = current_cap_maf
+
+                # Horizontal center of the gap between this bar and the next bar to the right
+                if i + 1 < len(x_pos):
+                    right_edge = x_pos[i] + main_width / 2
+                    left_edge_next = x_pos[i + 1] - main_width / 2
+                    gap_center_x = (right_edge + left_edge_next) / 2
+                else:
+                    # Last bar — fall back to a small offset to the right
+                    gap_center_x = x_pos[i] + main_width / 2 + 0.15
+
+                # Right edge of the current main bar
+                bar_right_x = x_pos[i] + main_width / 2
+
+                def draw_dashed_segment(low_maf, high_maf):
+                    if high_maf <= low_maf or high_maf - low_maf < 0.000001:
+                        return
+                    # Vertical dashed line
+                    ax.plot([gap_center_x, gap_center_x], [low_maf, high_maf],
+                            color='darkred', linestyle='--', linewidth=1.4, alpha=0.85, zorder=5)
+
+                    mid_y = (low_maf + high_maf) / 2
+                    displayed = high_maf - low_maf
+
+                    # White erasure starting just right of the bar so teacup is not covered
+                    erase_left = bar_right_x + 0.03
+                    erase_right = gap_center_x + 0.12
+                    erase_bottom = mid_y - 0.12
+                    erase_height = 0.24
+                    ax.add_patch(mpatches.Rectangle(
+                        (erase_left, erase_bottom),
+                        erase_right - erase_left, erase_height,
+                        facecolor='white', edgecolor='none', zorder=6
+                    ))
+                    ax.annotate(
+                        f'{displayed:.{format_maf}f}',
+                        xy=(gap_center_x, mid_y),
+                        ha='center', va='center',
+                        fontsize=font_size, fontweight='bold', color='black', zorder=7
+                    )
+
+                    # Short horizontal caps drawn AFTER the annotation so they aren't erased
+                    cap_half_width = 0.06
+                    ax.plot([gap_center_x - cap_half_width, gap_center_x + cap_half_width],
+                            [low_maf, low_maf],
+                            color='darkred', linestyle='-', linewidth=1.6, alpha=0.9, zorder=8)
+                    ax.plot([gap_center_x - cap_half_width, gap_center_x + cap_half_width],
+                            [high_maf, high_maf],
+                            color='darkred', linestyle='-', linewidth=1.6, alpha=0.9, zorder=8)
+
+                for idx, (elev_ft, cap_maf, label, mode) in enumerate(normalized):
+                    if mode not in ("above", "below", "both"):
+                        continue
+
+                    # ---------- ABOVE ----------
+                    if mode in ("above", "both"):
+                        if cap_maf < bar_top_maf:
+                            next_up_maf = bar_top_maf
+                            if idx + 1 < len(normalized):
+                                next_up_maf = min(normalized[idx + 1][1], bar_top_maf)
+                            if next_up_maf > cap_maf:
+                                draw_dashed_segment(cap_maf, next_up_maf)
+
+                    # ---------- BELOW (ruler down to bottom of bar) ----------
+                    if mode in ("below", "both"):
+                        if cap_maf > 0:
+                            draw_dashed_segment(0.0, cap_maf)
 
     @staticmethod
     def create_reserved_bars(ax, reservoirs, font_size, format_maf, current_maf, x_pos, main_width, reserved_width):
@@ -447,7 +534,10 @@ class ReservoirChart(BarChart):
         for i, r in enumerate(reservoirs):
             if not r.show_in_chart:
                 continue
-            for elev_ft, cap_af, label in getattr(r, 'special_levels', []):
+            for item in getattr(r, 'special_levels', []):
+                if not isinstance(item, (list, tuple)) or len(item) < 3:
+                    continue
+                elev_ft, cap_af, label = item[0], item[1], item[2]
                 cap_maf = cap_af / 1_000_000
                 if cap_maf <= current_maf[i]:
                     ax.plot(x_pos[i] + main_width/2 - 0.025, cap_maf, marker='<', markersize=8.5,

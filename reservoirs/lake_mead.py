@@ -79,10 +79,10 @@ class LakeMead(Reservoir):
         self.power_head_min_af = 2005585
 
         self.special_levels = [
-            (self.power_high_head_target_feet, self.power_high_head_target_af, "Low Head"),
+            (self.power_high_head_target_feet, self.power_high_head_target_af, "Turbines", "above"),
             # (1025, 5_981_122, "Level 3"),
-            (self.mead_consult_feet, self.mead_consult_af, "Consult"),
-            (self.power_head_target_feet, self.power_head_target_af, "Critical"),
+            (self.mead_consult_feet, self.mead_consult_af, "Consult", "above"),
+            (self.power_head_target_feet, self.power_head_target_af, "Critical", "above"),
             (self.power_head_min_feet, self.power_head_min_af, "Intakes"),
         ]
 

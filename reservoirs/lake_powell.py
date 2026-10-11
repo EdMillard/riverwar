@@ -77,7 +77,7 @@ class LakePowell(Reservoir):
         self.special_levels = [
             (self.power_head_target_feet, self.power_head_target_af, "Critical"),
             (self.power_head_min_feet, self.power_head_min_af, "Intakes"),
-            (self.dead_pool_feet, self.dead_pool_af, "Dead"),
+            (self.dead_pool_feet, self.dead_pool_af, "Dead", "both"),
         ]
 
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
