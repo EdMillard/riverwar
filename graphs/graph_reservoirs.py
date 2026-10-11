@@ -435,7 +435,8 @@ class ReservoirChart(BarChart):
             curr_maf = curr_af / 1_000_000
             full_maf = full_af / 1_000_000
             empty = full_maf - curr_maf
-            if empty <= 0: continue
+            if empty <= 0:
+                continue
 
             # Teacup bar
             if full_af > min_full_af_to_draw:
@@ -449,6 +450,28 @@ class ReservoirChart(BarChart):
                 top_y = min(full_maf, y_max)
                 ax.plot([x_pos[i] - main_width / 2, x_pos[i] + main_width / 2], [top_y, top_y],
                         color=teacup_color, linewidth=teacup_linewidth, alpha=teacup_alpha)
+                
+                # ==================== 1-YR / 1-MO ARROWS ON TEACUP EDGES ====================
+                left_x = x_pos[i] - main_width / 2
+                right_x = x_pos[i] + main_width / 2
+
+                # 1 year ago — left edge, right-pointing arrow
+                yr_af = getattr(r, 'storage_one_year_ago', None)
+                if yr_af is not None and yr_af > 0:
+                    yr_maf = yr_af / 1_000_000
+                    color = 'green' if curr_maf > yr_maf else 'red'
+                    ax.plot(left_x, yr_maf, marker='>', markersize=8.5,
+                            color=color, markeredgecolor='black', markeredgewidth=0.8,
+                            markerfacecolor=color, zorder=12)
+
+                # 1 month ago — right edge, left-pointing arrow
+                mo_af = getattr(r, 'storage_one_month_ago', None)
+                if mo_af is not None and mo_af > 0:
+                    mo_maf = mo_af / 1_000_000
+                    color = 'green' if curr_maf > mo_maf else 'red'
+                    ax.plot(right_x, mo_maf, marker='<', markersize=8.5,
+                            color=color, markeredgecolor='black', markeredgewidth=0.8,
+                            markerfacecolor=color, zorder=12)
 
             # ==================== PRACTICAL AVAILABLE ABOVE LOWEST NON-ZERO CRITICAL ====================
             lowest_crit_cap_af = 0

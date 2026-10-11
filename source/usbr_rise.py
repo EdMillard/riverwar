@@ -227,7 +227,7 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
                     update = end > last
                     # print(f"update {update} {file_path} {previous_data[-1][0]} {water_year_info.end_date}")
                 # FIXME HACK
-                # update = False
+                update = False
     if not info or update:
         if file_path.exists():
             old_file_moved_path = WaterYearInfo.move_file_with_mod_date(file_path)

@@ -190,7 +190,7 @@ class Reservoir:
         self.elevation_feet:float = 0
         self.active_capacity_af:float = 0
         self.storage_one_month_ago: float = 0
-        self.storage_two_months_ago: float = 0
+        self.storage_one_year_ago: float = 0
         self.evap_af:float = 0
         self.inflow_af:float = 0
         self.inflow_cfs:float = 0
@@ -562,22 +562,20 @@ class Reservoir:
             return np.datetime64(result)
         return result
 
-    def print_storage(self, daily_storage_af):
-        if 0 and len(daily_storage_af) > 0:
+    def print_storage(self, daily_storage_af, column_nam:str):
+        if 1 and len(daily_storage_af) > 0:
             current_dt = daily_storage_af['dt'][-1]
-            one_month_ago_dt = Reservoir.months_earlier(current_dt)
-            self.storage_one_month_ago = Reservoir.get_value_at_time(daily_storage_af, one_month_ago_dt)
-            one_month_delta = self.active_capacity_af - self.storage_one_month_ago
+            if self.storage_one_month_ago:
+                one_month_delta = self.active_capacity_af - self.storage_one_month_ago
+            else:
+                one_month_delta = 0
+            if self.storage_one_year_ago is not None:
+                one_year_ago_delta = self.active_capacity_af - self.storage_one_year_ago
+            else:
+                one_year_ago_delta = 0
 
-            two_months_ago_dt = Reservoir.months_earlier(current_dt, months=2)
-            self.storage_two_months_ago = Reservoir.get_value_at_time(daily_storage_af, two_months_ago_dt)
-            two_month_delta = self.active_capacity_af - self.storage_two_months_ago
-
-            three_months_ago_dt = Reservoir.months_earlier(current_dt, months=3)
-            storage_three_months_ago = Reservoir.get_value_at_time(daily_storage_af, three_months_ago_dt)
-            three_month_delta = self.active_capacity_af - storage_three_months_ago
-
-            print(f'{self.name.ljust(16)} Storage {self.active_capacity_af/1_000_000:5.3f} MAF 1 mo {one_month_delta:9.0f}  2 mo {two_month_delta:9.0f} 3 mo {three_month_delta:9.0f}')
+            print(f'{self.name.ljust(16)} Storage {self.active_capacity_af/1_000_000:5.3f} MAF 1 mo {one_month_delta:9.0f}  1 yr {one_year_ago_delta:9.0f}')
+            pass
 
     def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->Tuple[float, np.ndarray]:
         active_capacity_af = 0
@@ -589,9 +587,14 @@ class Reservoir:
                 # date_time = daily_storage_af['dt'][-1]
                 if len(daily_storage_af):
                     active_capacity_af = daily_storage_af['val'][-1]
+                    last_dt: np.datetime64 = daily_storage_af['dt'][-1].item()
+                    self.storage_one_month_ago = self.get_value_months_or_years_earlier(column_name, last_dt, months=1)
+                    self.storage_one_year_ago = self.get_value_months_or_years_earlier(column_name, last_dt, years=1)
                 else:
                     print(f"No storage data for {self.name}")
                     active_capacity_af = self.active_capacity_af # Use previous value
+                    self.storage_one_month_ago = 0
+                    self.storage_one_year_ago = 0
                 # sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
                 #                       title=column_name, month=month, divisor=divisor)
                 # active_capacity_af = self.get_value_by_year(self.water_year, column_name)
@@ -603,6 +606,77 @@ class Reservoir:
             active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
 
         return active_capacity_af, daily_storage_af
+
+    def get_value_months_or_years_earlier(
+            self,
+            column_name: str,
+            reference_dt,
+            months: int = 0,
+            years: int = 0,
+            date_column: str = "Date"
+    ) -> float | None:
+        """
+        Return the value from self.df_daily for the given column,
+        looking back `months` and/or `years` from the supplied reference_dt.
+
+        Parameters
+        ----------
+        column_name : str
+            Column to read (e.g. all_b.STORAGE).
+        reference_dt : datetime | np.datetime64 | str | pd.Timestamp
+            Starting datetime (normally the most recent daily storage timestamp).
+        months : int
+            Number of months to go back (default 0).
+        years : int
+            Number of years to go back (default 0).
+        date_column : str
+            Name of the date column if the DataFrame is not DatetimeIndex-indexed.
+
+        Returns
+        -------
+        float | None
+            The value at the earlier date, or None if not found.
+        """
+        if self.df_daily is None or self.df_daily.empty:
+            return None
+        if column_name not in self.df_daily.columns:
+            return None
+
+        df = self.df_daily
+
+        # Normalize the reference datetime
+        if isinstance(reference_dt, str):
+            ref = pd.to_datetime(reference_dt)
+        elif isinstance(reference_dt, np.datetime64):
+            ref = pd.Timestamp(reference_dt)
+        else:
+            ref = pd.Timestamp(reference_dt)
+
+        # Compute the target date
+        target_dt = ref
+        if years:
+            target_dt = target_dt - relativedelta(years=years)
+        if months:
+            target_dt = target_dt - relativedelta(months=months)
+
+        # Look up the nearest value
+        if isinstance(df.index, pd.DatetimeIndex):
+            idx = df.index.get_indexer([target_dt], method="nearest")[0]
+            if idx == -1:
+                return None
+            value = df.iloc[idx][column_name]
+        else:
+            if date_column not in df.columns:
+                return None
+            date_series = pd.to_datetime(df[date_column])
+            deltas = (date_series - target_dt).abs()
+            nearest_idx = deltas.idxmin()
+            value = df.loc[nearest_idx, column_name]
+
+        try:
+            return float(value) if pd.notna(value) else None
+        except (TypeError, ValueError):
+            return None
 
     def get_daily_and_last(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->float:
         release = 0
