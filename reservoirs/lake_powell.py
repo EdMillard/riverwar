@@ -77,11 +77,12 @@ class LakePowell(Reservoir):
         self.special_levels = [
             (self.power_head_target_feet, self.power_head_target_af, "Critical"),
             (self.power_head_min_feet, self.power_head_min_af, "Intakes"),
-            (self.dead_pool_feet, self.dead_pool_af, "Dead", "both"),
+            (self.dead_pool_feet, self.dead_pool_af, "Dead"),
         ]
 
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
-                                         ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
+                                         ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color),
+                                         ("Dead Pool", self.dead_pool_feet, self.dead_pool_af, Reservoir.dead_pool_color)]
 
     def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
         self.load_date(report_path, start_date, current_date, end_date)

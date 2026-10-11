@@ -316,9 +316,10 @@ class ReservoirsReality(ChartFrame):
 
         power_head_zones = [
             ('#ffffff', 'Available Capacity'),
-            (Reservoir.high_power_pool_color, 'Normal Power Head'),
-            (Reservoir.low_power_pool_color, 'Low Power Head'),
-            (Reservoir.non_power_pool_color, 'Limited Access')
+            (Reservoir.high_power_pool_color, 'System Water'),
+            (Reservoir.low_power_pool_color, 'Below Critical'),
+            (Reservoir.non_power_pool_color, 'Limited Access'),
+            (Reservoir.dead_pool_color, 'Dead Pool')
         ]
 
         aquifer_zones = [
@@ -337,7 +338,7 @@ class ReservoirsReality(ChartFrame):
         reservoir_chart = ReservoirChart(
             self.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=14.0,
             reservoir_totals=[self.lower_colorado_usbr, self.crsp_initial_units],
-            reserved_names=reserved_zones, aquifer_zones=aquifer_zones
+            power_head_zones=power_head_zones, reserved_names=reserved_zones, aquifer_zones=aquifer_zones
         )
         self.charts.append(reservoir_chart)
 

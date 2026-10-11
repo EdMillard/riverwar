@@ -160,9 +160,44 @@ class ReservoirChart(BarChart):
                 continue
 
             crit_points = getattr(r, 'critical_elevations_feet', [])
-            zones = []
-            prev = 0.0
+
+            # ==================== OPTIONAL DEAD POOL BAR AT BOTTOM ====================
+            dead_pool_maf = 0.0
+            dead_pool_color = None
+            filtered_crit = []
             for item in crit_points:
+                if isinstance(item, (list, tuple)) and len(item) >= 4:
+                    name = item[0]
+                    if name == "Dead Pool":
+                        dead_pool_maf = item[2] / 1_000_000
+                        dead_pool_color = item[3]
+                    else:
+                        filtered_crit.append(item)
+                else:
+                    filtered_crit.append(item)
+
+            # Draw dead pool bar if present and positive
+            bottom = 0.0
+            if dead_pool_maf > 0 and dead_pool_color is not None:
+                draw_h = min(dead_pool_maf, current_cap_maf)
+                if draw_h > 0:
+                    bar = ax.bar(x_pos[i], draw_h, width=main_width, bottom=0.0,
+                                 color=dead_pool_color, alpha=0.85, edgecolor='navy')[0]
+                    x = bar.get_x() + bar.get_width() / 2
+                    y = draw_h / 2
+                    ax.annotate(f'{draw_h:.{format_maf}f}',
+                                xy=(x, y),
+                                ha='center', va='center',
+                                fontsize=font_size_inside_bar,
+                                fontweight='bold',
+                                color='black')
+                    bottom = draw_h
+                    r.annotation_drawn_in_bar = draw_h
+
+            # Build zones from remaining critical points (starting above dead pool)
+            zones = []
+            prev = dead_pool_maf
+            for item in filtered_crit:
                 if isinstance(item, (list, tuple)) and len(item) >= 4:
                     name, elev, cap_af, color = item[:4]
                     cap = cap_af / 1_000_000
@@ -178,7 +213,7 @@ class ReservoirChart(BarChart):
                 zones.append((current_cap_maf - prev, top_color, 'Above Highest Critical',
                               current_cap_maf, elevations_feet[i]))
 
-            bottom = 0.0
+            # Draw remaining stacked zones above the dead pool (or from 0 if none)
             for n, (h, color, label, total_cap, elev) in enumerate(zones):
                 draw_h = min(h, current_cap_maf - bottom)
                 if draw_h <= 0:
@@ -191,7 +226,7 @@ class ReservoirChart(BarChart):
                 x = bar.get_x() + bar.get_width() / 2
 
                 # Current Storage annotation
-                r.annotation_drawn_in_bar = draw_h
+                r.annotation_drawn_in_bar = bottom + draw_h
                 y = bottom + draw_h / 2
                 if 0 < full_af < min_full_af_to_draw:
                     is_last = (n == len(zones) - 1)
@@ -207,7 +242,7 @@ class ReservoirChart(BarChart):
                                 ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold',
                                 color='black')
 
-                # Critical Elevation annotation
+                # Critical Elevation annotation (disabled)
                 if 0 and "Above Highest Critical" not in label and r.show_elevations:
                     ax.annotate(f'{elev:,.0f}\'',
                                 xy=(x_pos[i] + main_width * 0.52, bottom + draw_h),
@@ -450,7 +485,7 @@ class ReservoirChart(BarChart):
                 top_y = min(full_maf, y_max)
                 ax.plot([x_pos[i] - main_width / 2, x_pos[i] + main_width / 2], [top_y, top_y],
                         color=teacup_color, linewidth=teacup_linewidth, alpha=teacup_alpha)
-                
+
                 # ==================== 1-YR / 1-MO ARROWS ON TEACUP EDGES ====================
                 left_x = x_pos[i] - main_width / 2
                 right_x = x_pos[i] + main_width / 2

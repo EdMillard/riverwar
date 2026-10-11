@@ -50,7 +50,8 @@ from source.water_year_info import WaterYearInfo
 class Reservoir:
     high_power_pool_color = "lightblue"
     low_power_pool_color = "cornflowerblue"
-    non_power_pool_color = '#B0A4D6'
+    non_power_pool_color = '#c0b4e6'
+    dead_pool_color = '#9084b6'
 
     outflow_actual_color = 'red'
     outflow_projected_color = '#FF746C'
