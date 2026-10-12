@@ -237,12 +237,13 @@ class BarChart(Chart):
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
+                 y_units:Literal['MAF', 'TAF', 'AF', 'FT', 'CFS']='MAF',
                  percentage: float = 0.0,
                  ):
-        super().__init__(start_date, current_date, end_date, percentage=percentage)
+        super().__init__(start_date, current_date, end_date, y_units=y_units, percentage=percentage)
 
     def final_layout(self, ax, title:str, names:List[str], x_pos:np.ndarray):
-        ax.set_ylabel('Million Acre-Feet', fontsize=11.5, fontweight='bold')
+        ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')
         ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)

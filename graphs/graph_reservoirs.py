@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from pathlib import Path
 import wx
-from typing import List, Tuple
+from typing import List, Tuple, Literal
 from reservoirs.reservoir import Reservoir, ReservoirGroup
 import colorado.lb as lb
 from chart.chart import BarChart
@@ -49,8 +49,8 @@ class ReservoirChart(BarChart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None,
                  reservoir_totals:List[ReservoirGroup]=None,
                  power_head_zones:List[Tuple]=None, reserved_names:List[Tuple]=None, aquifer_zones:List[Tuple]=None,
-                 y_max:float=14.0, percentage:float = 0.0):
-        super().__init__(start_date, current_date, end_date, percentage=percentage)
+                 y_units:Literal['MAF', 'TAF', 'AF', 'FT', 'CFS']='MAF', y_max:float=14.0, percentage:float = 0.0):
+        super().__init__(start_date, current_date, end_date, y_units=y_units, percentage=percentage)
         self.version = 0.4
         self.reservoirs = reservoirs
 
@@ -225,16 +225,40 @@ class ReservoirChart(BarChart):
                              color=color, alpha=0.85, edgecolor='navy')[0]
                 x = bar.get_x() + bar.get_width() / 2
 
-                # Current Storage annotation
+                # Current Storage annotation (KAF, integer)
                 r.annotation_drawn_in_bar = bottom + draw_h
                 y = bottom + draw_h / 2
                 if 0 < full_af < min_full_af_to_draw:
                     is_last = (n == len(zones) - 1)
                     if is_last:
                         y += 0.08
-                        ax.annotate(f'{annotation_value:.{format_maf}f}', xy=(x, y),
-                                    ha='center', va='center', fontsize=font_size_inside_bar, fontweight='bold',
+
+                        storage_kaf = annotation_value * 1_000          # MAF → KAF
+                        storage_str = f'{storage_kaf:.0f}'
+
+                        delta_str = None
+                        delta_color = 'black'
+
+                        yr_af = getattr(r, 'storage_one_year_ago', None)
+                        if yr_af is not None and yr_af > 0:
+                            delta_kaf = (r.active_capacity_af - yr_af) / 1_000   # AF → KAF
+                            delta_color = 'green' if delta_kaf > 0 else 'red'
+                            delta_str = f'{delta_kaf:+.0f}'
+
+                        # Storage (black) right-aligned so its right edge sits at x
+                        ax.annotate(storage_str,
+                                    xy=(x, y),
+                                    ha='right', va='center',
+                                    fontsize=font_size_inside_bar, fontweight='bold',
                                     color='black')
+
+                        # Delta (colored) left-aligned so its left edge sits at x
+                        if delta_str:
+                            ax.annotate(' ' + delta_str,
+                                        xy=(x, y),
+                                        ha='left', va='center',
+                                        fontsize=font_size_inside_bar, fontweight='bold',
+                                        color=delta_color)
                     else:
                         continue
                 else:
@@ -558,6 +582,7 @@ class ReservoirChart(BarChart):
             else:
                 print(f"reservoir inactive {r.name}")
 
+        # divisor = self._get_divisor_for_units(self.y_units)
         reservoirs = active_reservoirs
         names = [r.name for r in reservoirs]
         current_maf = [r.active_capacity_af / 1_000_000 for r in reservoirs]

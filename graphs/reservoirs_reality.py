@@ -147,6 +147,7 @@ from reservoirs.blue_mesa import BlueMesa
 from reservoirs.morrow_point import MorrowPoint
 from reservoirs.crystal import Crystal
 from reservoirs.navajo import Navajo
+
 # CO Participating
 from reservoirs.mcphee import Mcphee
 from reservoirs.lake_nighthorse import LakeNighthorse
@@ -159,7 +160,6 @@ from reservoirs.lemon import Lemon
 from reservoirs.rifle_gap import RifleGap
 from reservoirs.crawford import Crawford
 from reservoirs.silver_jack import SilverJack
-
 # UT
 from reservoirs.starvation import Starvation
 from reservoirs.strawberry import Strawberry
@@ -174,7 +174,6 @@ from reservoirs.fontenelle import Fontenelle
 from reservoirs.big_sandy import BigSandy
 from reservoirs.meeks_cabin import MeeksCabin
 from reservoirs.stateline import Stateline
-
 # NM
 from reservoirs.heron import Heron
 
@@ -182,6 +181,9 @@ from reservoirs.heron import Heron
 from reservoirs.green_mountain import GreenMountain
 from reservoirs.lake_granby import LakeGranby
 from reservoirs.horsetooth import Horsetooth
+from reservoirs.homestake import Homestake
+from reservoirs.stagecoach import Stagecoach
+from reservoirs.vega import Vega
 from reservoirs.carter_lake import CarterLake
 from reservoirs.dillon import Dillon
 from reservoirs.wolford import Wolford
@@ -220,19 +222,16 @@ class ReservoirsReality(ChartFrame):
         imperial = Imperial(upstream=[lake_havasu])
         lake_pleasant = LakePleasant()
         mwd = MWD()
-        # roosevelt = Roosevelt(upstream=[])
         srp = SRP()
         aquifers = Aquifers()
 
-        self.show_upper_basin_reservoirs = False
+        self.show_upper_basin_reservoirs = True
         if self.show_upper_basin_reservoirs:
             # Participating Units
             # CO
             mcphee = Mcphee()
             lake_nighthorse = LakeNighthorse()
-            taylor_park = TaylorPark()
             vallecito = Vallecito()
-            ruedi = Ruedi()
             paonia = Paonia()
             ridgeway = Ridgway()
             lemon = Lemon()
@@ -266,24 +265,33 @@ class ReservoirsReality(ChartFrame):
             wolford = Wolford()
             green_mountain = GreenMountain()
             horsetooth = Horsetooth()
+            homestake = Homestake()
+            stagecoach = Stagecoach()
+            vega = Vega()
+            taylor_park = TaylorPark()
+            ruedi = Ruedi()
             carter_lake = CarterLake()
             groundhog = Groundhog()
             shadow_mountain = ShadowMountain()
             moon_lake = MoonLake()
             jackson_gulch = JacksonGulch()
             williams_fork = WilliamsFork()
+            # Meadow Creek
+            # Clinton Gulch
+            # Eagle Park
+            # Narraguinnep
             # gross = Gross()
             # Grand is a big 66,000 af natural lake but USBR only tracks a narrow band under 1,000 AF Northern Water uses for pumping
             # so this isnt really good for anything
             # grand_lake = GrandLake(upstream=[])
             self.upper_colorado_states = ReservoirGroup('Upper Colorado',
                                                    [lake_granby, dillon, horsetooth, green_mountain, carter_lake,
-                                                    williams_fork,
-                                                    wolford, moon_lake, groundhog, shadow_mountain, jackson_gulch],
+                                                    taylor_park, ruedi, williams_fork, wolford, homestake,
+                                                    moon_lake, stagecoach, vega, groundhog, shadow_mountain, jackson_gulch],
                                                         legend_position= (0.77, 1.0))
             self.participating = ReservoirGroup('Participating',
                         [strawberry, heron, fontenelle, jordanelle, mcphee,  starvation, vallecito, lake_nighthorse,
-                         taylor_park, ruedi, joes_valley, ridgeway, lemon, big_sandy, steinaker, upper_stillwater, meeks_cabin,
+                         joes_valley, ridgeway, lemon, big_sandy, steinaker, upper_stillwater, meeks_cabin,
                          red_fleet, paonia, state_line, rifle_gap, crawford, silver_jack, huntington_north],
                                                 legend_position= (0.77, 1.0))
         else:
@@ -345,14 +353,14 @@ class ReservoirsReality(ChartFrame):
         if self.show_upper_basin_reservoirs:
             reservoir_chart = ReservoirChart(
                 self.participating.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
-                reservoir_totals = [self.participating],
+                reservoir_totals = [self.participating], y_units='MAF',
                 percentage = 0.05
             )
             self.charts.append(reservoir_chart)
 
             reservoir_chart = ReservoirChart(
                 self.upper_colorado_states.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
-                reservoir_totals=[self.upper_colorado_states],
+                reservoir_totals=[self.upper_colorado_states], y_units='MAF',
                 percentage = 0.05
             )
             self.charts.append(reservoir_chart)
