@@ -51,7 +51,7 @@ class ReservoirChart(BarChart):
                  power_head_zones:List[Tuple]=None, reserved_names:List[Tuple]=None, aquifer_zones:List[Tuple]=None,
                  y_units:Literal['MAF', 'TAF', 'AF', 'FT', 'CFS']='MAF', y_max:float=14.0, percentage:float = 0.0):
         super().__init__(start_date, current_date, end_date, y_units=y_units, percentage=percentage)
-        self.version = 0.4
+        self.version = 0.5
         self.reservoirs = reservoirs
 
         self.reservoir_totals:List[ReservoirGroup] = reservoir_totals
@@ -69,7 +69,7 @@ class ReservoirChart(BarChart):
             self.height_inch = height_inch
 
         title = f'Colorado River Reservoir Reality\u2122 - {self.month_to_short_name(self.current_date.month)} ' \
-                f'{self.current_date.day}, {self.current_date.year}   v{self.version}'
+                f'{self.current_date.day}, {self.current_date.year}'
 
         fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=100)
         self.ax = fig.add_subplot(111)

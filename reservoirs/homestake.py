@@ -23,10 +23,7 @@ from pathlib import Path
 from datetime import date
 from reservoirs.reservoir import Reservoir
 from typing import List, Optional
-from source import cdss
-from api import df_utils
 import colorado.ub as ub
-import colorado.allb as all_b
 
 
 class Homestake(Reservoir):
@@ -60,9 +57,6 @@ class Homestake(Reservoir):
         super().load_data(report_path, start_date, current_date, end_date)
 
         # https://dwr.state.co.us/Tools/Stations/HOMRESCO?params=STORAGE
-        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_HOMESTAKE_ABBREV, self.name+'.'+all_b.STORAGE, 'STORAGE', self.start_date, self.end_date)
-        self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, self.name+'.'+all_b.STORAGE)
-
-        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_HOMESTAKE_ABBREV, self.name+'.'+all_b.ELEVATION, 'ELEV', self.start_date, self.end_date)
-        self.elevation_feet = cdss.get_last_nonzero(self.df_daily, self.name + '.' + all_b.ELEVATION)
+        self.get_storage_cdss(ub.CDSS_CO_HOMESTAKE_ABBREV)
+        self.get_elevation_cdss(ub.CDSS_CO_DILLON_ABBREV)
 

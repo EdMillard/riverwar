@@ -235,7 +235,9 @@ class MultiBarChart(Chart):
 
         ax.set_title(f"{self.title or ''}", fontsize=13.5, fontweight='bold', pad=12)
 
-        ax.grid(axis='y', linestyle='--', alpha=0.35, zorder=0)
+        ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=14)
+        ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
+        ax.grid(axis='y', linestyle='--', alpha=0.7, zorder=0)
 
         for ann in self.annotations:
             self.add_total_annotations(ann)

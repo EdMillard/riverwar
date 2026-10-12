@@ -23,11 +23,7 @@ from pathlib import Path
 from datetime import date
 from reservoirs.reservoir import Reservoir
 from typing import List, Optional
-from source import cdss
-from api import df_utils
 import colorado.ub as ub
-import colorado.allb as all_b
-
 
 class Dillon(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
@@ -61,9 +57,5 @@ class Dillon(Reservoir):
 
         # https://dwr.state.co.us/Tools/Stations/DILRESCO?params=STORAGE
         # CDSS Period of Record, 1987
-        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_DILLON_ABBREV, self.name+'.'+all_b.STORAGE, 'STORAGE', self.start_date, self.end_date)
-        self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, self.name+'.'+all_b.STORAGE)
-
-        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_DILLON_ABBREV, self.name+'.'+all_b.ELEVATION, 'ELEV', self.start_date, self.end_date)
-        self.elevation_feet = cdss.get_last_nonzero(self.df_daily, self.name + '.' + all_b.ELEVATION)
-
+        self.get_storage_cdss(ub.CDSS_CO_DILLON_ABBREV)
+        self.get_elevation_cdss(ub.CDSS_CO_DILLON_ABBREV)

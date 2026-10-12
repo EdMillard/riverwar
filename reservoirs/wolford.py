@@ -22,8 +22,6 @@ SOFTWARE.
 from reservoirs.reservoir import Reservoir
 from typing import List, Optional
 from source import cdss
-import pandas as pd
-from api import df_utils
 from pathlib import Path
 from datetime import date
 import colorado.allb as all_b
@@ -60,5 +58,4 @@ class Wolford(Reservoir):
 
         # https://dwr.state.co.us/Tools/Stations/WOLRESCO?params=STORAGE
         # CDSS Period of Record, 1997
-        cdss.telemetry_station_daily_to_df(self.df_daily, ub.CDSS_CO_WOLFORD_ABBREV, self.name+'.'+all_b.STORAGE, 'STORAGE', self.start_date, self.end_date)
-        self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, self.name+'.'+all_b.STORAGE)
+        self.get_storage_cdss(ub.CDSS_CO_WOLFORD_ABBREV)

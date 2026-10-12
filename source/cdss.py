@@ -218,8 +218,13 @@ def get_last_nonzero(df: pd.DataFrame, column: str):
 
     return valid.iloc[-1]
 
+def limit_to_today(d: date) -> date:
+    """Return the input date, but never later than today."""
+    return min(d, date.today())
+
 def telemetry_station_daily_to_df(df:pd.DataFrame, abbrev:str, name:str, measurement:str, start_date:date, end_date:date, month:int=10)->None:
-    for year in range(start_date.year, end_date.year + 1):
+    end_date = limit_to_today(end_date)
+    for year in range(start_date.year, end_date.year + 2):
         water_year_info = get_water_year_info(year, month=month)
         time_series = telemetry_station_time_series(None, abbrev, measurement, water_year_info=water_year_info, alias=name)
         if time_series is not None:

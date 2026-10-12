@@ -261,10 +261,10 @@ class Reservoir:
                     self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
                     end_date = pd.to_datetime(end_str, format="%b %Y").date()
                     self.report_end_date = Reservoir.get_end_of_month(end_date)
-                    self.df_daily = df_utils.create_daily_df(self.report_start_date, self.report_end_date, self.headers)
+                    self.df_daily = df_utils.create_daily_df(self.report_start_date, date.today(), self.headers)
                     self.report_path = report_path
                 else:
-                    self.df_daily = df_utils.create_daily_df(self.start_date, self.end_date, self.headers)
+                    self.df_daily = df_utils.create_daily_df(self.start_date, date.today(), self.headers)
                     self.report_start_date = self.start_date
                     self.report_end_date = self.end_date
         else:
@@ -577,6 +577,28 @@ class Reservoir:
 
             print(f'{self.name.ljust(16)} Storage {self.active_capacity_af/1_000_000:5.3f} MAF 1 mo {one_month_delta:9.0f}  1 yr {one_year_ago_delta:9.0f}')
             pass
+    @staticmethod
+    def last_non_na_date(df: pd.DataFrame, value_col: str, date_col: str = "Date") -> Optional[np.datetime64]:
+        """
+        Return the Date of the last row where value_col is not NA/NaN as np.datetime64.
+        """
+        if df.empty or value_col not in df.columns or date_col not in df.columns:
+            return None
+
+        valid = df.loc[df[value_col].notna()]
+        if valid.empty:
+            return None
+
+        # Sort so the last row is the latest date
+        last_row = valid.sort_values(date_col).iloc[-1]
+        dt = last_row[date_col]
+
+        # Ensure we return np.datetime64
+        if isinstance(dt, np.datetime64):
+            return dt
+        else:
+            # Convert Timestamp, date, string, etc. to np.datetime64
+            return np.datetime64(pd.to_datetime(dt))
 
     def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->Tuple[float, np.ndarray]:
         active_capacity_af = 0
@@ -607,6 +629,21 @@ class Reservoir:
             active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
 
         return active_capacity_af, daily_storage_af
+
+    def get_storage_cdss(self, abbreviation:str)->float:
+        column_name = self.name+'.'+all_b.STORAGE
+        cdss.telemetry_station_daily_to_df(self.df_daily, abbreviation, column_name, 'STORAGE', self.start_date, self.end_date)
+        self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, column_name)
+        last_dt: np.datetime64 = Reservoir.last_non_na_date(self.df_daily, column_name)
+        # last_dt: np.datetime64 = daily_storage_af['dt'][-1].item()
+        self.storage_one_month_ago = self.get_value_months_or_years_earlier(column_name, last_dt, months=1)
+        self.storage_one_year_ago = self.get_value_months_or_years_earlier(column_name, last_dt, years=1)
+        return self.active_capacity_af
+
+    def get_elevation_cdss(self, abbreviation: str) -> float:
+        cdss.telemetry_station_daily_to_df(self.df_daily, abbreviation, self.name+'.'+all_b.ELEVATION, 'ELEV', self.start_date, self.end_date)
+        self.elevation_feet = cdss.get_last_nonzero(self.df_daily, self.name + '.' + all_b.ELEVATION)
+        return self.elevation_feet
 
     def get_value_months_or_years_earlier(
             self,
