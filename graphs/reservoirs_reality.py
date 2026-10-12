@@ -352,15 +352,17 @@ class ReservoirsReality(ChartFrame):
 
         if self.show_upper_basin_reservoirs:
             reservoir_chart = ReservoirChart(
-                self.participating.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
-                reservoir_totals = [self.participating], y_units='MAF',
+                self.participating.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end,
+                y_max=1100,
+                reservoir_totals = [self.participating], y_units='TAF',
                 percentage = 0.05
             )
             self.charts.append(reservoir_chart)
 
             reservoir_chart = ReservoirChart(
-                self.upper_colorado_states.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end, y_max=1.1,
-                reservoir_totals=[self.upper_colorado_states], y_units='MAF',
+                self.upper_colorado_states.reservoirs, start_date=start, current_date=self.current_time_from_usbr, end_date=end,
+                y_max=1100,
+                reservoir_totals=[self.upper_colorado_states], y_units='TAF',
                 percentage = 0.05
             )
             self.charts.append(reservoir_chart)
