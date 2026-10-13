@@ -37,12 +37,14 @@ class Chart:
                  start_date: date | None = None,
                  current_date: date | None = None,
                  end_date: date | None = None,
+                 show_title: bool = False,
                  percentage: float = 0.0,
                  y_label: str = "",
                  y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
                  y_divisor: float | None = None):
 
         self.percentage = percentage
+        self.show_title = show_title
         self.canvas = None
         self.panel = None
 
@@ -238,11 +240,13 @@ class BarChart(Chart):
                  current_date: date | None = None,
                  end_date: date | None = None,
                  y_units:Literal['MAF', 'TAF', 'AF', 'FT', 'CFS']='MAF',
+                 show_title:bool=False,
                  percentage: float = 0.0,
                  ):
-        super().__init__(start_date, current_date, end_date, y_units=y_units, percentage=percentage)
+        super().__init__(start_date, current_date, end_date, y_units=y_units,
+                         show_title=show_title, percentage=percentage)
 
-    def final_layout(self, ax, title:str, names:List[str], x_pos:np.ndarray):
+    def final_layout(self, ax, title:Optional[str], names:List[str], x_pos:np.ndarray):
         ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')
         ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
         ax.set_xticks(x_pos)

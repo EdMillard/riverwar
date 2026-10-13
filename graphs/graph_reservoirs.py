@@ -49,8 +49,9 @@ class ReservoirChart(BarChart):
     def __init__(self, reservoirs: List[Reservoir], start_date=None, current_date=None, end_date=None,
                  reservoir_totals:List[ReservoirGroup]=None,
                  power_head_zones:List[Tuple]=None, reserved_names:List[Tuple]=None, aquifer_zones:List[Tuple]=None,
-                 y_units:Literal['MAF', 'TAF', 'AF', 'FT', 'CFS']='MAF', y_max:float=14.0, percentage:float = 0.0):
-        super().__init__(start_date, current_date, end_date, y_units=y_units, percentage=percentage)
+                 y_units:Literal['MAF', 'TAF', 'AF', 'FT', 'CFS']='MAF', y_max:float=14.0,
+                 show_title:bool=False, percentage:float = 0.0):
+        super().__init__(start_date, current_date, end_date, y_units=y_units, show_title=show_title, percentage=percentage)
         self.version = 0.5
         self.reservoirs = reservoirs
         self.ax = None
@@ -327,7 +328,7 @@ class ReservoirChart(BarChart):
                         return
                     # Vertical dashed line
                     ax.plot([gap_center_x, gap_center_x], [low_maf, high_maf],
-                            color='darkred', linestyle='--', linewidth=1.4, alpha=0.85, zorder=5)
+                            color='gray', linestyle='--', linewidth=1.4, alpha=0.4, zorder=5)
 
                     mid_y = (low_maf + high_maf) / 2
                     displayed = high_maf - low_maf
@@ -353,10 +354,10 @@ class ReservoirChart(BarChart):
                     cap_half_width = 0.06
                     ax.plot([gap_center_x - cap_half_width, gap_center_x + cap_half_width],
                             [low_maf, low_maf],
-                            color='darkred', linestyle='-', linewidth=1.6, alpha=0.9, zorder=8)
+                            color='gray', linestyle='-', linewidth=1.0, alpha=0.4, zorder=8)
                     ax.plot([gap_center_x - cap_half_width, gap_center_x + cap_half_width],
                             [high_maf, high_maf],
-                            color='darkred', linestyle='-', linewidth=1.6, alpha=0.9, zorder=8)
+                            color='gray', linestyle='-', linewidth=1.0, alpha=0.4, zorder=8)
 
                 for idx, (elev_ft, cap_maf, label, mode) in enumerate(normalized):
                     if mode not in ("above", "below", "both"):
@@ -776,10 +777,12 @@ class ReservoirChart(BarChart):
         ax.set_xlim(-0.65, len(names) - 0.35)
 
         # Title
-        if self.percentage > 0.5 or self.percentage == 0:
+        if self.show_title or self.percentage == 0:
             ax.set_title(title, fontsize=14.5, fontweight='bold', pad=10)
-
-        self.final_layout(ax, title, names, x_pos)
+            self.final_layout(ax, title, names, x_pos)
+        else:
+            ax.set_title(None)
+            self.final_layout(ax, None, names, x_pos)
 
     def add_total_annotations(self):
         if not self.reservoir_totals:

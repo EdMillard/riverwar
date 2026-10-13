@@ -57,15 +57,15 @@ def find_directories_with_file(root_dir: str, filename: str) -> List[str]:
 
 class NotebookFrame(wx.Frame):
     def __init__(self,
-                 callables:List[Tuple[str, Callable]],
-                 river_war:RiverWar,
+                 callables: List[Tuple[str, Callable]],
+                 river_war: RiverWar,
                  title: str = "Colorado River War"):
-        self.callables:List[Tuple[str, Callable]] = callables
+        self.callables: List[Tuple[str, Callable]] = callables
         self.river_war = river_war
 
         screen_w, screen_h = wx.DisplaySize()
-        window_height:int = screen_h - 64
-        window_width:int = min(1580, screen_w - 40)
+        window_height: int = screen_h - 64
+        window_width: int = min(1580, screen_w - 40)
 
         super().__init__(None, title=title, size=wx.Size(window_width, window_height))
 
@@ -75,9 +75,179 @@ class NotebookFrame(wx.Frame):
 
         self.sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=0)
 
+        # ---------- Overlay button (upper-right of tab bar) ----------
+        self.overlay_btn = wx.Button(self.panel, label="⚙", size=wx.Size(32, 22),
+                                     style=wx.BU_EXACTFIT)
+        self.overlay_btn.SetToolTip("Charts / Actions")
+        self.overlay_btn.Bind(wx.EVT_BUTTON, self.on_overlay_button)
+        self.overlay_btn.Raise()
+
         self.panel.SetSizer(self.sizer)
         self.SetMinSize(wx.Size(1100, 900))
         self.Centre()
+
+        self.panel.Bind(wx.EVT_SIZE, self._position_overlay_button)
+        self.notebook.Bind(wx.EVT_SIZE, self._position_overlay_button)
+        wx.CallAfter(self._position_overlay_button)
+
+    def _position_overlay_button(self, event=None):
+        if not getattr(self, 'overlay_btn', None):
+            if event:
+                event.Skip()
+            return
+
+        nb_size = self.notebook.GetSize()
+        if nb_size.width < 50 or nb_size.height < 30:
+            if event:
+                event.Skip()
+            return
+
+        try:
+            tab_height = self.notebook.GetTabRect(0).height if self.notebook.GetPageCount() > 0 else 28
+        except Exception:
+            tab_height = 28
+
+        btn_w, btn_h = self.overlay_btn.GetSize()
+        x = nb_size.width - btn_w - 6
+        y = max(2, (tab_height - btn_h) // 2)
+
+        nb_pos = self.notebook.GetPosition()
+        self.overlay_btn.SetPosition((nb_pos.x + x, nb_pos.y + y))
+        self.overlay_btn.Raise()
+
+        if event:
+            event.Skip()
+
+    def on_overlay_button(self, event):
+        menu = wx.Menu()
+
+        # Existing callables (charts / actions)
+        for label, func in self.callables:
+            item = menu.Append(wx.ID_ANY, label)
+
+            def make_handler(f):
+                return lambda evt: f(self)
+
+            menu.Bind(wx.EVT_MENU, make_handler(func), item)
+
+        # Separator + Export All Tabs to PDF
+        if self.callables:
+            menu.AppendSeparator()
+
+        export_item = menu.Append(wx.ID_ANY, "Export to PDF")
+        menu.Bind(wx.EVT_MENU, self.export_all_tabs_to_pdf, export_item)
+
+        # Popup near the button
+        btn_pos = self.overlay_btn.GetScreenPosition()
+        self.PopupMenu(menu, self.ScreenToClient(btn_pos))
+        menu.Destroy()
+
+    def export_all_tabs_to_pdf(self, event=None):
+        """Export every notebook page as a landscape PDF page.
+        Paper size is chosen by the user (Letter or Legal)."""
+        choices = ["Letter (8.5 × 11 in)", "Legal (8.5 × 14 in)"]
+        dlg = wx.SingleChoiceDialog(
+            self,
+            "Choose paper size for landscape PDF pages:",
+            "Export All Tabs to PDF",
+            choices
+        )
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return
+        paper = dlg.GetStringSelection()
+        dlg.Destroy()
+
+        # Page dimensions in inches (landscape)
+        if paper.startswith("Legal"):
+            page_w_in, page_h_in = 14.0, 8.5
+        else:  # Letter
+            page_w_in, page_h_in = 11.0, 8.5
+
+        # Build filename from first tab name + today’s date suffix
+        if self.notebook.GetPageCount() > 0:
+            first_tab = self.notebook.GetPageText(0)
+            safe_name = first_tab.replace(" ", "_")
+            safe_name = "".join(c if c.isalnum() or c in "_-" else "_" for c in safe_name)
+        else:
+            safe_name = "Notebook"
+
+        date_suffix = date.today().strftime("%b_%d_%Y").lower()
+        default_name = f"{safe_name}_{date_suffix}.pdf"
+
+        # Prefer a pdf/ subdirectory
+        pdf_dir = os.path.join(os.getcwd(), "pdf")
+        os.makedirs(pdf_dir, exist_ok=True)
+
+        with wx.FileDialog(self, "Save PDF As",
+                           defaultDir=pdf_dir,
+                           defaultFile=default_name,
+                           wildcard="PDF files (*.pdf)|*.pdf",
+                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as file_dlg:
+            if file_dlg.ShowModal() != wx.ID_OK:
+                return
+            pdf_path = file_dlg.GetPath()
+            if not pdf_path.lower().endswith('.pdf'):
+                pdf_path += '.pdf'
+
+        # Collect snapshots
+        pages: List[Image.Image] = []
+        original_selection = self.notebook.GetSelection()
+
+        try:
+            for i in range(self.notebook.GetPageCount()):
+                self.notebook.SetSelection(i)
+                wx.Yield()  # let the page paint
+                wx.MilliSleep(150)  # small pause for layout/draw
+
+                page = self.notebook.GetPage(i)
+                if isinstance(page, ChartFrame):
+                    img = page.get_combined_snapshot()
+                    if img:
+                        pages.append(img)
+        finally:
+            # restore original tab
+            if original_selection >= 0:
+                self.notebook.SetSelection(original_selection)
+
+        if not pages:
+            wx.MessageBox("No chart pages found to export.", "Export", wx.OK | wx.ICON_INFORMATION)
+            return
+
+        # Build landscape pages at 200 DPI
+        dpi = 200
+        page_w_px = int(page_w_in * dpi)
+        page_h_px = int(page_h_in * dpi)
+        margin_px = int(0.05 * dpi)
+
+        pdf_images: List[Image.Image] = []
+        for src in pages:
+            # Scale to fit inside the printable area while preserving aspect ratio
+            max_w = page_w_px - 2 * margin_px
+            max_h = page_h_px - 2 * margin_px
+            scale = min(max_w / src.width, max_h / src.height)
+            new_w = max(1, int(src.width * scale))
+            new_h = max(1, int(src.height * scale))
+            resized = src.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+            # Center on a white page
+            page_img = Image.new('RGB', (page_w_px, page_h_px), (255, 255, 255))
+            x = (page_w_px - new_w) // 2
+            y = (page_h_px - new_h) // 2
+            page_img.paste(resized, (x, y))
+            pdf_images.append(page_img)
+
+        # Write multi-page PDF
+        pdf_images[0].save(
+            pdf_path,
+            "PDF",
+            resolution=dpi,
+            save_all=True,
+            append_images=pdf_images[1:]
+        )
+
+        wx.MessageBox(f"Exported {len(pdf_images)} page(s) to:\n{pdf_path}",
+                      "Export Complete", wx.OK | wx.ICON_INFORMATION)
 
 # ==================== MAIN FRAME ====================
 class ChartFrame(wx.Panel):
@@ -141,6 +311,35 @@ class ChartFrame(wx.Panel):
         wx.CallAfter(self.final_full_layout)
 
         self.notebook_frame.notebook.AddPage(self, page_name)
+
+    def get_combined_snapshot(self) -> Optional[Image.Image]:
+        """Return a single PIL Image of all charts on this page stacked vertically.
+        Titles are rendered only on the top chart."""
+        try:
+            images: List[Image.Image] = []
+            for idx, chart in enumerate(self.charts):
+                original_percentage = getattr(chart, 'percentage', 0.0)
+                try:
+                    img = chart.save_figure()
+                finally:
+                    chart.percentage = original_percentage  # restore
+
+                if img:
+                    images.append(img)
+
+            if not images:
+                return None
+
+            total_h = sum(img.height for img in images)
+            combined = Image.new('RGB', (images[0].width, total_h), (255, 255, 255))
+            y = 0
+            for image in images:
+                combined.paste(image, (0, y))
+                y += image.height
+            return combined
+        except Exception as e:
+            print(f"[Snapshot Error] {e}")
+            return None
 
     def layout_charts(self):
         self.rebuild_chart_layout()
