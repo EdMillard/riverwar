@@ -224,7 +224,10 @@ def limit_to_today(d: date) -> date:
 
 def telemetry_station_daily_to_df(df:pd.DataFrame, abbrev:str, name:str, measurement:str, start_date:date, end_date:date, month:int=10)->None:
     end_date = limit_to_today(end_date)
-    for year in range(start_date.year, end_date.year + 2):
+    if month > 1:
+        if end_date.month >= month:
+            end_date = end_date.replace(year=end_date.year + 1) # Need to add a year if in first months of water year
+    for year in range(start_date.year, end_date.year + 1):
         water_year_info = get_water_year_info(year, month=month)
         time_series = telemetry_station_time_series(None, abbrev, measurement, water_year_info=water_year_info, alias=name)
         if time_series is not None:
