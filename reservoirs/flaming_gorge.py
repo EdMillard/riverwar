@@ -75,7 +75,6 @@ class FlamingGorge(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.FLAMING_GORGE_ELEVATION_WY)
         self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id, ub.FLAMING_GORGE_WY)
-        self.print_storage(daily_storage_af, ub.FLAMING_GORGE_WY)
 
         self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.FLAMING_GORGE_INFLOW_CFS)
         # self.inflow_af = self.get_daily_and_last(self.usbr_rise_inflow_af_id, ub.FLAMING_GORGE_INFLOW)

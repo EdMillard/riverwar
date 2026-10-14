@@ -91,7 +91,6 @@ class LakePowell(Reservoir):
         #
         self.date_time, self.elevation_feet = self.get_elevation(self.usbr_rise_elevation_ft_id, ub.POWELL_ELEVATION_WY)
         self.active_capacity_af, daily_storage_af = self.get_storage(self.usbr_rise_storage_af_id, ub.POWELL_WY)  # 1964
-        self.print_storage(daily_storage_af, ub.POWELL_WY)
 
         self.evao_af = self.get_daily_and_last(self.usbr_rise_evap_af_id, ub.POWELL_EVAPORATION_WY)
         self.inflow_cfs = self.get_daily_and_last(self.usbr_rise_inflow_cfs_id, ub.POWELL_INFLOW_CFS)

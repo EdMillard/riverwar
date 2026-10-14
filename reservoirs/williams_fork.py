@@ -57,7 +57,6 @@ class WilliamsFork(Reservoir):
 
         # https://dwr.state.co.us/Tools/Stations/WLFRESCO?params=STORAGE
         # CDSS Period of Record, 1987
-
-        self.get_storage_cdss(ub.CDSS_CO_WILLIAMS_FORK_ABBREV)
         self.get_elevation_cdss(ub.CDSS_CO_WILLIAMS_FORK_ABBREV)
+        self.get_storage_cdss(ub.CDSS_CO_WILLIAMS_FORK_ABBREV)
 

@@ -57,5 +57,5 @@ class Groundhog(Reservoir):
 
         # https://dwr.state.co.us/Tools/Stations/GRORESCO?params=STORAGE
         # CDSS Period of Record, 2011
-        self.get_storage_cdss(ub.CDSS_CO_GROUND_HOG_ABBREV)
         self.get_elevation_cdss(ub.CDSS_CO_GROUND_HOG_ABBREV)
+        self.get_storage_cdss(ub.CDSS_CO_GROUND_HOG_ABBREV)

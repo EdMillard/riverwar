@@ -57,6 +57,6 @@ class Homestake(Reservoir):
         super().load_data(report_path, start_date, current_date, end_date)
 
         # https://dwr.state.co.us/Tools/Stations/HOMRESCO?params=STORAGE
-        self.get_storage_cdss(ub.CDSS_CO_HOMESTAKE_ABBREV)
         self.get_elevation_cdss(ub.CDSS_CO_DILLON_ABBREV)
+        self.get_storage_cdss(ub.CDSS_CO_HOMESTAKE_ABBREV)
 

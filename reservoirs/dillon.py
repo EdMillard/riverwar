@@ -57,5 +57,5 @@ class Dillon(Reservoir):
 
         # https://dwr.state.co.us/Tools/Stations/DILRESCO?params=STORAGE
         # CDSS Period of Record, 1987
-        self.get_storage_cdss(ub.CDSS_CO_DILLON_ABBREV)
         self.get_elevation_cdss(ub.CDSS_CO_DILLON_ABBREV)
+        self.get_storage_cdss(ub.CDSS_CO_DILLON_ABBREV)

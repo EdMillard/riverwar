@@ -791,30 +791,42 @@ class ReservoirChart(BarChart):
         rows = []
         num_groups_with_legends = 0
         x, y = (0.77, 1.0)
-        for i, reservoir_group in enumerate(self.reservoir_totals):
+
+        for reservoir_group in self.reservoir_totals:
             name = reservoir_group.name
             reservoir_group.reservoir_total()
             if reservoir_group.legend_position is None:
                 continue
             num_groups_with_legends += 1
             x, y = reservoir_group.legend_position
-            rows.append((reservoir_group.accessible_total / 1_000_000, name, Reservoir.high_power_pool_color, 'black'))
-            #rows.append((reservoir_group.below_critical_total / 1_000_000, 'Below Critical', Reservoir.low_power_pool_color, 'gray')),
-            #rows.append((reservoir_group.limited_access_total / 1_000_000, 'Inaccessible', Reservoir.non_power_pool_color, 'gray')),
+
+            maf = reservoir_group.accessible_total / 1_000_000
+            yoy = reservoir_group.year_over_year_total / 1_000_000
+            rows.append((maf, yoy, name, Reservoir.high_power_pool_color, 'black'))
 
         title = ""
         if num_groups_with_legends > 1:
-            accessible_total = 0
-            for i, reservoir_group in enumerate(self.reservoir_totals):
-                accessible_total += reservoir_group.accessible_total
-            rows.append((accessible_total / 1_000_000, "Total", Reservoir.high_power_pool_color, 'black'))
+            accessible_total = sum(g.accessible_total for g in self.reservoir_totals)
+            year_over_year_total = sum(g.year_over_year_total for g in self.reservoir_totals)
+            rows.append((
+                accessible_total / 1_000_000,
+                year_over_year_total / 1_000_000,
+                "Total",
+                Reservoir.high_power_pool_color,
+                'black'
+            ))
             title = "System Water"
 
         handles = [
-            mpatches.Patch(facecolor=color, edgecolor='#555555', linewidth=0.8,
-                           label=f'{maf:4.2f} MAF {label}')
-            for maf, label, color, _ in rows
+            mpatches.Patch(
+                facecolor=color,
+                edgecolor='#555555',
+                linewidth=0.8,
+                label=f'{maf:.2f} MAF {yoy:+.2f} YoY {label}'
+            )
+            for maf, yoy, label, color, _ in rows
         ]
+
         leg = self.ax.legend(
             handles=handles,
             title=title,
@@ -829,9 +841,12 @@ class ReservoirChart(BarChart):
             labelspacing=0.4,
         )
         leg.get_title().set_fontweight('bold')
+
         for text in leg.get_texts():
             text.set_fontfamily('monospace')
             text.set_fontweight('semibold')
+
         for text, row in zip(leg.get_texts(), rows):
-            text.set_color(row[3])
+            text.set_color(row[4])
+
         self.ax.add_artist(leg)

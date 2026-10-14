@@ -288,12 +288,12 @@ class ReservoirsReality(ChartFrame):
                                                    [lake_granby, dillon, horsetooth, green_mountain, carter_lake,
                                                     taylor_park, ruedi, williams_fork, wolford, homestake,
                                                     moon_lake, stagecoach, vega, groundhog, shadow_mountain, jackson_gulch],
-                                                        legend_position= (0.77, 1.0))
+                                                        legend_position= (0.7, 1.0))
             self.participating = ReservoirGroup('Participating',
                         [strawberry, heron, fontenelle, jordanelle, mcphee,  starvation, vallecito, lake_nighthorse,
                          joes_valley, ridgeway, lemon, big_sandy, steinaker, upper_stillwater, meeks_cabin,
                          red_fleet, paonia, state_line, rifle_gap, crawford, silver_jack, huntington_north],
-                                                legend_position= (0.77, 1.0))
+                                                legend_position= (0.7, 1.0))
         else:
             self.upper_colorado_states = ReservoirGroup('Upper Colorado', [])
             self.participating = ReservoirGroup('Participating', [])
@@ -302,10 +302,10 @@ class ReservoirsReality(ChartFrame):
                                                     [imperial, aquifers, srp, lake_pleasant, mwd])
         self.lower_colorado_usbr = ReservoirGroup('USBR Lower Colorado',
                                                   [lake_havasu, lake_mohave, lake_mead],
-                                                  legend_position= (0.25, 0.80))
+                                                  legend_position= (0.66, 0.75))
         self.crsp_initial_units = ReservoirGroup('CRSP Initial Units',
                                                  [lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point, crystal],
-                                                 legend_position= (0.70, 0.80))
+                                                 legend_position= (0.66, 0.75))
         self.reservoirs = [
             imperial, aquifers, srp, lake_pleasant, mwd, lake_havasu, lake_mohave,
             lake_mead, lake_powell, flaming_gorge, navajo, blue_mesa, morrow_point, crystal
