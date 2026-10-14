@@ -24,7 +24,8 @@ class LineChart(Chart):
     def __init__(self,
                  data_series: List[Union[
                      Tuple[pd.DataFrame, str, str],
-                     Tuple[pd.DataFrame, str, str, str]
+                     Tuple[pd.DataFrame, str, str, str],
+                     Tuple[pd.DataFrame, str, str, str, bool]
                  ]],
                  percentage: float = 0.0,
                  title: str = "",
@@ -43,9 +44,11 @@ class LineChart(Chart):
                  overlay_years: bool = False,
                  color_by_year: bool = False,
                  year_colors: Optional[List[str]] = None,
+                 stacked: bool = False,  # <-- new
                  ):
 
-        super().__init__(start_date, current_date, end_date, y_divisor=y_divisor, y_units=y_units, percentage=percentage)
+        super().__init__(start_date, current_date, end_date, y_divisor=y_divisor, y_units=y_units,
+                         percentage=percentage)
 
         self.data_series = data_series
         self.title = title
@@ -56,6 +59,7 @@ class LineChart(Chart):
         self.y_max = y_max
         self.y_min = y_min
         self.ax = None
+        self.stacked = stacked  # <-- new
 
         if y_divisor is not None:
             self.y_divisor = y_divisor
@@ -72,14 +76,18 @@ class LineChart(Chart):
         self.year_colors = year_colors
         self.overlay_date_map = {}
 
-        # === Data normalization (original) ===
+        # === Data normalization (original, lightly extended) ===
         normalized_series = []
         for item in self.data_series:
-            if len(item) == 4:
+            if len(item) >= 5:
+                df, col, color, linestyle, do_stack = item[:5]
+            elif len(item) == 4:
                 df, col, color, linestyle = item
+                do_stack = True
             else:
                 df, col, color = item
                 linestyle = None
+                do_stack = True
 
             if df is None or df.empty:
                 continue
@@ -90,9 +98,9 @@ class LineChart(Chart):
                 df = df.sort_values('Date').reset_index(drop=True)
 
             if linestyle is not None:
-                normalized_series.append((df, col, color, linestyle))
+                normalized_series.append((df, col, color, linestyle, do_stack))
             else:
-                normalized_series.append((df, col, color))
+                normalized_series.append((df, col, color, None, do_stack))
 
         self.data_series = normalized_series
 
@@ -243,36 +251,85 @@ class LineChart(Chart):
         all_dates = []
         all_values = []
 
-        for item in self.data_series:
-            # Support both 3-tuple and 4-tuple
-            if len(item) == 4:
-                df, col, color, linestyle = item
-            else:
-                df, col, color = item
-                linestyle = None
+        # ==================== STACKED AREA PATH ====================
+        if self.stacked:
+            stack_series = []
+            stack_colors = []
+            stack_labels = []
 
-            if df.empty or col not in df.columns:
+            for item in self.data_series:
+                df, col, color, linestyle, do_stack = item
+                if not do_stack:
+                    continue
+                if df is None or df.empty or col not in df.columns:
+                    continue
+
+                s = df[['Date', col]].copy()
+                s[col] = pd.to_numeric(s[col], errors='coerce').fillna(0)
+                stack_series.append(s.set_index('Date')[col])
+                stack_colors.append(color)
+                stack_labels.append(col.replace('_', ' '))
+
+            if stack_series:
+                stacked_df = pd.concat(stack_series, axis=1, keys=stack_labels).fillna(0)
+                cumulative = stacked_df.cumsum(axis=1)
+
+                prev = pd.Series(0.0, index=cumulative.index)
+                for i, col_name in enumerate(cumulative.columns):
+                    ax.fill_between(
+                        cumulative.index,
+                        prev,
+                        cumulative[col_name],
+                        color=stack_colors[i],
+                        alpha=0.55,
+                        label=col_name,
+                        zorder=2
+                    )
+                    ax.plot(
+                        cumulative.index,
+                        cumulative[col_name],
+                        color=stack_colors[i],
+                        linewidth=1.3,
+                        alpha=0.95,
+                        zorder=3
+                    )
+                    prev = cumulative[col_name]
+
+                all_dates = cumulative.index.tolist()
+                all_values = cumulative.iloc[:, -1].tolist()
+
+        # ==================== OVERLAY LINES (non-stacked) ====================
+        for item in self.data_series:
+            df, col, color, linestyle, do_stack = item
+            if self.stacked and do_stack:
+                continue  # already drawn as part of the stack
+
+            if df is None or df.empty or col not in df.columns:
                 continue
 
+            df = df.copy()
             df[col] = pd.to_numeric(df[col], errors='coerce')
             valid = df[col].dropna()
 
             all_dates.extend(df['Date'].dropna().tolist())
             all_values.extend(valid.tolist())
 
-            # Nice label for color-by-year mode
             if self.color_by_year and '_year' in df.columns:
                 year_val = int(df['_year'].iloc[0])
                 plot_label = f"{year_val} {col.replace('_', ' ')}"
             else:
                 plot_label = col.replace('_', ' ')
 
-            ax.plot(df['Date'], df[col],
-                    label=plot_label,
-                    linewidth=1.7 if self.color_by_year else 2.2,
-                    color=color,
-                    linestyle=linestyle or '-',
-                    alpha=0.82 if self.color_by_year else 1.0)
+            ax.plot(
+                df['Date'],
+                df[col],
+                label=plot_label,
+                linewidth=2.0 if not self.stacked else 2.2,
+                color=color,
+                linestyle=linestyle or '-',
+                alpha=0.95,
+                zorder=4 if self.stacked else 2
+            )
 
         if not all_dates or not all_values:
             return
@@ -321,7 +378,7 @@ class LineChart(Chart):
 
         self.setup_yaxis(ax)
 
-        # ==================== Y-LIMITS - ROUND AUTO SCALE ====================
+        # ==================== Y-LIMITS ====================
         data_min = min(all_values)
         data_max = max(all_values)
         data_range = data_max - data_min
@@ -364,9 +421,6 @@ class LineChart(Chart):
 
                 ax.yaxis.set_major_locator(MultipleLocator(major))
                 ax.yaxis.set_minor_locator(MultipleLocator(minor))
-
-                ax.yaxis.set_major_locator(MultipleLocator(major))
-                ax.yaxis.set_minor_locator(MultipleLocator(minor))
                 ax.tick_params(axis='y', which='minor', length=3, width=0.6)
 
                 decimals = 0 if step >= 1 else 1
@@ -374,23 +428,7 @@ class LineChart(Chart):
                     FuncFormatter(lambda v, pos, d=decimals, div=self.y_divisor: f"{v / div:.{d}f}")
                 )
 
-        ax.legend(fontsize=9 if self.color_by_year else 10.5, loc='best',
-                  ncol=2 if self.color_by_year else 1)
-
-    # ==================== HELPER (full original) ====================
-    def _get_divisor_for_units(self, units: str) -> float:
-        """Extended divisor logic (identical to your original)."""
-        unit_map = {
-            'MAF': 1_000_000,
-            'TAF': 1_000,
-            'AF': 1,
-            'FT': 1,
-            'ft': 1,
-            'CFS': 1,
-            '°F': 1,
-            '°C': 1,
-            'in': 1,
-            'mm': 1,
-            '%': 1,
-        }
-        return unit_map.get(units, 1.0)
+        # Legend
+        ncol = 2 if (self.color_by_year or self.stacked) else 1
+        fontsize = 9 if (self.color_by_year or self.stacked) else 10.5
+        ax.legend(fontsize=fontsize, loc='best', ncol=ncol)

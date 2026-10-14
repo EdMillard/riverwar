@@ -102,10 +102,8 @@ class Chart:
         # Get data range
         all_values = []
         for item in self.data_series:
-            if len(item) == 4:
-                df, col, _, _ = item
-            else:
-                df, col, _ = item
+            # Take only the first three elements (df, col, color); ignore any extra flags
+            df, col, *_ = item
             if col in df.columns:
                 vals = pd.to_numeric(df[col], errors='coerce').dropna()
                 if not vals.empty:

@@ -185,7 +185,7 @@ class ReservoirsBig3(ChartFrame):
                     if do_adjustment:
                         reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
                     time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0', 'solid'))
-                    time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_975, 'darkred'))
+                    time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_950, 'darkred'))
                 elif reservoir.name == 'Flaming Gorge':
                     fg_df = reservoir.df_daily
                     if do_adjustment:
@@ -209,8 +209,8 @@ class ReservoirsBig3(ChartFrame):
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
             show_x_labels = True,
             show_right_labels = True,
-            y_min = -800000,
-            y_max = 5_800_000
+            # y_min = -800000,
+            # y_max = 5_800_000
         )
         # self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
@@ -233,7 +233,7 @@ class ReservoirsBig3(ChartFrame):
             y_min=0,
             y_units='CFS',
         )
-        # self.inflow_outflow_chart.set_end_date(graph_end_date)
+        self.inflow_outflow_chart.set_end_date(graph_end_date)
         # self.charts.append(self.inflow_outflow_chart)
 
         time_series = [
@@ -248,10 +248,12 @@ class ReservoirsBig3(ChartFrame):
             show_x_labels=False,
             percentage=0.25,
             y_units='CFS',
-            y_max=10_500,
+            # y_max=10_500,
+            y_min = 0,
+            stacked=True,
         )
-        # line_chart.set_end_date(graph_end_date)
-        # self.charts.append(line_chart)
+        line_chart.set_end_date(graph_end_date)
+        self.charts.append(line_chart)
 
         '''
         time_series = [
@@ -286,7 +288,7 @@ class ReservoirsBig3(ChartFrame):
             y_units='CFS',
         )
         # self.inflow_outflow_chart.set_end_date(graph_end_date)
-        # self.charts.append(self.inflow_outflow_chart)
+        self.charts.append(self.inflow_outflow_chart)
 
 def previous_month_path(path: Path) -> Path:
     """
@@ -330,8 +332,8 @@ if __name__ == "__main__":
     river_war = RiverWar()
     notebook_frame = NotebookFrame([], river_war)
 
-    years = [2026]
-    download_usbr_24mo_reports(years=years)
+    # years = [2026]
+    # download_usbr_24mo_reports(years=years)
 
     ReservoirsBig3( notebook_frame=notebook_frame)
 
