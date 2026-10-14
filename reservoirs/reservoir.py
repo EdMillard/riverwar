@@ -91,6 +91,9 @@ class Reservoir:
         self.show_elevations = False
         self.show_in_chart = True
         self.custom_color = 0
+        self.yoy_start_year = 0
+        self.storage_yoy:List[Tuple] = []
+        self.storage_mom:List[Tuple] = []
 
         # USBR RISE ID's
         #
@@ -190,8 +193,6 @@ class Reservoir:
         #
         self.elevation_feet:float = 0
         self.active_capacity_af:float = 0
-        self.storage_one_month_ago: float = 0
-        self.storage_one_year_ago: float = 0
         self.evap_af:float = 0
         self.inflow_af:float = 0
         self.inflow_cfs:float = 0
@@ -256,11 +257,16 @@ class Reservoir:
             if self.report_path != report_path:
                 self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
                 if self.df_24_month is not None:
-                    start_str = self.df_24_month['Date'].iloc[0]
+                    if self.yoy_start_year:
+                        self.report_start_date = datetime.now().replace(year=self.yoy_start_year)
+                    else:
+                        start_str = self.df_24_month['Date'].iloc[0]
+                        self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
+
                     end_str = self.df_24_month['Date'].iloc[-1]
-                    self.report_start_date = pd.to_datetime(start_str, format="%b %Y").date()
                     end_date = pd.to_datetime(end_str, format="%b %Y").date()
                     self.report_end_date = Reservoir.get_end_of_month(end_date)
+
                     self.df_daily = df_utils.create_daily_df(self.report_start_date, date.today(), self.headers)
                     self.report_path = report_path
                 else:
@@ -427,7 +433,9 @@ class Reservoir:
 
     def usbr_rise_load_daily(self, usbr_rise_id:int, column_name:str, start_year:int=0, end_year:int=0):
         daily = 0
-        if self.report_start_date is not None:
+        if start_year:
+            pass
+        elif self.report_start_date is not None:
             start_year = self.report_start_date.year
         if self.report_end_date is not None:
             end_year = self.report_end_date.year
@@ -563,12 +571,12 @@ class Reservoir:
         return result
 
     def print_storage(self):
-        if self.storage_one_month_ago:
-            one_month_delta = self.active_capacity_af - self.storage_one_month_ago
+        if len(self.storage_mom) and self.storage_mom[0] is not None:
+            one_month_delta = self.active_capacity_af - self.storage_mom[0][1]
         else:
             one_month_delta = 0
-        if self.storage_one_year_ago is not None:
-            one_year_ago_delta = self.active_capacity_af - self.storage_one_year_ago
+        if len(self.storage_yoy) and self.storage_yoy[0] is not None:
+            one_year_ago_delta = self.active_capacity_af - self.storage_yoy[0][1]
         else:
             one_year_ago_delta = 0
 
@@ -597,44 +605,79 @@ class Reservoir:
             # Convert Timestamp, date, string, etc. to np.datetime64
             return np.datetime64(pd.to_datetime(dt))
 
-    def get_storage(self, usbr_rise_id: int, column_name:str, month=all_b.WY, divisor:int=1)->Tuple[float, np.ndarray]:
+    def get_storage(self, usbr_rise_id: int, column_name: str, month=all_b.WY, divisor: int = 1) -> Tuple[
+        float, np.ndarray]:
         daily_storage_af = None
         when = Reservoir.compare_to_today(self.current_date)
         if when == 'match':
             if usbr_rise_id:
-                daily_storage_af = self.usbr_rise_load_daily(usbr_rise_id, column_name)
-                # date_time = daily_storage_af['dt'][-1]
+                if self.yoy_start_year:
+                    daily_storage_af = self.usbr_rise_load_daily(usbr_rise_id, column_name,
+                                                                 start_year=self.yoy_start_year)
+                else:
+                    daily_storage_af = self.usbr_rise_load_daily(usbr_rise_id, column_name)
+
                 if len(daily_storage_af):
                     self.active_capacity_af = daily_storage_af['val'][-1]
-                    last_dt: np.datetime64 = daily_storage_af['dt'][-1].item()
-                    self.storage_one_month_ago = self.get_value_months_or_years_earlier(column_name, last_dt, months=1)
-                    self.storage_one_year_ago = self.get_value_months_or_years_earlier(column_name, last_dt, years=1)
+                    last_dt = daily_storage_af['dt'][-1].item()
+
+                    # One month ago (unchanged)
+                    self.storage_mom.append(self.get_value_months_or_years_earlier(column_name, last_dt, months=1))
+
+                    # Year-over-year list
+                    self.storage_yoy = []
+                    if self.yoy_start_year == 0:
+                        # Only 1 year ago
+                        self.storage_yoy.append(self.get_value_months_or_years_earlier(column_name, last_dt, years=1))
+                    else:
+                        # From 1 year ago back to yoy_start_year
+                        current_year = last_dt.year
+                        years_back = current_year - self.yoy_start_year
+                        for years_ago in range(1, years_back + 1):
+                            self.storage_yoy.append(self.get_value_months_or_years_earlier(column_name, last_dt, years=years_ago))
+
                     self.print_storage()
                 else:
                     print(f"No storage data for {self.name}")
-                    self.active_capacity_af = self.active_capacity_af # Use previous value
-                    self.storage_one_month_ago = 0
-                    self.storage_one_year_ago = 0
-                # sheet.usbr_last_value(self.df, usbr_rise_id, self.water_year, self.water_year,
-                #                       title=column_name, month=month, divisor=divisor)
-                # active_capacity_af = self.get_value_by_year(self.water_year, column_name)
-        elif when =='less':
+                    self.active_capacity_af = self.active_capacity_af  # keep previous value
+                    self.storage_mom = []
+                    self.storage_yoy = []
+        elif when == 'less':
             # actual for month
-            self.active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
+            self.active_capacity_af = Reservoir.get_value_for_month_year(
+                self.df_24_month, self.current_date, self.end_of_month_storage_str
+            )
         else:
             # predicted for month
-            self.active_capacity_af = Reservoir.get_value_for_month_year(self.df_24_month, self.current_date, self.end_of_month_storage_str)
+            self.active_capacity_af = Reservoir.get_value_for_month_year(
+                self.df_24_month, self.current_date, self.end_of_month_storage_str
+            )
 
         return self.active_capacity_af, daily_storage_af
 
-    def get_storage_cdss(self, abbreviation:str)->float:
-        column_name = self.name+'.'+all_b.STORAGE
-        cdss.telemetry_station_daily_to_df(self.df_daily, abbreviation, column_name, 'STORAGE', self.start_date, self.end_date)
+    def get_storage_cdss(self, abbreviation: str) -> float:
+        column_name = self.name + '.' + all_b.STORAGE
+        cdss.telemetry_station_daily_to_df(
+            self.df_daily, abbreviation, column_name, 'STORAGE', self.start_date, self.end_date
+        )
         self.active_capacity_af = cdss.get_last_nonzero(self.df_daily, column_name)
-        last_dt: np.datetime64 = Reservoir.last_non_na_date(self.df_daily, column_name)
-        # last_dt: np.datetime64 = daily_storage_af['dt'][-1].item()
-        self.storage_one_month_ago = self.get_value_months_or_years_earlier(column_name, last_dt, months=1)
-        self.storage_one_year_ago = self.get_value_months_or_years_earlier(column_name, last_dt, years=1)
+        last_dt = Reservoir.last_non_na_date(self.df_daily, column_name)
+
+        # One month ago (unchanged)
+        self.storage_mom.append(self.get_value_months_or_years_earlier(column_name, last_dt, months=1))
+
+        # Year-over-year list
+        self.storage_yoy = []
+        if self.yoy_start_year == 0:
+            # Only 1 year ago
+            self.storage_yoy.append(self.get_value_months_or_years_earlier(column_name, last_dt, years=1))
+        else:
+            # From 1 year ago back to yoy_start_year
+            current_year = last_dt.year
+            years_back = current_year - self.yoy_start_year
+            for years_ago in range(1, years_back + 1):
+                self.storage_yoy.append(self.get_value_months_or_years_earlier(column_name, last_dt, years=years_ago))
+
         return self.active_capacity_af
 
     def get_elevation_cdss(self, abbreviation: str) -> float:
@@ -650,9 +693,9 @@ class Reservoir:
             months: int = 0,
             years: int = 0,
             date_column: str = "Date"
-    ) -> float | None:
+    ) -> Tuple | None:
         """
-        Return the value from self.df_daily for the given column,
+        Return (date, value) from self.df_daily for the given column,
         looking back `months` and/or `years` from the supplied reference_dt.
 
         Parameters
@@ -670,8 +713,8 @@ class Reservoir:
 
         Returns
         -------
-        float | None
-            The value at the earlier date, or None if not found.
+        Tuple[datetime | pd.Timestamp, float] | None
+            (matched_date, value) or None if not found.
         """
         if self.df_daily is None or self.df_daily.empty:
             return None
@@ -700,6 +743,7 @@ class Reservoir:
             idx = df.index.get_indexer([target_dt], method="nearest")[0]
             if idx == -1:
                 return None
+            matched_date = df.index[idx]
             value = df.iloc[idx][column_name]
         else:
             if date_column not in df.columns:
@@ -707,10 +751,14 @@ class Reservoir:
             date_series = pd.to_datetime(df[date_column])
             deltas = (date_series - target_dt).abs()
             nearest_idx = deltas.idxmin()
+            matched_date = date_series.loc[nearest_idx]
             value = df.loc[nearest_idx, column_name]
 
         try:
-            return float(value) if pd.notna(value) else None
+            numeric_value = float(value) if pd.notna(value) else None
+            if numeric_value is None:
+                return None
+            return (matched_date, numeric_value)
         except (TypeError, ValueError):
             return None
 
@@ -1382,8 +1430,8 @@ class ReservoirGroup:
 
         for r in self.reservoirs:
             active_capacity_af = getattr(r, 'active_capacity_af', 0)
-            if r.storage_one_year_ago != 0:
-                self.year_over_year_total += (active_capacity_af - r.storage_one_year_ago)
+            if len(r.storage_yoy) and r.storage_yoy is not None:
+                self.year_over_year_total += (active_capacity_af - r.storage_yoy[0][1])
 
             limited_access = 0
             below_critical = 0

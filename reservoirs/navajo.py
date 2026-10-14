@@ -34,6 +34,7 @@ class Navajo(Reservoir):
                              ub.NAVAJO_INFLOW, ub.NAVAJO_INFLOW_CFS,
                              ub.NAVAJO_RELEASE, ub.NAVAJO_RELEASE_CFS, ub.NAVAJO_EVAPORATION_WY]
         super().__init__('Navajo', headers, catalog_id=2392, upstream=upstream)
+        self.yoy_start_year = 2022
         self.start_year = 1962
         self.end_of_month_storage_str = 'Live Storage'
 
@@ -56,6 +57,11 @@ class Navajo(Reservoir):
 
         self.turbine_intake_feet = 0
         self.turbine_intake_af = 0
+
+        self.special_levels = [
+            (self.power_head_min_feet, self.power_head_min_af, "Pump"),
+        ]
+
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color)]
 

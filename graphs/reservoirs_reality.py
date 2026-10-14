@@ -212,6 +212,7 @@ class ReservoirsReality(ChartFrame):
         morrow_point = MorrowPoint()
         crystal = Crystal()
         lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
+        lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
 
         # USBR Lower Basin
         lake_mead = LakeMead(upstream=[lake_powell])
@@ -225,7 +226,7 @@ class ReservoirsReality(ChartFrame):
         srp = SRP()
         aquifers = Aquifers()
 
-        self.show_upper_basin_reservoirs = True
+        self.show_upper_basin_reservoirs = False
         if self.show_upper_basin_reservoirs:
             # Participating Units
             # CO
@@ -255,10 +256,9 @@ class ReservoirsReality(ChartFrame):
             huntington_north = HuntingtonNorth()
             upper_stillwater = UpperStillwater()
 
-            # NM
-            heron = Heron(upstream=[])
-
             # Not USBR
+            # NM
+            heron = Heron()
             # CO
             dillon = Dillon()
             lake_granby = LakeGranby()
@@ -285,12 +285,12 @@ class ReservoirsReality(ChartFrame):
             # so this isnt really good for anything
             # grand_lake = GrandLake(upstream=[])
             self.upper_colorado_states = ReservoirGroup('Upper Colorado',
-                                                   [lake_granby, dillon, horsetooth, green_mountain, carter_lake,
+                                                   [lake_granby, heron, dillon, horsetooth, green_mountain, carter_lake,
                                                     taylor_park, ruedi, williams_fork, wolford, homestake,
                                                     moon_lake, stagecoach, vega, groundhog, shadow_mountain, jackson_gulch],
                                                         legend_position= (0.7, 1.0))
             self.participating = ReservoirGroup('Participating',
-                        [strawberry, heron, fontenelle, jordanelle, mcphee,  starvation, vallecito, lake_nighthorse,
+                        [strawberry, fontenelle, jordanelle, mcphee,  starvation, vallecito, lake_nighthorse,
                          joes_valley, ridgeway, lemon, big_sandy, steinaker, upper_stillwater, meeks_cabin,
                          red_fleet, paonia, state_line, rifle_gap, crawford, silver_jack, huntington_north],
                                                 legend_position= (0.7, 1.0))

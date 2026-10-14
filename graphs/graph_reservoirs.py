@@ -243,11 +243,12 @@ class ReservoirChart(BarChart):
                         delta_str = None
                         delta_color = 'black'
 
-                        yr_af = getattr(r, 'storage_one_year_ago', None)
-                        if yr_af is not None and yr_af > 0:
-                            delta_kaf = (r.active_capacity_af - yr_af) / divisor
-                            delta_color = 'green' if delta_kaf > 0 else 'red'
-                            delta_str = f'{delta_kaf:+.{format_maf}f}'
+                        if len(r.storage_yoy):
+                            if r.storage_yoy[0] is not None:
+                                yr_af = r.storage_yoy[0][1]
+                                delta_kaf = (r.active_capacity_af - yr_af) / divisor
+                                delta_color = 'green' if delta_kaf > 0 else 'red'
+                                delta_str = f'{delta_kaf:+.{format_maf}f}'
 
                         # Storage (black) right-aligned so its right edge sits at x
                         ax.annotate(storage_str,
@@ -516,26 +517,51 @@ class ReservoirChart(BarChart):
                         color=teacup_color, linewidth=teacup_linewidth, alpha=teacup_alpha)
 
                 # ==================== 1-YR / 1-MO ARROWS ON TEACUP EDGES ====================
+                # year over year — left edge, right-pointing arrow
+                # Process oldest → newest so we can color based on change from the prior year
                 left_x = x_pos[i] - main_width / 2
-                right_x = x_pos[i] + main_width / 2
+                prev_value = None
 
-                # 1 year ago — left edge, right-pointing arrow
-                yr_af = getattr(r, 'storage_one_year_ago', None)
-                if yr_af is not None and yr_af > 0:
-                    yr_maf = yr_af / divisor
-                    color = 'green' if curr_maf > yr_maf else 'red'
+                # Reverse so oldest is first
+                for idx, yoy in enumerate(reversed(r.storage_yoy)):
+                    if yoy is None:
+                        continue
+
+                    yr_maf = yoy[1] / divisor
+
+                    # Oldest has no prior value → black
+                    if idx == 0 or prev_value is None:
+                        color = 'black'
+                    else:
+                        # Green if this year increased over the previous, red if decreased
+                        color = 'green' if yr_maf > prev_value else 'red'
+
                     ax.plot(left_x, yr_maf, marker='>', markersize=8.5,
                             color=color, markeredgecolor='black', markeredgewidth=0.8,
                             markerfacecolor=color, zorder=12)
 
-                # 1 month ago — right edge, left-pointing arrow
-                mo_af = getattr(r, 'storage_one_month_ago', None)
-                if mo_af is not None and mo_af > 0:
-                    mo_maf = mo_af / divisor
-                    color = 'green' if curr_maf > mo_maf else 'red'
-                    ax.plot(right_x, mo_maf, marker='<', markersize=8.5,
-                            color=color, markeredgecolor='black', markeredgewidth=0.8,
-                            markerfacecolor=color, zorder=12)
+                    # Year label to the right of the arrow
+                    year = yoy[0].year
+                    ax.annotate(
+                        str(year),
+                        xy=(left_x, yr_maf),
+                        xytext=(left_x + 0.05, yr_maf),
+                        ha='left', va='center',
+                        fontsize=8, color=color, fontweight='bold',
+                        zorder=13
+                    )
+
+                    prev_value = yr_maf
+
+                # month — right edge, left-pointing arrow
+                right_x = x_pos[i] + main_width / 2
+                for mom in r.storage_mom:
+                    if mom is not None:
+                        mo_maf = mom[1] / divisor
+                        color = 'green' if curr_maf > mo_maf else 'red'
+                        ax.plot(right_x, mo_maf, marker='<', markersize=8.5,
+                                color=color, markeredgecolor='black', markeredgewidth=0.8,
+                                markerfacecolor=color, zorder=12)
 
             # ==================== PRACTICAL AVAILABLE ABOVE LOWEST NON-ZERO CRITICAL ====================
             lowest_crit_cap_af = 0
@@ -630,16 +656,35 @@ class ReservoirChart(BarChart):
                     continue
                 elev_ft, cap_af, label = item[0], item[1], item[2]
                 storage = cap_af / divisor
-                if storage <= current_storage[i]:
-                    ax.plot(x_pos[i] + main_width/2 - 0.025, storage, marker='<', markersize=8.5,
-                            color='black', markeredgecolor='black', markerfacecolor='white')
-                    if label:
-                        s = f'{elev_ft:,.0f}\'\n{label}'
-                    else:
-                        s = f'{elev_ft:,.0f}\''
+                x_marker = x_pos[i] + main_width / 2 - 0.025
+                x_text = x_pos[i] + main_width * 0.52 + 0.015
 
-                    ax.annotate(s, xy=(x_pos[i] + main_width*0.52 + 0.015, storage),
-                                ha='left', va='center',
+                # Arrow
+                ax.plot(x_marker, storage, marker='<', markersize=8.5,
+                        color='black', markeredgecolor='black', markerfacecolor='white')
+
+                # Elevation (centered on the arrow)
+                elev_text = f'{elev_ft:,.0f}\''
+                ax.annotate(elev_text, xy=(x_text, storage),
+                            ha='left', va='center',
+                            fontsize=font_size,
+                            fontweight='bold',
+                            color='black',
+                            bbox=dict(boxstyle="round",
+                                      edgecolor='none',
+                                      facecolor="white",
+                                      pad=0,
+                                      alpha=1))
+
+                # Label below the arrow/elevation (only if present)
+                if label:
+                    # Offset downward in points so the label sits just below the elevation text
+                    # (adjust the multiplier if your font metrics need more/less spacing)
+                    offset_pts = -(font_size * 0.4)
+                    ax.annotate(label, xy=(x_text, storage),
+                                xytext=(0, offset_pts),
+                                textcoords='offset points',
+                                ha='left', va='top',
                                 fontsize=font_size,
                                 fontweight='bold',
                                 color='black',
@@ -647,8 +692,7 @@ class ReservoirChart(BarChart):
                                           edgecolor='none',
                                           facecolor="white",
                                           pad=0,
-                                          alpha=1)
-                                )
+                                          alpha=1))
 
         # ==================== FINAL ANNOTATIONS ====================
         for i in range(len(names)):

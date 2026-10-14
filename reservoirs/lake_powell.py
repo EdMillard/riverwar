@@ -45,6 +45,7 @@ class LakePowell(Reservoir):
                              ub.POWELL_RELEASE, ub.POWELL_RELEASE_CFS]
         super().__init__('Lake Powell', headers, catalog_id = 2362, upstream=upstream)
         self.show_elevations = True
+        self.yoy_start_year = 2001
 
         self.start_year = 1964
         self.usgs_release_gage_id:str = '09380000'
@@ -77,7 +78,7 @@ class LakePowell(Reservoir):
         self.special_levels = [
             (self.power_head_target_feet, self.power_head_target_af, "Critical"),
             (self.power_head_min_feet, self.power_head_min_af, "Intakes"),
-            (self.dead_pool_feet, self.dead_pool_af, "Dead"),
+            (self.dead_pool_feet, self.dead_pool_af, "Dead\nPool"),
         ]
 
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),

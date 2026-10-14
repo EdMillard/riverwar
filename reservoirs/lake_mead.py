@@ -51,6 +51,7 @@ class LakeMead(Reservoir):
                              lb.MEAD_RELEASE, lb.MEAD_RELEASE_CFS]
         super().__init__('Lake Mead', headers, catalog_id= 4370, upstream=upstream, month=month)
         self.show_elevations = True
+        self.yoy_start_year = 2001
 
         self.start_year = 1937
 
@@ -79,7 +80,15 @@ class LakeMead(Reservoir):
         self.power_head_min_feet = 950
         self.power_head_min_af = 2005585
 
+        self.sweet_spot_upper_feet = 1085
+        self.sweet_spot_upper_af = 10_192_045
+
+        self.sweet_spot_lower_feet = 1080
+        self.sweet_spot_lower_af = 9_776_595
+
         self.special_levels = [
+            (self.sweet_spot_upper_feet, self.sweet_spot_upper_af, "Sweet Spot"),
+            (self.sweet_spot_lower_feet, self.sweet_spot_lower_af, ""),
             (self.power_high_head_target_feet, self.power_high_head_target_af, "Turbines", "above"),
             # (1025, 5_981_122, "Level 3"),
             (self.mead_consult_feet, self.mead_consult_af, "Consult", "above"),

@@ -35,7 +35,8 @@ class FlamingGorge(Reservoir):
                              ub.FLAMING_GORGE_INFLOW_UNREGULATED, ub.FLAMING_GORGE_INFLOW_UNREGULATED_CFS,
                              ub.FLAMING_GORGE_RELEASE, ub.FLAMING_GORGE_RELEASE_CFS, ub.FLAMING_GORGE_EVAPORATION_WY]
         super().__init__('Flaming Gorge', headers, catalog_id=2300, upstream=upstream)
-        self.show_elevations = True
+        self.show_elevations = False
+        self.yoy_start_year = 2022
         self.start_year = 1963
         self.end_of_month_storage_str = 'Live Storage'
 

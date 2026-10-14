@@ -26,6 +26,7 @@ class JacksonGulch(Reservoir):
     def __init__(self, upstream: Optional[List[Reservoir]] = None):
         headers:List[str] = []
         super().__init__('Jackson Gulch',headers,  catalog_id= 2347, upstream=upstream)
+        self.show_in_chart = False
         self.start_year = 1949
 
         # Elevations
