@@ -140,11 +140,13 @@ class USGSGage(object):
         if file_path.exists():
             previous_data = self.load_daily_discharge(file_path, water_year_info, update, parameterCd=parameterCd, statCd=statCd)
             if previous_data is not None and len(previous_data):
+                last_date = previous_data[-1][0]
                 if water_year_info is not None and water_year_info.is_current_water_year:
-                    last_date = previous_data[-1][0]
-                    if isinstance(last_date, np.datetime64):
-                        last_date = last_date.astype("M8[us]").astype(datetime.datetime)
                     update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
+                else:
+                    last = pd.Timestamp(previous_data[-1][0]).date()
+                    end = pd.Timestamp(water_year_info.end_date).date()
+                    update = end > last
             else:
                 update = True
                 previous_data = None
