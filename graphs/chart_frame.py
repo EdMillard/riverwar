@@ -262,6 +262,10 @@ class ChartFrame(wx.Panel):
         self.reports: List[str] = reports or []
         self.report_path: str = ''
 
+        self.start_nav = None
+        self.current_nav = None
+        self.end_nav = None
+
         self.charts: List[Chart] = []
         self.toolbar: Optional[wx.Panel] = None
         self.chart_panel: Optional[wx.Panel] = None
@@ -572,9 +576,12 @@ class ChartFrame(wx.Panel):
 
     def load_reservoirs(self) -> Optional[date]:
         date_time_as_date = None
-        start = self.start_nav.current_date
-        current = self.current_nav.current_date
-        end = self.end_nav.current_date
+        if self.start_nav is not None:
+            start = self.start_nav.current_date
+            current = self.current_nav.current_date
+            end = self.end_nav.current_date
+        else:
+            start = current = end = date.today()
 
         for reservoir_list in self.reservoir_lists:
             for reservoir in reservoir_list:

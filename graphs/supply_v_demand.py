@@ -23,6 +23,7 @@ import wx
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
 from chart.multi_bar_chart import MultiBarChart
+from colorado.river_war import RiverWar
 import colorado.lb as lb
 import colorado.ub as ub
 import colorado.allb as all_b
@@ -199,7 +200,7 @@ class SupplyVDemand(ChartFrame):
 
         pie_wedges = [
             (df_ub_cul, ub.CO_WEST_SLOPE, '#4040ff'),
-            (df_ub_users, ub.CO_NORTHERN_WATER, '6060ff'),
+            (df_ub_users, ub.CO_NORTHERN_WATER, '#6060ff'),
             (df_ub_cul, ub.CU_UT, '#8080ff'),
             (df_ub_cul, ub.CU_WY, '#a0a0ff'),
             (df_ub_cul, ub.CU_NM, '#c0c0ff'),
@@ -268,11 +269,12 @@ class SupplyVDemand(ChartFrame):
             ]),
         ]
         self.multi_bar_chart = MultiBarChart(
-            percentage=0.12,
+            percentage=0.10,
             groups=bar_groups,
             title="",
             start_year=self.start_year,
             end_year=self.end_year,
+            y_max=26,
             y_min=4,
             show_x_labels=True
         )
@@ -297,3 +299,14 @@ class SupplyVDemand(ChartFrame):
 
         self.demand_pie_chart.update_for_year(self.current_year)
         self.current_year += 1
+
+if __name__ == "__main__":
+    app = wx.App(False)
+
+    river_war = RiverWar()
+    notebook_frame = NotebookFrame([], river_war)
+
+    SupplyVDemand( notebook_frame=notebook_frame)
+
+    notebook_frame.Show()
+    app.MainLoop()

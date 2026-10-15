@@ -267,7 +267,7 @@ class Reservoir:
                     end_date = pd.to_datetime(end_str, format="%b %Y").date()
                     self.report_end_date = Reservoir.get_end_of_month(end_date)
 
-                    self.df_daily = df_utils.create_daily_df(self.report_start_date, date.today(), self.headers)
+                    self.df_daily = df_utils.create_daily_df(self.report_start_date, end_date, self.headers)
                     self.report_path = report_path
                 else:
                     self.df_daily = df_utils.create_daily_df(self.start_date, date.today(), self.headers)

@@ -63,15 +63,14 @@ class Heron(Reservoir):
     def load_data_annual(self, start_year:Optional[int]=None, end_year:Optional[int]=None)->pd.DataFrame:
         if self.usbr_rise_san_juan_chama_average_inflow_af_id:
             self.df_annual: pd.DataFrame = df_utils.create_df(self.start_year, self.end_year,
-                                                         [ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL, all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE, all_b.EVAPORATION,
+                                                         [ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL_AF, ub.USBR_NM_SAN_JUAN_CHAMA_TUNNEL_AF,
+                                                          all_b.STORAGE, all_b.ELEVATION, all_b.RELEASE, all_b.EVAPORATION,
                                                           all_b.INFLOW])
             sheet.usgs_annuals(self.df_annual, ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL_GAGE, self.start_year, 2008,
-                               divisor=1, month=all_b.WY, title=ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL)
+                               divisor=1, month=all_b.WY, title=ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL_AF)
 
             sheet.usbr_annuals(self.df_annual, self.usbr_rise_san_juan_chama_average_inflow_af_id, 2009, self.end_year,
-                               month=all_b.WY, title=ub.USGS_NM_SAN_JUAN_CHAMA_TUNNEL, divisor=1)
-
-
+                               month=all_b.WY, title=ub.USBR_NM_SAN_JUAN_CHAMA_TUNNEL_AF, divisor=1)
         return self.df_annual
 
     def load_data(self, report_path:Path, start_date: date, current_date: date, end_date: date):

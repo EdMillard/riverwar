@@ -171,6 +171,8 @@ USGS_UT_JORDAN_RIVER = 'Jordan River'
 USGS_UT_JORDAN_RIVER_GAGE = '10171000'
 
 # NM
+USGS_NM_SAN_JUAN_CHAMA_TUNNEL_AF = 'USGS San Juan Chama Azotea Tunnel AF'
+
 USBR_NM_SAN_JUAN_CHAMA_TUNNEL_AF = 'San Juan Chama Azotea Tunnel AF'
 USBR_NM_SAN_JUAN_CHAMA_TUNNEL_CFS = 'San Juan Chama Azotea Tunnel CFS'
 

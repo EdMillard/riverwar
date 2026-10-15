@@ -81,7 +81,7 @@ class UpperBasinUsersDataSet(DataSet):
         # UT Strawberry
         strawberry = Strawberry()
         strawberry.load_data_annual()
-        df_utils.copy_column(strawberry.df_annual, df, 'Strawberry')
+        df_utils.copy_column(strawberry.df_annual, df, 'Storage', new_name='Strawberry.Storage')
 
         # UT / Wasatch Front
         # Need to find data for this tunnel to Provo River since USGS discontinued theirs in 1969, Utah DWRi, Provo River WUA
