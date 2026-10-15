@@ -25,7 +25,7 @@ import pandas as pd
 from datetime import date, timedelta
 import os
 import wx.lib.buttons as buttons
-from typing import List, Optional, Callable, Tuple
+from typing import List, Optional, Callable, Tuple, Union
 from reservoirs.reservoir import Reservoir
 from chart.chart import Chart
 from colorado.month_nav import MonthYearNavigator
@@ -254,12 +254,12 @@ class ChartFrame(wx.Panel):
     def __init__(self,
                  notebook_frame: NotebookFrame,
                  reservoir_lists: Optional[List[List[Reservoir]]] = None,
-                 reports: List[str] | None = None,
+                 reports: List[Path] | None = None,
                  page_name: str = "Chart"
     ):
         self.notebook_frame = notebook_frame
         self.reservoir_lists:List[List[Reservoir]] = reservoir_lists or []
-        self.reports: List[str] = reports or []
+        self.report_paths: List[Path] = reports or []
         self.report_path: str = ''
 
         self.start_nav = None
@@ -292,8 +292,8 @@ class ChartFrame(wx.Panel):
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.main_sizer)
 
-        if self.reports:
-            self.toolbar = self._init_toolbar(self.reports)
+        if self.report_paths:
+            self.toolbar = self._init_toolbar(self.report_paths)
             self.toolbar.Hide()
             self.main_sizer.Add(self.toolbar, 0, wx.EXPAND | wx.ALL, border=2)
         else:
@@ -427,7 +427,7 @@ class ChartFrame(wx.Panel):
         self.do_manual_chart_layout()
         self.Refresh()
 
-    def _init_toolbar(self, reports: List[str]) -> wx.Panel:
+    def _init_toolbar(self, report_paths: List[Path]) -> wx.Panel:
         top_toolbar = wx.Panel(self, style=wx.BORDER_NONE)
         top_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))
 
@@ -437,10 +437,10 @@ class ChartFrame(wx.Panel):
         tb_sizer.Add(self.status_text, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, border=0)
         tb_sizer.AddStretchSpacer(1)
 
-        if reports and len(reports) > 0:
-            dir_names = [Path(p).name for p in reports]
+        if report_paths and len(report_paths) > 0:
+            dir_names = [p.name for p in report_paths]
             self.report_choice = wx.Choice(top_toolbar, choices=dir_names)
-            last_report = reports[-1]
+            last_report = report_paths[-1]
             self.report_choice.SetSelection(len(dir_names) - 1)
             self.report_path = last_report
             self.report_choice.SetToolTip("Select report directory")
@@ -585,6 +585,7 @@ class ChartFrame(wx.Panel):
 
         for reservoir_list in self.reservoir_lists:
             for reservoir in reservoir_list:
+                reservoir.load_reports(self.report_paths)
                 reservoir.load_data(Path(self.report_path), start, current, end)
                 if reservoir.name == 'Lake Powell':
                     date_time_as_date = pd.Timestamp(reservoir.date_time)
@@ -602,7 +603,7 @@ class ChartFrame(wx.Panel):
         if self.report_choice is None:
             return
         idx = self.report_choice.GetSelection()
-        self.set_report(self.reports[idx])
+        self.set_report(self.report_paths[idx])
 
         print(f"Selected report: {Path(self.report_path).name}")
         self.load_data()
@@ -779,6 +780,26 @@ class ChartFrame(wx.Panel):
             optimize=True
         )
 
+    def paths_matching_month_year_root(
+            reference_path: Union[str, Path],
+            paths: List[Union[str, Path]]
+    ) -> List[Path]:
+        """
+        Extract the month-year root (e.g. 'JUL26') from reference_path
+        and return every path in `paths` that contains the same root.
+        Always returns a list of Path objects.
+        """
+        ref = str(reference_path)
+        match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})', ref)
+        if not match:
+            return []
+
+        root = match.group(2)  # e.g. 'JUL26'
+
+        # Match /YYYY/ROOT (followed by _ . or end)
+        pattern = re.compile(rf'/\d{{4}}/{re.escape(root)}(?:_|$|\.)')
+        return [Path(p) for p in paths if pattern.search(str(p))]
+
     @staticmethod
     def find_directories_with_file(root_dir: str, filename: str, suffix: str='') -> List[str]:
         """Return list of directories containing the given filename."""
@@ -798,8 +819,14 @@ class ChartFrame(wx.Panel):
     def filter_and_sort_usbr_reports(paths, suffix=''):
         def get_sort_key(path_str):
             path = str(path_str)
-            # Extract year and month code; suffix must match exactly at end of path
-            match = re.search(rf'/(\d{{4}})/([A-Z]{{3}}\d{{2}}){re.escape(suffix)}$', path)
+            if suffix:
+                # Require exact suffix match at end of path
+                pattern = rf'/(\d{{4}})/([A-Z]{{3}}\d{{2}}){re.escape(suffix)}$'
+            else:
+                # No suffix required; just match year + month code
+                pattern = r'/(\d{4})/([A-Z]{3}\d{2})'
+
+            match = re.search(pattern, path)
             if not match:
                 return datetime.min, path
 
@@ -813,8 +840,12 @@ class ChartFrame(wx.Panel):
 
             return dt, path
 
-        # Keep only paths that end with /YYYY/MONYY plus the given suffix
-        pattern = re.compile(rf'/(\d{{4}})/[A-Z]{{3}}\d{{2}}{re.escape(suffix)}$')
+        # Keep only paths that match /YYYY/MONYY (plus optional suffix)
+        if suffix:
+            pattern = re.compile(rf'/(\d{{4}})/[A-Z]{{3}}\d{{2}}{re.escape(suffix)}$')
+        else:
+            pattern = re.compile(r'/(\d{4})/[A-Z]{3}\d{2}')
+
         filtered = [p for p in paths if pattern.search(str(p))]
 
         return sorted(filtered, key=get_sort_key)

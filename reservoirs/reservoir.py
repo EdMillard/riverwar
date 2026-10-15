@@ -44,6 +44,7 @@ from source.usgs_gage import USGSGage
 from source import cdss
 import pandas as pd
 from source.water_year_info import WaterYearInfo
+from scipy.interpolate import interp1d
 
 # Head and tail USBR JSON Files for verification
 # find . -name '*2026.json' -type f -printf '%T@ %p\0' | sort -zn | cut -zd' ' -f2- | xargs -0 -I {} sh -c 'echo "=== {} ==="; head -n 10 "{}"; echo "..."; tail -n 8 "{}"; echo "────────────────────────────────────────"'
@@ -165,6 +166,7 @@ class Reservoir:
         self.df_annual: Optional[pd.DataFrame] = None
 
         self.report_path: Optional[str|None] = ''
+        self.reports:dict = {}
         self.df_24_month: Optional[pd.DataFrame] = None
         self.df_24_wy: Optional[pd.DataFrame] = None
         self.date_time:TimeStamp = TimeStamp(1970, 1, 1)
@@ -243,6 +245,11 @@ class Reservoir:
         last_day = calendar.monthrange(d.year, d.month)[1]
         return date(d.year, d.month, last_day)
 
+    def load_reports(self, report_paths:List[Path]) -> None:
+        for report_path in report_paths:
+            df_24_month, df_24_wy = self.load_24_month(report_path, self.name)
+            self.reports[report_path.name] = (df_24_month, df_24_wy)
+
     def load_date(self, report_path:Optional[Path], start_date:date, current_date:date, end_date:date):
         self.start_date = start_date
         self.current_date = current_date
@@ -255,7 +262,8 @@ class Reservoir:
 
         if report_path is not None:
             if self.report_path != report_path:
-                self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
+                self.df_24_month, self.df_24_wy = self.reports.get(report_path.name, (None, None))
+                # self.df_24_month, self.df_24_wy =  self.load_24_month(report_path, self.name)
                 if self.df_24_month is not None:
                     if self.yoy_start_year:
                         self.report_start_date = datetime.now().replace(year=self.yoy_start_year)
@@ -458,8 +466,10 @@ class Reservoir:
         if self.report_end_date is not None:
             end_year = self.report_end_date.year
         if not end_year or end_year > date.today().year:
-            end_year = date.today().year
-
+            if self.water_year_month == 1 or date.today().month < self.water_year_month:
+                end_year = date.today().year
+            else:
+                end_year = date.today().year+1
         for year in range(start_year, end_year+1):
             water_year_info = self.get_water_year_info(year, month=self.water_year_month)
             gage = USGSGage(gage_id, water_year_info)
@@ -790,6 +800,186 @@ class Reservoir:
         return total
 
     @staticmethod
+    def monthly_total_to_daily(
+            df_monthly: pd.DataFrame,
+            df_daily: pd.DataFrame,
+            monthly_date_col: str = "Date",
+            monthly_value_col: str = "Regulated Inflow",
+            daily_date_col: str = "Date",
+            daily_target_col: str = "Regulated_Inflow_daily",
+            blank_first_month: bool = False,
+            convert_af_to_cfs: bool = False
+    ) -> None:
+        """
+        Spread a monthly total evenly across the days of that month
+        to produce an approximate daily rate.
+        If convert_af_to_cfs=True, the final daily values are converted
+        from AF/day to CFS.
+        Mutates df_daily in place.
+        """
+        if df_monthly.empty or df_daily.empty:
+            return
+
+        # Prepare monthly totals as month-end timestamps
+        monthly = df_monthly[[monthly_date_col, monthly_value_col]].copy()
+        monthly[monthly_date_col] = pd.to_datetime(
+            monthly[monthly_date_col], format="%b %Y", errors="coerce"
+        )
+        monthly = monthly.dropna(subset=[monthly_date_col])
+        monthly[monthly_date_col] = monthly[monthly_date_col] + MonthEnd(0)
+        monthly[monthly_value_col] = pd.to_numeric(monthly[monthly_value_col], errors="coerce")
+
+        # Map each month-end to its daily rate (total / days in month)
+        monthly["days"] = monthly[monthly_date_col].dt.days_in_month
+        monthly["daily_rate"] = monthly[monthly_value_col] / monthly["days"]
+        rate_by_month = monthly.set_index(monthly_date_col)["daily_rate"]
+
+        # Daily dates
+        daily_dates = pd.to_datetime(df_daily[daily_date_col], errors="coerce")
+        month_ends = daily_dates + MonthEnd(0)
+
+        # Look up the daily rate for each day and write in place
+        df_daily[daily_target_col] = month_ends.map(rate_by_month)
+
+        # Convert AF/day → CFS if requested
+        # 1 AF = 43560 ft³; 1 day = 86400 s
+        if convert_af_to_cfs:
+            df_daily[daily_target_col] = df_daily[daily_target_col] * (43560.0 / 86400.0)
+
+        # Optional: blank the first calendar month
+        if blank_first_month:
+            first_day = daily_dates.iloc[0]
+            first_month_end = first_day.replace(day=1) + MonthEnd(0)
+            mask = daily_dates <= first_month_end
+            df_daily.loc[mask, daily_target_col] = pd.NA
+
+    @staticmethod
+    def monthly_total_to_daily_smooth(
+            df_monthly: pd.DataFrame,
+            df_daily: pd.DataFrame,
+            monthly_date_col: str = "Date",
+            monthly_value_col: str = "Regulated Inflow",
+            daily_date_col: str = "Date",
+            daily_target_col: str = "Regulated_Inflow_daily",
+            smoothing: str = "cubic",
+            blank_first_month: bool = True,
+            convert_af_to_cfs: bool = False
+    ) -> None:
+        """
+        Smoothly distribute monthly totals to daily values while
+        preserving each month's original total.
+        If convert_af_to_cfs=True, the final daily values are converted
+        from AF/day to CFS.
+        Mutates df_daily in place.
+        """
+        if df_monthly.empty or df_daily.empty:
+            return
+
+        # --- Monthly totals as month-end ---
+        monthly = df_monthly[[monthly_date_col, monthly_value_col]].copy()
+        monthly[monthly_date_col] = pd.to_datetime(
+            monthly[monthly_date_col], format="%b %Y", errors="coerce"
+        )
+        monthly = monthly.dropna(subset=[monthly_date_col])
+        monthly[monthly_date_col] = monthly[monthly_date_col] + MonthEnd(0)
+        monthly[monthly_value_col] = pd.to_numeric(monthly[monthly_value_col], errors="coerce")
+        monthly = monthly.sort_values(monthly_date_col).reset_index(drop=True)
+
+        if monthly.empty:
+            return
+
+        # Cumulative at month-end (start from 0 just before the first month)
+        first_month_start = monthly[monthly_date_col].iloc[0].replace(day=1)
+        cum = pd.Series(
+            [0.0] + monthly[monthly_value_col].cumsum().tolist(),
+            index=[first_month_start - pd.Timedelta(days=1)] + monthly[monthly_date_col].tolist()
+        )
+
+        # --- Daily dates ---
+        daily_dates = pd.to_datetime(df_daily[daily_date_col], errors="coerce")
+        daily_x = daily_dates.astype("int64")
+
+        # Interpolate the cumulative
+        x = cum.index.astype("int64")
+        y = cum.values
+        if smoothing in ("quadratic", "cubic") and len(cum) >= 4:
+            f = interp1d(x, y, kind=smoothing, fill_value="extrapolate", bounds_error=False)
+            cum_daily = f(daily_x)
+        else:
+            cum_daily = np.interp(daily_x, x, y)
+
+        # Daily increments (difference of cumulative)
+        daily_raw = np.diff(cum_daily, prepend=cum_daily[0])
+        # Avoid negative or zero issues on the very first point
+        daily_raw[0] = max(daily_raw[0], 0)
+
+        # --- Rescale each month so sum(daily) == original monthly total ---
+        df_daily[daily_target_col] = daily_raw
+        month_ends = daily_dates + MonthEnd(0)
+
+        for month_end, total in zip(monthly[monthly_date_col], monthly[monthly_value_col]):
+            mask = month_ends == month_end
+            if not mask.any() or total == 0 or pd.isna(total):
+                continue
+            current_sum = df_daily.loc[mask, daily_target_col].sum()
+            if current_sum != 0:
+                df_daily.loc[mask, daily_target_col] *= (total / current_sum)
+
+        # Convert AF/day → CFS if requested
+        # 1 AF = 43560 ft³; 1 day = 86400 s
+        if convert_af_to_cfs:
+            df_daily[daily_target_col] = df_daily[daily_target_col] * (43560.0 / 86400.0)
+
+        # Optional: blank the first calendar month
+        if blank_first_month:
+            first_day = daily_dates.iloc[0]
+            first_month_end = first_day.replace(day=1) + MonthEnd(0)
+            mask = daily_dates <= first_month_end
+            df_daily.loc[mask, daily_target_col] = pd.NA
+
+    import pandas as pd
+    from pandas.tseries.offsets import MonthEnd
+
+    def compare_monthly_sums(
+            df: pd.DataFrame,
+            col_a: str,
+            col_b: str,
+            date_col: str = "Date"
+    ) -> None:
+        """
+        Aggregate two daily columns back to monthly sums,
+        then print the difference (col_a - col_b) for each month.
+        """
+        if df.empty or col_a not in df.columns or col_b not in df.columns:
+            print("Missing data or columns")
+            return
+
+        work = df[[date_col, col_a, col_b]].copy()
+        work[date_col] = pd.to_datetime(work[date_col], errors="coerce")
+        work = work.dropna(subset=[date_col])
+
+        # Month-end key for grouping
+        work["_month"] = work[date_col] + MonthEnd(0)
+
+        monthly = (
+            work.groupby("_month")[[col_a, col_b]]
+            .sum()
+            .sort_index()
+        )
+
+        monthly["diff"] = monthly[col_a] - monthly[col_b]
+
+        print(f"{'Month':<12} {col_a:>15} {col_b:>15} {'Diff':>15}")
+        print("-" * 60)
+        for month_end, row in monthly.iterrows():
+            label = month_end.strftime("%b %Y")
+            print(f"{label:<12} {row[col_a]:>15,.1f} {row[col_b]:>15,.1f} {row['diff']:>15,.1f}")
+
+        print("-" * 60)
+        print(
+            f"{'TOTAL':<12} {monthly[col_a].sum():>15,.1f} {monthly[col_b].sum():>15,.1f} {monthly['diff'].sum():>15,.1f}")
+
+    @staticmethod
     def interpolate_monthly_storage_to_daily(
             df_monthly: pd.DataFrame,
             df_daily: pd.DataFrame,
@@ -812,30 +1002,36 @@ class Reservoir:
             monthly[monthly_date_col], format="%b %Y"
         ) + MonthEnd(0)
 
-        monthly_series = monthly.set_index(monthly_date_col)[monthly_value_col].sort_index()
+        monthly_series = (
+            monthly.set_index(monthly_date_col)[monthly_value_col]
+            .sort_index()
+            .astype(float)
+        )
+
+        if monthly_series.empty:
+            return
 
         # 2. Daily dates
         daily_dates = pd.to_datetime(df_daily[daily_date_col])
 
-        # 3. Full interpolation using ALL monthly points
-        if smoothing in ['quadratic', 'cubic'] and len(monthly_series) >= 3:
-            from scipy.interpolate import interp1d
-            x = monthly_series.index.astype('int64')
-            y = monthly_series.values
-            f = interp1d(x, y, kind=smoothing, fill_value="extrapolate")
-            interpolated = f(daily_dates.astype('int64'))
-        else:
-            interpolated = monthly_series.reindex(daily_dates).interpolate(method='linear')
+        # 3. Interpolate using numeric timestamps (avoids exact-match issues)
+        x = monthly_series.index.astype("int64")
+        y = monthly_series.values
+        daily_x = daily_dates.astype("int64")
 
-        # 4. Copy ALL interpolated values first
+        if smoothing in ("quadratic", "cubic") and len(monthly_series) >= 3:
+            f = interp1d(x, y, kind=smoothing, fill_value="extrapolate", bounds_error=False)
+            interpolated = f(daily_x)
+        else:
+            interpolated = np.interp(daily_x, x, y)
+
+        # 4. Assign full interpolated series
         df_daily[daily_target_col] = interpolated
 
-        # 5. Then force the entire FIRST MONTH to NaN
+        # 5. Force the entire FIRST MONTH to NaN
         first_day = daily_dates.iloc[0]
-        first_month_start = first_day.replace(day=1)
-        first_month_end = first_month_start + MonthEnd(0)
-
-        mask = (daily_dates >= first_month_start) & (daily_dates <= first_month_end)
+        first_month_end = first_day.replace(day=1) + MonthEnd(0)
+        mask = daily_dates <= first_month_end
         df_daily.loc[mask, daily_target_col] = pd.NA
 
     @staticmethod

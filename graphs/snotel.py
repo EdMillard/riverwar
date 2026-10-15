@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from datetime import date
-from datetime import datetime
 from typing import List, Optional, Tuple
 from colorado.river_war import RiverWar
 from api import df_utils
@@ -306,7 +305,7 @@ class Snotel(ChartFrame):
             # df_summary = get_snotel_sensors_with_dates(station_id, state)
             print_full_summary(df_summary, title=f"{name} Sensor Summary:")
             self.num_years = get_sensor_history_years(df_summary)
-            self.num_years = 7
+            # self.num_years = 7
             self.start_date = self.end_date.replace(year=self.end_date.year - self.num_years)
             begin_date = self.start_date.strftime("%Y-%m-%d")
             # begin_date = "2026-01-01"

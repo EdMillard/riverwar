@@ -203,7 +203,10 @@ class ReservoirsReality(ChartFrame):
         current_size = notebook_frame.GetSize()
         current_size.x = 2048
         notebook_frame.SetSize(current_size)
-        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv')
+        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv', '')
+        reports_latest = []
+        if len(reports):
+            reports_latest = ChartFrame.paths_matching_month_year_root(reports[-1], reports)
 
         # Initial Units
         flaming_gorge = FlamingGorge()
@@ -315,7 +318,7 @@ class ReservoirsReality(ChartFrame):
         else:
             reservoir_lists = [self.reservoirs]
 
-        super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports, page_name=self.name)
+        super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports_latest, page_name=self.name)
 
     def load_charts(self):
         start = self.start_nav.current_date
