@@ -826,7 +826,14 @@ class Reservoir:
             monthly[monthly_date_col], format="%b %Y", errors="coerce"
         )
         monthly = monthly.dropna(subset=[monthly_date_col])
-        monthly[monthly_date_col] = monthly[monthly_date_col] + MonthEnd(0)
+        if 0:
+            monthly[monthly_date_col] = (
+                    monthly[monthly_date_col] + MonthEnd(0) - pd.DateOffset(months=1)
+            )
+        else:
+            monthly[monthly_date_col] = (
+                    monthly[monthly_date_col] + MonthEnd(0)
+            )
         monthly[monthly_value_col] = pd.to_numeric(monthly[monthly_value_col], errors="coerce")
 
         # Map each month-end to its daily rate (total / days in month)
@@ -881,7 +888,10 @@ class Reservoir:
             monthly[monthly_date_col], format="%b %Y", errors="coerce"
         )
         monthly = monthly.dropna(subset=[monthly_date_col])
-        monthly[monthly_date_col] = monthly[monthly_date_col] + MonthEnd(0)
+        if 0:
+            monthly[monthly_date_col] = monthly[monthly_date_col] + MonthEnd(0) - pd.DateOffset(months=1)
+        else:
+            monthly[monthly_date_col] = monthly[monthly_date_col] + MonthEnd(0)
         monthly[monthly_value_col] = pd.to_numeric(monthly[monthly_value_col], errors="coerce")
         monthly = monthly.sort_values(monthly_date_col).reset_index(drop=True)
 
@@ -936,9 +946,6 @@ class Reservoir:
             first_month_end = first_day.replace(day=1) + MonthEnd(0)
             mask = daily_dates <= first_month_end
             df_daily.loc[mask, daily_target_col] = pd.NA
-
-    import pandas as pd
-    from pandas.tseries.offsets import MonthEnd
 
     def compare_monthly_sums(
             df: pd.DataFrame,
@@ -998,9 +1005,17 @@ class Reservoir:
 
         # 1. Prepare monthly data (end of each month)
         monthly = df_monthly[[monthly_date_col, monthly_value_col]].copy()
-        monthly[monthly_date_col] = pd.to_datetime(
-            monthly[monthly_date_col], format="%b %Y"
-        ) + MonthEnd(0)
+        if 0:
+            monthly[monthly_date_col] = (
+                    pd.to_datetime(monthly[monthly_date_col], format="%b %Y")
+                    + MonthEnd(0)
+                    - pd.DateOffset(months=1)
+            )
+        else:
+            monthly[monthly_date_col] = (
+                    pd.to_datetime(monthly[monthly_date_col], format="%b %Y")
+                    + MonthEnd(0)
+            )
 
         monthly_series = (
             monthly.set_index(monthly_date_col)[monthly_value_col]

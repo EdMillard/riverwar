@@ -783,7 +783,7 @@ class ChartFrame(wx.Panel):
     def paths_matching_month_year_root(
             reference_path: Union[str, Path],
             paths: List[Union[str, Path]]
-    ) -> List[Path]:
+    ) -> Tuple[str, List[Path]]:
         """
         Extract the month-year root (e.g. 'JUL26') from reference_path
         and return every path in `paths` that contains the same root.
@@ -798,7 +798,7 @@ class ChartFrame(wx.Panel):
 
         # Match /YYYY/ROOT (followed by _ . or end)
         pattern = re.compile(rf'/\d{{4}}/{re.escape(root)}(?:_|$|\.)')
-        return [Path(p) for p in paths if pattern.search(str(p))]
+        return root, [Path(p) for p in paths if pattern.search(str(p))]
 
     @staticmethod
     def find_directories_with_file(root_dir: str, filename: str, suffix: str='') -> List[str]:

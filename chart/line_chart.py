@@ -1,4 +1,25 @@
-from reservoirs.reservoir import Reservoir
+"""
+Copyright (c) 2025 Ed Millard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute copies of the Software, and
+to permit persons to whom the Software is furnished to do so, subject to the
+following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
 from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 import matplotlib.cm as cm
@@ -45,6 +66,9 @@ class LineChart(Chart):
                  color_by_year: bool = False,
                  year_colors: Optional[List[str]] = None,
                  stacked: bool = False,  # <-- new
+                 compact_legend: bool = False,
+                 legend_variables: Optional[List[Tuple[str, str]]] = None,  # [(label, color), ...]
+                 legend_studies: Optional[List[Tuple[str, str]]] = None,  # [(label, linestyle), ...]
                  ):
 
         super().__init__(start_date, current_date, end_date, y_divisor=y_divisor, y_units=y_units,
@@ -75,6 +99,10 @@ class LineChart(Chart):
         self.color_by_year = color_by_year and self.overlay_years
         self.year_colors = year_colors
         self.overlay_date_map = {}
+
+        self.compact_legend = compact_legend
+        self.legend_variables = legend_variables or []
+        self.legend_studies = legend_studies or []
 
         # === Data normalization (original, lightly extended) ===
         normalized_series = []
@@ -228,10 +256,10 @@ class LineChart(Chart):
         self.create_line_chart(self.ax)
 
         left_margin = 0.05
-        if self.show_right_labels:
-            right_margin = 0.96
-        else:
-            right_margin = 0.98
+        #if self.show_right_labels:
+        right_margin = 0.96
+        #else:
+        #    right_margin = 0.98
 
         top_margin = 0.90 if self.title and self.title.strip() else 0.99
         bottom_margin = 0.12 if self.show_x_labels else 0.03
@@ -340,6 +368,8 @@ class LineChart(Chart):
             ax.set_xlim(min(ref_dates), max(ref_dates))
             ax.xaxis.set_major_locator(mdates.MonthLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+            # Optional finer minor grid for overlays (uncomment if desired)
+            # ax.xaxis.set_minor_locator(mdates.DayLocator(interval=5))
         else:
             data_min = min(all_dates)
             data_max = max(all_dates)
@@ -350,27 +380,30 @@ class LineChart(Chart):
             ax.xaxis.set_major_locator(mdates.YearLocator())
             ax.xaxis.set_major_formatter(mdates.DateFormatter('%y'))
 
-            if self.show_x_labels:
-                years_span = (x_end - x_start).days / 365.25
-                if years_span < 10:
-                    ax.xaxis.set_minor_locator(mdates.MonthLocator())
+            # Always install minor locator when the span is short enough
+            # (independent of show_x_labels so the minor grid still appears)
+            years_span = (x_end - x_start).days / 365.25
+            if years_span < 10:
+                ax.xaxis.set_minor_locator(mdates.MonthLocator())
 
-                    def month_first_letter(x, pos):
-                        return mdates.DateFormatter('%b')(x, pos)[0]
+                def month_first_letter(x, pos):
+                    return mdates.DateFormatter('%b')(x, pos)[0]
 
-                    ax.xaxis.set_minor_formatter(month_first_letter)
+                ax.xaxis.set_minor_formatter(month_first_letter)
 
         # Tick styling
         ax.tick_params(axis='x', which='minor', length=3, width=0.7, labelsize=8.5, pad=2)
         ax.tick_params(axis='x', which='major', length=6, width=1.2, labelsize=10, pad=4)
 
+        # Only hide the labels, not the ticks or grid
         if not self.show_x_labels:
-            ax.set_xticklabels([])
+            ax.set_xticklabels([])  # major labels
+            ax.tick_params(axis='x', which='minor', labelbottom=False)  # minor labels
 
         if self.title and str(self.title).strip():
             ax.set_title(self.title, fontsize=14, fontweight='bold', pad=6)
 
-        # Grid
+        # Grid (minor grid now appears even when labels are hidden)
         ax.grid(True, which='major', linestyle='-', linewidth=1.0, color='gray', alpha=1, zorder=0)
         ax.grid(True, which='minor', linestyle='--', linewidth=0.7, color='gray', alpha=0.75, zorder=0)
         ax.grid(True, axis='y', linestyle='--', alpha=0.7, zorder=0)
@@ -429,6 +462,30 @@ class LineChart(Chart):
                 )
 
         # Legend
-        ncol = 2 if (self.color_by_year or self.stacked) else 1
-        fontsize = 9 if (self.color_by_year or self.stacked) else 10.5
-        ax.legend(fontsize=fontsize, loc='best', ncol=ncol)
+        if self.compact_legend and (self.legend_variables or self.legend_studies):
+            from matplotlib.lines import Line2D
+
+            handles = []
+            labels = []
+
+            # Variable colors (solid lines)
+            for label, color in self.legend_variables:
+                handles.append(Line2D([0], [0], color=color, linewidth=2.5, linestyle='-'))
+                labels.append(label)
+
+            # Study / period line styles (neutral color)
+            for label, ls in self.legend_studies:
+                handles.append(Line2D([0], [0], color='0.25', linewidth=2.0, linestyle=ls))
+                labels.append(label)
+
+            ax.legend(handles, labels,
+                      fontsize=9,
+                      loc='best',
+                      ncol=2,
+                      framealpha=0.92,
+                      handlelength=2.5)
+        else:
+            # original automatic legend
+            ncol = 2 if (self.color_by_year or self.stacked) else 1
+            fontsize = 9 if (self.color_by_year or self.stacked) else 10.5
+            ax.legend(fontsize=fontsize, loc='best', ncol=ncol)
