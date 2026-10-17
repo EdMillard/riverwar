@@ -68,10 +68,10 @@ CA_COLOR = '#ff6060'
 NV_COLOR = 'lightgray'
 AZ_COLOR = '#ffbb77'
 
+CUT_COLOR   = '#ff7946'
 PHX_COLOR   = '#ff9966'
 PINAL_COLOR = '#ffbb77'
 TUCSON_COLOR = '#ffdd99'
-CUT_COLOR   = '#ff7946'
 
 MEAD = 'Mead'
 MEAD_MOST = 'Mead Most'

@@ -40,7 +40,7 @@ class SupplyVDemand(ChartFrame):
         self.current_year = self.start_year
         self.timer = None
         self.animation_interval = 1000
-        self.version = 0.3
+        self.version = 0.4
         self.play_btn = None
         self.year_slider = None
         self.toolbar_status = None
@@ -196,33 +196,64 @@ class SupplyVDemand(ChartFrame):
         df_utils.subtract_columns_across_dfs(df_lb_cul, lb.CA_MAINSTEM, [(df_lb_cul, lb.PALO_VERDE_CU)], result_column=lb.CA_MAINSTEM)
 
         # CO TMD/West Slope
-        df_utils.subtract_columns_across_dfs(df_ub_cul, ub.CU_CO, [(df_ub_users, ub.CO_NORTHERN_WATER)], result_column=ub.CO_WEST_SLOPE)
+        # df_utils.subtract_columns_across_dfs(df_ub_cul, ub.CU_CO, [(df_ub_users, ub.CO_NORTHERN_WATER)], result_column=ub.CO_WEST_SLOPE)
+
+        # CO
+        CO_COLOR_1 = '#c040c0'
+        # CO_COLOR_2 = '#e080e0'
+
+        # UB
+        # '#6060ff'
+        UT_COLOR = '#8080ff'
+        WY_COLOR = '#a0a0ff'
+        NM_COLOR = '#c0c0ff'
+
+        # CA
+        CA_COLOR_4 = '#ff8080'
+        CA_COLOR_3 = '#ff6060'
+        CA_COLOR_2 = '#ff4040'
+        CA_COLOR_1 = '#df0000'
+
+        # NV
+        NV_COLOR_2 = 'lightgray'
+        NV_COLOR_1 = 'gray'
+
+        # MX
+        MX_COLOR = '#40a040'
+
+        AZ_COLOR_1 = '#ef5926'
+        AZ_COLOR_2 = '#ef6936'
+        AZ_COLOR_3 = '#ef7946'
+        AZ_COLOR_4 = '#ef8956'
+        AZ_COLOR_5 = '#ef9966'
+        AZ_COLOR_6 = '#efbb77'
+        AZ_COLOR_7 = '#efdd99'
 
         pie_wedges = [
-            (df_ub_cul, ub.CO_WEST_SLOPE, '#4040ff'),
-            (df_ub_users, ub.CO_NORTHERN_WATER, '#6060ff'),
-            (df_ub_cul, ub.CU_UT, '#8080ff'),
-            (df_ub_cul, ub.CU_WY, '#a0a0ff'),
-            (df_ub_cul, ub.CU_NM, '#c0c0ff'),
+            (df_ub_cul, ub.CO_WEST_SLOPE, CO_COLOR_1),
+            # (df_ub_users, ub.CO_NORTHERN_WATER, CO_COLOR_2),
+            (df_ub_cul, ub.CU_UT, UT_COLOR),
+            (df_ub_cul, ub.CU_WY, WY_COLOR),
+            (df_ub_cul, ub.CU_NM, NM_COLOR),
             (df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'),
-            (df_lb_cul, lb.MEXICO, '#40a040'),
+            (df_lb_cul, lb.MEXICO, MX_COLOR),
             (df_lb_cul, lb.LB_RESERVOIR_EVAP, 'gold'),
             (df_lb_cul, lb.SALTON_INFLOW, 'gold', {'hatch': '-','hatch_color': '#c040c0'}),
-            (df_lb_cul, lb.IMPERIAL_VALLEY_CU, '#c040c0', {'label': 'Imperial Valley'}),
-            (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, '#e080e0', {'label': 'Metropolitan'}),
-            (df_lb_cul, lb.CA_MAINSTEM, '#f070f0'),
-            (df_lb_cul, lb.PALO_VERDE_CU, '#ffa0ff', {'label': 'Palo Verde'}),
-            (df_lb_cul, lb.NV_COLORADO_RIVER_TOTAL, 'lightgray', {'label': 'NV'}),
-            (df_lb_cul, lb.NV_TRIBUTARY_CUL, 'gray', {'label': 'NV Trib'}),
-            (ltsc_df,   lb.AZ_LTSC_STORED, lb.PHX_COLOR, {'label': 'CAP Aquifer Store', 'hatch': '|', 'hatch_color': '#ff8080'}),
-            (df_lb_cul, lb.AZ_CAP, '#ff8080', {'label': 'CAP'}),
-            (df_lb_cul, lb.AZ_CRIT_CU, '#ff6060', {'label': 'CRIT'}),
-            (df_lb_cul, lb.WELLTON_MOHAWK_CU, '#ff4040', {'label': 'Wellton Mohawk'}),
-            (df_lb_cul, lb.AZ_MAINSTEM, '#ef0000'),
+            (df_lb_cul, lb.IMPERIAL_VALLEY_CU, CA_COLOR_1, {'label': 'Imperial Valley'}),
+            (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, CA_COLOR_2, {'label': 'Metropolitan'}),
+            (df_lb_cul, lb.CA_MAINSTEM, CA_COLOR_4),
+            (df_lb_cul, lb.PALO_VERDE_CU, CA_COLOR_3, {'label': 'Palo Verde'}),
+            (df_lb_cul, lb.NV_COLORADO_RIVER_TOTAL, NV_COLOR_2, {'label': 'NV'}),
+            (df_lb_cul, lb.NV_TRIBUTARY_CUL, NV_COLOR_1, {'label': 'NV Trib'}),
+            (ltsc_df,   lb.AZ_LTSC_STORED, AZ_COLOR_7, {'label': 'CAP Aquifer Store', 'hatch': '|', 'hatch_color': '#ff8080'}),
+            (df_lb_cul, lb.AZ_CAP, AZ_COLOR_6, {'label': 'CAP'}),
+            (df_lb_cul, lb.AZ_CRIT_CU, AZ_COLOR_5, {'label': 'CRIT'}),
+            (df_lb_cul, lb.WELLTON_MOHAWK_CU, AZ_COLOR_4, {'label': 'Wellton Mohawk'}),
+            (df_lb_cul, lb.AZ_MAINSTEM, AZ_COLOR_3),
         ]
         if show_tributaries:
-            pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, '#d03030', {'label': 'AZ Trib'}))
-            pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, '#c02020', {'label': 'AZ Gila'}))
+            pie_wedges.append((df_lb_cul, lb.AZ_TRIBUTARY_CUL, AZ_COLOR_2, {'label': 'AZ Trib'}))
+            pie_wedges.append((df_lb_cul, lb.AZ_GILA_CUL, AZ_COLOR_1, {'label': 'AZ Gila'}))
             pie_wedges.append((df_lb_cul, lb.UB_STATE_TRIB_IN_LB, 'darkblue'))
 
             df_utils.add_columns_across_dfs([
