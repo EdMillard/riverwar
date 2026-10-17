@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from datetime import datetime
 import wx
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
@@ -299,12 +300,13 @@ class SupplyVDemand(ChartFrame):
                 (df_powell, all_b.STORAGE, 'royalblue'),
             ]),
         ]
+        today = datetime.today().date()
         self.multi_bar_chart = MultiBarChart(
             percentage=0.10,
             groups=bar_groups,
             title="",
             start_year=self.start_year,
-            end_year=self.end_year,
+            end_year=today.year,
             y_max=26,
             y_min=4,
             show_x_labels=True

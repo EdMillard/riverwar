@@ -257,6 +257,6 @@ class BarChart(Chart):
         ax.set_title(title, fontsize=14, fontweight='bold', pad=12)
         ax.set_xticks(x_pos)
         ax.set_xticklabels(names, rotation=0, ha='center', fontsize=10.5)
-        ax.grid(axis='y', linestyle='--', alpha=0.65)
+        ax.grid(axis='y', linestyle='-', alpha=0.65)
         ax.set_axisbelow(True)
         ax.set_ylim(0, self.y_max)

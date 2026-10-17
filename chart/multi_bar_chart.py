@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import pandas as pd
 import numpy as np
 from datetime import date
@@ -119,6 +119,76 @@ class MultiBarChart(Chart):
         else:
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(tick_labels, rotation=0, ha='center', fontsize=fontsize)
+
+    def setup_yaxis(self, ax):
+        """Smart Y-axis with good label visibility on small values.
+        Adapted for MultiBarChart group structure."""
+        ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')
+        formatter = ticker.FuncFormatter(self.scaled_formatter)
+        ax.yaxis.set_major_formatter(formatter)
+
+        if not self.groups:
+            return
+
+        # Collect all scaled values from the stacked bar groups
+        all_values = []
+        for group_label, series_list in self.groups:
+            for df, col, color in series_list:
+                if df is None or col not in df.columns:
+                    continue
+                vals = pd.to_numeric(df[col], errors='coerce').dropna()
+                if not vals.empty:
+                    # Scale here so tick logic matches the plotted heights
+                    all_values.extend(vals / self.y_divisor)
+
+        if not all_values:
+            return
+
+        data_min = min(all_values)
+        data_max = max(all_values)
+        data_range = data_max - data_min if data_max > data_min else 1.0
+
+        # Tick strategy (same thresholds, now operating on scaled data)
+        if data_range <= 1.0:
+            major_step = 0.1
+            minor_step = 0.05
+        elif data_range <= 5.0:
+            major_step = 0.5
+            minor_step = 0.1
+        elif data_range <= 20.0:
+            major_step = 1.0
+            minor_step = 0.25
+        elif data_range <= 50.0:
+            major_step = 5.0
+            minor_step = 1.0
+        elif data_range <= 200.0:
+            major_step = 10.0
+            minor_step = 2.0
+        else:
+            major_step = round(data_range / 8 / 10) * 10 or 100
+            minor_step = major_step / 5
+
+        from matplotlib.ticker import MultipleLocator
+        ax.yaxis.set_major_locator(MultipleLocator(major_step))
+        ax.yaxis.set_minor_locator(MultipleLocator(minor_step))
+
+        # Formatter override for small ranges (more readable than the default scaled_formatter)
+        if data_range <= 5.0:
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+        elif data_range <= 20.0:
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
+
+        # Tick appearance
+        ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
+        ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
+
+        ax.grid(True, which='major', axis='y', linestyle='-', linewidth=1.2, color='black', alpha=0.7)
+        ax.grid(True, which='minor', axis='y', linestyle='--', linewidth=0.6, color='gray', alpha=0.5)
+
+        # Only force zero baseline when the data is non-negative
+        # (and the caller hasn't already set an explicit y_min)
+        if data_min >= 0 and self.y_min is None:
+            ax.set_ylim(ymin=0)
 
     def create_bar_chart(self, ax):
         if not self.groups:
@@ -237,7 +307,7 @@ class MultiBarChart(Chart):
 
         ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
         ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
-        ax.grid(axis='y', linestyle='--', alpha=0.7, zorder=0)
+        ax.grid(axis='y', linestyle='-', alpha=0.7, zorder=0)
 
         for ann in self.annotations:
             self.add_total_annotations(ann)
