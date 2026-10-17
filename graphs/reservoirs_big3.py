@@ -24,20 +24,17 @@ from pathlib import Path
 from datetime import datetime
 import re
 import wx
-import pandas as pd
 from colorado.river_war import RiverWar
 from chart.chart import Chart
-from datetime import date
-import api.df_utils as df_utils
 from graphs.chart_frame import ChartFrame, NotebookFrame
-from chart.line_chart import LineChart
+from chart.line_chart import LineChart, TimeSeries
 import colorado.lb as lb
 import colorado.ub as ub
 from reservoirs.reservoir import Reservoir
 from reservoirs.lake_mead import LakeMead
 from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
-from typing import List,Tuple, Union
+from typing import List,Tuple
 
 from pdf_reader.pdf_reader import download_usbr_24mo_reports
 # from source.crbfc import request_esplist, request_forecast
@@ -52,7 +49,7 @@ GIF_LOOP_ENABLED = False
 
 class ReservoirsBig3(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
-        self.name = 'Reservoirs Big 3'
+        self.name = '24 Month Revealed'
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv', '')
         reports_latest = []
         if len(reports):
@@ -199,15 +196,15 @@ class ReservoirsBig3(ChartFrame):
                     # reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
                     # df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
                     legend_studies = ReservoirsBig3.add_report_series(reservoir, time_series, 'End Of Month Storage', "#a0a0ff",
-                                                     subtract=reservoir.power_head_min_af, is_storage=True)
+                                                     subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
                 elif reservoir.name == 'Lake Mead':
                     # if do_adjustment:
                     #     reservoir.df_daily[lb.MEAD_MOST] = reservoir.df_daily[lb.MEAD_MOST] - powell_df['Cut Powell Release']
                     # time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0', 'solid'))
                     time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_950, 'darkred'))
                     legend_variables.append((lb.MEAD_ABOVE_950, 'darkred'))
-                    ReservoirsBig3.add_report_series(reservoir, time_series, 'End Of Month Storage', "#ffa0a0",
-                                                     subtract=reservoir.power_head_min_af, is_storage=True)
+                    ReservoirsBig3.add_report_series(reservoir, time_series, 'End Of Month Storage', 'red',
+                                                     subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
                 elif reservoir.name == 'Flaming Gorge':
                     # fg_df = reservoir.df_daily
                     # if do_adjustment:
@@ -217,7 +214,7 @@ class ReservoirsBig3(ChartFrame):
                     time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
                     legend_variables.append(( ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
                     ReservoirsBig3.add_report_series(reservoir, time_series, 'Live Storage', "#50a050",
-                                                     subtract=reservoir.power_head_min_af, is_storage=True)
+                                                     subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
 
         '''
         esp: Dict[str, str] = request_esplist()
@@ -229,7 +226,7 @@ class ReservoirsBig3(ChartFrame):
         today = datetime.today().date()
         self.line_chart = LineChart(
             time_series,
-            title=f'Colorado River {self.name} Storage {self.report_name} - {Chart.month_to_short_name(today.month)} ' \
+            title=f'Colorado River {self.name} {self.report_name} - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
             show_x_labels = False,
@@ -345,6 +342,7 @@ class ReservoirsBig3(ChartFrame):
             time_series: list,
             column_name: str,
             color: str,
+            linewidth: float = 2,
             convert_af_to_cfs: bool = True,
             subtract_col: str | None = None,
             subtract: float = 0.0,
@@ -395,7 +393,15 @@ class ReservoirsBig3(ChartFrame):
                 reservoir.df_daily[name] = reservoir.df_daily[name] - subtract
 
             legend_studies.append((report_name, line_style))
-            time_series.insert(0, (reservoir.df_daily, name, color, line_style, False))
+            ts = TimeSeries(
+                df=reservoir.df_daily,
+                col=name,
+                color=color,
+                linestyle=line_style,
+                do_stack=False,
+                linewidth=linewidth
+            )
+            time_series.insert(0, ts)
         return legend_studies
 
 def previous_month_path(path: Path) -> Path:
@@ -440,8 +446,8 @@ if __name__ == "__main__":
     river_war = RiverWar()
     notebook_frame = NotebookFrame([], river_war)
 
-    years = [2026]
-    download_usbr_24mo_reports(years=years)
+    # years = [2026]
+    # download_usbr_24mo_reports(years=years)
 
     ReservoirsBig3( notebook_frame=notebook_frame)
 

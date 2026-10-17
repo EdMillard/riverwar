@@ -99,12 +99,20 @@ class Chart:
         if not self.data_series:
             return
 
-        # Get data range
+        # Get data range — supports both old tuples and TimeSeries objects
         all_values = []
         for item in self.data_series:
-            # Take only the first three elements (df, col, color); ignore any extra flags
-            df, col, *_ = item
-            if col in df.columns:
+            # Handle TimeSeries objects (new style)
+            if hasattr(item, 'df') and hasattr(item, 'col'):
+                df = item.df
+                col = item.col
+            # Handle old-style tuples
+            elif isinstance(item, (tuple, list)) and len(item) >= 2:
+                df, col = item[0], item[1]
+            else:
+                continue
+
+            if df is not None and col in df.columns:
                 vals = pd.to_numeric(df[col], errors='coerce').dropna()
                 if not vals.empty:
                     all_values.extend(vals)
