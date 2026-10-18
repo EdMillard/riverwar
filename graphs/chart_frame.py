@@ -427,7 +427,6 @@ class ChartFrame(wx.Panel):
         self.do_manual_chart_layout()
         self.Refresh()
 
-
     @staticmethod
     def annotate_level(ax, y, feet, color, draw_text=True, left_of_axis=True, draw_line=True):
         """Draw an optional level line and label on the right y-axis.

@@ -87,7 +87,7 @@ class MultiBarChart(Chart):
                  y_divisor: float | None = None,
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
     ):
-
+        self.year_to_idx = None
         super().__init__([], start_date, current_date, end_date, y_label=y_label, y_units=y_units, y_divisor=y_divisor, percentage=percentage)
 
         # Normalize groups to BarGroup (backward compatible with old tuples)
@@ -250,7 +250,7 @@ class MultiBarChart(Chart):
             return
 
         x = np.arange(len(years))
-        year_to_idx = {year: idx for idx, year in enumerate(years)}
+        self.year_to_idx = {year: idx for idx, year in enumerate(years)}
 
         n_groups = len(self.groups)
         group_width = 0.78 / n_groups if n_groups > 0 else 0.6
@@ -259,7 +259,7 @@ class MultiBarChart(Chart):
         max_height = 0.0
 
         # Underlay lines
-        self._plot_lines(ax, self.underlay_lines, year_to_idx, zorder=1, linewidth=2.8, alpha=0.85)
+        self._plot_lines(ax, self.underlay_lines, self.year_to_idx, zorder=1, linewidth=2.8, alpha=0.85)
 
         # Bars
         for g_idx, (_, yearly_data) in enumerate(group_data):
@@ -293,7 +293,7 @@ class MultiBarChart(Chart):
                                 ha='center', va='bottom', fontsize=8.5, fontweight='bold', zorder=6)
 
         # Overlay Lines
-        self._plot_lines(ax, self.overlay_lines, year_to_idx, zorder=12, linewidth=3.2, alpha=0.95)
+        self._plot_lines(ax, self.overlay_lines, self.year_to_idx, zorder=12, linewidth=3.2, alpha=0.95)
 
         # Y limits
         ax.set_ylim(self.y_min if self.y_min is not None else 0.0,
@@ -305,13 +305,13 @@ class MultiBarChart(Chart):
 
         if self.x_min is not None:
             if self.x_min >= self.start_year - 1:
-                x_left = year_to_idx.get(int(self.x_min), x[0]) - 0.6
+                x_left = self.year_to_idx.get(int(self.x_min), x[0]) - 0.6
             else:
                 x_left = float(self.x_min)
 
         if self.x_max is not None:
             if self.x_max >= self.start_year - 1:
-                x_right = year_to_idx.get(int(self.x_max), x[-1]) + 1.2
+                x_right = self.year_to_idx.get(int(self.x_max), x[-1]) + 1.2
             else:
                 x_right = float(self.x_max)
 
@@ -490,3 +490,131 @@ class MultiBarChart(Chart):
                         yearly[year] = []
                     yearly[year].append((val, col.replace('_', ' '), color))
         return yearly
+
+    def annotate_value(self, ax, year, value, color,
+                       position='above_top',          # 'above_top', 'below_top', 'above_bottom', 'below_bottom'
+                       draw_line=True, draw_text=True,
+                       text=None, fontsize=9):
+        """
+        Annotate a single year/value on the top or bottom x-axis.
+        year: calendar year (will be mapped to the chart’s x-index)
+        value: y-coordinate of the marker (data units)
+        """
+        if not hasattr(self, 'year_to_idx') or year not in self.year_to_idx:
+            return
+
+        x = self.year_to_idx[year]
+        label = text if text is not None else str(value)
+
+        # Vertical line (optional)
+        if draw_line:
+            ax.axvline(x, color=color, linestyle='--', linewidth=1.2,
+                       alpha=0.8, zorder=3)
+
+        if not draw_text:
+            return
+
+        # Position relative to the x-axis
+        trans = ax.get_xaxis_transform()   # x in data, y in axes fraction
+        if position == 'above_top':
+            y_frac, va = 1.02, 'bottom'
+        elif position == 'below_top':
+            y_frac, va = 0.98, 'top'
+        elif position == 'above_bottom':
+            y_frac, va = 0.02, 'bottom'
+        elif position == 'below_bottom':
+            y_frac, va = -0.04, 'top'      # may collide with tick labels
+        else:
+            y_frac, va = 1.02, 'bottom'
+
+        ax.text(x, y_frac, label,
+                transform=trans,
+                ha='center', va=va,
+                fontsize=fontsize, color=color, fontweight='bold',
+                clip_on=False,
+                bbox=dict(boxstyle="round,pad=0.25",
+                          facecolor="white", alpha=0.95,
+                          edgecolor=color, linewidth=0.8),
+                zorder=10)
+
+    def annotate_range(self, ax, start_year, end_year, label,
+                       line_color, text_color=None,
+                       position='above_top',
+                       linewidth=1.4, cap_length=0.8,  # was 0.6 → longer caps
+                       fontsize=9):
+        """
+        Draw a dashed horizontal bracket between two years with end caps
+        and a centered label.
+        line_color  – color of the dashed line and end caps
+        text_color  – color of the label (defaults to line_color)
+        """
+        if not hasattr(self, 'year_to_idx'):
+            return
+        if start_year not in self.year_to_idx or end_year not in self.year_to_idx:
+            return
+
+        if text_color is None:
+            text_color = line_color
+
+        x1 = self.year_to_idx[start_year]
+        x2 = self.year_to_idx[end_year]
+        if x1 > x2:
+            x1, x2 = x2, x1
+
+        # ~2 px upward shift (approx for 145 dpi / ~6–9" figure)
+        pixel_up = 0.0025
+
+        if position == 'above_top':
+            y_text = 1.03 + pixel_up
+            va = 'bottom'
+            line_shift = 0.007
+        elif position == 'below_top':
+            y_text = 0.97 + pixel_up  # moved up ~2 px
+            va = 'top'
+            line_shift = -0.012
+        elif position == 'above_bottom':
+            y_text = 0.03 + pixel_up
+            va = 'bottom'
+            line_shift = 0.007
+        elif position == 'below_bottom':
+            y_text = -0.05 + pixel_up
+            va = 'top'
+            line_shift = -0.012
+        else:
+            y_text = 1.03 + pixel_up
+            va = 'bottom'
+            line_shift = 0.007
+
+        y_line = y_text + line_shift
+
+        trans = ax.get_xaxis_transform()
+
+        # Dashed line
+        ax.plot([x1, x2], [y_line, y_line],
+                transform=trans,
+                color=line_color, linestyle='--', linewidth=linewidth,
+                solid_capstyle='butt', clip_on=False, zorder=4)
+
+        # Longer end caps (~2 px longer)
+        cap = cap_length * 0.01
+        ax.plot([x1, x1], [y_line - cap, y_line + cap],
+                transform=trans, color=line_color, linewidth=linewidth,
+                clip_on=False, zorder=4)
+        ax.plot([x2, x2], [y_line - cap, y_line + cap],
+                transform=trans, color=line_color, linewidth=linewidth,
+                clip_on=False, zorder=4)
+
+        # Center label (borderless white bubble to mask the line)
+        mid = (x1 + x2) / 2
+        ax.text(mid, y_text, label,
+                transform=trans,
+                ha='center', va=va,
+                fontsize=fontsize, color=text_color, fontweight='bold',
+                clip_on=False,
+                bbox=dict(
+                    boxstyle="round,pad=0.25",
+                    facecolor="white",
+                    alpha=1.0,
+                    edgecolor="none",
+                ),
+                zorder=10)

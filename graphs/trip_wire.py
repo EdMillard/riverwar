@@ -36,7 +36,7 @@ from api import df_utils
 
 class TripWire(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
-        self.name = 'Trip Wire'
+        self.name = 'Bad Hydrology'
         self.report_name, reports_latest = ChartFrame.get_latest_reports()
 
         self.start_year = 1991
@@ -50,7 +50,7 @@ class TripWire(ChartFrame):
         self.toolbar_status = None
         self.supply_demand_chart:Optional[MultiBarChart] = None
         self.lees_ferry_chart:Optional[MultiBarChart] = None
-        self.multi_bar_chart:Optional[MultiBarChart] = None
+        self.storage_chart:Optional[MultiBarChart] = None
         super().__init__(notebook_frame, page_name=self.name)
         self.right_axis_annotations()
 
@@ -59,6 +59,15 @@ class TripWire(ChartFrame):
         ChartFrame.annotate_level(ax, 9.0, '9.0',
                                   lb.MX_COLOR, draw_text=True, draw_line=True,
                                   left_of_axis=False)
+        self.supply_demand_chart.annotate_range(
+            ax,
+            start_year=1999,
+            end_year=2004,
+            label="Lower Basin Overuse",
+            line_color="black",
+            text_color="maroon",
+            position="below_top",
+        )
 
         ax = self.lees_ferry_chart.ax
         ChartFrame.annotate_level(ax, 7.5, '7.5',
@@ -67,6 +76,80 @@ class TripWire(ChartFrame):
         ChartFrame.annotate_level(ax, 8.25, '8.25',
                                       'red', draw_text=True, draw_line=True,
                                       left_of_axis=False)
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2017,
+            end_year=2026,
+            label="10 Year Average",
+            line_color="black",
+            text_color="royalblue",
+            position="below_top",
+        )
+
+        ax = self.storage_chart.ax
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=1999,
+            end_year=2004,
+            label="The Fall\n-24 MAF",
+            line_color="black",
+            text_color="red",
+            position="below_top",
+        )
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2004,
+            end_year=2011,
+            label="Recover\n+7",
+            line_color="black",
+            text_color="green",
+            position="below_top",
+        )
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2011,
+            end_year=2014,
+            label="Drought",
+            line_color="black",
+            text_color="red",
+            position="below_top",
+        )
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2014,
+            end_year=2019,
+            label="Sweet Spot Gaming",
+            line_color="black",
+            text_color="darkgoldenrod",
+            position="below_top",
+        )
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2019,
+            end_year=2022,
+            label="Drought",
+            line_color="black",
+            text_color="red",
+            position="below_top",
+        )
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2022,
+            end_year=2024,
+            label="Recover",
+            line_color="black",
+            text_color="green",
+            position="below_top",
+        )
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2024,
+            end_year=2026,
+            label="Drought",
+            line_color="black",
+            text_color="red",
+            position="below_top",
+        )
 
     def load_charts(self):
         river_war = self.notebook_frame.river_war
@@ -163,7 +246,7 @@ class TripWire(ChartFrame):
             label="Mead",series=[BarSeries(df=df_mead, col=all_b.STORAGE, color="maroon")]
         )
 
-        self.multi_bar_chart = MultiBarChart(
+        self.storage_chart = MultiBarChart(
             percentage=0.33,
             groups=[mead_bar, powell_bar],
             start_year=graph_start_year,
@@ -172,7 +255,7 @@ class TripWire(ChartFrame):
             y_min=3,
             show_x_labels=False
         )
-        self.charts.append(self.multi_bar_chart)
+        self.charts.append(self.storage_chart)
 
 if __name__ == "__main__":
     app = wx.App(False)
