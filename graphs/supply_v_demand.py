@@ -23,7 +23,7 @@ from datetime import datetime
 import wx
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
-from chart.multi_bar_chart import MultiBarChart
+from chart.multi_bar_chart import MultiBarChart, BarGroup, BarSeries
 from colorado.river_war import RiverWar
 import colorado.lb as lb
 import colorado.ub as ub
@@ -292,23 +292,21 @@ class SupplyVDemand(ChartFrame):
         lake_mead = LakeMead(upstream=[lake_powell])
         df_mead = lake_mead.load_data_annual(start_year=self.start_year)
 
-        bar_groups = [
-            ('Mead', [
-                (df_mead, all_b.STORAGE, 'maroon'),
-            ]),
-            ('Powell', [
-                (df_powell, all_b.STORAGE, 'royalblue'),
-            ]),
-        ]
+        mead_bar = BarGroup(
+            label="Mead",series=[BarSeries(df=df_mead, col=all_b.STORAGE, color="maroon", label="Mead")]
+        )
+        powell_bar = BarGroup(
+            label="Powell", series=[BarSeries(df=df_powell, col=all_b.STORAGE, color="royalblue", label="Powell")]
+        )
         today = datetime.today().date()
         self.multi_bar_chart = MultiBarChart(
             percentage=0.10,
-            groups=bar_groups,
+            groups=[mead_bar, powell_bar],
             title="",
             start_year=self.start_year,
             end_year=today.year,
             y_max=26,
-            y_min=4,
+            y_min=3,
             show_x_labels=True
         )
         self.charts.append(self.multi_bar_chart)

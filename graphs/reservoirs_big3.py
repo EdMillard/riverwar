@@ -50,12 +50,8 @@ GIF_LOOP_ENABLED = False
 class ReservoirsBig3(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         self.name = '24 Month Revealed'
-        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv', '')
-        reports_latest = []
-        if len(reports):
-           self.report_name,  reports_latest = ChartFrame.paths_matching_month_year_root(reports[-1], reports)
-        else:
-            self.report_name = ''
+        self.report_name, reports_latest = ChartFrame.get_latest_reports()
+
         flaming_gorge = FlamingGorge()
         lake_powell = LakePowell(upstream=[flaming_gorge])
         lake_mead = LakeMead(upstream=[lake_powell])
@@ -71,51 +67,6 @@ class ReservoirsBig3(ChartFrame):
         super().__init__(notebook_frame, reservoir_lists=[reservoirs], reports=reports_latest, page_name=self.name)
         self.right_axis_annotations()
 
-    @staticmethod
-    def annotate_level(ax, y, feet, color, draw_text=True, left_of_axis=True, draw_line=True):
-        """Draw an optional level line and label on the right y-axis.
-
-        y is the plotted coordinate (for example acre_feet - min_capacity).
-        feet is the elevation shown in the label.
-        left_of_axis=True:  right-justified text just to the left of the right y-axis
-        left_of_axis=False: left-justified text just to the right of the right y-axis
-        """
-        if draw_line:
-            ax.axhline(
-                y=y,
-                color=color,
-                linestyle='--',
-                linewidth=1.5,
-                alpha=0.85,
-                zorder=3,
-            )
-
-        if not draw_text:
-            return
-
-        if left_of_axis:
-            x, ha = 0.995, 'right'
-        else:
-            x, ha = 1.005, 'left'
-
-        ax.text(
-            x, y,
-            str(feet),
-            transform=ax.get_yaxis_transform(),
-            va='center',
-            ha=ha,
-            fontsize=10,
-            color=color,
-            fontweight='bold',
-            clip_on=False,
-            bbox=dict(
-                boxstyle="round,pad=0.3",
-                facecolor="white",
-                alpha=1,
-                edgecolor=color,
-            ),
-        )
-
     def right_axis_annotations(self):
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
@@ -129,7 +80,7 @@ class ReservoirsBig3(ChartFrame):
                                 if isinstance(item, (list, tuple)) and len(item) >= 3:
                                     if item[0] == 'Safe Power Head':
                                         min_capacity = item[2]
-                                        ReservoirsBig3.annotate_level(ax, 0.0, str(round(item[1])),
+                                        ChartFrame.annotate_level(ax, 0.0, str(round(item[1])),
                                                                       'royalblue', draw_text=True, draw_line=True,
                                                                       left_of_axis=True)
 
@@ -137,7 +88,7 @@ class ReservoirsBig3(ChartFrame):
                             elevation_3510_af = getattr(reservoir, 'power_head_target_af', 0)
                             if elevation_3510_af:
                                 ax = self.line_chart.ax
-                                ReservoirsBig3.annotate_level(ax, elevation_3510_af-min_capacity, elevation_3510_ft,
+                                ChartFrame.annotate_level(ax, elevation_3510_af-min_capacity, elevation_3510_ft,
                                                               'royalblue', draw_text=True, left_of_axis=True)
 
                 elif  reservoir.name == 'Lake Mead':
@@ -148,12 +99,12 @@ class ReservoirsBig3(ChartFrame):
 
                         mead_consult_feet = getattr(reservoir, 'mead_consult_feet', 0)
                         mead_consult_af = getattr(reservoir, 'mead_consult_af', 0)
-                        ReservoirsBig3.annotate_level(ax, mead_consult_af - min_capacity, mead_consult_feet,
+                        ChartFrame.annotate_level(ax, mead_consult_af - min_capacity, mead_consult_feet,
                                                       'darkred', draw_text=True, left_of_axis=False)
 
                         mead_high_head_feet = getattr(reservoir, 'power_high_head_target_feet', 0)
                         mead_high_head_af = getattr(reservoir, 'power_high_head_target_af', 0)
-                        ReservoirsBig3.annotate_level(ax, mead_high_head_af - min_capacity, mead_high_head_feet,
+                        ChartFrame.annotate_level(ax, mead_high_head_af - min_capacity, mead_high_head_feet,
                                                       'darkred', draw_text=True, left_of_axis=False)
 
                         crit_points = getattr(reservoir, 'critical_elevations_feet', [])
@@ -161,12 +112,12 @@ class ReservoirsBig3(ChartFrame):
                             for item in crit_points:
                                 if isinstance(item, (list, tuple)) and len(item) >= 3:
                                     if item[0] == 'Safe Power Head':
-                                        ReservoirsBig3.annotate_level(ax, 0.0, f"{item[1]}'",'darkred',
+                                        ChartFrame.annotate_level(ax, 0.0, f"{item[1]}'",'darkred',
                                                                       draw_text=True, draw_line=False, left_of_axis=False)
                                     else:
                                         cap_maf = (item[2] - min_capacity)
                                         elevation_ft = item[1]
-                                        ReservoirsBig3.annotate_level(ax, cap_maf, elevation_ft,
+                                        ChartFrame.annotate_level(ax, cap_maf, elevation_ft,
                                                                       'darkred', draw_text=True, left_of_axis=False)
 
     def load_charts(self):

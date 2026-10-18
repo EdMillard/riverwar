@@ -427,6 +427,62 @@ class ChartFrame(wx.Panel):
         self.do_manual_chart_layout()
         self.Refresh()
 
+
+    @staticmethod
+    def annotate_level(ax, y, feet, color, draw_text=True, left_of_axis=True, draw_line=True):
+        """Draw an optional level line and label on the right y-axis.
+
+        y is the plotted coordinate (for example acre_feet - min_capacity).
+        feet is the elevation shown in the label.
+        left_of_axis=True:  right-justified text just to the left of the right y-axis
+        left_of_axis=False: left-justified text just to the right of the right y-axis
+        """
+        if draw_line:
+            ax.axhline(
+                y=y,
+                color=color,
+                linestyle='--',
+                linewidth=1.5,
+                alpha=0.85,
+                zorder=3,
+            )
+
+        if not draw_text:
+            return
+
+        if left_of_axis:
+            x, ha = 0.995, 'right'
+        else:
+            x, ha = 1.005, 'left'
+
+        ax.text(
+            x, y,
+            str(feet),
+            transform=ax.get_yaxis_transform(),
+            va='center',
+            ha=ha,
+            fontsize=10,
+            color=color,
+            fontweight='bold',
+            clip_on=False,
+            bbox=dict(
+                boxstyle="round,pad=0.3",
+                facecolor="white",
+                alpha=1,
+                edgecolor=color,
+            ),
+        )
+
+    @staticmethod
+    def get_latest_reports()-> Tuple[str, List[Path]]:
+        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv', '')
+        reports_latest = []
+        if len(reports):
+           report_name,  reports_latest = ChartFrame.paths_matching_month_year_root(reports[-1], reports)
+        else:
+            report_name = ''
+        return report_name, reports_latest
+
     def _init_toolbar(self, report_paths: List[Path]) -> wx.Panel:
         top_toolbar = wx.Panel(self, style=wx.BORDER_NONE)
         top_toolbar.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_FRAMEBK))

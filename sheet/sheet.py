@@ -540,8 +540,8 @@ def usgs_annuals(df, gage_id, start_year, end_year, title='', parameter_cd='0006
         try:
             daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=title, parameterCd=parameter_cd,
                                         statCd=stat_cd)
-            daily_discharge_af = convert_cfs_to_af_per_day(daily_cfs)
-            annual_af = daily_to_water_year(daily_discharge_af, water_year_month=month)
+            annual_af = daily_to_water_year(daily_cfs, water_year_month=month)
+
             # result = (annual_af[0]['dt'], annual_af[0]['val'])
             # annuals.append(result)
             if len(annual_af) == 1:

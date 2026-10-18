@@ -124,6 +124,7 @@ https://www.mwdh2o.com/management/general-manager/?query=Report
 
 '''
 # from colorado.graph_inflow_outflow import InflowOutflowChart
+from pathlib import Path
 from graphs.graph_reservoirs import ReservoirChart
 import wx
 from colorado.river_war import RiverWar
@@ -203,10 +204,8 @@ class ReservoirsReality(ChartFrame):
         current_size = notebook_frame.GetSize()
         current_size.x = 2048
         notebook_frame.SetSize(current_size)
-        reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv', '')
-        reports_latest = []
-        if len(reports):
-            reports_latest = ChartFrame.paths_matching_month_year_root(reports[-1], reports)
+
+        self.report_name, reports_latest = ChartFrame.get_latest_reports()
 
         # Initial Units
         flaming_gorge = FlamingGorge()
@@ -214,7 +213,6 @@ class ReservoirsReality(ChartFrame):
         blue_mesa = BlueMesa()
         morrow_point = MorrowPoint()
         crystal = Crystal()
-        lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
         lake_powell = LakePowell(upstream=[flaming_gorge, blue_mesa, navajo])
 
         # USBR Lower Basin
@@ -318,8 +316,12 @@ class ReservoirsReality(ChartFrame):
         else:
             reservoir_lists = [self.reservoirs]
 
-        super().__init__(notebook_frame, reservoir_lists=reservoir_lists, reports=reports_latest, page_name=self.name)
-
+        super().__init__(
+            notebook_frame,
+            reservoir_lists=reservoir_lists,
+            reports=reports_latest,
+            page_name=self.name
+        )
     def load_charts(self):
         start = self.start_nav.current_date
         # current = self.current_nav.current_date

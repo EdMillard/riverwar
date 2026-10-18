@@ -1,37 +1,70 @@
-"""
-Copyright (c) 2025 Ed Millard
+# Copyright (c) 2025 Ed Millard
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute copies of the Software, and
+# to permit persons to whom the Software is furnished to do so, subject to the
+# following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute copies of the Software, and
-to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
+from matplotlib.patches import Rectangle
+from matplotlib.ticker import MultipleLocator
 import pandas as pd
 import numpy as np
 from datetime import date
 from typing import List, Optional, Tuple, Dict, Any, Literal
-from chart.chart import Chart
+from dataclasses import dataclass, field
 from collections import defaultdict
+from chart.chart import Chart
+
+
+@dataclass
+class BarSeries:
+    """One stacked series inside a BarGroup."""
+    df: pd.DataFrame
+    col: str
+    color: str
+    color_overrides: Optional[List[Tuple[float, str]]] = None   # (value, color)
+    label: Optional[str] = None                                 # optional display override
+
+
+@dataclass
+class BarGroup:
+    """A labeled group of stacked bar series."""
+    label: str
+    series: List[BarSeries] = field(default_factory=list)
+
+    @classmethod
+    def from_tuples(cls, label: str, series_list: List[Tuple]) -> "BarGroup":
+        series = []
+        for item in series_list:
+            if len(item) == 3:
+                df, col, color = item
+                series.append(BarSeries(df=df, col=col, color=color))
+            elif len(item) == 4:
+                df, col, color, overrides = item
+                series.append(BarSeries(df=df, col=col, color=color, color_overrides=overrides))
+            else:
+                raise ValueError(f"Unexpected series tuple length: {len(item)}")
+        return cls(label=label, series=series)
 
 
 class MultiBarChart(Chart):
     def __init__(self,
-                 groups: List[Tuple[str, List[Tuple[pd.DataFrame, str, str]]]],
+                 groups: List[Tuple[str, List[Tuple]] | BarGroup],
                  underlay_lines: List[Tuple[pd.DataFrame, str, str] |
                                    Tuple[pd.DataFrame, str, str, Dict[str, Any]]] | None = None,
                  overlay_lines: List[Tuple[pd.DataFrame, str, str] |
@@ -49,7 +82,7 @@ class MultiBarChart(Chart):
                  end_date: date | None = None,
                  show_totals: bool = False,
                  show_x_labels: bool = True,
-                 y_label: str = "",                    # kept for future flexibility
+                 y_label: str = "",
                  y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
                  y_divisor: float | None = None,
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
@@ -57,7 +90,17 @@ class MultiBarChart(Chart):
 
         super().__init__([], start_date, current_date, end_date, y_label=y_label, y_units=y_units, y_divisor=y_divisor, percentage=percentage)
 
-        self.groups = groups
+        # Normalize groups to BarGroup (backward compatible with old tuples)
+        self.groups: List[BarGroup] = []
+        for item in groups:
+            if isinstance(item, BarGroup):
+                self.groups.append(item)
+            elif isinstance(item, (tuple, list)) and len(item) == 2:
+                label, series_list = item
+                self.groups.append(BarGroup.from_tuples(label, series_list))
+            else:
+                raise TypeError(f"groups items must be BarGroup or (label, series_list) tuple, got {type(item)}")
+
         self.underlay_lines = underlay_lines or []
         self.overlay_lines = overlay_lines or []
         self.show_totals = show_totals
@@ -87,10 +130,7 @@ class MultiBarChart(Chart):
         self.ax = None
         self.fig = None
 
-        self.original_groups = [
-            (label, [(df.copy(), col, color) for df, col, color in series_list])
-            for label, series_list in groups
-        ]
+        self.original_groups = self.groups
 
     def setup_year_xaxis(self, ax, years: List[int], max_ticks: int = 25, fontsize: int = 10):
         """Standalone reusable X-axis setup for year-based charts."""
@@ -105,7 +145,7 @@ class MultiBarChart(Chart):
             tick_labels = [f"{y % 100:02d}" for y in years[::step]]
             fontsize = max(8, fontsize - 1)
         elif n_years > max_ticks:
-            step = 2
+            step = 1
             tick_positions = np.arange(0, n_years, step)
             tick_labels = [f"{y % 100:02d}" for y in years[::step]]
             fontsize = max(9, fontsize - 0.5)
@@ -122,7 +162,7 @@ class MultiBarChart(Chart):
 
     def setup_yaxis(self, ax):
         """Smart Y-axis with good label visibility on small values.
-        Adapted for MultiBarChart group structure."""
+        Works with BarGroup structure; operates on scaled values."""
         ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')
         formatter = ticker.FuncFormatter(self.scaled_formatter)
         ax.yaxis.set_major_formatter(formatter)
@@ -132,13 +172,12 @@ class MultiBarChart(Chart):
 
         # Collect all scaled values from the stacked bar groups
         all_values = []
-        for group_label, series_list in self.groups:
-            for df, col, color in series_list:
-                if df is None or col not in df.columns:
+        for group in self.groups:
+            for s in group.series:
+                if s.df is None or s.col not in s.df.columns:
                     continue
-                vals = pd.to_numeric(df[col], errors='coerce').dropna()
+                vals = pd.to_numeric(s.df[s.col], errors='coerce').dropna()
                 if not vals.empty:
-                    # Scale here so tick logic matches the plotted heights
                     all_values.extend(vals / self.y_divisor)
 
         if not all_values:
@@ -148,16 +187,19 @@ class MultiBarChart(Chart):
         data_max = max(all_values)
         data_range = data_max - data_min if data_max > data_min else 1.0
 
-        # Tick strategy (same thresholds, now operating on scaled data)
+        # Tick strategy (operating on scaled data)
         if data_range <= 1.0:
             major_step = 0.1
             minor_step = 0.05
         elif data_range <= 5.0:
             major_step = 0.5
             minor_step = 0.1
-        elif data_range <= 20.0:
+        elif data_range <= 12.0:
             major_step = 1.0
-            minor_step = 0.25
+            minor_step = 0.5
+        elif data_range <= 25.0:
+            major_step = 2.0
+            minor_step = 1
         elif data_range <= 50.0:
             major_step = 5.0
             minor_step = 1.0
@@ -168,11 +210,9 @@ class MultiBarChart(Chart):
             major_step = round(data_range / 8 / 10) * 10 or 100
             minor_step = major_step / 5
 
-        from matplotlib.ticker import MultipleLocator
         ax.yaxis.set_major_locator(MultipleLocator(major_step))
         ax.yaxis.set_minor_locator(MultipleLocator(minor_step))
 
-        # Formatter override for small ranges (more readable than the default scaled_formatter)
         if data_range <= 5.0:
             ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
         elif data_range <= 20.0:
@@ -185,8 +225,6 @@ class MultiBarChart(Chart):
         ax.grid(True, which='major', axis='y', linestyle='-', linewidth=1.2, color='black', alpha=0.7)
         ax.grid(True, which='minor', axis='y', linestyle='--', linewidth=0.6, color='gray', alpha=0.5)
 
-        # Only force zero baseline when the data is non-negative
-        # (and the caller hasn't already set an explicit y_min)
         if data_min >= 0 and self.y_min is None:
             ax.set_ylim(ymin=0)
 
@@ -200,9 +238,9 @@ class MultiBarChart(Chart):
         group_data = []
         all_years = set()
 
-        for group_label, series_list in self.groups:
-            yearly = MultiBarChart._get_yearly_stacked_data(series_list)
-            group_data.append((group_label, yearly))
+        for group in self.groups:
+            yearly = MultiBarChart._get_yearly_stacked_data(group.series)
+            group_data.append((group.label, yearly))
             for year in yearly:
                 all_years.add(year)
 
@@ -232,10 +270,18 @@ class MultiBarChart(Chart):
                 if self.x_max is not None and year > self.x_max:
                     continue
                 bottom = 0.0
-                for val, label, color in yearly_data.get(year, []):
+                for val, label, color, overrides in yearly_data.get(year, []):
+                    # Per-bar color override by value match
+                    bar_color = color
+                    if overrides:
+                        for ov_val, ov_color in overrides:
+                            if abs(val - ov_val) < 1e-6:
+                                bar_color = ov_color
+                                break
+
                     height = val / self.y_divisor
                     ax.bar(bar_positions[i], height, width=group_width - spacing,
-                           bottom=bottom, color=color, edgecolor='white',
+                           bottom=bottom, color=bar_color, edgecolor='white',
                            linewidth=0.8, label=label, zorder=5)
                     bottom += height
                     max_height = max(max_height, bottom)
@@ -274,47 +320,42 @@ class MultiBarChart(Chart):
         # X-axis labels
         self.setup_year_xaxis(ax, years, max_ticks=20, fontsize=10)
 
-        # === Reliable Legend with Group Names (auto location) ===
-        from matplotlib.patches import Rectangle
-
+        # Legend with group names
         unique_legend = {}
 
-        for group_label, series_list in self.groups:
-            for df, col, color in series_list:
-                clean_label = col.replace('_', ' ')
-                display_label = f"{group_label} {clean_label}"
+        for group in self.groups:
+            for s in group.series:
+                clean_label = s.label or s.col.replace('_', ' ')
+                display_label = f"{group.label} {clean_label}"
 
                 proxy = Rectangle((0, 0), 1, 1,
-                                  fc=color,
+                                  fc=s.color,
                                   ec='white',
                                   linewidth=0.8)
 
                 if display_label not in unique_legend:
                     unique_legend[display_label] = proxy
 
-        # Auto location - matplotlib will pick best spot (often upper right)
         if unique_legend:
             ax.legend(unique_legend.values(), unique_legend.keys(),
-                      loc='best',  # ← changed to 'best'
+                      loc='best',
                       fontsize=9,
                       frameon=True,
-                      ncol=1)  # ncol=1 or 2 depending on your preference
+                      ncol=1)
 
-        # === Y-AXIS (now using shared function) ===
+        # Y-axis
         self.setup_yaxis(ax)
 
         ax.set_title(f"{self.title or ''}", fontsize=13.5, fontweight='bold', pad=12)
 
         ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
         ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
-        ax.grid(axis='y', linestyle='-', alpha=0.7, zorder=0)
+        # Grid is fully controlled inside setup_yaxis (no override here)
 
         for ann in self.annotations:
             self.add_total_annotations(ann)
 
-    # ... rest of the class unchanged (_plot_lines, create_figure, add_total_annotations, etc.)
     def _plot_lines(self, ax, line_list, year_to_idx, zorder=10, linewidth=3.0, alpha=0.95):
-        # (unchanged - omitted for brevity, copy from your previous version)
         if not line_list:
             return
 
@@ -374,11 +415,11 @@ class MultiBarChart(Chart):
 
         self.create_bar_chart(self.ax)
 
-        # === Smart top margin based on title ===
+        # Smart top margin based on title
         top_margin = 0.88 if self.title and self.title.strip() else 1
         bottom_margin = 0.15 if self.show_x_labels else 0.05
 
-        fig.tight_layout(pad=1.0)   # smaller pad
+        fig.tight_layout(pad=1.0)
         fig.subplots_adjust(left=0.09, right=0.96, bottom=bottom_margin, top=top_margin)
 
         self.fig = fig
@@ -388,12 +429,9 @@ class MultiBarChart(Chart):
         if self.y_divisor <= 1:
             return f'{x:,.0f}'
         else:
-            # return f'{x / self.y_divisor:,.2f}'
             return f'{x:,.2f}'
 
-    # add_total_annotations and static methods remain unchanged
     def add_total_annotations(self, annotations, divisor: float = 1_000_000):
-        # (unchanged)
         x = annotations[0]
         y = annotations[1]
         annotations_list = annotations[2]
@@ -416,27 +454,26 @@ class MultiBarChart(Chart):
         )
 
     @staticmethod
-    def _get_yearly_stacked_data(series: List[Tuple[pd.DataFrame, str, str]]) -> dict:
-        # (unchanged - copy from your original)
+    def _get_yearly_stacked_data(series: List[BarSeries]) -> dict:
         yearly = {}
-        for df, col, color in series:
-            if df.empty or 'Year' not in df.columns or col not in df.columns:
+        for s in series:
+            if s.df.empty or 'Year' not in s.df.columns or s.col not in s.df.columns:
                 continue
-            df = df.copy()
+            df = s.df.copy()
             df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
             df = df.dropna(subset=['Year'])
+            display_label = s.label or s.col.replace('_', ' ')
             for _, row in df.iterrows():
                 year = int(row['Year'])
-                val = pd.to_numeric(row[col], errors='coerce')
+                val = pd.to_numeric(row[s.col], errors='coerce')
                 if pd.notna(val) and val > 0:
-                    if year not in yearly:
-                        yearly[year] = []
-                    yearly[year].append((val, col.replace('_', ' '), color))
+                    yearly.setdefault(year, []).append(
+                        (val, display_label, s.color, s.color_overrides)
+                    )
         return yearly
 
     @staticmethod
     def _get_yearly_line_data(series: List[Tuple[pd.DataFrame, str, str]]) -> dict:
-        # (unchanged)
         yearly = {}
         for df, col, color in series:
             if df.empty or 'Year' not in df.columns or col not in df.columns:
