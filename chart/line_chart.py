@@ -273,15 +273,6 @@ class LineChart(Chart):
         self.data_series = new_series
 
     # ==================== SETTERS ====================
-    def set_start_date(self, start_date: date | None):
-        self.start_date = start_date
-
-    def set_end_date(self, end_date: date | None):
-        self.end_date = end_date
-
-    def set_current_date(self, current_date: date | None):
-        self.current_date = current_date
-
     def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
         if width_inch is not None:
             self.width_inch = width_inch

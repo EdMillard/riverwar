@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from datetime import datetime
+from datetime import date
 import wx
 import colorado.ub as ub
 from sheet import sheet
@@ -36,7 +36,9 @@ from api import df_utils
 class TripWire(ChartFrame):
     def __init__(self, notebook_frame: NotebookFrame):
         self.name = 'Trip Wire'
-        self.start_year = 1999
+        self.report_name, reports_latest = ChartFrame.get_latest_reports()
+
+        self.start_year = 1991
         self.end_year = 2026
         self.current_year = self.start_year
         self.timer = None
@@ -97,13 +99,15 @@ class TripWire(ChartFrame):
             label = "Hoover", series = [BarSeries(df=df_mead, col=all_b.RELEASE, color="maroon", label="")]
         )
 
-        today = datetime.today().date()
+        graph_start_year = 1999
+        today = date.today()
+        graph_end_year = today.year
         self.supply_demand_chart = MultiBarChart(
             title=f'Colorado River {self.name}',
             percentage=0.33,
             groups=[hoover_release_bar, powell_inflow_bar],
-            start_year=self.start_year,
-            end_year=today.year,
+            start_year=graph_start_year,
+            end_year=graph_end_year,
             y_max=16,
             y_min=0,
             show_x_labels=False
@@ -111,23 +115,40 @@ class TripWire(ChartFrame):
         self.charts.append(self.supply_demand_chart)
 
         # ============= LEES FERRY ==============
+        overlay_10_year = [
+            (
+                df_powell,
+                "Lees Ferry 10 yr avg",
+                "goldenrod",
+                {
+                    "label": "Lees Ferry 10 yr avg",
+                    "linewidth": 2.5,
+                    "linestyle": "-",
+                    "marker": "", # "o"
+                    # "markersize": 5,
+                    # "markerfacecolor": 'black',
+                    # "markeredgecolor": 'red',
+                }
+            ),
+        ]
         lees_ferry_bar = BarGroup(
             label="", series=[BarSeries(df=df_powell, col=ub.LEES_FERRY_USGS, color="royalblue")]
         )
-
-        today = datetime.today().date()
         self.lees_ferry_chart = MultiBarChart(
             percentage=0.33,
             groups=[lees_ferry_bar],
-            start_year=self.start_year,
-            end_year=today.year,
+            overlay_lines=overlay_10_year,
+            start_year=graph_start_year,
+            end_year=graph_end_year,
             y_max=13,
             y_min=4,
             show_x_labels=True
         )
         self.charts.append(self.lees_ferry_chart)
+        # graph_end_date = date(2028, 12, 31)
+        # self.lees_ferry_chart.set_start_date(graph_end_date)
 
-        # ============= RESERVOIR STORRAGE ==============
+        # ============= RESERVOIR STORAGE ==============
 
         powell_bar = BarGroup(
             label="Powell", series=[BarSeries(df=df_powell, col=all_b.STORAGE, color="royalblue")]
@@ -136,12 +157,11 @@ class TripWire(ChartFrame):
             label="Mead",series=[BarSeries(df=df_mead, col=all_b.STORAGE, color="maroon")]
         )
 
-        today = datetime.today().date()
         self.multi_bar_chart = MultiBarChart(
             percentage=0.33,
             groups=[mead_bar, powell_bar],
-            start_year=self.start_year,
-            end_year=today.year,
+            start_year=graph_start_year,
+            end_year=graph_end_year,
             y_max=26,
             y_min=3,
             show_x_labels=False

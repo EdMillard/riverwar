@@ -90,6 +90,15 @@ class Chart:
         else:
             return f'{x / self.y_divisor:,.2f}'
 
+    def set_start_date(self, start_date: date | None):
+        self.start_date = start_date
+
+    def set_end_date(self, end_date: date | None):
+        self.end_date = end_date
+
+    def set_current_date(self, current_date: date | None):
+        self.current_date = current_date
+
     def setup_yaxis(self, ax):
         """Smart Y-axis with good label visibility on small values."""
         ax.set_ylabel(self.y_units, fontsize=11.5, fontweight='bold')

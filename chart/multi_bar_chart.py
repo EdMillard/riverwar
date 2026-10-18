@@ -398,6 +398,7 @@ class MultiBarChart(Chart):
                     linestyle=opts.get('linestyle', opts.get('ls', '-')),
                     marker=marker,
                     markersize=opts.get('markersize', 7),
+                    markerfacecolor=opts.get('markerfacecolor', data['color']),
                     markeredgecolor=opts.get('markeredgecolor', 'white'),
                     markeredgewidth=opts.get('markeredgewidth', 1.5),
                     label=label,
