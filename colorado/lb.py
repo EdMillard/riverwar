@@ -73,7 +73,7 @@ PHX_COLOR   = '#ff9966'
 PINAL_COLOR = '#ffbb77'
 TUCSON_COLOR = '#ffdd99'
 
-MX_COLOR = '#40a040'
+MX_COLOR = 'darkgreen'     # '#40a040'
 
 MEAD = 'Mead'
 MEAD_MOST = 'Mead Most'

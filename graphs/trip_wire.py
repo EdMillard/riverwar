@@ -101,7 +101,7 @@ class TripWire(ChartFrame):
         hoover_release_bar = BarGroup(
             label = "Hoover", series = [
                 BarSeries(df=df_mead, col="Mexico", color=lb.MX_COLOR, label="Mexico"),
-                BarSeries(df=df_mead, col="Lower Basin", color="maroon", label="Lower Basin")
+                BarSeries(df=df_mead, col="Lower Basin", color="maroon", label="Lower Basin"),
             ]
         )
 

@@ -281,7 +281,7 @@ class MultiBarChart(Chart):
 
                     height = val / self.y_divisor
                     ax.bar(bar_positions[i], height, width=group_width - spacing,
-                           bottom=bottom, color=bar_color, edgecolor='white',
+                           bottom=bottom, color=bar_color, edgecolor='none',
                            linewidth=0.8, label=label, zorder=5)
                     bottom += height
                     max_height = max(max_height, bottom)
