@@ -27,6 +27,7 @@ from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.multi_bar_chart import MultiBarChart, BarGroup, BarSeries
 from colorado.river_war import RiverWar
 import colorado.allb as all_b
+import colorado.lb as lb
 from reservoirs.lake_mead import LakeMead
 from reservoirs.lake_powell import LakePowell
 from typing import Optional
@@ -56,17 +57,15 @@ class TripWire(ChartFrame):
     def right_axis_annotations(self):
         ax = self.supply_demand_chart.ax
         ChartFrame.annotate_level(ax, 9.0, '9.0',
-                                      'red', draw_text=True, draw_line=True,
-                                      left_of_axis=False)
+                                  lb.MX_COLOR, draw_text=True, draw_line=True,
+                                  left_of_axis=False)
+
         ax = self.lees_ferry_chart.ax
         ChartFrame.annotate_level(ax, 7.5, '7.5',
                                       'dodgerblue', draw_text=True, draw_line=True,
                                       left_of_axis=False)
         ChartFrame.annotate_level(ax, 8.25, '8.25',
                                       'red', draw_text=True, draw_line=True,
-                                      left_of_axis=False)
-        ChartFrame.annotate_level(ax, 7.5, '7.5',
-                                      'dodgerblue', draw_text=True, draw_line=True,
                                       left_of_axis=False)
 
     def load_charts(self):
@@ -77,7 +76,7 @@ class TripWire(ChartFrame):
         powell.load_data_annual(self.start_year, self.end_year)
 
         # ====================== NATURAL FLOW ======================
-        natural_flow_data = river_war.dataset.get('Natural Flow')
+        #natural_flow_data = river_war.dataset.get('Natural Flow')
 
         lake_powell = LakePowell(upstream=[])
         lake_mead = LakeMead(upstream=[lake_powell])
@@ -90,13 +89,20 @@ class TripWire(ChartFrame):
 
         # sheet.usgs_annuals(df_powell, '09380000', self.start_year, self.end_year, title=ub.LEES_FERRY_USGS, divisor=1)
         df_mead = lake_mead.load_data_annual(start_year=self.start_year)
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
+        sheet.merge_annual_column(df_mead, df_mx, lb.MEXICO, divisor=1)
 
-        # ============= POWELL INFLOW ==============
+        df_utils.subtract_column(df_mead, all_b.RELEASE, lb.MEXICO, result_column="Lower Basin")
+
+        # ============= POWELL INFLOW, MEAD RELEASE  ==============
         powell_inflow_bar = BarGroup(
             label="Powell Inflow", series=[BarSeries(df=df_powell, col=all_b.INFLOW, color="royalblue", label="Regulated")]
         )
         hoover_release_bar = BarGroup(
-            label = "Hoover", series = [BarSeries(df=df_mead, col=all_b.RELEASE, color="maroon", label="")]
+            label = "Hoover", series = [
+                BarSeries(df=df_mead, col="Mexico", color=lb.MX_COLOR, label="Mexico"),
+                BarSeries(df=df_mead, col="Lower Basin", color="maroon", label="Lower Basin")
+            ]
         )
 
         graph_start_year = 1999

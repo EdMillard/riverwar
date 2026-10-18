@@ -219,9 +219,6 @@ class SupplyVDemand(ChartFrame):
         NV_COLOR_2 = 'lightgray'
         NV_COLOR_1 = 'gray'
 
-        # MX
-        MX_COLOR = '#40a040'
-
         AZ_COLOR_1 = '#ef5926'
         AZ_COLOR_2 = '#ef6936'
         AZ_COLOR_3 = '#ef7946'
@@ -237,7 +234,7 @@ class SupplyVDemand(ChartFrame):
             (df_ub_cul, ub.CU_WY, WY_COLOR),
             (df_ub_cul, ub.CU_NM, NM_COLOR),
             (df_ub_cul, ub.UB_RESERVOIR_EVAP, 'gold'),
-            (df_lb_cul, lb.MEXICO, MX_COLOR),
+            (df_lb_cul, lb.MEXICO, lb.MX_COLOR),
             (df_lb_cul, lb.LB_RESERVOIR_EVAP, 'gold'),
             (df_lb_cul, lb.SALTON_INFLOW, 'gold', {'hatch': '-','hatch_color': '#c040c0'}),
             (df_lb_cul, lb.IMPERIAL_VALLEY_CU, CA_COLOR_1, {'label': 'Imperial Valley'}),
