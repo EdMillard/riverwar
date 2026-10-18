@@ -540,13 +540,14 @@ class MultiBarChart(Chart):
     def annotate_range(self, ax, start_year, end_year, label,
                        line_color, text_color=None,
                        position='above_top',
-                       linewidth=1.4, cap_length=0.8,  # was 0.6 → longer caps
-                       fontsize=9):
+                       linewidth=1.4, cap_length=0.8,
+                       fontsize=9,
+                       show_delta=False):
         """
         Draw a dashed horizontal bracket between two years with end caps
         and a centered label.
-        line_color  – color of the dashed line and end caps
-        text_color  – color of the label (defaults to line_color)
+        show_delta=True: append the change in total bar height
+                     (end_year total − start_year total) on a new line.
         """
         if not hasattr(self, 'year_to_idx'):
             return
@@ -560,16 +561,33 @@ class MultiBarChart(Chart):
         x2 = self.year_to_idx[end_year]
         if x1 > x2:
             x1, x2 = x2, x1
+            start_year, end_year = end_year, start_year
 
-        # ~2 px upward shift (approx for 145 dpi / ~6–9" figure)
+        # --- optional delta calculation ---
+        full_label = label
+        if show_delta:
+            def total_for_year(year):
+                total = 0.0
+                for group in self.groups:
+                    yearly = MultiBarChart._get_yearly_stacked_data(group.series)
+                    for val, _, _, _ in yearly.get(year, []):
+                        total += val / self.y_divisor
+                return total
+
+            start_val = total_for_year(start_year)
+            end_val = total_for_year(end_year)
+            delta = end_val - start_val
+            sign = "+" if delta >= 0 else ""
+            full_label = f"{label}\n{sign}{delta:.1f}"
+
+        # Text y-position
         pixel_up = 0.0025
-
         if position == 'above_top':
             y_text = 1.03 + pixel_up
             va = 'bottom'
             line_shift = 0.007
         elif position == 'below_top':
-            y_text = 0.97 + pixel_up  # moved up ~2 px
+            y_text = 0.97 + pixel_up
             va = 'top'
             line_shift = -0.012
         elif position == 'above_bottom':
@@ -586,7 +604,6 @@ class MultiBarChart(Chart):
             line_shift = 0.007
 
         y_line = y_text + line_shift
-
         trans = ax.get_xaxis_transform()
 
         # Dashed line
@@ -595,7 +612,7 @@ class MultiBarChart(Chart):
                 color=line_color, linestyle='--', linewidth=linewidth,
                 solid_capstyle='butt', clip_on=False, zorder=4)
 
-        # Longer end caps (~2 px longer)
+        # End caps
         cap = cap_length * 0.01
         ax.plot([x1, x1], [y_line - cap, y_line + cap],
                 transform=trans, color=line_color, linewidth=linewidth,
@@ -604,9 +621,9 @@ class MultiBarChart(Chart):
                 transform=trans, color=line_color, linewidth=linewidth,
                 clip_on=False, zorder=4)
 
-        # Center label (borderless white bubble to mask the line)
+        # Center label (borderless white bubble)
         mid = (x1 + x2) / 2
-        ax.text(mid, y_text, label,
+        ax.text(mid, y_text, full_label,
                 transform=trans,
                 ha='center', va=va,
                 fontsize=fontsize, color=text_color, fontweight='bold',
