@@ -1489,8 +1489,8 @@ class Reservoir:
         # Skip the units row (row 1, 0-based)
         df = pd.read_csv(
             file_path,
-            header=0,  # Use the first row as headers
-            skiprows=[1],  # Skip the second row (units row)
+            header=0,
+            skiprows=[1],
             quoting=csv.QUOTE_NONE,
             escapechar='\\',
             dtype=str,
@@ -1507,7 +1507,6 @@ class Reservoir:
             if unit.lower().startswith('1000') or '1000' in unit:
                 multiplier_columns[clean_name] = 1000.0
 
-        # Apply new column names
         df.columns = new_columns
 
         # Apply scaling where needed
@@ -1516,15 +1515,12 @@ class Reservoir:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
                 df[col] = df[col] * factor
                 df[col] = df[col].round(0).astype('Int64')
-                # print(f"Scaled column '{col}' by {factor:,}")
 
         # Fix first column name if needed
         if str(df.columns[0]).strip() in ['nan', '', 'Unnamed: 0']:
             df.columns = ['Date'] + list(df.columns[1:])
 
         date_col = df.columns[0]
-
-        # print("Loaded columns:", list(df.columns))  # ← debug
 
         # Split WY vs Monthly
         wy_mask = df[date_col].astype(str).str.contains(r'WY', case=False, na=False, regex=True)
@@ -1535,12 +1531,28 @@ class Reservoir:
         # Extra safety: remove any remaining WY rows from monthly
         df_monthly = df_monthly[~df_monthly[date_col].astype(str).str.contains(r'WY', case=False, na=False, regex=True)]
 
-        # Convert to numeric
+        # Convert numeric columns
         for dframe in [df_monthly, df_wy]:
             if dframe.empty:
                 continue
             for col in dframe.columns[1:]:
                 dframe[col] = pd.to_numeric(dframe[col], errors='coerce')
+
+        # --- Convert WY Date column → Year ---
+        if not df_wy.empty:
+            # Extract the year number (strips "WY " or "WY")
+            df_wy['Year'] = (
+                df_wy[date_col]
+                .astype(str)
+                .str.replace(r'(?i)^WY\s*', '', regex=True)
+                .str.strip()
+            )
+            df_wy['Year'] = pd.to_numeric(df_wy['Year'], errors='coerce').astype('Int64')
+
+            # Drop the original Date column and put Year first
+            df_wy = df_wy.drop(columns=[date_col])
+            cols = ['Year'] + [c for c in df_wy.columns if c != 'Year']
+            df_wy = df_wy[cols]
 
         if parent_name:
             if not df_monthly.empty:

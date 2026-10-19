@@ -191,32 +191,35 @@ class MultiBarChart(Chart):
         if data_range <= 1.0:
             major_step = 0.1
             minor_step = 0.05
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
         elif data_range <= 5.0:
             major_step = 0.5
             minor_step = 0.1
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
         elif data_range <= 12.0:
             major_step = 1.0
             minor_step = 0.5
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f'))
         elif data_range <= 25.0:
             major_step = 2.0
             minor_step = 1
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f'))
         elif data_range <= 50.0:
             major_step = 5.0
             minor_step = 1.0
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f'))
         elif data_range <= 200.0:
             major_step = 10.0
             minor_step = 2.0
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f'))
         else:
             major_step = round(data_range / 8 / 10) * 10 or 100
             minor_step = major_step / 5
+            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
+
 
         ax.yaxis.set_major_locator(MultipleLocator(major_step))
         ax.yaxis.set_minor_locator(MultipleLocator(minor_step))
-
-        if data_range <= 5.0:
-            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.2f'))
-        elif data_range <= 20.0:
-            ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
 
         # Tick appearance
         ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
@@ -546,13 +549,18 @@ class MultiBarChart(Chart):
         """
         Draw a dashed horizontal bracket between two years with end caps
         and a centered label.
-        show_delta=True: append the change in total bar height
-                     (end_year total − start_year total) on a new line.
+        Returns a dict of artists so the caller can move/update them later:
+            {
+                'line': Line2D,      # the dashed horizontal line
+                'cap1': Line2D,      # left end cap
+                'cap2': Line2D,      # right end cap
+                'text': Text,        # the label
+            }
         """
-        if not hasattr(self, 'year_to_idx'):
-            return
+        if not hasattr(self, 'year_to_idx') or self.year_to_idx is None:
+            return None
         if start_year not in self.year_to_idx or end_year not in self.year_to_idx:
-            return
+            return None
 
         if text_color is None:
             text_color = line_color
@@ -563,7 +571,7 @@ class MultiBarChart(Chart):
             x1, x2 = x2, x1
             start_year, end_year = end_year, start_year
 
-        # --- optional delta calculation ---
+        # --- optional delta ---
         full_label = label
         if show_delta:
             def total_for_year(year):
@@ -607,31 +615,122 @@ class MultiBarChart(Chart):
         trans = ax.get_xaxis_transform()
 
         # Dashed line
-        ax.plot([x1, x2], [y_line, y_line],
-                transform=trans,
-                color=line_color, linestyle='--', linewidth=linewidth,
-                solid_capstyle='butt', clip_on=False, zorder=4)
+        line, = ax.plot([x1, x2], [y_line, y_line],
+                        transform=trans,
+                        color=line_color, linestyle='--', linewidth=linewidth,
+                        solid_capstyle='butt', clip_on=False, zorder=4)
 
         # End caps
         cap = cap_length * 0.01
-        ax.plot([x1, x1], [y_line - cap, y_line + cap],
-                transform=trans, color=line_color, linewidth=linewidth,
-                clip_on=False, zorder=4)
-        ax.plot([x2, x2], [y_line - cap, y_line + cap],
-                transform=trans, color=line_color, linewidth=linewidth,
-                clip_on=False, zorder=4)
+        cap1, = ax.plot([x1, x1], [y_line - cap, y_line + cap],
+                        transform=trans, color=line_color, linewidth=linewidth,
+                        clip_on=False, zorder=4)
+        cap2, = ax.plot([x2, x2], [y_line - cap, y_line + cap],
+                        transform=trans, color=line_color, linewidth=linewidth,
+                        clip_on=False, zorder=4)
 
-        # Center label (borderless white bubble)
+        # Center label
         mid = (x1 + x2) / 2
-        ax.text(mid, y_text, full_label,
-                transform=trans,
-                ha='center', va=va,
-                fontsize=fontsize, color=text_color, fontweight='bold',
-                clip_on=False,
-                bbox=dict(
-                    boxstyle="round,pad=0.25",
-                    facecolor="white",
-                    alpha=1.0,
-                    edgecolor="none",
-                ),
-                zorder=10)
+        text = ax.text(mid, y_text, full_label,
+                       transform=trans,
+                       ha='center', va=va,
+                       fontsize=fontsize, color=text_color, fontweight='bold',
+                       clip_on=False,
+                       bbox=dict(
+                           boxstyle="round,pad=0.25",
+                           facecolor="white",
+                           alpha=1.0,
+                           edgecolor="none",
+                       ),
+                       zorder=10)
+
+        return {
+            'line': line,
+            'cap1': cap1,
+            'cap2': cap2,
+            'text': text,
+            'y_line': y_line,
+            'y_text': y_text,
+            'cap': cap,
+        }
+    def enable_draggable_vline(self, callback=None, color='#d62728', linewidth=1.6,
+                               alpha=0.9, initial_year=None):
+        """
+        Click-and-drag vertical line that snaps to the nearest year index.
+        callback(year) receives the year the line is currently snapped to.
+        """
+        if self.ax is None or self.year_to_idx is None:
+            raise RuntimeError("Call create_figure() before enabling the draggable line")
+
+        # Starting position (integer index)
+        if initial_year is not None and initial_year in self.year_to_idx:
+            x0 = float(self.year_to_idx[initial_year])
+        else:
+            xlim = self.ax.get_xlim()
+            x0 = float(round((xlim[0] + xlim[1]) / 2))
+
+        self._vline = self.ax.axvline(
+            x0, color=color, linewidth=linewidth, alpha=alpha,
+            linestyle='-', zorder=20, picker=8
+        )
+        self._vline_callback = callback
+        self._vline_dragging = False
+
+        canvas = self.fig.canvas
+        self._vline_cids = [
+            canvas.mpl_connect('button_press_event', self._on_vline_press),
+            canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
+            canvas.mpl_connect('button_release_event', self._on_vline_release),
+        ]
+        self.fig.canvas.draw_idle()
+
+    def _index_to_year(self, idx):
+        """Reverse lookup: integer index → year."""
+        for year, i in self.year_to_idx.items():
+            if i == idx:
+                return year
+        return None
+
+    def _report(self, idx):
+        if self._vline_callback is None:
+            return
+        year = self._index_to_year(idx)
+        if year is not None:
+            self._vline_callback(year)
+
+    def _on_vline_press(self, event):
+        if event.inaxes != self.ax or event.button != 1:
+            return
+        contains, _ = self._vline.contains(event)
+        if contains:
+            self._vline_dragging = True
+
+    def _on_vline_motion(self, event):
+        if not self._vline_dragging or event.inaxes != self.ax or event.xdata is None:
+            return
+        # Snap the drawn line to the nearest integer index
+        idx = int(round(event.xdata))
+        self._vline.set_xdata([idx, idx])
+        self._report(idx)
+        self.fig.canvas.draw_idle()
+
+    def _on_vline_release(self, event):
+        if not self._vline_dragging:
+            return
+        self._vline_dragging = False
+        if event.xdata is not None:
+            idx = int(round(event.xdata))
+            self._vline.set_xdata([idx, idx])
+            self._report(idx)
+        self.fig.canvas.draw_idle()
+
+    def disable_draggable_vline(self):
+        """Remove the line and disconnect events."""
+        if hasattr(self, '_vline_cids'):
+            for cid in self._vline_cids:
+                self.fig.canvas.mpl_disconnect(cid)
+            self._vline_cids = []
+        if hasattr(self, '_vline') and self._vline in self.ax.lines:
+            self._vline.remove()
+        self._vline_dragging = False
+        self.fig.canvas.draw_idle()
