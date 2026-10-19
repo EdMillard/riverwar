@@ -494,51 +494,90 @@ class MultiBarChart(Chart):
                     yearly[year].append((val, col.replace('_', ' '), color))
         return yearly
 
-    def annotate_value(self, ax, year, value, color,
-                       position='above_top',          # 'above_top', 'below_top', 'above_bottom', 'below_bottom'
-                       draw_line=True, draw_text=True,
-                       text=None, fontsize=9):
+    def annotate_value(self, ax, year, label, color,
+                       position='above_top',
+                       draw_line=True,
+                       draw_outline=True,
+                       fontsize=9):
         """
-        Annotate a single year/value on the top or bottom x-axis.
-        year: calendar year (will be mapped to the chart’s x-index)
-        value: y-coordinate of the marker (data units)
+        Annotate a single year on the top or bottom x-axis.
+        draw_line=False → draw a short arrow just outside the label instead.
+        When position='below_bottom' and x-axis labels are hidden,
+        the annotation is shifted up by roughly one font size.
         """
-        if not hasattr(self, 'year_to_idx') or year not in self.year_to_idx:
-            return
+        if not hasattr(self, 'year_to_idx') or self.year_to_idx is None:
+            return None
+        if year not in self.year_to_idx:
+            return None
 
         x = self.year_to_idx[year]
-        label = text if text is not None else str(value)
+        trans = ax.get_xaxis_transform()
 
-        # Vertical line (optional)
-        if draw_line:
-            ax.axvline(x, color=color, linestyle='--', linewidth=1.2,
-                       alpha=0.8, zorder=3)
+        # Extra upward shift for below_bottom when tick labels are off
+        below_bottom_boost = 0.0
+        if position == 'below_bottom' and not self.show_x_labels:
+            below_bottom_boost = 0.035
 
-        if not draw_text:
-            return
-
-        # Position relative to the x-axis
-        trans = ax.get_xaxis_transform()   # x in data, y in axes fraction
         if position == 'above_top':
-            y_frac, va = 1.02, 'bottom'
+            y_frac, va = 1.025, 'bottom'
+            arrow_dir = 'down'
         elif position == 'below_top':
-            y_frac, va = 0.98, 'top'
+            y_frac, va = 0.975, 'top'
+            arrow_dir = 'up'
         elif position == 'above_bottom':
-            y_frac, va = 0.02, 'bottom'
+            y_frac, va = 0.025, 'bottom'
+            arrow_dir = 'down'
         elif position == 'below_bottom':
-            y_frac, va = -0.04, 'top'      # may collide with tick labels
+            y_frac, va = -0.045 + below_bottom_boost, 'top'
+            arrow_dir = 'up'
         else:
-            y_frac, va = 1.02, 'bottom'
+            y_frac, va = 1.025, 'bottom'
+            arrow_dir = 'down'
 
-        ax.text(x, y_frac, label,
-                transform=trans,
-                ha='center', va=va,
-                fontsize=fontsize, color=color, fontweight='bold',
-                clip_on=False,
-                bbox=dict(boxstyle="round,pad=0.25",
-                          facecolor="white", alpha=0.95,
-                          edgecolor=color, linewidth=0.8),
-                zorder=10)
+        # Optional vertical line
+        vline = None
+        if draw_line:
+            vline = ax.axvline(x, color=color, linestyle='--', linewidth=1.2,
+                               alpha=0.8, zorder=3)
+
+        edge = color if draw_outline else "none"
+
+        text = ax.text(x, y_frac, label,
+                       transform=trans,
+                       ha='center', va=va,
+                       fontsize=fontsize, color=color, fontweight='bold',
+                       clip_on=False,
+                       bbox=dict(boxstyle="round,pad=0.25",
+                                 facecolor="white", alpha=0.95,
+                                 edgecolor=edge, linewidth=0.8),
+                       zorder=10)
+
+        # Small arrow just outside the label
+        arrow = None
+        if not draw_line:
+            gap = 0.004
+            length = 0.008
+            nudge = 0.004  # ~2–3 px — more visible
+
+            if arrow_dir == 'down':
+                # above_top / above_bottom: push arrow down
+                start_y = y_frac - gap - nudge
+                end_y = start_y - length
+            else:
+                # below_top / below_bottom: push arrow up
+                start_y = y_frac + gap + nudge
+                end_y = start_y + length
+
+            arrow = ax.annotate(
+                '', xy=(x, end_y), xytext=(x, start_y),
+                xycoords=trans, textcoords=trans,
+                arrowprops=dict(arrowstyle='-|>', color=color,
+                                lw=1.0, mutation_scale=8),
+                annotation_clip=False,
+                zorder=12,
+            )
+
+        return {'vline': vline, 'text': text, 'arrow': arrow}
 
     def annotate_range(self, ax, start_year, end_year, label,
                        line_color, text_color=None,
