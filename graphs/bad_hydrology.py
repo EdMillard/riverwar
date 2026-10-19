@@ -171,7 +171,6 @@ class BadHydrology(ChartFrame):
         )
 
         graph_start_year = 1999
-        today = date.today()
         self.supply_demand_chart = MultiBarChart(
             title=f'Colorado River {self.name}',
             percentage=0.33,
@@ -210,8 +209,8 @@ class BadHydrology(ChartFrame):
             overlay_lines=overlay_10_year,
             start_year=graph_start_year,
             end_year=2028,
-            y_max=13,
-            y_min=4,
+            y_max=10.5,
+            y_min=5,
             show_x_labels=True
         )
         self.charts.append(self.lees_ferry_chart)
@@ -230,7 +229,7 @@ class BadHydrology(ChartFrame):
             groups=[mead_bar, powell_bar],
             start_year=graph_start_year,
             end_year=2028,
-            y_max=26,
+            y_max=25.5,
             y_min=3,
             show_x_labels=False,
         )
@@ -257,43 +256,95 @@ class BadHydrology(ChartFrame):
 
         # Supply Demand Annotations
         #
+        demand_floor = 8_250_000
+
         ax = self.supply_demand_chart.ax
-        ChartFrame.annotate_level(ax, 9.0, '9.0',
+        ChartFrame.annotate_level(ax, demand_floor/1_000_000, f'{demand_floor/1_000_000:.2f}',
+                                  'maroon', draw_text=True, draw_line=True,
+                                  left_of_axis=False)
+        ChartFrame.annotate_level(ax, 1.5, f'{1.5:.2f}',
                                   lb.MX_COLOR, draw_text=True, draw_line=True,
                                   left_of_axis=False)
 
-        overuse = BadHydrology.sum_minus_constant(self.df_mead, 1999, 2004, all_b.RELEASE, 9_000_000) / 1_000_000
+        self.supply_demand_chart.annotate_value(
+            ax,
+            year=2003,
+            label="QSA",
+            color="maroon",
+            position="above_top",
+            draw_line=False,
+            draw_outline=False
+        )
+        self.supply_demand_chart.annotate_value(
+            ax,
+            year=2007,
+            label="2007 ROD",
+            color="black",
+            position="above_top",
+            draw_line=False,
+            draw_outline=False
+        )
+
+        self.supply_demand_chart.annotate_value(
+            ax,
+            year=2026,
+            label="2026 ROD",
+            color="black",
+            position="above_top",
+            draw_line=False,
+            draw_outline=False
+        )
+
+        overuse = BadHydrology.sum_minus_constant(self.df_mead, 1999, 2004, all_b.RELEASE, demand_floor) / 1_000_000
         self.supply_demand_chart.annotate_range(
             ax,
             start_year=1999,
             end_year=2004,
-            label=f"Lower Basin Overuse\n{overuse:.2f}",
+            label=f"Lower Basin Overuse\n{-overuse:.2f}",
             line_color="black",
-            text_color="maroon",
+            text_color="red",
             position="below_top",
         )
 
-        # overuse = BadHydrology.sum_minus_constant(self.df_mead, 2006, 2019, all_b.RELEASE, 9_000_000) / 1_000_000
-        # self.supply_demand_chart.annotate_range(
-        #     ax,
-        #     start_year=2006,
-        #     end_year=2019,
-        #     label=f"Overuse\n{overuse:.2f}",
-        #     line_color="black",
-        #     text_color="maroon",
-        #     position="below_top",
-        # )
+        overuse = BadHydrology.sum_minus_constant(self.df_mead, 2005, 2005, all_b.RELEASE, demand_floor) / 1_000_000
+        self.supply_demand_chart.annotate_range(
+            ax,
+            start_year=2005,
+            end_year=2005,
+            label=f"2005\n{-overuse:.2f}",
+            line_color="black",
+            text_color="darkgreen",
+            position="below_top",
+        )
 
-        overuse = BadHydrology.sum_minus_constant(self.df_mead, 2020, 2026, all_b.RELEASE, 9_000_000) / 1_000_000
+        overuse = BadHydrology.sum_minus_constant(self.df_mead, 2006, 2019, all_b.RELEASE, demand_floor) / 1_000_000
+        self.supply_demand_chart.annotate_range(
+            ax,
+            start_year=2006,
+            end_year=2019,
+            label=f"Overuse\n{-overuse:.2f}",
+            line_color="black",
+            text_color="red",
+            position="below_top",
+        )
+
+        overuse = BadHydrology.sum_minus_constant(self.df_mead, 2020, 2026, all_b.RELEASE, demand_floor) / 1_000_000
         self.supply_demand_chart.annotate_range(
             ax,
             start_year=2020,
             end_year=2026,
-            label=f"Conservation\n{overuse:.2f}",
+            label=f"Conservation\n{-overuse:.2f}",
             line_color="black",
-            text_color="maroon",
+            text_color="darkgreen",
             position="below_top",
         )
+        legend = ax.get_legend()
+        if legend is not None:
+            # Option A – named location
+            # legend.set_loc('upper left')
+
+            # Option B – precise position (axes fraction)
+            legend.set_bbox_to_anchor((0.85, 0.88))
 
         # 10 year annotations
         #
@@ -319,6 +370,33 @@ class BadHydrology(ChartFrame):
         # Storage annotations
         #
         ax = self.storage_chart.ax
+        self.storage_chart.annotate_value(
+            ax,
+            year=2004,
+            label="Letters",
+            color="royalblue",
+            position="below_bottom",
+            draw_line=False,
+            draw_outline=False
+        )
+        self.storage_chart.annotate_value(
+            ax,
+            year=2018,
+            label="DCP",
+            color="black",
+            position="below_bottom",
+            draw_line=False,
+            draw_outline=False
+        )
+        self.storage_chart.annotate_value(
+            ax,
+            year=2024,
+            label="2024 Interim ROD",
+            color="black",
+            position="below_bottom",
+            draw_line=False,
+            draw_outline=False
+        )
         self.storage_chart.annotate_range(
             ax,
             start_year=1999,
