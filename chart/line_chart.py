@@ -450,7 +450,36 @@ class LineChart(Chart):
         else:
             ax.set_ylim(auto_min, auto_max)
 
-        if self.y_units in ('MAF', 'TAF', 'AF') and self.y_divisor:
+        ax.autoscale(enable=False, axis='y')
+
+        # ---------- CFS (typical range ~1k–20k) ----------
+        if self.y_units == 'CFS':
+            y0, y1 = ax.get_ylim()
+            span = y1 - y0
+            if span > 0:
+                # Target ~6–8 major ticks
+                raw_step = span / 6.5
+                magnitude = 10 ** math.floor(math.log10(max(raw_step, 1)))
+                step = magnitude
+                for mult in (1, 2, 2.5, 5, 10):
+                    candidate = mult * magnitude
+                    if candidate >= raw_step:
+                        step = candidate
+                        break
+
+                major = step * self.y_divisor
+                minor = (step / 5) * self.y_divisor
+
+                ax.yaxis.set_major_locator(MultipleLocator(major))
+                ax.yaxis.set_minor_locator(MultipleLocator(minor))
+                ax.tick_params(axis='y', which='minor', length=3, width=0.6)
+
+                ax.yaxis.set_major_formatter(
+                    FuncFormatter(lambda v, pos, div=self.y_divisor: f"{int(round(v / div)):,}")
+                )
+
+        # ---------- Volume units (MAF / TAF / AF) ----------
+        elif self.y_units in ('MAF', 'TAF', 'AF') and self.y_divisor:
             y0, y1 = ax.get_ylim()
             span = (y1 - y0) / self.y_divisor
             if span > 0:
