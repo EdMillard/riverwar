@@ -23,14 +23,14 @@ from reservoirs.reservoir import Reservoir
 from matplotlib.figure import Figure
 import pandas as pd
 from datetime import date
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 import numpy as np
 from chart.chart import Chart
 
 
 class PieChart(Chart):
     def __init__(self,
-                 data_series: List[Tuple[pd.DataFrame, str, str, dict | None]],
+                 data_series: List[Tuple],
                  year: int = 2024,
                  title: str = "",
                  percentage: float = 0.0,
@@ -39,13 +39,13 @@ class PieChart(Chart):
                  end_date: date | None = None,
                  reservoirs: List[Reservoir] | None = None,
                  value_divisor: float = 1_000_000,
-                 outer_annotations: List[Tuple[str, float, Tuple[pd.DataFrame, str]]] | None = None,
-                 annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None,
-                 radial_lines: List[Tuple[pd.DataFrame, str, str]] | None = None,
-                 left_bar_series: List[Tuple[pd.DataFrame, str, str]] | None = None,
+                 outer_annotations: List | None = None,
+                 annotations: List | None = None,
+                 radial_lines: List | None = None,
+                 left_bar_series: List | None = None,
                  left_bar_ymax: float | None = None,
                  left_bar_ymin: float | None = None,
-                 version:float = 0.1):
+                 version: float = 0.1):
 
         super().__init__(reservoirs or [], start_date, current_date, end_date, percentage=percentage)
 
@@ -55,17 +55,20 @@ class PieChart(Chart):
 
         for item in data_series:
             if len(item) == 3:
-                df, col, color = item
+                a, b, c = item
                 options = {}
             elif len(item) == 4:
-                df, col, color, options = item
+                a, b, c, options = item
                 options = options or {}
             else:
                 raise ValueError(f"Each item in data_series must have 3 or 4 elements. Got {len(item)}")
 
-            self.data_series.append((df, col, color, options))
-            # Store original for safety (without options)
-            self.original_data_series.append((df.copy(), col, color))
+            self.data_series.append((a, b, c, options))
+            # Store original for safety (best-effort copy when it's a DataFrame)
+            if isinstance(a, pd.DataFrame):
+                self.original_data_series.append((a.copy(), b, c))
+            else:
+                self.original_data_series.append((a, b, c))
 
         self.title = title
         self.value_divisor = value_divisor
@@ -107,7 +110,7 @@ class PieChart(Chart):
             self.ax_pie = None
             self.ax = fig.add_subplot(111)
 
-        self._create_chart()          # ← This method now exists
+        self._create_chart()
         fig.tight_layout(pad=2.8)
         self.fig = fig
         return fig
@@ -121,19 +124,59 @@ class PieChart(Chart):
         elif self.ax is not None:
             self._create_pie(self.ax)
 
+    def _extract_value(self, item) -> Optional[Tuple[float, str, str, dict]]:
+        """
+        Extract (value, display_label, color, options) from either:
+          - Direct numeric: (value, label, color) or (value, label, color, options)
+          - DataFrame year lookup: (df, col, color) or (df, col, color, options)
+        Returns None if invalid or non-positive.
+        """
+        if not item or len(item) < 3:
+            return None
+
+        # Direct numeric form
+        if isinstance(item[0], (int, float, np.number)):
+            val = float(item[0])
+            label = str(item[1])
+            color = item[2]
+            options = item[3] if len(item) >= 4 and isinstance(item[3], dict) else {}
+            if pd.notna(val) and val > 0:
+                return val, options.get('label', label), color, options
+            return None
+
+        # Classic DataFrame form
+        df = item[0]
+        col = item[1]
+        color = item[2]
+        options = item[3] if len(item) >= 4 and isinstance(item[3], dict) else {}
+
+        if not isinstance(df, pd.DataFrame) or df.empty or col not in df.columns:
+            return None
+
+        matching = df[df['Year'] == self.year]
+        if matching.empty:
+            return None
+
+        val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
+        if pd.isna(val) or val <= 0:
+            return None
+
+        display_label = options.get('label', str(col).replace('_', ' '))
+        return float(val), display_label, color, options
+
     def _create_left_bar(self, ax):
         """Tall skinny bar with legend moved down"""
         ax.clear()
         values, labels, colors = [], [], []
 
-        for df, col, color in self.left_bar_series:
-            matching = df[df['Year'] == self.year]
-            if not matching.empty:
-                val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
-                if pd.notna(val) and val > 0:
-                    values.append(val / self.value_divisor)
-                    labels.append(col.replace('_', ' '))
-                    colors.append(color)
+        for item in self.left_bar_series:
+            extracted = self._extract_value(item)
+            if extracted is None:
+                continue
+            val, display_label, color, _ = extracted
+            values.append(val / self.value_divisor)
+            labels.append(display_label)
+            colors.append(color)
 
         if not values:
             ax.text(0.5, 0.5, "No data", ha='center', va='center', fontsize=10)
@@ -200,23 +243,17 @@ class PieChart(Chart):
         hatch_colors = []
         edgecolors = []
 
-        for df, col, color, options in self.data_series:
-            if df.empty or col not in df.columns:
+        for item in self.data_series:
+            extracted = self._extract_value(item)
+            if extracted is None:
                 continue
-            matching = df[df['Year'] == self.year]
-            if not matching.empty:
-                val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
-                if pd.notna(val) and val > 0:
-                    values.append(val)
-                    display_label = options.get('label', col.replace('_', ' '))
-                    labels.append(display_label)
-
-                    colors.append(color)
-                    hatches.append(options.get('hatch', ''))
-                    hatch_colors.append(options.get('hatch_color', color))
-
-                    # Only use custom edgecolor if user explicitly passed it
-                    edgecolors.append(options.get('edgecolor'))  # None = keep default white
+            val, display_label, color, options = extracted
+            values.append(val)
+            labels.append(display_label)
+            colors.append(color)
+            hatches.append(options.get('hatch', ''))
+            hatch_colors.append(options.get('hatch_color', color))
+            edgecolors.append(options.get('edgecolor'))  # None = keep default white
 
         if not values:
             ax.text(0.5, 0.5, "No valid data for this year", ha='center', va='center', fontsize=14)
@@ -230,7 +267,6 @@ class PieChart(Chart):
                 return ''
             else:
                 return f'{absolute:,.2f}'
-                # return f'{pct:.1f}%\n{absolute:,.2f}'
 
         ax.clear()
 
@@ -243,7 +279,6 @@ class PieChart(Chart):
             pctdistance=0.75,
             labeldistance=1.02,
             textprops={'fontsize': 10},
-            # wedgeprops=dict(linewidth=1.5, edgecolor='white')
         )
 
         # Apply properties carefully
@@ -273,41 +308,44 @@ class PieChart(Chart):
         # === Dynamic Radial Lines (cumulative) ===
         if self.radial_lines:
             cumulative = 0.0
-            for df, col, color in self.radial_lines:
-                matching = df[df['Year'] == self.year]
-                if not matching.empty:
-                    val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
-                    if pd.notna(val) and val > 0:
-                        cumulative += val
-                        self.draw_radial_line(
-                            ax,
-                            value=cumulative,
-                            color=color,
-                            linestyle='-',
-                            linewidth=2.5
-                        )
+            for item in self.radial_lines:
+                extracted = self._extract_value(item)
+                if extracted is None:
+                    continue
+                val, _, color, _ = extracted
+                cumulative += val
+                self.draw_radial_line(
+                    ax,
+                    value=cumulative,
+                    color=color,
+                    linestyle='-',
+                    linewidth=2.5
+                )
+
         for ann in self.annotations:
             self.add_total_annotations(ann)
 
         if self.outer_annotations:
             radius = 1.25
-            for name, degrees, (df, col) in self.outer_annotations:
-                matching = df[df['Year'] == self.year]
-                if not matching.empty:
-                    val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
-                    if pd.notna(val) and val > 0:
-                        percentage = (val / total * 100) if total > 0 else 0
-                        formatted = f"{val / self.value_divisor:,.2f}"
-                        rad = np.deg2rad(degrees)
-                        x = radius * np.cos(rad)
-                        y = radius * np.sin(rad)
-                        ha = 'left' if -90 < (degrees % 360) < 90 else 'right'
-                        ax.text(x, y, f"{name}\n{formatted} MAF   {percentage:.1f}%",
-                                ha=ha, va='center', fontsize=9.5, fontweight='bold',
-                                bbox=dict(boxstyle="round,pad=0.45", facecolor="white", alpha=0.9))
+            for name, degrees, source in self.outer_annotations:
+                extracted = self._extract_value(source if isinstance(source, tuple) else (source,))
+                # Support both (df, col) and (value, label, color) style, or raw number
+                if isinstance(source, (int, float, np.number)):
+                    val = float(source)
+                else:
+                    extracted = self._extract_value(source)
+                    val = extracted[0] if extracted else None
 
-
-
+                if val is not None and pd.notna(val) and val > 0:
+                    percentage = (val / total * 100) if total > 0 else 0
+                    formatted = f"{val / self.value_divisor:,.2f}"
+                    rad = np.deg2rad(degrees)
+                    x = radius * np.cos(rad)
+                    y = radius * np.sin(rad)
+                    ha = 'left' if -90 < (degrees % 360) < 90 else 'right'
+                    ax.text(x, y, f"{name}\n{formatted} MAF   {percentage:.1f}%",
+                            ha=ha, va='center', fontsize=9.5, fontweight='bold',
+                            bbox=dict(boxstyle="round,pad=0.45", facecolor="white", alpha=0.9))
 
     def draw_radial_line(self, ax, value: float,
                          color: str = 'black',
@@ -317,16 +355,12 @@ class PieChart(Chart):
         """
         Draw a radial line from center to the edge of the pie at the given value.
         """
-        # Calculate total for current year
+        # Calculate total for current year / series
         total = 0.0
-        for df, col, _, _ in self.data_series:
-            if df.empty or col not in df.columns:
-                continue
-            matching = df[df['Year'] == self.year]
-            if not matching.empty:
-                val = pd.to_numeric(matching[col].iloc[0], errors='coerce')
-                if pd.notna(val):
-                    total += val
+        for item in self.data_series:
+            extracted = self._extract_value(item)
+            if extracted is not None:
+                total += extracted[0]
 
         if total <= 0:
             return
@@ -381,6 +415,8 @@ class PieChart(Chart):
         Each item in annotations_list can be:
           - (label, (df, col))                  → default black
           - (label, (df, col), color)           → custom color for that line
+          - (label, numeric_value)              → direct numeric (no year)
+          - (label, numeric_value, color)
         """
         if not annotations or len(annotations) < 3:
             return
@@ -394,38 +430,42 @@ class PieChart(Chart):
 
         # Get total value (last item) for percentage calculation
         last_item = annotations_list[-1]
-        if len(last_item) == 3:
-            _, (total_df, total_col), _ = last_item
+        if len(last_item) >= 2:
+            source = last_item[1]
+            if isinstance(source, (int, float, np.number)):
+                total_value = float(source)
+            else:
+                extracted = self._extract_value(source if isinstance(source, tuple) else (source,))
+                total_value = extracted[0] if extracted else 0.0
         else:
-            _, (total_df, total_col) = last_item
-
-        matching_total = total_df[total_df['Year'] == self.year]
-        total_value = pd.to_numeric(matching_total[total_col].iloc[0],
-                                    errors='coerce') if not matching_total.empty else 0.0
+            total_value = 0.0
 
         # Build the text lines with individual colors
         text_lines = []
         colors = []
 
         for item in annotations_list:
-            if len(item) == 3:
-                label, (df, col), color = item
-            else:
-                label, (df, col) = item
-                color = 'black'
+            if len(item) >= 2:
+                label = item[0]
+                source = item[1]
+                color = item[2] if len(item) >= 3 else 'black'
 
-            matching = df[df['Year'] == self.year]
-            value = pd.to_numeric(matching[col].iloc[0], errors='coerce') if not matching.empty else 0.0
-            maf = value / divisor
+                if isinstance(source, (int, float, np.number)):
+                    value = float(source)
+                else:
+                    extracted = self._extract_value(source if isinstance(source, tuple) else (source,))
+                    value = extracted[0] if extracted else 0.0
 
-            if total_value > 0:
-                percentage = (value / total_value) * 100
-                line = f"{maf:5.2f} MAF {percentage:5.1f}% {label}"
-            else:
-                line = f"{maf:5.2f} MAF {label}"
+                maf = value / divisor
 
-            text_lines.append(line)
-            colors.append(color)
+                if total_value > 0:
+                    percentage = (value / total_value) * 100
+                    line = f"{maf:5.2f} MAF {percentage:5.1f}% {label}"
+                else:
+                    line = f"{maf:5.2f} MAF {label}"
+
+                text_lines.append(line)
+                colors.append(color)
 
         # Draw each line separately so we can color them individually
         line_height = 0.028
@@ -444,14 +484,12 @@ class PieChart(Chart):
                 zorder=15,
             )
 
-        # Draw a single box around the whole block (no plt required)
-        # Draw a single box around the whole block (no plt required)
+        # Draw a single box around the whole block
         if text_lines:
             from matplotlib.patches import Rectangle
             box_height = len(text_lines) * line_height + 0.02
-            # Tighter box: reduced width + slightly smaller left padding
-            box_width = 0.30  # was 0.35
-            left_pad = 0.005  # was 0.01
+            box_width = 0.30
+            left_pad = 0.005
 
             self.ax.add_patch(
                 Rectangle(

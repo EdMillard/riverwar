@@ -81,3 +81,5 @@ EVAPORATION_BG = 'd0ffff'
 
 USGS_BG = 'efefd0'
 CDSS_BG = 'e0e0c0'
+
+EVAP_COLOR = '#ffd720'
