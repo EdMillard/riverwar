@@ -223,7 +223,7 @@ class BadHydrology(ChartFrame):
         )
         lees_ferry_bar = BarGroup(
             label="", series=[BarSeries(df=self.df_powell, col=ub.LEES_FERRY_USGS, color="royalblue"),
-                              BarSeries(df=self.df_powell, col=ub.PARIA_RIVER_USGS, color=lb.AZ_COLOR)]
+                              BarSeries(df=self.df_powell, col=ub.PARIA_RIVER_USGS, color=ub.PARIA_COLOR)]
         )
         self.lees_ferry_chart = MultiBarChart(
             percentage=0.33,

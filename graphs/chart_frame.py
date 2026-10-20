@@ -19,6 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pptx import Presentation
+from pptx.util import Inches
+from io import BytesIO
 from PIL import Image
 import wx
 import pandas as pd
@@ -75,12 +78,27 @@ class NotebookFrame(wx.Frame):
 
         self.sizer.Add(self.notebook, 1, wx.EXPAND | wx.ALL, border=0)
 
-        # ---------- Overlay button (upper-right of tab bar) ----------
-        self.overlay_btn = wx.Button(self.panel, label="⚙", size=wx.Size(32, 22),
-                                     style=wx.BU_EXACTFIT)
-        self.overlay_btn.SetToolTip("Charts / Actions")
-        self.overlay_btn.Bind(wx.EVT_BUTTON, self.on_overlay_button)
-        self.overlay_btn.Raise()
+        # ---------- Export recording controls (upper-right of tab bar) ----------
+        self.export_toggle = wx.ToggleButton(self.panel, label="Export", size=wx.Size(72, 22),
+                                             style=wx.BU_EXACTFIT)
+        self.export_toggle.SetToolTip("Toggle export recording on/off")
+        self.export_toggle.Bind(wx.EVT_TOGGLEBUTTON, self.on_export_toggle)
+
+        self.capture_btn = wx.Button(self.panel, label="Capture", size=wx.Size(72, 22),
+                                    style=wx.BU_EXACTFIT)
+        self.capture_btn.SetToolTip("Capture current tab into the export")
+        self.capture_btn.Bind(wx.EVT_BUTTON, self.on_capture)
+        self.capture_btn.Enable(False)
+
+        self.export_toggle.Raise()
+        self.capture_btn.Raise()
+
+        # Recording state
+        self.export_recording = False
+        self.export_pages: List[Image.Image] = []
+        self.export_pdf_path: str | None = None
+        self.export_page_w_in = 11.0
+        self.export_page_h_in = 8.5
 
         self.panel.SetSizer(self.sizer)
         self.SetMinSize(wx.Size(1100, 900))
@@ -91,7 +109,7 @@ class NotebookFrame(wx.Frame):
         wx.CallAfter(self._position_overlay_button)
 
     def _position_overlay_button(self, event=None):
-        if not getattr(self, 'overlay_btn', None):
+        if not getattr(self, 'export_toggle', None):
             if event:
                 event.Skip()
             return
@@ -102,127 +120,141 @@ class NotebookFrame(wx.Frame):
                 event.Skip()
             return
 
+        # ---- robust tab height ----
+        tab_height = 28
         try:
-            tab_height = self.notebook.GetTabRect(0).height if self.notebook.GetPageCount() > 0 else 28
+            if self.notebook.GetPageCount() > 0:
+                rect = self.notebook.GetTabRect(0)
+                if rect.height > 0:
+                    tab_height = rect.height
         except Exception:
-            tab_height = 28
+            pass  # keep default 28
 
-        btn_w, btn_h = self.overlay_btn.GetSize()
-        x = nb_size.width - btn_w - 6
-        y = max(2, (tab_height - btn_h) // 2)
+        # Position the two buttons side-by-side
+        toggle_w, toggle_h = self.export_toggle.GetSize()
+        cap_w, cap_h = self.capture_btn.GetSize()
+        gap = 8
+
+        x_cap = nb_size.width - cap_w - 6
+        x_toggle = x_cap - toggle_w - gap
+        y = max(2, (tab_height - max(toggle_h, cap_h)) // 2)
 
         nb_pos = self.notebook.GetPosition()
-        self.overlay_btn.SetPosition((nb_pos.x + x, nb_pos.y + y))
-        self.overlay_btn.Raise()
+        self.export_toggle.SetPosition((nb_pos.x + x_toggle, nb_pos.y + y))
+        self.capture_btn.SetPosition((nb_pos.x + x_cap, nb_pos.y + y))
+
+        self.export_toggle.Raise()
+        self.capture_btn.Raise()
 
         if event:
             event.Skip()
 
-    def on_overlay_button(self, event):
-        menu = wx.Menu()
-
-        # Existing callables (charts / actions)
-        for label, func in self.callables:
-            item = menu.Append(wx.ID_ANY, label)
-
-            def make_handler(f):
-                return lambda evt: f(self)
-
-            menu.Bind(wx.EVT_MENU, make_handler(func), item)
-
-        # Separator + Export All Tabs to PDF
-        if self.callables:
-            menu.AppendSeparator()
-
-        export_item = menu.Append(wx.ID_ANY, "Export to PDF")
-        menu.Bind(wx.EVT_MENU, self.export_all_tabs_to_pdf, export_item)
-
-        # Popup near the button
-        btn_pos = self.overlay_btn.GetScreenPosition()
-        self.PopupMenu(menu, self.ScreenToClient(btn_pos))
-        menu.Destroy()
-
-    def export_all_tabs_to_pdf(self, event=None):
-        """Export every notebook page as a landscape PDF page.
-        Paper size is chosen by the user (Letter or Legal)."""
-        choices = ["Letter (8.5 × 11 in)", "Legal (8.5 × 14 in)"]
-        dlg = wx.SingleChoiceDialog(
-            self,
-            "Choose paper size for landscape PDF pages:",
-            "Export All Tabs to PDF",
-            choices
-        )
-        if dlg.ShowModal() != wx.ID_OK:
-            dlg.Destroy()
+    def on_capture(self, event):
+        if not self.export_recording:
             return
-        paper = dlg.GetStringSelection()
-        dlg.Destroy()
 
-        # Page dimensions in inches (landscape)
-        if paper.startswith("Legal"):
-            page_w_in, page_h_in = 14.0, 8.5
-        else:  # Letter
-            page_w_in, page_h_in = 11.0, 8.5
+        idx = self.notebook.GetSelection()
+        if idx < 0:
+            return
 
-        # Build filename from first tab name + today’s date suffix
-        if self.notebook.GetPageCount() > 0:
-            first_tab = self.notebook.GetPageText(0)
-            safe_name = first_tab.replace(" ", "_")
-            safe_name = "".join(c if c.isalnum() or c in "_-" else "_" for c in safe_name)
+        page = self.notebook.GetPage(idx)
+        if isinstance(page, ChartFrame):
+            img = page.get_combined_snapshot()
+            if img:
+                self.export_pages.append(img)
+                wx.MessageBox(
+                    f"Captured tab: {self.notebook.GetPageText(idx)}\n"
+                    f"Total pages: {len(self.export_pages)}",
+                    "Captured",
+                    wx.OK | wx.ICON_INFORMATION
+                )
+            else:
+                wx.MessageBox("Failed to capture this tab.", "Capture",
+                              wx.OK | wx.ICON_WARNING)
         else:
-            safe_name = "Notebook"
+            wx.MessageBox("Current tab is not a chart page.", "Capture",
+                          wx.OK | wx.ICON_INFORMATION)
 
-        date_suffix = date.today().strftime("%b_%d_%Y").lower()
-        default_name = f"{safe_name}_{date_suffix}.pdf"
-
-        # Prefer a pdf/ subdirectory
-        pdf_dir = os.path.join(os.getcwd(), "pdf")
-        os.makedirs(pdf_dir, exist_ok=True)
-
-        with wx.FileDialog(self, "Save PDF As",
-                           defaultDir=pdf_dir,
-                           defaultFile=default_name,
-                           wildcard="PDF files (*.pdf)|*.pdf",
-                           style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT) as file_dlg:
-            if file_dlg.ShowModal() != wx.ID_OK:
+    def on_export_toggle(self, event):
+        if self.export_toggle.GetValue():
+            # --- Start recording ---
+            choices = ["Letter (8.5 × 11 in)", "Legal (8.5 × 14 in)"]
+            dlg = wx.SingleChoiceDialog(
+                self,
+                "Choose paper size for landscape pages:",
+                "Start Export Recording",
+                choices
+            )
+            if dlg.ShowModal() != wx.ID_OK:
+                self.export_toggle.SetValue(False)
+                dlg.Destroy()
                 return
-            pdf_path = file_dlg.GetPath()
-            if not pdf_path.lower().endswith('.pdf'):
-                pdf_path += '.pdf'
+            paper = dlg.GetStringSelection()
+            dlg.Destroy()
 
-        # Collect snapshots
-        pages: List[Image.Image] = []
-        original_selection = self.notebook.GetSelection()
+            if paper.startswith("Legal"):
+                self.export_page_w_in, self.export_page_h_in = 14.0, 8.5
+            else:
+                self.export_page_w_in, self.export_page_h_in = 11.0, 8.5
 
-        try:
-            for i in range(self.notebook.GetPageCount()):
-                self.notebook.SetSelection(i)
-                wx.Yield()  # let the page paint
-                wx.MilliSleep(150)  # small pause for layout/draw
+            # Build filename from currently selected tab + today’s date
+            idx = self.notebook.GetSelection()
+            if idx >= 0:
+                tab_name = self.notebook.GetPageText(idx)
+                safe_name = tab_name.replace(" ", "_")
+                safe_name = "".join(c if c.isalnum() or c in "_-" else "_" for c in safe_name)
+            else:
+                safe_name = "Notebook"
 
-                page = self.notebook.GetPage(i)
-                if isinstance(page, ChartFrame):
-                    img = page.get_combined_snapshot()
-                    if img:
-                        pages.append(img)
-        finally:
-            # restore original tab
-            if original_selection >= 0:
-                self.notebook.SetSelection(original_selection)
+            date_suffix = date.today().strftime("%b_%d_%Y").lower()
+            default_name = f"{safe_name}_{date_suffix}.pdf"
 
-        if not pages:
-            wx.MessageBox("No chart pages found to export.", "Export", wx.OK | wx.ICON_INFORMATION)
+            pdf_dir = os.path.join(os.getcwd(), "pdf")
+            os.makedirs(pdf_dir, exist_ok=True)
+
+            with wx.FileDialog(
+                    self,
+                    "Save export as",
+                    defaultDir=pdf_dir,
+                    defaultFile=default_name,
+                    wildcard="PDF files (*.pdf)|*.pdf",
+                    style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
+            ) as file_dlg:
+                if file_dlg.ShowModal() != wx.ID_OK:
+                    self.export_toggle.SetValue(False)
+                    return
+                path = file_dlg.GetPath()
+                if not path.lower().endswith('.pdf'):
+                    path += '.pdf'
+                self.export_pdf_path = path  # <-- exact user path
+
+            self.export_pages = []
+            self.export_recording = True
+            self.capture_btn.Enable(True)
+            self.export_toggle.SetLabel("Stop")
+        else:
+            # --- Stop & save ---
+            self._finish_export()
+
+    def _finish_export(self):
+        self.export_recording = False
+        self.capture_btn.Enable(False)
+        self.export_toggle.SetLabel("Export")
+        self.export_toggle.SetValue(False)
+
+        if not self.export_pages or not self.export_pdf_path:
+            wx.MessageBox("No pages captured or no file path.", "Export",
+                          wx.OK | wx.ICON_INFORMATION)
             return
 
-        # Build landscape pages at 200 DPI
+        # Build scaled pages
         dpi = 200
-        page_w_px = int(page_w_in * dpi)
-        page_h_px = int(page_h_in * dpi)
+        page_w_px = int(self.export_page_w_in * dpi)
+        page_h_px = int(self.export_page_h_in * dpi)
         margin_px = int(0.05 * dpi)
 
         pdf_images: List[Image.Image] = []
-        for src in pages:
-            # Scale to fit inside the printable area while preserving aspect ratio
+        for src in self.export_pages:
             max_w = page_w_px - 2 * margin_px
             max_h = page_h_px - 2 * margin_px
             scale = min(max_w / src.width, max_h / src.height)
@@ -230,24 +262,123 @@ class NotebookFrame(wx.Frame):
             new_h = max(1, int(src.height * scale))
             resized = src.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
-            # Center on a white page
             page_img = Image.new('RGB', (page_w_px, page_h_px), (255, 255, 255))
             x = (page_w_px - new_w) // 2
             y = (page_h_px - new_h) // 2
             page_img.paste(resized, (x, y))
             pdf_images.append(page_img)
 
-        # Write multi-page PDF
+        # Save PDF to the exact path chosen in the dialog
         pdf_images[0].save(
-            pdf_path,
+            self.export_pdf_path,
             "PDF",
             resolution=dpi,
             save_all=True,
             append_images=pdf_images[1:]
         )
 
-        wx.MessageBox(f"Exported {len(pdf_images)} page(s) to:\n{pdf_path}",
-                      "Export Complete", wx.OK | wx.ICON_INFORMATION)
+        # Save PowerPoint next to it
+        pptx_path = os.path.splitext(self.export_pdf_path)[0] + ".pptx"
+        prs = Presentation()
+        prs.slide_width = Inches(self.export_page_w_in)
+        prs.slide_height = Inches(self.export_page_h_in)
+        blank_layout = prs.slide_layouts[6]
+
+        for img in pdf_images:
+            slide = prs.slides.add_slide(blank_layout)
+            bio = BytesIO()
+            img.save(bio, format="PNG")
+            bio.seek(0)
+            slide.shapes.add_picture(
+                bio,
+                Inches(0), Inches(0),
+                width=Inches(self.export_page_w_in),
+                height=Inches(self.export_page_h_in)
+            )
+        prs.save(pptx_path)
+
+        wx.MessageBox(
+            f"Saved {len(pdf_images)} page(s) to:\n"
+            f"{self.export_pdf_path}\n"
+            f"{pptx_path}",
+            "Export Complete",
+            wx.OK | wx.ICON_INFORMATION
+        )
+
+        # Clean up
+        self.export_pages.clear()
+        self.export_pdf_path = None
+
+    def _finish_export(self):
+        self.export_recording = False
+        self.capture_btn.Enable(False)
+        self.export_toggle.SetLabel("Export")
+        self.export_toggle.SetValue(False)
+
+        if not self.export_pages or not self.export_pdf_path:
+            wx.MessageBox("No pages captured.", "Export", wx.OK | wx.ICON_INFORMATION)
+            return
+
+        # Build scaled pages (same logic as before)
+        dpi = 200
+        page_w_px = int(self.export_page_w_in * dpi)
+        page_h_px = int(self.export_page_h_in * dpi)
+        margin_px = int(0.05 * dpi)
+
+        pdf_images: List[Image.Image] = []
+        for src in self.export_pages:
+            max_w = page_w_px - 2 * margin_px
+            max_h = page_h_px - 2 * margin_px
+            scale = min(max_w / src.width, max_h / src.height)
+            new_w = max(1, int(src.width * scale))
+            new_h = max(1, int(src.height * scale))
+            resized = src.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
+            page_img = Image.new('RGB', (page_w_px, page_h_px), (255, 255, 255))
+            x = (page_w_px - new_w) // 2
+            y = (page_h_px - new_h) // 2
+            page_img.paste(resized, (x, y))
+            pdf_images.append(page_img)
+
+        # Save PDF
+        pdf_images[0].save(
+            self.export_pdf_path,
+            "PDF",
+            resolution=dpi,
+            save_all=True,
+            append_images=pdf_images[1:]
+        )
+
+        # Save PowerPoint
+        pptx_path = os.path.splitext(self.export_pdf_path)[0] + ".pptx"
+        prs = Presentation()
+        prs.slide_width = Inches(self.export_page_w_in)
+        prs.slide_height = Inches(self.export_page_h_in)
+        blank_layout = prs.slide_layouts[6]
+
+        for img in pdf_images:
+            slide = prs.slides.add_slide(blank_layout)
+            bio = BytesIO()
+            img.save(bio, format="PNG")
+            bio.seek(0)
+            slide.shapes.add_picture(
+                bio, Inches(0), Inches(0),
+                width=Inches(self.export_page_w_in),
+                height=Inches(self.export_page_h_in)
+            )
+        prs.save(pptx_path)
+
+        wx.MessageBox(
+            f"Saved {len(pdf_images)} page(s) to:\n"
+            f"{self.export_pdf_path}\n"
+            f"{pptx_path}",
+            "Export Complete",
+            wx.OK | wx.ICON_INFORMATION
+        )
+
+        # Clean up
+        self.export_pages.clear()
+        self.export_pdf_path = None
 
 # ==================== MAIN FRAME ====================
 class ChartFrame(wx.Panel):
@@ -649,8 +780,8 @@ class ChartFrame(wx.Panel):
     def load_charts(self):
         pass
 
-    def set_report(self, report_str: str):
-        self.report_path = report_str
+    def set_report(self, report_path: Path):
+        self.report_path = report_path
         for chart in self.charts:
             chart.update_report(Path(self.report_path).name)
 
