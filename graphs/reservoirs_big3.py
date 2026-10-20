@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
-from datetime import datetime
+import datetime
 import re
 import wx
 from colorado.river_war import RiverWar
@@ -124,10 +124,14 @@ class ReservoirsBig3(ChartFrame):
         # do_adjustment = False
         powell_df = None
         # fg_df = None
+
         # start_mod_date = date(2026, 5, 1)
         # end_powell_mod_date = date(2026, 9, 30)
         # end_fg_mod_date = date(2027, 5, 1)
-        # graph_end_date = date(2027, 5, 1)
+        today = datetime.date.today()
+        graph_start_date = datetime.date(2025, 10, 19)
+        graph_end_date = today
+
         time_series = []
         legend_variables = []
         legend_studies = []
@@ -174,7 +178,6 @@ class ReservoirsBig3(ChartFrame):
         if colorado_cisco_esp_id:
             df_colorado_cisco = request_forecast(colorado_cisco_esp_id, 2026)
         '''
-        today = datetime.today().date()
         self.line_chart = LineChart(
             time_series,
             title=f'Colorado River {self.name} {self.report_name} - {Chart.month_to_short_name(today.month)} ' \
@@ -188,6 +191,7 @@ class ReservoirsBig3(ChartFrame):
             legend_variables=legend_variables,
             legend_studies=legend_studies
         )
+        # self.line_chart.set_start_date(graph_start_date)
         # self.line_chart.set_end_date(graph_end_date)
         self.charts.append(self.line_chart)
 
@@ -209,6 +213,7 @@ class ReservoirsBig3(ChartFrame):
             y_min=0,
             y_units='CFS',
         )
+        # self.inflow_outflow_chart.set_start_date(graph_start_date)
         # self.inflow_outflow_chart.set_end_date(graph_end_date)
         # self.charts.append(self.inflow_outflow_chart)
 
@@ -239,6 +244,7 @@ class ReservoirsBig3(ChartFrame):
             legend_variables=legend_variables,
             legend_studies=legend_studies
         )
+        # line_chart.set_start_date(graph_start_date)
         # line_chart.set_end_date(graph_end_date)
         self.charts.append(line_chart)
 
@@ -284,6 +290,7 @@ class ReservoirsBig3(ChartFrame):
             legend_variables=legend_variables,
             legend_studies=legend_studies
         )
+        # self.inflow_outflow_chart.set_start_date(graph_start_date)
         # self.inflow_outflow_chart.set_end_date(graph_end_date)
         self.charts.append(self.inflow_outflow_chart)
 

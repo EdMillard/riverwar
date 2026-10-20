@@ -421,7 +421,7 @@ class MultiBarChart(Chart):
 
         # Smart top margin based on title
         top_margin = 0.88 if self.title and self.title.strip() else 1
-        bottom_margin = 0.15 if self.show_x_labels else 0.05
+        bottom_margin = 0.10 if self.show_x_labels else 0.05
 
         fig.tight_layout(pad=1.0)
         fig.subplots_adjust(left=0.09, right=0.96, bottom=bottom_margin, top=top_margin)

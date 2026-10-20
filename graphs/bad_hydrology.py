@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from datetime import date
+#from datetime import date
 import wx
 import colorado.ub as ub
 from sheet import sheet
@@ -52,6 +52,7 @@ class BadHydrology(ChartFrame):
         self.year_slider = None
         self.toolbar_status = None
         self.range_ann = None
+        self.year_prev = 0
 
         self.supply_demand_chart:Optional[MultiBarChart] = None
         self.lees_ferry_chart:Optional[MultiBarChart] = None
@@ -86,6 +87,10 @@ class BadHydrology(ChartFrame):
                            month=all_b.WY,
                            title=ub.LEES_FERRY_USGS, divisor=1)
 
+        sheet.usgs_annuals(self.df_powell,  '09382000', self.start_year, self.end_year,
+                           month=all_b.WY,
+                           title=ub.PARIA_RIVER_USGS, divisor=1)
+
         self.df_mead = self.lake_mead.load_data_annual(start_year=self.start_year)
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
         sheet.merge_annual_column(self.df_mead, df_mx, lb.MEXICO, divisor=1)
@@ -99,6 +104,7 @@ class BadHydrology(ChartFrame):
                 col_map = {
                     "Lees Ferry Gage": ub.LEES_FERRY_USGS,
                     "Regulated Inflow": all_b.INFLOW,
+                    "Total Release": all_b.RELEASE,
                 }
                 BadHydrology.copy_columns_for_years(
                     src=df_wy,
@@ -157,7 +163,6 @@ class BadHydrology(ChartFrame):
                             col_map=col_map,
                         )
         df_utils.subtract_column(self.df_mead, all_b.RELEASE, lb.MEXICO, result_column="Lower Basin")
-        df_utils.moving_average(self.df_powell, ub.LEES_FERRY_USGS, 'Lees Ferry 10 yr avg')
 
         # ============= POWELL INFLOW, MEAD RELEASE  ==============
         powell_inflow_bar = BarGroup(
@@ -183,7 +188,20 @@ class BadHydrology(ChartFrame):
         )
         self.charts.append(self.supply_demand_chart)
 
-        # ============= LEES FERRY ==============
+        df_utils.add_column_sum(
+            self.df_powell,
+            cols_to_sum=[ub.LEES_FERRY_USGS, ub.PARIA_RIVER_USGS],
+            sum_column_name='Lee Ferry Compact'
+        )
+        df_utils.subtract_column(
+            self.df_powell,
+            col1='Lee Ferry Compact',  # column to subtract from
+            col2=all_b.RELEASE,  # column to subtract
+            result_column='Lees Ferry Overage'
+        )
+        sum_overage = BadHydrology.sum_lees_ferry_overage(self.df_powell,  2000, 2015, 'Lees Ferry Overage')
+        df_utils.moving_average(self.df_powell, 'Lee Ferry Compact', 'Lees Ferry 10 yr avg')
+
         overlay_10_year = [
             (
                 self.df_powell,
@@ -200,12 +218,16 @@ class BadHydrology(ChartFrame):
                 }
             ),
         ]
+        glen_canypn__bar = BarGroup(
+            label="Glen Canyon", series=[BarSeries(df=self.df_powell, col=all_b.RELEASE, color="dodgerblue", label="")]
+        )
         lees_ferry_bar = BarGroup(
-            label="", series=[BarSeries(df=self.df_powell, col=ub.LEES_FERRY_USGS, color="royalblue")]
+            label="", series=[BarSeries(df=self.df_powell, col=ub.LEES_FERRY_USGS, color="royalblue"),
+                              BarSeries(df=self.df_powell, col=ub.PARIA_RIVER_USGS, color=lb.AZ_COLOR)]
         )
         self.lees_ferry_chart = MultiBarChart(
             percentage=0.33,
-            groups=[lees_ferry_bar],
+            groups=[glen_canypn__bar, lees_ferry_bar],
             overlay_lines=overlay_10_year,
             start_year=graph_start_year,
             end_year=2028,
@@ -236,6 +258,22 @@ class BadHydrology(ChartFrame):
         self.charts.append(self.storage_chart)
 
     @staticmethod
+    def sum_lees_ferry_overage(df, start_year, end_year, column_name="Lees Ferry Overage"):
+        """
+        Sum the values in the 'Lees Ferry Overage' column for years
+        between start_year and end_year (inclusive).
+
+        Expects a 'Year' column.
+        """
+        if 'Year' not in df.columns:
+            raise KeyError("DataFrame must contain a 'Year' column")
+        if column_name not in df.columns:
+            raise KeyError(f"Column '{column_name}' not found")
+
+        mask = (df['Year'] >= start_year) & (df['Year'] <= end_year)
+        return df.loc[mask, column_name].sum()
+
+    @staticmethod
     def value_for_year(df, year, col, year_col='Year'):
         """Return the value in `col` for the given `year`, or None if not found."""
         if df.empty or year_col not in df.columns or col not in df.columns:
@@ -244,6 +282,22 @@ class BadHydrology(ChartFrame):
         if match.empty:
             return None
         return pd.to_numeric(match.iloc[0], errors='coerce')
+
+    @staticmethod
+    def compute_iiic(df, column_name, start_year, end_year, constant=7.5):
+        """
+        Sum the values in `column_name` for rows whose Year is between
+        start_year and end_year (inclusive), divide by 2, then add `constant`.
+
+        Expects a 'Year' column.
+        """
+        if 'Year' not in df.columns:
+            raise KeyError("DataFrame must contain a 'Year' column")
+
+        mask = (df['Year'] >= start_year) & (df['Year'] <= end_year)
+        total = df.loc[mask, column_name].sum()
+
+        return (((total / 10.0)  / 1_000_000) / 2.0) + constant
 
     @staticmethod
     def sum_minus_constant(df, start_year, end_year, col, constant):
@@ -366,6 +420,15 @@ class BadHydrology(ChartFrame):
             text_color="royalblue",
             position="below_top",
         )
+        legend = ax.get_legend()
+        if legend is not None:
+            # Option A – named location
+            # legend.set_loc('upper left')
+
+            # Option B – precise position (axes fraction)
+            legend.set_bbox_to_anchor((0.10, 0.88))
+
+        self.on_line_moved(year)
 
         # Storage annotations
         #
@@ -467,16 +530,31 @@ class BadHydrology(ChartFrame):
             position="below_top",
             show_delta=True
         )
+        self.storage_chart.annotate_range(
+            ax,
+            start_year=2026,
+            end_year=2028,
+            label="Future",
+            line_color="black",
+            text_color="red",
+            position="below_top",
+            show_delta=True
+        )
 
     def on_line_moved(self, year):
         if self.range_ann is None:
             return
 
+        if year == self.year_prev:
+            return
+        self.year_prev = year
         # Example: keep a fixed-width window ending at the dragged year
         start = year - 9
         end = year
         if start not in self.storage_chart.year_to_idx or end not in self.storage_chart.year_to_idx:
             return
+
+        iii_c =  BadHydrology.compute_iiic(self.df_mead, lb.MEXICO, start, end, constant=7.5)
 
         x1 = self.storage_chart.year_to_idx[start]
         x2 = self.storage_chart.year_to_idx[end]
@@ -496,8 +574,15 @@ class BadHydrology(ChartFrame):
 
         # Move and update the text
         mid = (x1 + x2) / 2
-        avg = BadHydrology.value_for_year(self.df_powell, year, 'Lees Ferry 10 yr avg')
-        label = f"10 Year Average\n{year} {avg / 1_000_000:.3f}" if avg is not None else f"10 Year Average\n{year}"
+        avg = BadHydrology.value_for_year(self.df_powell, year, 'Lees Ferry 10 yr avg') / 1_000_000
+        label = f"10 Year Average\n{year} "
+        if avg is not None:
+            if avg < 7.5:
+                label += f"{avg:.3f} - {7.5:.3f} = {avg-7.5:.3f}"
+            else:
+                label += f"{avg:.3f} - {iii_c:.3f} = {avg-iii_c:.3f}"
+        else:
+            label = f"10 Year Average\n{year}"
         self.range_ann['text'].set_position((mid, y_text))
         self.range_ann['text'].set_text(label)
 

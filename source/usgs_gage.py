@@ -128,6 +128,8 @@ class USGSGage(object):
                 update = True
         else:
             water_year_string = ''
+        # FIXME HACK
+        update = False
 
         previous_data = None
         new_data = None
@@ -150,6 +152,8 @@ class USGSGage(object):
             else:
                 update = True
                 previous_data = None
+            # FIXME HACK
+            update = False
 
         if file_path.exists() and update:
             old_file_moved_path = WaterYearInfo.move_file_with_mod_date(file_path)
