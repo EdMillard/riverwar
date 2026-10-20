@@ -376,7 +376,12 @@ class PieChart(Chart):
             self.canvas.Refresh()
 
     def add_total_annotations(self, annotations, divisor=1_000_000):
-        """Draw annotation table with a nice bordered box (like legend)"""
+        """Draw annotation table with a nice bordered box.
+
+        Each item in annotations_list can be:
+          - (label, (df, col))                  → default black
+          - (label, (df, col), color)           → custom color for that line
+        """
         if not annotations or len(annotations) < 3:
             return
 
@@ -387,40 +392,77 @@ class PieChart(Chart):
         if not annotations_list:
             return
 
-        lines = []
-        # Get total value (last item)
-        _, (total_df, total_col) = annotations_list[-1]
-        matching_total = total_df[total_df['Year'] == self.year]
-        total_value = pd.to_numeric(matching_total[total_col].iloc[0], errors='coerce') if not matching_total.empty else 0.0
+        # Get total value (last item) for percentage calculation
+        last_item = annotations_list[-1]
+        if len(last_item) == 3:
+            _, (total_df, total_col), _ = last_item
+        else:
+            _, (total_df, total_col) = last_item
 
-        for label, (df, col) in annotations_list:
+        matching_total = total_df[total_df['Year'] == self.year]
+        total_value = pd.to_numeric(matching_total[total_col].iloc[0],
+                                    errors='coerce') if not matching_total.empty else 0.0
+
+        # Build the text lines with individual colors
+        text_lines = []
+        colors = []
+
+        for item in annotations_list:
+            if len(item) == 3:
+                label, (df, col), color = item
+            else:
+                label, (df, col) = item
+                color = 'black'
+
             matching = df[df['Year'] == self.year]
             value = pd.to_numeric(matching[col].iloc[0], errors='coerce') if not matching.empty else 0.0
-
             maf = value / divisor
 
             if total_value > 0:
                 percentage = (value / total_value) * 100
-                lines.append(f"{maf:5.2f} MAF {percentage:5.1f}% {label}")
+                line = f"{maf:5.2f} MAF {percentage:5.1f}% {label}"
             else:
-                lines.append(f"{maf:5.2f} MAF {label}")
+                line = f"{maf:5.2f} MAF {label}"
 
-        text_block = "\n".join(lines)
+            text_lines.append(line)
+            colors.append(color)
 
-        # === Clean box around the annotation (no separator) ===
-        self.ax.text(
-            x=x, y=y, s=text_block,
-            transform=self.ax.transAxes,
-            fontsize=11,
-            fontfamily='monospace',
-            fontweight='semibold',
-            ha='left', va='top',
-            zorder=15,
-            bbox=dict(
-                boxstyle="round,pad=0.6",
-                facecolor="white",
-                edgecolor="#aaaaaa",      # light gray, matches typical legend border
-                alpha=0.95,
-                linewidth=1.1
+        # Draw each line separately so we can color them individually
+        line_height = 0.028
+        for i, (line, color) in enumerate(zip(text_lines, colors)):
+            self.ax.text(
+                x=x,
+                y=y - (i * line_height),
+                s=line,
+                transform=self.ax.transAxes,
+                fontsize=11,
+                fontfamily='monospace',
+                fontweight='semibold',
+                ha='left',
+                va='top',
+                color=color,
+                zorder=15,
             )
-        )
+
+        # Draw a single box around the whole block (no plt required)
+        # Draw a single box around the whole block (no plt required)
+        if text_lines:
+            from matplotlib.patches import Rectangle
+            box_height = len(text_lines) * line_height + 0.02
+            # Tighter box: reduced width + slightly smaller left padding
+            box_width = 0.30  # was 0.35
+            left_pad = 0.005  # was 0.01
+
+            self.ax.add_patch(
+                Rectangle(
+                    (x - left_pad, y - box_height + 0.01),
+                    box_width, box_height,
+                    transform=self.ax.transAxes,
+                    facecolor='white',
+                    edgecolor='#aaaaaa',
+                    alpha=0.95,
+                    linewidth=1.1,
+                    zorder=14,
+                    clip_on=False
+                )
+            )
