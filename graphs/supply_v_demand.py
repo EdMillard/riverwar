@@ -45,11 +45,26 @@ class SupplyVDemand(ChartFrame):
         self.play_btn = None
         self.year_slider = None
         self.toolbar_status = None
+        self.year_prev = 0
 
         self.demand_pie_chart:Optional[PieChart] = None
         self.multi_bar_chart:Optional[MultiBarChart] = None
 
         super().__init__(notebook_frame, page_name=self.name)
+
+        self.multi_bar_chart.enable_draggable_vline(
+            callback=self.on_line_moved,
+            color='black',
+            initial_year=2026,
+        )
+
+    def on_line_moved(self, year):
+        if year == self.current_year:
+            return
+        self.current_year = year
+        self.demand_pie_chart.update_for_year(self.current_year)
+        if hasattr(self, 'toolbar_status'):
+            self.toolbar_status.SetLabel(f"Year: {self.current_year}")
 
     def create_toolbar(self):
         super().create_toolbar()
