@@ -134,6 +134,17 @@ class PieChart(Chart):
         if not item or len(item) < 3:
             return None
 
+        # inside the loop that builds text_lines
+        source = item[1]
+        if isinstance(source, (int, float, np.number)):
+            value = float(source)
+        else:
+            # Make sure we hand _extract_value something with at least 3 elements
+            if isinstance(source, tuple) and len(source) == 2:
+                source = (source[0], source[1], "black")  # dummy color
+            extracted = self._extract_value(source)
+            value = extracted[0] if extracted else 0.0
+
         # Direct numeric form
         if isinstance(item[0], (int, float, np.number)):
             val = float(item[0])
@@ -430,15 +441,17 @@ class PieChart(Chart):
 
         # Get total value (last item) for percentage calculation
         last_item = annotations_list[-1]
+        total_value = 0.0
         if len(last_item) >= 2:
             source = last_item[1]
             if isinstance(source, (int, float, np.number)):
                 total_value = float(source)
             else:
-                extracted = self._extract_value(source if isinstance(source, tuple) else (source,))
+                # Support bare (df, col) 2-tuples used by the annotation lists
+                if isinstance(source, tuple) and len(source) == 2:
+                    source = (source[0], source[1], "black")
+                extracted = self._extract_value(source)
                 total_value = extracted[0] if extracted else 0.0
-        else:
-            total_value = 0.0
 
         # Build the text lines with individual colors
         text_lines = []
@@ -453,7 +466,10 @@ class PieChart(Chart):
                 if isinstance(source, (int, float, np.number)):
                     value = float(source)
                 else:
-                    extracted = self._extract_value(source if isinstance(source, tuple) else (source,))
+                    # Support bare (df, col) 2-tuples used by the annotation lists
+                    if isinstance(source, tuple) and len(source) == 2:
+                        source = (source[0], source[1], "black")
+                    extracted = self._extract_value(source)
                     value = extracted[0] if extracted else 0.0
 
                 maf = value / divisor

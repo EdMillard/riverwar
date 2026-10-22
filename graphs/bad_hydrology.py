@@ -53,6 +53,8 @@ class BadHydrology(ChartFrame):
         self.toolbar_status = None
         self.range_ann = None
         self.year_prev = 0
+        self.moving_average_years = 20
+        self.moving_average_label = f'Lee Ferry {self.moving_average_years} yr moving avg'
 
         self.supply_demand_chart:Optional[MultiBarChart] = None
         self.lees_ferry_chart:Optional[MultiBarChart] = None
@@ -197,18 +199,19 @@ class BadHydrology(ChartFrame):
             self.df_powell,
             col1='Lee Ferry Compact',  # column to subtract from
             col2=all_b.RELEASE,  # column to subtract
-            result_column='Lees Ferry Overage'
+            result_column='Lee Ferry Overage'
         )
-        sum_overage = BadHydrology.sum_lees_ferry_overage(self.df_powell,  2000, 2015, 'Lees Ferry Overage')
-        df_utils.moving_average(self.df_powell, 'Lee Ferry Compact', 'Lees Ferry 10 yr avg')
-
-        overlay_10_year = [
+        sum_overage = BadHydrology.sum_lee_ferry_overage(self.df_powell,  2000, 2015, 'Lee Ferry Overage')
+        df_utils.moving_average(self.df_powell, 'Lee Ferry Compact',
+                                self.moving_average_label,
+                                window=self.moving_average_years)
+        overlay_moving_average_year = [
             (
                 self.df_powell,
-                "Lees Ferry 10 yr avg",
+                self.moving_average_label,
                 "goldenrod",
                 {
-                    "label": "Lees Ferry 10 yr avg",
+                    "label": self.moving_average_label,
                     "linewidth": 2.5,
                     "linestyle": "-",
                     "marker": "", # "o"
@@ -228,7 +231,7 @@ class BadHydrology(ChartFrame):
         self.lees_ferry_chart = MultiBarChart(
             percentage=0.33,
             groups=[glen_canypn__bar, lees_ferry_bar],
-            overlay_lines=overlay_10_year,
+            overlay_lines=overlay_moving_average_year,
             start_year=graph_start_year,
             end_year=2028,
             y_max=10.5,
@@ -258,9 +261,9 @@ class BadHydrology(ChartFrame):
         self.charts.append(self.storage_chart)
 
     @staticmethod
-    def sum_lees_ferry_overage(df, start_year, end_year, column_name="Lees Ferry Overage"):
+    def sum_lee_ferry_overage(df, start_year, end_year, column_name):
         """
-        Sum the values in the 'Lees Ferry Overage' column for years
+        Sum the values in the 'Lee Ferry Overage' column for years
         between start_year and end_year (inclusive).
 
         Expects a 'Year' column.
@@ -284,7 +287,7 @@ class BadHydrology(ChartFrame):
         return pd.to_numeric(match.iloc[0], errors='coerce')
 
     @staticmethod
-    def compute_iiic(df, column_name, start_year, end_year, constant=7.5):
+    def compute_iiic(df, column_name, start_year, end_year, constant=7.5, moving_average_window=10):
         """
         Sum the values in `column_name` for rows whose Year is between
         start_year and end_year (inclusive), divide by 2, then add `constant`.
@@ -297,7 +300,7 @@ class BadHydrology(ChartFrame):
         mask = (df['Year'] >= start_year) & (df['Year'] <= end_year)
         total = df.loc[mask, column_name].sum()
 
-        return (((total / 10.0)  / 1_000_000) / 2.0) + constant
+        return (((total / moving_average_window)  / 1_000_000) / 2.0) + constant
 
     @staticmethod
     def sum_minus_constant(df, start_year, end_year, col, constant):
@@ -400,7 +403,7 @@ class BadHydrology(ChartFrame):
             # Option B – precise position (axes fraction)
             legend.set_bbox_to_anchor((0.85, 0.88))
 
-        # 10 year annotations
+        # Moving average year annotations
         #
         ax = self.lees_ferry_chart.ax
         ChartFrame.annotate_level(ax, 7.5, '7.5',
@@ -410,12 +413,13 @@ class BadHydrology(ChartFrame):
                                       'red', draw_text=True, draw_line=True,
                                       left_of_axis=False)
         year = 2026
-        avg = BadHydrology.value_for_year(self.df_powell, year, 'Lees Ferry 10 yr avg')
+        avg = BadHydrology.value_for_year(self.df_powell, year, self.moving_average_label)
         self.range_ann  = self.storage_chart.annotate_range(
             ax,
             start_year=2017,
             end_year=2026,
-            label=f"10 Year Average\n{year} {avg/1_000_000:.3f}",
+            label='',
+            #label=f"{self.moving_average_years} Year Average\n{year} {avg/1_000_000:.3f}",
             line_color="black",
             text_color="royalblue",
             position="below_top",
@@ -549,12 +553,13 @@ class BadHydrology(ChartFrame):
             return
         self.year_prev = year
         # Example: keep a fixed-width window ending at the dragged year
-        start = year - 9
+        start = year - (self.moving_average_years-1)
         end = year
         if start not in self.storage_chart.year_to_idx or end not in self.storage_chart.year_to_idx:
             return
 
-        iii_c =  BadHydrology.compute_iiic(self.df_mead, lb.MEXICO, start, end, constant=7.5)
+        iii_c =  BadHydrology.compute_iiic(self.df_mead, lb.MEXICO, start, end,
+                                           constant=7.5, moving_average_window=self.moving_average_years)
 
         x1 = self.storage_chart.year_to_idx[start]
         x2 = self.storage_chart.year_to_idx[end]
@@ -574,15 +579,15 @@ class BadHydrology(ChartFrame):
 
         # Move and update the text
         mid = (x1 + x2) / 2
-        avg = BadHydrology.value_for_year(self.df_powell, year, 'Lees Ferry 10 yr avg') / 1_000_000
-        label = f"10 Year Average\n{year} "
+        avg = BadHydrology.value_for_year(self.df_powell, year, self.moving_average_label) / 1_000_000
+        label = f"{self.moving_average_years} Year Average\n{year} "
         if avg is not None:
             if avg < 7.5:
                 label += f"{avg:.3f} - {7.5:.3f} = {avg-7.5:.3f}"
             else:
                 label += f"{avg:.3f} - {iii_c:.3f} = {avg-iii_c:.3f}"
         else:
-            label = f"10 Year Average\n{year}"
+            label = f"{self.moving_average_years} Year Average\n{year}"
         self.range_ann['text'].set_position((mid, y_text))
         self.range_ann['text'].set_text(label)
 
