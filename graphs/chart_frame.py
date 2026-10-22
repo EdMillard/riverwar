@@ -604,11 +604,14 @@ class ChartFrame(wx.Panel):
         )
 
     @staticmethod
-    def get_latest_reports()-> Tuple[str, List[Path]]:
+    def get_latest_reports(path='')-> Tuple[str, List[Path]]:
         reports = ChartFrame.find_directories_with_file('data/USBR_24Month_Reports', 'Lake_Powell.csv', '')
         reports_latest = []
         if len(reports):
-           report_name,  reports_latest = ChartFrame.paths_matching_month_year_root(reports[-1], reports)
+            if path:
+                report_name,  reports_latest = ChartFrame.paths_matching_month_year_root(path, reports)
+            else:
+                report_name,  reports_latest = ChartFrame.paths_matching_month_year_root(reports[-1], reports)
         else:
             report_name = ''
         return report_name, reports_latest

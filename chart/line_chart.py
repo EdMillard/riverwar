@@ -483,9 +483,16 @@ class LineChart(Chart):
             y0, y1 = ax.get_ylim()
             span = (y1 - y0) / self.y_divisor
             if span > 0:
-                if span <= 20:
+                # Prefer finer major steps for typical reservoir ranges (e.g. 0.5–3 MAF)
+                if span <= 3:
+                    step = 0.1
+                elif span <= 6:
+                    step = 0.2
+                elif span <= 15:
+                    step = 0.5
+                elif span <= 30:
                     step = 1
-                elif span <= 40:
+                elif span <= 60:
                     step = 2
                 else:
                     raw_step = span / 8
@@ -497,13 +504,14 @@ class LineChart(Chart):
                             break
 
                 major = step * self.y_divisor
-                minor = 0.1 * self.y_divisor
+                minor = (step / 5) * self.y_divisor  # or 0.1 * self.y_divisor if you always want 0.1-MAF minors
 
                 ax.yaxis.set_major_locator(MultipleLocator(major))
                 ax.yaxis.set_minor_locator(MultipleLocator(minor))
                 ax.tick_params(axis='y', which='minor', length=3, width=0.6)
 
-                decimals = 0 if step >= 1 else 1
+                # Always show one decimal for these units when step < 1
+                decimals = 1 if step < 1 else 0
                 ax.yaxis.set_major_formatter(
                     FuncFormatter(lambda v, pos, d=decimals, div=self.y_divisor: f"{v / div:.{d}f}")
                 )

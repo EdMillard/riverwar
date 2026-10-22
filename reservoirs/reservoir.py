@@ -92,9 +92,12 @@ class Reservoir:
         self.show_elevations = False
         self.show_in_chart = True
         self.custom_color = 0
-        self.yoy_start_year = 0
+        self.yoy_start_year = 2025
         self.storage_yoy:List[Tuple] = []
         self.storage_mom:List[Tuple] = []
+        self.storage_since_date:List[Tuple] = []
+        self.elevation_since_date:List[Tuple] = []
+        self.since_date = "2026-09-15"
 
         # USBR RISE ID's
         #
@@ -488,6 +491,9 @@ class Reservoir:
                 self.elevation_feet = daily_elevation_ft['val'][-1]
             else:
                 date_time = self.date_time
+            last_dt = daily_elevation_ft['dt'][-1].item()
+            elevation = self.get_value_months_or_years_earlier(column_name, last_dt, since_date=self.since_date)
+            self.elevation_since_date.append(elevation)
         elif when =='less':
             # actual for month
             date_time = self.date_time
@@ -581,6 +587,12 @@ class Reservoir:
         return result
 
     def print_storage(self):
+        if len(self.elevation_since_date):
+            elevation = self.elevation_since_date[0][1]
+            storage_delta = self.active_capacity_af - self.storage_since_date[0][1]
+        else:
+            elevation = 0
+            storage_delta = 0
         if len(self.storage_mom) and self.storage_mom[0] is not None:
             one_month_delta = self.active_capacity_af - self.storage_mom[0][1]
         else:
@@ -591,6 +603,7 @@ class Reservoir:
             one_year_ago_delta = 0
 
         print(f'{self.name.ljust(16)} {self.elevation_feet:7.2f}\' - {self.active_capacity_af/1_000_000:5.3f} MAF 1 mo {one_month_delta:9.0f}  1 yr {one_year_ago_delta:9.0f}')
+        print(f'{self.name.ljust(16)} {elevation:7.2f}\' - {storage_delta/1_000_000:5.3f} MAF since {self.since_date}')
 
     @staticmethod
     def last_non_na_date(df: pd.DataFrame, value_col: str, date_col: str = "Date") -> Optional[np.datetime64]:
@@ -633,6 +646,8 @@ class Reservoir:
 
                     # One month ago (unchanged)
                     self.storage_mom.append(self.get_value_months_or_years_earlier(column_name, last_dt, months=1))
+                    storage = self.get_value_months_or_years_earlier(column_name, last_dt, since_date=self.since_date)
+                    self.storage_since_date.append(storage)
 
                     # Year-over-year list
                     self.storage_yoy = []
@@ -696,28 +711,42 @@ class Reservoir:
         self.print_storage()
         return self.elevation_feet
 
+    from dateutil.relativedelta import relativedelta
+    from typing import Tuple, Optional
+    import pandas as pd
+    import numpy as np
+
     def get_value_months_or_years_earlier(
             self,
             column_name: str,
             reference_dt,
             months: int = 0,
             years: int = 0,
+            days: int = 0,
+            since_date=None,
             date_column: str = "Date"
     ) -> Tuple | None:
         """
-        Return (date, value) from self.df_daily for the given column,
-        looking back `months` and/or `years` from the supplied reference_dt.
+        Return (date, value) from self.df_daily for the given column.
+
+        You can either:
+          - Look back relative amounts (months / years / days) from reference_dt, or
+          - Supply an absolute since_date (in which case reference_dt is ignored for the target).
 
         Parameters
         ----------
         column_name : str
             Column to read (e.g. all_b.STORAGE).
         reference_dt : datetime | np.datetime64 | str | pd.Timestamp
-            Starting datetime (normally the most recent daily storage timestamp).
+            Starting datetime when using relative offsets.
         months : int
             Number of months to go back (default 0).
         years : int
             Number of years to go back (default 0).
+        days : int
+            Number of days to go back (default 0).
+        since_date : datetime | np.datetime64 | str | pd.Timestamp | None
+            Absolute date to look up (overrides the relative offset calculation).
         date_column : str
             Name of the date column if the DataFrame is not DatetimeIndex-indexed.
 
@@ -733,20 +762,31 @@ class Reservoir:
 
         df = self.df_daily
 
-        # Normalize the reference datetime
-        if isinstance(reference_dt, str):
-            ref = pd.to_datetime(reference_dt)
-        elif isinstance(reference_dt, np.datetime64):
-            ref = pd.Timestamp(reference_dt)
+        # Determine the target datetime
+        if since_date is not None:
+            # Absolute date takes precedence
+            if isinstance(since_date, str):
+                target_dt = pd.to_datetime(since_date)
+            elif isinstance(since_date, np.datetime64):
+                target_dt = pd.Timestamp(since_date)
+            else:
+                target_dt = pd.Timestamp(since_date)
         else:
-            ref = pd.Timestamp(reference_dt)
+            # Relative offset from reference_dt
+            if isinstance(reference_dt, str):
+                ref = pd.to_datetime(reference_dt)
+            elif isinstance(reference_dt, np.datetime64):
+                ref = pd.Timestamp(reference_dt)
+            else:
+                ref = pd.Timestamp(reference_dt)
 
-        # Compute the target date
-        target_dt = ref
-        if years:
-            target_dt = target_dt - relativedelta(years=years)
-        if months:
-            target_dt = target_dt - relativedelta(months=months)
+            target_dt = ref
+            if years:
+                target_dt = target_dt - relativedelta(years=years)
+            if months:
+                target_dt = target_dt - relativedelta(months=months)
+            if days:
+                target_dt = target_dt - pd.Timedelta(days=days)
 
         # Look up the nearest value
         if isinstance(df.index, pd.DatetimeIndex):
