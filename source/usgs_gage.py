@@ -29,6 +29,7 @@ from rw.util import reshape_annual_range
 from source.water_year_info import WaterYearInfo
 from datetime import date
 from api import df_utils
+from typing import List, Tuple
 
 
 # USGS Gage parameter definitions
@@ -153,7 +154,7 @@ class USGSGage(object):
                 update = True
                 previous_data = None
             # FIXME HACK
-            # update = False
+            update = True
 
         if file_path.exists() and update:
             old_file_moved_path = WaterYearInfo.move_file_with_mod_date(file_path)
@@ -164,6 +165,9 @@ class USGSGage(object):
             self.request_daily_discharge(file_path, self.start_date, str(self.end_date), parameterCd=parameterCd,
                                          statCd=statCd)
             new_data = self.load_daily_discharge(file_path, water_year_info, update, parameterCd=parameterCd, statCd=statCd)
+            if water_year_info.end_date >= datetime.date.today():
+                latest = self.request_instantaneous_value_discharge( parameterCd=parameterCd)
+                new_data = np.append(new_data, np.array([latest], dtype=new_data.dtype))
 
         if previous_data is not None and new_data is not None:
             WaterYearInfo.diff_data(previous_data, new_data, file_path, old_file_moved_path)
@@ -251,6 +255,66 @@ class USGSGage(object):
                         break
         f.close()
         return a
+
+    import datetime
+
+    def parse_usgs_rdb(data):
+        """
+        Parse USGS RDB into list of ('YYYY-MM-DDTHH:MM:SS', value) tuples.
+        """
+        lines = data.strip().splitlines()
+        results = []
+
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("agency_cd") or line.startswith("5s"):
+                continue
+
+            parts = line.split("\t")
+            if len(parts) < 5 or not parts[0].startswith("USGS"):
+                continue
+
+            try:
+                dt_str = parts[2].strip()
+                value_str = parts[4].strip()
+
+                if not value_str or value_str in ("", "Ice", "Eqp", "Ssn", "Bkw", "Rat", "---"):
+                    continue
+
+                dt = datetime.datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
+                formatted = dt.strftime("%Y-%m-%dT%H:%M:%S")
+                value = float(value_str)
+                results.append((formatted, value))
+            except (ValueError, IndexError):
+                continue
+
+        return results
+
+    # https://waterservices.usgs.gov/nwis/iv/?format=json&sites=09379500&parameterCd=00060,00065&period=P2D
+    def request_instantaneous_value_discharge(self, parameterCd='00060'):
+        url = 'https://waterservices.usgs.gov/nwis/iv?format=rdb&sites='
+        url += self.site
+        # url += '&startDT='
+        # url += str(start_date)
+        # url += '&endDT='
+        # url += str(end_date)
+        url += '&parameterCd='
+        url += str(parameterCd)
+        # url += '&statCd='
+        # url += str(statCd)
+        url += '&period=P2D'
+        print(f'USGS instantaneous:  {url}')
+        r = requests.get(url)
+        if r.status_code == 200:
+            if r.text.startswith('<!DOCTYPE html>'):
+                print("USGS gage request got HTML response, site number is probably wrong", self.site)
+            else:
+                raw = r.content.decode("utf-8")
+                data = USGSGage.parse_usgs_rdb(raw)
+                return data[-1]
+        else:
+            print('usgs_get_gage_discharge failed with response: ', r.status_code, ' ', r.reason)
+        return 0, 0
 
     def request_daily_discharge(self, file_path, start_date, end_date, append=False, parameterCd='00060', statCd='00003'):
         url = 'https://waterservices.usgs.gov/nwis/dv?format=rdb&sites='
