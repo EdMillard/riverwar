@@ -20,17 +20,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from pathlib import Path
 import datetime
-import re
 import wx
 from colorado.river_war import RiverWar
 from chart.chart import Chart
 from graphs.chart_frame import ChartFrame, NotebookFrame
-from chart.line_chart import LineChart, TimeSeries
+from chart.line_chart import LineChart
 import colorado.lb as lb
 import colorado.ub as ub
-from reservoirs.reservoir import Reservoir
 from reservoirs.lake_mead import LakeMead
 from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
@@ -150,7 +147,7 @@ class ReservoirsBig3(ChartFrame):
                     # df_24_month_prev, df_24_wy_prev = reservoir.load_24_month(prev_path, reservoir.name)
                     # reservoir.get_projection(df_24_month_prev, 'Powell Most MAR26')
                     # df_utils.subtract_column(reservoir.df_daily, ub.POWELL_MOST, 'Powell Most MAR26', "Diff")
-                    legend_studies = ReservoirsBig3.add_report_series(reservoir, time_series, 'End Of Month Storage', "#a0a0ff",
+                    legend_studies = ChartFrame.add_report_series(reservoir, time_series, 'End Of Month Storage', "#a0a0ff",
                                                      subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
                 elif reservoir.name == 'Lake Mead':
                     # if do_adjustment:
@@ -158,7 +155,7 @@ class ReservoirsBig3(ChartFrame):
                     # time_series.append((reservoir.df_daily, lb.MEAD_MOST, '#ffa0a0', 'solid'))
                     time_series.append((reservoir.df_daily, lb.MEAD_ABOVE_950, 'darkred'))
                     legend_variables.append((lb.MEAD_ABOVE_950, 'darkred'))
-                    ReservoirsBig3.add_report_series(reservoir, time_series, 'End Of Month Storage', 'red',
+                    ChartFrame.add_report_series(reservoir, time_series, 'End Of Month Storage', 'red',
                                                      subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
                 elif reservoir.name == 'Flaming Gorge':
                     # fg_df = reservoir.df_daily
@@ -168,7 +165,7 @@ class ReservoirsBig3(ChartFrame):
                     # time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_MOST, '#50a050', 'solid'))
                     time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
                     legend_variables.append(( ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
-                    ReservoirsBig3.add_report_series(reservoir, time_series, 'Live Storage', "#50a050",
+                    ChartFrame.add_report_series(reservoir, time_series, 'Live Storage', "#50a050",
                                                      subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
 
         '''
@@ -229,7 +226,7 @@ class ReservoirsBig3(ChartFrame):
                 if reservoir.name == 'Lake Powell':
                     time_series.insert(0, (reservoir.df_daily, ub.POWELL_INFLOW_CFS, 'gray', "dotted", False))
                     legend_variables.append((ub.POWELL_INFLOW_CFS, 'gray'))
-                    legend_studies = ReservoirsBig3.add_report_series(reservoir, time_series, 'Regulated Inflow', "blue")
+                    legend_studies = ChartFrame.add_report_series(reservoir, time_series, 'Regulated Inflow', "blue")
 
         line_chart = LineChart(
             time_series, title='',
@@ -276,7 +273,7 @@ class ReservoirsBig3(ChartFrame):
                     time_series.append((reservoir.df_daily, lb.MEAD_RELEASE_CFS, 'darkred'))
                     legend_variables.append((lb.MEAD_RELEASE_CFS, 'darkred'))
                     ReservoirsBig3.add_report_series(reservoir, time_series, 'Total Release', "red")
-                    legend_studies = ReservoirsBig3.add_report_series(reservoir, time_series, 'Glen Release', "blue")
+                    legend_studies = ChartFrame.add_report_series(reservoir, time_series, 'Glen Release', "blue")
 
         self.inflow_outflow_chart = LineChart(
             time_series,
@@ -293,110 +290,6 @@ class ReservoirsBig3(ChartFrame):
         # self.inflow_outflow_chart.set_start_date(graph_start_date)
         # self.inflow_outflow_chart.set_end_date(graph_end_date)
         self.charts.append(self.inflow_outflow_chart)
-
-    @staticmethod
-    def add_report_series(
-            reservoir,
-            time_series: list,
-            column_name: str,
-            color: str,
-            linewidth: float = 2,
-            convert_af_to_cfs: bool = True,
-            subtract_col: str | None = None,
-            subtract: float = 0.0,
-            is_storage: bool = False
-    ) -> List[Tuple[str, str]]:
-        """
-        For each report on the reservoir, distribute the given monthly column
-        to daily, then insert a line-series tuple into time_series.
-        Line style cycles by report index: solid, dotted, dashed, ...
-
-        If is_storage=True, uses interpolate_monthly_storage_to_daily
-        instead of monthly_total_to_daily_smooth.
-
-        If subtract_col is provided, that daily column is subtracted from the
-        interpolated result.
-        If subtract != 0, that constant is also subtracted.
-        """
-        legend_studies = []
-        styles = ["dotted", "--", "-", "-."]
-
-        for i, (report_name, dfs) in enumerate(reservoir.reports.items()):
-            line_style = styles[i % len(styles)]
-            name = f"{report_name}.{column_name}"
-            df, df_wy = dfs
-
-            if is_storage:
-                Reservoir.interpolate_monthly_storage_to_daily(
-                    df,
-                    reservoir.df_daily,
-                    monthly_value_col=column_name,
-                    daily_target_col=name
-                )
-            else:
-                Reservoir.monthly_total_to_daily_smooth(
-                    df,
-                    reservoir.df_daily,
-                    monthly_value_col=column_name,
-                    daily_target_col=name,
-                    convert_af_to_cfs=convert_af_to_cfs
-                )
-
-            if subtract_col and subtract_col in reservoir.df_daily.columns:
-                reservoir.df_daily[name] = (
-                        reservoir.df_daily[name] - reservoir.df_daily[subtract_col]
-                )
-
-            if subtract:
-                reservoir.df_daily[name] = reservoir.df_daily[name] - subtract
-
-            legend_studies.append((report_name, line_style))
-            ts = TimeSeries(
-                df=reservoir.df_daily,
-                col=name,
-                color=color,
-                linestyle=line_style,
-                do_stack=False,
-                linewidth=linewidth
-            )
-            time_series.insert(0, ts)
-        return legend_studies
-
-def previous_month_path(path: Path) -> Path:
-    """
-    Takes a path like: /.../2026/APR26
-    Returns:          /.../2026/MAR26
-
-    Handles year rollover: JAN26 → DEC25
-    """
-    path_str = str(path)
-
-    # Match year and month code (e.g. 2026/APR26), ignoring an optional _SUFFIX such as _MIN
-    match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})(?:_.*)?$', path_str)
-    if not match:
-        raise ValueError(f"Could not find month-year pattern in path: {path}")
-    year_str = match.group(1)
-    month_code = match.group(2)  # e.g. APR26
-
-    # Parse to datetime
-    dt = datetime.strptime(month_code, '%b%y')
-    dt = dt.replace(year=int(year_str))
-
-    # Go to previous month
-    if dt.month == 1:
-        prev_dt = dt.replace(year=dt.year - 1, month=12, day=1)
-    else:
-        prev_dt = dt.replace(month=dt.month - 1, day=1)
-
-    # Format back to APR26 style
-    new_month_code = prev_dt.strftime('%b%y').upper()
-
-    # Replace in the original path
-    new_path_str = re.sub(r'/(\d{4})/[A-Z]{3}\d{2}$',
-                          f'/{prev_dt.year}/{new_month_code}',
-                          path_str)
-
-    return Path(new_path_str)
 
 if __name__ == "__main__":
     app = wx.App(False)

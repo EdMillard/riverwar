@@ -113,8 +113,8 @@ class Reservoir:
         if self.catalog_id:
             path = Path(f'data/USBR_RISE/catalog/{self.name_as_file_name()}.json')
             if path.exists():
-                f = path.open(mode='r')
-                self.usbr_item_ids = json.load(f)
+                with path.open(mode='r') as f:
+                    self.usbr_item_ids = json.load(f)
             else:
                 data = usbr_rise.load_catalog(Path(f'data/USBR_RISE/catalog/{self.catalog_id}'), f'{self.catalog_id}')
                 attributes = data.get('attributes', None)
@@ -137,15 +137,14 @@ class Reservoir:
                             name, item_id = usbr_rise.request_catalog_item(data_id)
                             self.usbr_item_ids[name] = item_id
 
-                    f = path.open(mode='w')
-                    json_str = json.dumps(self.usbr_item_ids, indent=4)
-                    f.write(json_str)
-                    f.close()
+                    with path.open(mode='w') as f:
+                        json_str = json.dumps(self.usbr_item_ids, indent=4)
+                        f.write(json_str)
 
             if self.usbr_item_ids:
                 self.location_name = self.usbr_item_ids.get('location_name', '')
                 if not self.location_name.startswith(self.name):
-                    print(f'Reservoir nane mismatch {self.name} {self.location_name}')
+                    print(f'Reservoir name mismatch {self.name} {self.location_name}')
                 self.states = self.usbr_item_ids.get('states', None)
                 self.usbr_rise_elevation_ft_id = self.usbr_item_ids.get('elevation_ft', 0)
                 self.usbr_rise_storage_af_id = self.usbr_item_ids.get('storage_af', 0)
@@ -192,7 +191,7 @@ class Reservoir:
         self.start_month_year_actual = "Oct 2025"
         self.end_month_year_actual = "Mar 2026"
         self.start_month_year_projected = "Apr 2026"
-        self.emd_month_year_projected = "Sep 2026"
+        self.end_month_year_projected = "Sep 2026"
 
         # Elevations
         #
@@ -261,7 +260,7 @@ class Reservoir:
         self.start_month_year_actual = start_date.strftime("%b %Y")
         self.end_month_year_actual = previous_month.strftime("%b %Y")
         self.start_month_year_projected = self.today.strftime("%b %Y")
-        self.emd_month_year_projected = end_date.strftime("%b %Y")
+        self.end_month_year_projected = end_date.strftime("%b %Y")
 
         if report_path is not None:
             if self.report_path != report_path:
@@ -442,11 +441,9 @@ class Reservoir:
 
         return string
 
-    def usbr_rise_load_daily(self, usbr_rise_id:int, column_name:str, start_year:int=0, end_year:int=0):
-        daily = 0
-        if start_year:
-            pass
-        elif self.report_start_date is not None:
+    def resolve_water_year_range(self, start_year: int = 0, end_year: int = 0) -> Tuple[int, int]:
+        """Resolve start/end water years from report dates or current date."""
+        if not start_year and self.report_start_date is not None:
             start_year = self.report_start_date.year
         if self.report_end_date is not None:
             end_year = self.report_end_date.year
@@ -454,34 +451,35 @@ class Reservoir:
             if self.water_year_month == 1 or date.today().month < self.water_year_month:
                 end_year = date.today().year
             else:
-                end_year = date.today().year+1
+                end_year = date.today().year + 1
+        return start_year, end_year
 
-        for year in range(start_year, end_year+1):
+    def usbr_rise_load_daily(self, usbr_rise_id: int, column_name: str, start_year: int = 0, end_year: int = 0):
+        daily = 0
+        start_year, end_year = self.resolve_water_year_range(start_year, end_year)
+
+        for year in range(start_year, end_year + 1):
             self.water_year_info = self.get_water_year_info(year, month=self.water_year_month)
             info, daily = usbr_rise.load(usbr_rise_id, water_year_info=self.water_year_info, alias=column_name)
             if daily is not None:
-                df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=column_name)
+                df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date',
+                                                       value_column_name=column_name)
             else:
                 print(f'{self.name} id={usbr_rise_id} {column_name} usbr_rise_load_daily failed')
         return daily
 
-    def usgs_load_daily(self, gage_id:str, column_name:str, start_year:int=0, end_year:int=0, parameterCd='00060', statCd='00003', month=1):
+    def usgs_load_daily(self, gage_id: str, column_name: str, start_year: int = 0, end_year: int = 0,
+                        parameterCd='00060', statCd='00003', month=1):
         daily = 0
-        if self.report_start_date is not None:
-            start_year = self.report_start_date.year
-        if self.report_end_date is not None:
-            end_year = self.report_end_date.year
-        if not end_year or end_year > date.today().year:
-            if self.water_year_month == 1 or date.today().month < self.water_year_month:
-                end_year = date.today().year
-            else:
-                end_year = date.today().year+1
-        for year in range(start_year, end_year+1):
+        start_year, end_year = self.resolve_water_year_range(start_year, end_year)
+
+        for year in range(start_year, end_year + 1):
             water_year_info = self.get_water_year_info(year, month=self.water_year_month)
             gage = USGSGage(gage_id, water_year_info)
-            daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=column_name, parameterCd=parameterCd,
-                                             statCd=statCd)
-            df_utils.fill_df_from_structured_array(self.df_daily, daily_cfs, date_column_name='Date', value_column_name=column_name)
+            daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=column_name,
+                                             parameterCd=parameterCd, statCd=statCd)
+            df_utils.fill_df_from_structured_array(self.df_daily, daily_cfs, date_column_name='Date',
+                                                   value_column_name=column_name)
         return daily
 
     def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:
@@ -489,14 +487,15 @@ class Reservoir:
         # print(f'relative time: {when}')
         if when == 'match':
             daily_elevation_ft = self.usbr_rise_load_daily(usbr_rise_id, column_name)
-            if len(daily_elevation_ft) > 0:
+            if daily_elevation_ft is not None and len(daily_elevation_ft) > 0:
                 date_time = daily_elevation_ft['dt'][-1]
                 self.elevation_feet = daily_elevation_ft['val'][-1]
+                last_dt = daily_elevation_ft['dt'][-1].item()
+                elevation = self.get_value_months_or_years_earlier(column_name, last_dt, since_date=self.since_date)
+                self.elevation_since_date.append(elevation)
             else:
                 date_time = self.date_time
-            last_dt = daily_elevation_ft['dt'][-1].item()
-            elevation = self.get_value_months_or_years_earlier(column_name, last_dt, since_date=self.since_date)
-            self.elevation_since_date.append(elevation)
+                print(f'{self.name} get_elevation failed for id={usbr_rise_id} {column_name}')
         elif when =='less':
             # actual for month
             date_time = self.date_time
@@ -1272,7 +1271,7 @@ class Reservoir:
             df,
             column_name=column_name,
             start_month_year=self.start_month_year_projected,
-            end_month_year=self.emd_month_year_projected
+            end_month_year=self.end_month_year_projected
         )
         return total
 

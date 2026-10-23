@@ -36,6 +36,7 @@ from colorado.river_war import RiverWar
 from datetime import datetime
 from pathlib import Path
 from source.water_year_info import WaterYearInfo
+from chart.line_chart import TimeSeries
 import re
 
 arrow_fg = wx.Colour(150, 150, 150)
@@ -124,7 +125,7 @@ class NotebookFrame(wx.Frame):
         tab_height = 28
         try:
             if self.notebook.GetPageCount() > 0:
-                rect = self.notebook.GetTabRect(0)
+                rect = self.notebook.GetTabRect(0) # type: ignore[attr-defined]
                 if rect.height > 0:
                     tab_height = rect.height
         except Exception:
@@ -140,8 +141,8 @@ class NotebookFrame(wx.Frame):
         y = max(2, (tab_height - max(toggle_h, cap_h)) // 2)
 
         nb_pos = self.notebook.GetPosition()
-        self.export_toggle.SetPosition((nb_pos.x + x_toggle, nb_pos.y + y))
-        self.capture_btn.SetPosition((nb_pos.x + x_cap, nb_pos.y + y))
+        self.export_toggle.SetPosition(wx.Point((nb_pos.x + x_toggle, nb_pos.y + y)))
+        self.capture_btn.SetPosition(wx.Point((nb_pos.x + x_cap, nb_pos.y + y)))
 
         self.export_toggle.Raise()
         self.capture_btn.Raise()
@@ -149,7 +150,7 @@ class NotebookFrame(wx.Frame):
         if event:
             event.Skip()
 
-    def on_capture(self, event):
+    def on_capture(self, _event):
         if not self.export_recording:
             return
 
@@ -175,7 +176,7 @@ class NotebookFrame(wx.Frame):
             wx.MessageBox("Current tab is not a chart page.", "Capture",
                           wx.OK | wx.ICON_INFORMATION)
 
-    def on_export_toggle(self, event):
+    def on_export_toggle(self, _event):
         if self.export_toggle.GetValue():
             # --- Start recording ---
             choices = ["Letter (8.5 × 11 in)", "Legal (8.5 × 14 in)"]
@@ -235,79 +236,6 @@ class NotebookFrame(wx.Frame):
         else:
             # --- Stop & save ---
             self._finish_export()
-
-    def _finish_export(self):
-        self.export_recording = False
-        self.capture_btn.Enable(False)
-        self.export_toggle.SetLabel("Export")
-        self.export_toggle.SetValue(False)
-
-        if not self.export_pages or not self.export_pdf_path:
-            wx.MessageBox("No pages captured or no file path.", "Export",
-                          wx.OK | wx.ICON_INFORMATION)
-            return
-
-        # Build scaled pages
-        dpi = 200
-        page_w_px = int(self.export_page_w_in * dpi)
-        page_h_px = int(self.export_page_h_in * dpi)
-        margin_px = int(0.05 * dpi)
-
-        pdf_images: List[Image.Image] = []
-        for src in self.export_pages:
-            max_w = page_w_px - 2 * margin_px
-            max_h = page_h_px - 2 * margin_px
-            scale = min(max_w / src.width, max_h / src.height)
-            new_w = max(1, int(src.width * scale))
-            new_h = max(1, int(src.height * scale))
-            resized = src.resize((new_w, new_h), Image.Resampling.LANCZOS)
-
-            page_img = Image.new('RGB', (page_w_px, page_h_px), (255, 255, 255))
-            x = (page_w_px - new_w) // 2
-            y = (page_h_px - new_h) // 2
-            page_img.paste(resized, (x, y))
-            pdf_images.append(page_img)
-
-        # Save PDF to the exact path chosen in the dialog
-        pdf_images[0].save(
-            self.export_pdf_path,
-            "PDF",
-            resolution=dpi,
-            save_all=True,
-            append_images=pdf_images[1:]
-        )
-
-        # Save PowerPoint next to it
-        pptx_path = os.path.splitext(self.export_pdf_path)[0] + ".pptx"
-        prs = Presentation()
-        prs.slide_width = Inches(self.export_page_w_in)
-        prs.slide_height = Inches(self.export_page_h_in)
-        blank_layout = prs.slide_layouts[6]
-
-        for img in pdf_images:
-            slide = prs.slides.add_slide(blank_layout)
-            bio = BytesIO()
-            img.save(bio, format="PNG")
-            bio.seek(0)
-            slide.shapes.add_picture(
-                bio,
-                Inches(0), Inches(0),
-                width=Inches(self.export_page_w_in),
-                height=Inches(self.export_page_h_in)
-            )
-        prs.save(pptx_path)
-
-        wx.MessageBox(
-            f"Saved {len(pdf_images)} page(s) to:\n"
-            f"{self.export_pdf_path}\n"
-            f"{pptx_path}",
-            "Export Complete",
-            wx.OK | wx.ICON_INFORMATION
-        )
-
-        # Clean up
-        self.export_pages.clear()
-        self.export_pdf_path = None
 
     def _finish_export(self):
         self.export_recording = False
@@ -969,6 +897,7 @@ class ChartFrame(wx.Panel):
             optimize=True
         )
 
+    @staticmethod
     def paths_matching_month_year_root(
             reference_path: Union[str, Path],
             paths: List[Union[str, Path]]
@@ -981,7 +910,7 @@ class ChartFrame(wx.Panel):
         ref = str(reference_path)
         match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})', ref)
         if not match:
-            return []
+            return '', []
 
         root = match.group(2)  # e.g. 'JUL26'
 
@@ -1038,3 +967,409 @@ class ChartFrame(wx.Panel):
         filtered = [p for p in paths if pattern.search(str(p))]
 
         return sorted(filtered, key=get_sort_key)
+
+    @staticmethod
+    def add_two_series_delta_annotation(
+            ax,
+            ts1,
+            ts2,
+            date,
+            column1: str = None,
+            column2: str = None,
+            color: str = None,
+            linestyle: str = "--",
+            linewidth: float = 1.5,
+            text_offset: float = 0.0,  # now a vertical offset (fraction of y-span)
+            annotation_side: str = "right",  # "right" or "left"
+    ):
+        """
+        Draw a vertical dashed line (with solid end-caps) at `date` between the
+        values of two different time series on that date, and annotate the delta.
+
+        text_offset : float
+            Vertical offset as a fraction of the current y-axis span.
+            Positive moves the text up, negative moves it down.
+
+        annotation_side:
+            "right" → text to the right of the vertical line, left-justified
+            "left"  → text to the left of the vertical line, right-justified
+
+        Delta = value(ts1) - value(ts2).
+        """
+        if not isinstance(ts1, TimeSeries):
+            ts1 = TimeSeries.from_tuple(ts1)
+        if not isinstance(ts2, TimeSeries):
+            ts2 = TimeSeries.from_tuple(ts2)
+
+        col1 = column1 or ts1.col
+        col2 = column2 or ts2.col
+        line_color = color or ts1.color
+
+        def prepare(ts, col, name):
+            if ts.df is None or ts.df.empty or col not in ts.df.columns:
+                print(f"[add_two_series_delta_annotation] {name}: missing DataFrame or column '{col}' → returning None")
+                return None
+            df = ts.df.copy()
+            if "Date" not in df.columns:
+                print(f"[add_two_series_delta_annotation] {name}: no 'Date' column → returning None")
+                return None
+            df["Date"] = pd.to_datetime(df["Date"])
+            df = df.set_index("Date").sort_index()
+            return df
+
+        df1 = prepare(ts1, col1, "ts1")
+        df2 = prepare(ts2, col2, "ts2")
+        if df1 is None or df2 is None:
+            print(
+                "[add_two_series_delta_annotation] Could not prepare both series → returning None (no annotation drawn)")
+            return
+
+        dt = pd.Timestamp(date)
+
+        def nearest_value(df, col, label):
+            if df.empty:
+                print(f"[add_two_series_delta_annotation] {label}: DataFrame is empty → returning None")
+                return None
+
+            idx = df.index.get_indexer([dt], method="nearest")[0]
+            if idx == -1:
+                print(f"[add_two_series_delta_annotation] {label}: no nearest index for {dt.date()} → returning None")
+                return None
+
+            candidates = list(range(idx, -1, -1)) + list(range(idx + 1, len(df)))
+            for i in candidates:
+                val = df.iloc[i][col]
+                if pd.notna(val):
+                    try:
+                        numeric = float(val)
+                        matched_date = df.index[i]
+                        if matched_date.date() != dt.date():
+                            print(f"[add_two_series_delta_annotation] WARNING {label}: "
+                                  f"requested {dt.date()} but using {matched_date.date()} "
+                                  f"(value={numeric})")
+                        return numeric
+                    except (TypeError, ValueError):
+                        continue
+
+            print(
+                f"[add_two_series_delta_annotation] {label}: no non-NaN value found near {dt.date()} → returning None")
+            return None
+
+        v1 = nearest_value(df1, col1, "ts1")
+        v2 = nearest_value(df2, col2, "ts2")
+        if v1 is None or v2 is None:
+            print(
+                "[add_two_series_delta_annotation] Could not obtain both values → returning None (no annotation drawn)")
+            return
+
+        delta = v1 - v2
+
+        # Vertical dashed line
+        ax.plot(
+            [dt, dt],
+            [v1, v2],
+            color=line_color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            zorder=6,
+        )
+
+        # Short solid end-caps (same color)
+        x_span_days = (pd.Timestamp(ax.get_xlim()[1]) - pd.Timestamp(ax.get_xlim()[0])).days
+        cap_width_days = max(1, int(x_span_days * 0.008))
+        cap = pd.Timedelta(days=cap_width_days)
+
+        ax.plot([dt - cap, dt + cap], [v1, v1],
+                color=line_color, linestyle="-", linewidth=linewidth,
+                solid_capstyle="butt", zorder=6)
+        ax.plot([dt - cap, dt + cap], [v2, v2],
+                color=line_color, linestyle="-", linewidth=linewidth,
+                solid_capstyle="butt", zorder=6)
+
+        # Annotation with vertical offset
+        mid_y = (v1 + v2) / 2.0
+        y0, y1 = ax.get_ylim()
+        y_span = y1 - y0
+        y_offset = y_span * text_offset
+
+        sign = "+" if delta >= 0 else ""
+        label = f"{sign}{delta:,.1f}"
+
+        x_clearance = pd.Timedelta(days=max(1, int(x_span_days * 0.008)))
+
+        if annotation_side.lower() == "left":
+            xytext = (dt - x_clearance, mid_y + y_offset)
+            ha = "right"
+        else:
+            xytext = (dt + x_clearance, mid_y + y_offset)
+            ha = "left"
+
+        ax.annotate(
+            label,
+            xy=(dt, mid_y),
+            xytext=xytext,
+            textcoords="data",
+            ha=ha,
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color=line_color,
+            zorder=7,
+        )
+
+    @staticmethod
+    def add_delta_annotation(
+            ax,
+            ts,
+            start_date,
+            end_date,
+            column: str = None,
+            color: str = None,
+            linestyle: str = "--",
+            linewidth: float = 1.5,
+            text_offset: float = 0.0,  # now a vertical offset (fraction of y-span)
+            annotation_side: str = "right",  # "right" or "left"
+    ):
+        """
+        Draw a vertical dashed line at end_date between the values of the series
+        on start_date and end_date, with solid end-caps in the same color,
+        and annotate the delta.
+
+        text_offset : float
+            Vertical offset as a fraction of the current y-axis span.
+            Positive moves the text up, negative moves it down.
+            Use this to keep multiple annotations from overlapping.
+
+        annotation_side:
+            "right" → text to the right of the vertical line, left-justified
+            "left"  → text to the left of the vertical line, right-justified
+        """
+        if not isinstance(ts, TimeSeries):
+            ts = TimeSeries.from_tuple(ts)
+
+        col = column or ts.col
+        line_color = color or ts.color
+
+        if ts.df is None or ts.df.empty or col not in ts.df.columns:
+            print(f"[add_delta_annotation] Missing DataFrame or column '{col}' → returning None")
+            return
+
+        df = ts.df.copy()
+        if "Date" not in df.columns:
+            print("[add_delta_annotation] No 'Date' column → returning None")
+            return
+        df["Date"] = pd.to_datetime(df["Date"])
+        df = df.set_index("Date").sort_index()
+
+        start = pd.Timestamp(start_date)
+        end = pd.Timestamp(end_date)
+
+        def nearest_value(dt, label="value"):
+            if df.empty:
+                print(f"[add_delta_annotation] {label}: DataFrame is empty → returning None")
+                return None, None
+
+            idx = df.index.get_indexer([dt], method="nearest")[0]  # type: ignore[arg-type]
+            if idx == -1:
+                print(f"[add_delta_annotation] {label}: no nearest index for {dt.date()} → returning None")
+                return None, None
+
+            candidates = list(range(idx, -1, -1)) + list(range(idx + 1, len(df)))
+            for i in candidates:
+                val = df.iloc[i][col]
+                if pd.notna(val):
+                    try:
+                        numeric = float(val) # type: ignore[arg-type]
+                        matched_date = pd.Timestamp(df.index[i])
+                        if matched_date.date() != dt.date():
+                            print(f"[add_delta_annotation] WARNING {label}: "
+                                  f"requested {dt.date()} but using {matched_date.date()} "
+                                  f"(value={numeric})")
+                        return numeric, matched_date
+                    except (TypeError, ValueError):
+                        continue
+
+            print(f"[add_delta_annotation] {label}: no non-NaN value found near {dt.date()} → returning None")
+            return None, None
+
+        v_start, matched_start = nearest_value(start, label="start")
+        v_end, matched_end = nearest_value(end, label="end")
+        if v_start is None or v_end is None:
+            print(
+                "[add_delta_annotation] Could not obtain both start and end values → returning None (no annotation drawn)")
+            return
+
+        delta = v_end - v_start
+        vertical_x = end
+
+        # Vertical dashed line
+        ax.plot(
+            [vertical_x, vertical_x],
+            [v_start, v_end],
+            color=line_color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            zorder=6,
+        )
+
+        # Solid end-cap from actual start time/value to the vertical line
+        ax.plot(
+            [matched_start, vertical_x],
+            [v_start, v_start],
+            color=line_color,
+            linestyle="-",
+            linewidth=linewidth,
+            solid_capstyle="butt",
+            zorder=6,
+        )
+
+        # Short solid cap at the end value
+        x_span_days = (pd.Timestamp(ax.get_xlim()[1]) - pd.Timestamp(ax.get_xlim()[0])).days
+        cap_width_days = max(1, int(x_span_days * 0.008))
+        cap = pd.Timedelta(days=cap_width_days)
+
+        ax.plot(
+            [vertical_x - cap, vertical_x + cap],
+            [v_end, v_end],
+            color=line_color,
+            linestyle="-",
+            linewidth=linewidth,
+            solid_capstyle="butt",
+            zorder=6,
+        )
+
+        # Annotation with vertical offset
+        mid_y = (v_start + v_end) / 2.0
+        y0, y1 = ax.get_ylim()
+        y_span = y1 - y0
+        y_offset = y_span * text_offset  # positive = up, negative = down
+
+        sign = "+" if delta >= 0 else ""
+        label = f"{sign}{delta:,.1f}"
+
+        # Small fixed horizontal clearance so text doesn't sit on the line
+        x_clearance = pd.Timedelta(days=max(1, int(x_span_days * 0.008)))
+
+        if annotation_side.lower() == "left":
+            xytext = (vertical_x - x_clearance, mid_y + y_offset)
+            ha = "right"
+        else:  # "right"
+            xytext = (vertical_x + x_clearance, mid_y + y_offset)
+            ha = "left"
+
+        ax.annotate(
+            label,
+            xy=(vertical_x, mid_y),
+            xytext=xytext,
+            textcoords="data",
+            ha=ha,
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color=line_color,
+            zorder=7,
+        )
+
+    @staticmethod
+    def add_report_series(
+            reservoir,
+            time_series: list,
+            column_name: str,
+            color: str,
+            linewidth: float = 2,
+            convert_af_to_cfs: bool = True,
+            subtract_col: str | None = None,
+            subtract: float = 0.0,
+            is_storage: bool = False
+    ) -> List[Tuple[str, str]]:
+        """
+        For each report on the reservoir, distribute the given monthly column
+        to daily, then insert a line-series tuple into time_series.
+        Line style cycles by report index: solid, dotted, dashed, ...
+
+        If is_storage=True, uses interpolate_monthly_storage_to_daily
+        instead of monthly_total_to_daily_smooth.
+
+        If subtract_col is provided, that daily column is subtracted from the
+        interpolated result.
+        If subtract != 0, that constant is also subtracted.
+        """
+        legend_studies = []
+        styles = ["dotted", "--", "-", "-."]
+
+        for i, (report_name, dfs) in enumerate(reservoir.reports.items()):
+            line_style = styles[i % len(styles)]
+            name = f"{report_name}.{column_name}"
+            df, df_wy = dfs
+
+            if is_storage:
+                Reservoir.interpolate_monthly_storage_to_daily(
+                    df,
+                    reservoir.df_daily,
+                    monthly_value_col=column_name,
+                    daily_target_col=name
+                )
+            else:
+                Reservoir.monthly_total_to_daily_smooth(
+                    df,
+                    reservoir.df_daily,
+                    monthly_value_col=column_name,
+                    daily_target_col=name,
+                    convert_af_to_cfs=convert_af_to_cfs
+                )
+
+            if subtract_col and subtract_col in reservoir.df_daily.columns:
+                reservoir.df_daily[name] = (
+                        reservoir.df_daily[name] - reservoir.df_daily[subtract_col]
+                )
+
+            if subtract:
+                reservoir.df_daily[name] = reservoir.df_daily[name] - subtract
+
+            legend_studies.append((report_name, line_style))
+            ts = TimeSeries(
+                df=reservoir.df_daily,
+                col=name,
+                color=color,
+                linestyle=line_style,
+                do_stack=False,
+                linewidth=linewidth
+            )
+            time_series.insert(0, ts)
+        return legend_studies
+
+def previous_month_path(path: Path) -> Path:
+    """
+    Takes a path like: /.../2026/APR26
+    Returns:          /.../2026/MAR26
+
+    Handles year rollover: JAN26 → DEC25
+    """
+    path_str = str(path)
+
+    # Match year and month code (e.g. 2026/APR26), ignoring an optional _SUFFIX such as _MIN
+    match = re.search(r'/(\d{4})/([A-Z]{3}\d{2})(?:_.*)?$', path_str)
+    if not match:
+        raise ValueError(f"Could not find month-year pattern in path: {path}")
+    year_str = match.group(1)
+    month_code = match.group(2)  # e.g. APR26
+
+    # Parse to datetime
+    dt = datetime.strptime(month_code, '%b%y')
+    dt = dt.replace(year=int(year_str))
+
+    # Go to previous month
+    if dt.month == 1:
+        prev_dt = dt.replace(year=dt.year - 1, month=12, day=1)
+    else:
+        prev_dt = dt.replace(month=dt.month - 1, day=1)
+
+    # Format back to APR26 style
+    new_month_code = prev_dt.strftime('%b%y').upper()
+
+    # Replace in the original path
+    new_path_str = re.sub(r'/(\d{4})/[A-Z]{3}\d{2}$',
+                          f'/{prev_dt.year}/{new_month_code}',
+                          path_str)
+
+    return Path(new_path_str)
