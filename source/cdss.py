@@ -43,8 +43,8 @@ import requests
 from pathlib import Path
 import numpy as np
 from source.water_year_info import WaterYearInfo
-import datetime
 from datetime import date
+from source.hydrologic_cache import WaterYearCache
 
 def structure_info(wdid):
     json_info = None
@@ -235,63 +235,56 @@ def telemetry_station_daily_to_df(df:pd.DataFrame, abbrev:str, name:str, measure
 
 def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=None, update=False, alias='',
                                   start_date=None, end_date=None):
-    time_series = None
-
     if water_year_info is not None:
-        water_year_string = '_' + parameter + '_' + str(water_year_info.year)
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
         if water_year_info.is_current_water_year:
             update = True
-    else:
-        water_year_string = ''
 
-    file_name = cache_file_name(abbrev, water_year_string=water_year_string)
-    if file_name.exists() and not update:
-        time_series = load_json(file_name, value_name='measValue')
-        if water_year_info is not None and water_year_info.is_current_water_year:
-            last_date = time_series[-1][0]
-            update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
-        else:
-            last = pd.Timestamp(time_series[-1][0]).date()
-            end = pd.Timestamp(water_year_info.end_date).date()
-            update = end > last
-        print_last_value(abbrev, time_series, alias=alias)
-        if not update:
-            return time_series
+    cache = WaterYearCache.for_cdss()
 
-    # api_key = None  # Replace with your CDSS API key (optional for limited queries)
-    base_url = "https://dwr.state.co.us/Rest/GET/api/v2/telemetrystations/telemetrytimeseriesday/"
-    url = f"{base_url}?abbrev={abbrev}"
-    if parameter:
-        url += f"&parameter={parameter}"
-    if start_date:
-        url += f'&startDate={start_date}'
-    if end_date:
-        url += f'&endDate={end_date}'
+    def fetch_fn(path: Path) -> None:
+        # Re-use the original request logic by calling the low-level function
+        # that writes the JSON (adapted from the original body)
+        base_url = "https://dwr.state.co.us/Rest/GET/api/v2/telemetrystations/telemetrytimeseriesday/"
+        url = f"{base_url}?abbrev={abbrev}"
+        if parameter:
+            url += f"&parameter={parameter}"
+        if start_date:
+            url += f'&startDate={start_date}'
+        if end_date:
+            url += f'&endDate={end_date}'
+        fields = ['measDate', 'measValue', 'modified']
+        url += '&fields=' + ','.join(fields)
+        try:
+            print(f'CDSS telemetry:  {url}')
+            response = requests.get(url)
+            response.raise_for_status()
+            if response.json().get("ResultList"):
+                write_json(path, response)
+        except requests.exceptions.RequestException as e:
+            msg = f"Error querying CDSS telemetry station {abbrev} info: {e}"
+            if logger is not None:
+                logger.log_message(msg)
+            else:
+                print(msg)
 
-    fields = ['measDate', 'measValue', 'modified']
-    url += f'&fields='
-    for field in fields:
-        url += f'{field},'
-    url = url[:-1]
+    def parse_fn(path: Path):
+        return load_json(path, value_name='measValue')
 
-    #     'https://dwr.state.co.us/Rest/GET/api/v2/telemetrystations/telemetrytimeseriesday/?fields=measDate%2CmeasValue%2Cmodified&abbrev=GRORESCO&parameter=STORAGE&startDate=11%2F01%2F2024'
-    try:
-        print(f'CDSS telemetry:  {url}')
-        response = requests.get(url)
-        response.raise_for_status()  # Raise exception for bad status codes
-        json_data = response.json()
-        if json_data["ResultList"]:
-            write_json(file_name, response)
-            time_series = data_from_json(json_data, value_name='measValue')
-            print_last_value(abbrev, time_series, alias=alias)
-    except requests.exceptions.RequestException as e:
-        msg = f"Error querying CDSS telemetry station {abbrev} info: {e}"
-        if logger is not None:
-            logger.log_message(msg)
-        else:
-            print(msg)
+    time_series = cache.load_or_fetch(
+        key=abbrev,
+        water_year_info=water_year_info,
+        fetch_fn=fetch_fn,
+        parse_fn=parse_fn,
+        suffix=parameter or "",
+        extension='.json',
+        force=update,
+        move_on_update=True,
+        diff_on_update=True,
+    )
+
+    print_last_value(abbrev, time_series, alias=alias)
     return time_series
 
 
@@ -343,32 +336,45 @@ def request_surface_waters_day(logger, abbrev, file_name, start_date=None, end_d
 
 def surface_waters_day(logger, abbrev, water_year_info, meas_type=None, update=False, alias='', file_prefix=''):
     if water_year_info is not None:
-        water_year_string = '_' + str(water_year_info.year)
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
-        # cdss_start_date = pd.Timestamp(start_datetime64).strftime('%m-%d-%Y')
         if water_year_info.is_current_water_year:
             update = True
     else:
         logger.log_message(f'CDSS surface water request has no info: {abbrev}')
         return None
 
-    file_name = cache_file_name(abbrev, meas_type=meas_type, water_year_string=water_year_string, file_prefix=file_prefix)
-    if file_name.exists() and not update:
-        time_series = load_json(file_name, value_name='value')
-        if water_year_info is not None and water_year_info.is_current_water_year:
-            last_date = time_series[-1][0]
-            update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
-        else:
-            last = pd.Timestamp(time_series[-1][0]).date()
-            end = pd.Timestamp(water_year_info.end_date).date()
-            update = end > last
-        print_last_value(abbrev, time_series, alias=alias)
-        if not update:
-            return time_series
+    cache = WaterYearCache.for_cdss()
 
-    time_series = request_surface_waters_day(logger, abbrev, file_name, start_date=start_date, end_date=end_date,
-                                             meas_type=meas_type, alias=alias)
+    def fetch_fn(path: Path) -> None:
+        request_surface_waters_day(logger, abbrev, path, start_date=start_date, end_date=end_date,
+                                    meas_type=meas_type, alias=alias)
+
+    def parse_fn(path: Path):
+        return load_json(path, value_name='value')
+
+    suffix_parts = []
+    if meas_type:
+        suffix_parts.append(meas_type)
+    if file_prefix:
+        # file_prefix is applied by original cache_file_name; keep it in the key for compatibility
+        key = f"{file_prefix}_{abbrev}"
+    else:
+        key = abbrev
+
+    time_series = cache.load_or_fetch(
+        key=key,
+        water_year_info=water_year_info,
+        fetch_fn=fetch_fn,
+        parse_fn=parse_fn,
+        suffix='_'.join(suffix_parts) if suffix_parts else "",
+        extension='.json',
+        force=update,
+        move_on_update=True,
+        diff_on_update=True,
+    )
+
+    print_last_value(abbrev, time_series, alias=alias)
     return time_series
 
 
@@ -443,40 +449,52 @@ def structures_divrec(logger, wdid:str, water_year_info, meas_type:str='divrecda
     if analyze:
         print(f'CDSS {wdid} {alias} {water_year_info.year}')
     if water_year_info is not None:
-        water_year_string = '_' + str(water_year_info.year)
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
-        # cdss_start_date = pd.Timestamp(start_datetime64).strftime('%m-%d-%Y')
         if water_year_info.is_current_water_year:
             update = True
     else:
         logger.log_message(f'CDSS structure divrec request has no info: {wdid}')
         return None
 
-    file_name = cache_file_name(wdid, meas_type=meas_type, water_year_string=water_year_string, water_class_num=water_class_num, file_prefix=file_prefix)
-    if file_name.exists() and not update:
+    cache = WaterYearCache.for_cdss()
+
+    def fetch_fn(path: Path) -> None:
+        request_structures_divrec(logger, wdid, path, start_date=start_date, end_date=end_date,
+                                   meas_type=meas_type, water_class_num=water_class_num, alias=alias, analyze=analyze)
+
+    def parse_fn(path: Path):
         if meas_type == 'stagevolume':
-            value_name='volume'
+            value_name = 'volume'
         elif meas_type == 'divrecday':
             value_name = 'dataValue'
         else:
-            print(f'cdss structures_divrec unknown meas_type: {meas_type}')
             return None
-        time_series = load_json(file_name, value_name=value_name, date_name='dataMeasDate',
-                                water_class_num=water_class_num, analyze=analyze)
-        if water_year_info is not None and water_year_info.is_current_water_year:
-            last_date = time_series[-1][0]
-            update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
-        else:
-            last = pd.Timestamp(time_series[-1][0]).date()
-            end = pd.Timestamp(water_year_info.end_date).date()
-            update = end > last
-        # print_last_value(wdid, time_series, alias=alias)
-        if not update:
-            return time_series
+        return load_json(path, value_name=value_name, date_name='dataMeasDate',
+                         water_class_num=water_class_num, analyze=analyze)
 
-    time_series = request_structures_divrec(logger, wdid, file_name, start_date=start_date, end_date=end_date,
-                                             meas_type=meas_type, water_class_num=water_class_num, alias=alias, analyze=analyze)
+    suffix_parts = []
+    if meas_type:
+        suffix_parts.append(meas_type)
+    if water_class_num:
+        suffix_parts.append(water_class_num)
+    if file_prefix:
+        key = f"{file_prefix}_{wdid}"
+    else:
+        key = wdid
+
+    time_series = cache.load_or_fetch(
+        key=key,
+        water_year_info=water_year_info,
+        fetch_fn=fetch_fn,
+        parse_fn=parse_fn,
+        suffix='_'.join(suffix_parts) if suffix_parts else "",
+        extension='.json',
+        force=update,
+        move_on_update=True,
+        diff_on_update=True,
+    )
+
     return time_series
 
 def daily_to_water_year(a, water_year_start_month=10):
@@ -501,7 +519,7 @@ def daily_to_water_year(a, water_year_start_month=10):
     cfs_to_af = 1.983459
 
     for o in sorted_a:
-        dt_obj = o['dt'].astype(object)  # datetime.date
+        dt_obj = pd.Timestamp(o['dt']).to_pydatetime()
         val = o['val']
 
         # === Calculate correct Water Year label ===
@@ -509,8 +527,6 @@ def daily_to_water_year(a, water_year_start_month=10):
             wy_year = dt_obj.year + 1
         else:
             wy_year = dt_obj.year
-
-        wy_start = datetime.date(wy_year - 1, water_year_start_month, 1)
 
         # New water year started
         if current_wy is None or wy_year != current_wy:

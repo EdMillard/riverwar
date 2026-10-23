@@ -29,8 +29,7 @@ from rw.util import reshape_annual_range
 from source.water_year_info import WaterYearInfo
 from datetime import date
 from api import df_utils
-from typing import List, Tuple
-
+from source.hydrologic_cache import WaterYearCache
 
 # USGS Gage parameter definitions
 # https://help.waterdata.usgs.gov/code/parameter_cd_query?fmt=rdb&inline=true&group_cd=%
@@ -122,62 +121,43 @@ class USGSGage(object):
 
     def daily_discharge(self, water_year_info=None, update=update_gages, alias='', parameterCd='00060', statCd='00003'):
         if water_year_info is not None:
-            water_year_string = '_' + str(water_year_info.year)
             self.start_date = water_year_info.start_date
             self.end_date = water_year_info.end_date
             if water_year_info.is_current_water_year:
                 update = True
         else:
-            water_year_string = ''
-        # FIXME HACK
-        # update = False
+            water_year_info = getattr(self, 'water_year_info', None)
 
-        previous_data = None
-        new_data = None
-        if water_year_info.is_water_year:
-            file_path = Path('data/USGS_Gages/WY')
-        else:
-            file_path = Path('data/USGS_Gages/')
+        cache = WaterYearCache.for_usgs(water_year_info)
 
-        file_path = file_path.joinpath(self.site + water_year_string +'.csv')
-        if file_path.exists():
-            previous_data = self.load_daily_discharge(file_path, water_year_info, update, parameterCd=parameterCd, statCd=statCd)
-            if previous_data is not None and len(previous_data):
-                last_date = previous_data[-1][0]
-                if water_year_info is not None and water_year_info.is_current_water_year:
-                    update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
-                else:
-                    last = pd.Timestamp(previous_data[-1][0]).date()
-                    end = pd.Timestamp(water_year_info.end_date).date()
-                    update = end > last
-            else:
-                update = True
-                previous_data = None
-            # FIXME HACK
-            update = True
+        def fetch_fn(path: Path) -> None:
+            self.request_daily_discharge(path, self.start_date, str(self.end_date), parameterCd=parameterCd, statCd=statCd)
 
-        if file_path.exists() and update:
-            old_file_moved_path = WaterYearInfo.move_file_with_mod_date(file_path)
-        else:
-            old_file_moved_path = None
+        def parse_fn(path: Path):
+            return self.load_time_series_csv(str(path), parameterCd=parameterCd, statCd=statCd)
 
-        if not file_path.exists() or update:
-            self.request_daily_discharge(file_path, self.start_date, str(self.end_date), parameterCd=parameterCd,
-                                         statCd=statCd)
-            new_data = self.load_daily_discharge(file_path, water_year_info, update, parameterCd=parameterCd, statCd=statCd)
-            if water_year_info.end_date >= datetime.date.today():
-                latest = self.request_instantaneous_value_discharge( parameterCd=parameterCd)
-                new_data = np.append(new_data, np.array([latest], dtype=new_data.dtype))
+        data = cache.load_or_fetch(
+            key=self.site,
+            water_year_info=water_year_info,
+            fetch_fn=fetch_fn,
+            parse_fn=parse_fn,
+            # suffix=f"{parameterCd}_{statCd}",
+            suffix=f"",
+            extension='.csv',
+            force=update,
+            move_on_update=True,
+            diff_on_update=True,
+        )
 
-        if previous_data is not None and new_data is not None:
-            WaterYearInfo.diff_data(previous_data, new_data, file_path, old_file_moved_path)
-            daily_discharge = new_data
-        elif previous_data is not None:
-            daily_discharge = previous_data
-        else:
-            daily_discharge = new_data
+        if water_year_info is not None and water_year_info.end_date >= datetime.date.today() and data is not None and len(data):
+            latest = self.request_instantaneous_value_discharge(parameterCd=parameterCd)
+            if latest and isinstance(latest, tuple):
+                try:
+                    data = np.append(data, np.array([latest], dtype=data.dtype))
+                except Exception:
+                    pass
 
-        print_last_value(self.site, daily_discharge, alias=alias)
+        print_last_value(self.site, data, alias=alias)
 
         # value_column = f'{parameterCd}_{statCd}'
         # summary = usgs_csv_summary(file_path, value_column=value_column)
@@ -186,7 +166,7 @@ class USGSGage(object):
         # value_af = value_cfs * 1.983459
        #  print(f"\t{file_path} {summary['first_date']}-{summary['last_date']} {value_af:10.2f} AF")
 
-        return daily_discharge
+        return data
 
     def load_time_series_csv(self, filename:str, parameterCd:str ='00060', statCd:str ='00003'):
         date_time_format = "%Y-%m-%d"
@@ -256,8 +236,7 @@ class USGSGage(object):
         f.close()
         return a
 
-    import datetime
-
+    @staticmethod
     def parse_usgs_rdb(data):
         """
         Parse USGS RDB into list of ('YYYY-MM-DDTHH:MM:SS', value) tuples.
@@ -356,14 +335,12 @@ class USGSGage(object):
     @staticmethod
     def daily_year_valid(daily_discharge_cfs, water_year_info:WaterYearInfo, file_path:Path|str)-> bool:
         valid:bool = False
-        start_dt = daily_discharge_cfs[0]['dt']
-        start_dt_pd = pd.Timestamp(start_dt)
-        end_dt = daily_discharge_cfs[-1]['dt']
-        end_dt_pd = pd.Timestamp(end_dt)
-        if start_dt_pd.date() == water_year_info.start_date or end_dt_pd.date() == water_year_info.end_date:
+        start_dt = pd.Timestamp(daily_discharge_cfs[0]['dt']).date()
+        end_dt = pd.Timestamp(daily_discharge_cfs[-1]['dt']).date()
+        if start_dt == water_year_info.start_date or end_dt == water_year_info.end_date:
             valid = True
         else:
-            print(f'Misaligned water year, reloading: {file_path} {start_dt_pd.date()} {water_year_info.start_date} {end_dt_pd.date()} {water_year_info.end_date}')
+            print(f'Misaligned water year, reloading: {file_path} {start_dt} {water_year_info.start_date} {end_dt} {water_year_info.end_date}')
         return valid
 
     def load_daily_discharge(self, file_path, water_year_info: WaterYearInfo, update=update_gages, parameterCd='00060', statCd='00003'):
@@ -379,7 +356,7 @@ class USGSGage(object):
                 self.daily_discharge_cfs = self.load_time_series_csv(file_path)
                 return self.daily_discharge_cfs
             end_datetime64 = self.daily_discharge_cfs[-1]['dt']
-            end_date = end_datetime64.astype("datetime64[D]").astype(datetime.date)
+            end_date = pd.Timestamp(end_datetime64).date()
             yesterdays_date = datetime.datetime.now().date() - datetime.timedelta(days=1)
             if end_date < yesterdays_date < self.end_date and update:
                 print(end_date, self.end_date, yesterdays_date)
@@ -455,7 +432,7 @@ def daily_to_water_year(a, water_year_month=1):
     total = 0
     result = []
     for o in a:
-        obj = o['dt'].astype(object)
+        obj = pd.Timestamp(o['dt']).to_pydatetime()
         if obj.month == water_year_month and obj.day == 1:
             if total > 0:
                 result.append([dt, total*1.983459])
@@ -487,7 +464,7 @@ def daily_to_water_year(a, water_year_month=1):
 
 
 def daily_cfs_to_monthly_af(a, start_year=0, end_year=0):
-    obj = a[0]['dt'].astype(object)
+    obj = pd.Timestamp(a[0]['dt']).to_pydatetime()
     dt = datetime.date(obj.year, obj.month, obj.day)
     month = obj.month
     year = obj.year
@@ -495,7 +472,7 @@ def daily_cfs_to_monthly_af(a, start_year=0, end_year=0):
     total = 0
     result = []
     for o in a:
-        obj = o['dt'].astype(object)
+        obj = pd.Timestamp(o['dt']).to_pydatetime()
         if obj.month != month:
             if start_year == 0 and end_year == 0:
                 result.append([dt, round(total)])
@@ -748,53 +725,4 @@ def usgs_gage_water_quality(sites, start_date, end_date):
 # sites = ['09085100']  # Colorado River Below Glenwood Springs, CO
 # sites = ['09095500']  # Colorado River Near Cameo, CO
 # sites = ['09106150']  # COLO RIVER BELOW GRAND VALLEY DIV NR PALISADE, CO
-# sites = ['09163500']  # Colorado River Near Colorado-Utah State Line
-# sites = ['09180500']  # COLORADO RIVER NEAR CISCO, UT
-# sites = ['09185600']  # COLORADO RIVER AT POTASH, UT
-
-# sites = ['09380000']  # Colorado River at Lees Ferry, AZ
-# sites = ['09382000']  # Paria River at Lees Ferry, AZ
-
-# sites = ['09383400']  # Little Colorado At Greer, AZ
-# sites = ['09397000']  # Little Colorado At Holbrook, AZ
-# sites = ['09400350']  # Little Colorado Near Winslow, AZ
-# sites = ['09402000']  # Little Colorado Near Cameron, AZ
-
-# sites = ['09406000']  # Virgin River at Virgin, UT
-# sites = ['09408150']  # Virgin River near Hurricane, UT
-# sites = ['09413500']  # Virgin River near St.George, UT
-# sites = ['09415000']  # VIRGIN RV AT LITTLEFIELD, AZ
-
-# sites = ['09416000']  # Muddy River NR Moapa, NV
-# sites = ['09419000']  # Muddy River NR Glendale, NV
-
-# sites = ['09431500']  # GILA RIVER NEAR REDROCK, NM
-# sites = ['09448500']  # GILA RIVER NEAR GILA, NM
-# sites = ['09439000']  # GILA RIVER AT DUNCAN, AZ
-# sites = ['09442000']  # GILA RIVER NEAR CLIFTON, AZ
-# sites = ['09430500']  # GILA RIVER AT HEAD OF SAFFORD VALLEY, NR SOLOMON
-# sites = ['09514100']  # GILA RIVER AT ESTRELLA PARKWAY, NEAR GOODYEAR, AZ (River is extirpated in Phoenix here)
-
-# sites = ['09497500']  # SALT RIVER NEAR CHRYSOTILE, AZ
-# sites = ['09498500']  # SALT RIVER NEAR ROOSEVELT, AZ
-# sites = ['09502000']  # SALT RIVER BLW STEWART MOUNTAIN DAM, AZ
-
-# sites = ['09508500']  # VERDE RVR BLW TANGLE CREEK, ABV HORSESHOE DAM, AZ
-# sites = ['09510000']  # VERDE RIVER BELOW BARTLETT DAM, AZ
-# sites = ['09511300']  # VERDE RIVER NEAR SCOTTSDALE, AZ
-
-# sites = ['09423000']  # Colorado River Below Davis Dam, Az-Nv
-# sites = ['09426620']  # Bill Williams River Near Parker, AZ
-# sites = ['09427520']  # Colorado River Below Parker Dam, Az-Ca
-# sites = ['09428500']  # CRIR MAIN CANAL NEAR PARKER, AZ
-# sites = ['09429000']  # Palo Verde Canal Near Blythe, CA
-# sites = ['09429100']  # Colorado River Below Palo Verde Dam, Az-Ca
-# sites = ['09522500']  # Gila Gravity Main Canal At Imperial Dam
-# sites = ['09527590']  # Coachella Canal Above All-American Diversion
-# sites = ['09523000']  # All-American Canal Near Imperial Dam
-# sites = ['09527700']  # ALL-AMERICAN CANAL BELOW DROP 2 RESERVOIR OUTLET  (Coachella and Alamo to Mexico removed)
-
-# sites = ['09429500']  # Colorado River Below Imperial Dam
-# sites = ['09429600']  # Colorado River Below Laguna Dam
-# sites = ['09525500']  # Yuma Main Canal Below Colorado River Siphon
-# sites = ['09521100']  # Colorado River Yuma Main Canal WW at Yuma, AZ
+#

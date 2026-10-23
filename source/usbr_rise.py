@@ -27,8 +27,9 @@ import pandas as pd
 import requests
 from pathlib import Path
 from source.water_year_info import WaterYearInfo
-from typing import Dict, Any, List, Union, Tuple, Optional
+from typing import Dict, Any, List, Union, Tuple, Optional, Hashable
 from urllib.parse import urlparse
+from source.hydrologic_cache import WaterYearCache
 
 debug = True
 
@@ -48,7 +49,7 @@ def daily_to_water_year(a, water_year_month=1):
     total = 0
     result = []
     for o in a:
-        obj = o['dt'].astype(object)
+        obj = pd.Timestamp(o['dt']).to_pydatetime()
         if obj.month == 10 and obj.day == 1:
             if total > 0:
                 result.append([dt, total])
@@ -78,7 +79,7 @@ def daily_to_water_year(a, water_year_month=1):
 
     return a
 
-def daily_to_monthly_sum(a: np.ndarray) -> List[Dict[str, Any]]:
+def daily_to_monthly_sum(a: np.ndarray) -> List[Dict[Hashable, Any]]:
     """
     Convert daily structured numpy array ('dt' and 'val' fields)
     into monthly sums.
@@ -97,8 +98,9 @@ def daily_to_monthly_sum(a: np.ndarray) -> List[Dict[str, Any]]:
     df['dt'] = pd.to_datetime(df['dt'], errors='coerce')
 
     # Group by year and month
-    df['year'] = df['dt'].dt.year
-    df['month'] = df['dt'].dt.month
+    dt_index = pd.DatetimeIndex(df['dt'])
+    df['year'] = dt_index.year
+    df['month'] = dt_index.month
 
     monthly = df.groupby(['year', 'month'])['val'].sum().reset_index()
 
@@ -133,7 +135,7 @@ def daily_af_to_monthly_af(a, start_year=0, end_year=0):
     total = 0
     result = []
     for o in a:
-        obj = o['dt'].astype(object)
+        obj = pd.Timestamp(o['dt']).to_pydatetime()
         if obj.month != month:
             if start_year == 0 and end_year == 0:
                 result.append([dt, round(total)])
@@ -179,77 +181,58 @@ def print_last_value(abbrev, a, alias=''):
 
 def daily_year_valid(daily_discharge_cfs, water_year_info:WaterYearInfo, file_path:Path|str)-> bool:
     valid:bool = False
-    start_dt = daily_discharge_cfs[0]['dt']
-    start_dt_pd = pd.Timestamp(start_dt)
-    end_dt = daily_discharge_cfs[-1]['dt']
-    end_dt_pd = pd.Timestamp(end_dt)
-    if start_dt_pd.date() == water_year_info.start_date or end_dt_pd.date() == water_year_info.end_date:
+    start_dt = pd.Timestamp(daily_discharge_cfs[0]['dt']).date()
+    end_dt = pd.Timestamp(daily_discharge_cfs[-1]['dt']).date()
+    if start_dt == water_year_info.start_date or end_dt == water_year_info.end_date:
         valid = True
     else:
-        print(f'Misaligned water year, reloading: {file_path} {start_dt_pd.date()} {water_year_info.start_date} {end_dt_pd.date()} {water_year_info.end_date}')
+        print(f'Misaligned water year, reloading: {file_path} {start_dt} {water_year_info.start_date} {end_dt} {water_year_info.end_date}')
     return valid
 
 def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, update=False, alias=''):
     info = None
     item_id_str = str(item_id)
-    if water_year_info.is_water_year:
-        data_path = Path('data/USBR_RISE/WY')
-    else:
-        data_path = Path('data/USBR_RISE')
-    data_path.mkdir(parents=True, exist_ok=True)
 
     if water_year_info is not None:
-        water_year_string = '_' + str(water_year_info.year)
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
         if water_year_info.is_current_water_year:
             update = True
-    else:
-        water_year_string = ''
 
-    previous_data = None
-    if csv:
-        file_path = data_path.joinpath(item_id_str + water_year_string + '.csv')
-    else:
-        file_path = data_path.joinpath(item_id_str +  water_year_string + '.json')
-        if file_path.exists():
-            info, previous_data = load_json(file_path)
-            if previous_data is not None and len(previous_data):
-                if not daily_year_valid(previous_data, water_year_info, file_path):
-                    print(f'Misaligned water year, reloading: {file_path}')
-                    update = True
-                last_date = previous_data[-1][0]
-                if water_year_info is not None and water_year_info.is_current_water_year:
-                    update = WaterYearInfo.is_current_datetime_greater(last_date, hours_offset=48)
-                else:
-                    last = pd.Timestamp(previous_data[-1][0]).date()
-                    end = pd.Timestamp(water_year_info.end_date).date()
-                    update = end > last
-                    # print(f"update {update} {file_path} {previous_data[-1][0]} {water_year_info.end_date}")
-                # FIXME HACK
-                # update = False
-    if not info or update:
-        if file_path.exists():
-            old_file_moved_path = WaterYearInfo.move_file_with_mod_date(file_path)
+    # Dual-directory layout is now inside WaterYearCache
+    cache = WaterYearCache.for_usbr(water_year_info)
+
+    extension = '.csv' if csv else '.json'
+
+    def fetch_fn(path: Path) -> None:
+        request(item_id, path, start_date, end_date, csv)
+
+    def parse_fn(path: Path):
+        nonlocal info
+        if csv:
+            # FIXME original CSV path
+            print("FIXME USBR RISE csv load")
+            return None
         else:
-            old_file_moved_path = None
+            info, arr = load_json(path)
+            return arr
 
-        info, new_data = request(item_id, file_path, start_date, end_date, csv)
+    data = cache.load_or_fetch(
+        key=item_id_str,
+        water_year_info=water_year_info,
+        fetch_fn=fetch_fn,
+        parse_fn=parse_fn,
+        suffix="",
+        extension=extension,
+        force=update,
+        move_on_update=True,
+        diff_on_update=True,
+    )
 
-        if previous_data is not None and new_data is not None:
-            WaterYearInfo.diff_data(previous_data, new_data, file_path, old_file_moved_path)
-            a = new_data
-        elif previous_data is not None:
-            a = previous_data
-        else:
-            a = new_data
-    else:
-        a = previous_data
-
-    if not alias:
-        alias = info.get('Parameter Name')
-    # print_last_value(str(item_id), a, alias=alias)
-    return info, a
+    # if not alias and info is not None:
+    #    alias = info.get('Parameter Name')
+    # print_last_value(str(item_id), data, alias=alias)
+    return info, data
 
 def request_accum():
     url = 'https://www.usbr.gov/lc/region/g4000/riverops/webreports/hourlyweb.json'
@@ -412,7 +395,7 @@ def load_catalog_items(catalog_record, prefix=''):
         catalog_items = relationships['catalogItems']
         for catalog_item in catalog_items['data']:
             catalog_item_id_str = catalog_item['id']
-            request_catalog_item(catalog_item_id_str, prefix)
+            request_catalog_item(catalog_item_id_str)
     except KeyError:
         print("usbr request catalog item key error: ")
         return {}
@@ -466,7 +449,6 @@ def request_location(location:dict)->Tuple[str, List[str]]:
     return location_name, states
 
 def request_catalog_item(catalog_item_id_str)->Tuple[str, int]:
-    catalog_item = {}
     url = 'https://data.usbr.gov'
     url += catalog_item_id_str
 
