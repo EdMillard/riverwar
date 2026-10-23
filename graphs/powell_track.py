@@ -33,6 +33,7 @@ from reservoirs.reservoir import Reservoir
 from reservoirs.lake_powell import LakePowell
 from reservoirs.flaming_gorge import FlamingGorge
 from typing import List,Tuple
+import pandas as pd
 
 from pdf_reader.pdf_reader import download_usbr_24mo_reports
 # from source.crbfc import request_esplist, request_forecast
@@ -52,7 +53,11 @@ class ReservoirsBig3(ChartFrame):
 
         self.report_name, reports_latest = ChartFrame.get_latest_reports(path='/opt/dev/riverwar/data/USBR_24Month_Reports/2026/SEP26_MIN')
 
-        self.line_chart = None
+        self.storage_chart = None
+        self.powell_storage_time_series = None
+        self.powell_storage_projection_time_series = None
+        self.flaming_gorge_storage_time_series = None
+        self.flaming_gorge_storage_projection_time_series = None
         self.inflow_outflow_chart = None
         self.fg_inflow_outflow_chart = None
         self.powell_inflows = None
@@ -68,14 +73,35 @@ class ReservoirsBig3(ChartFrame):
         self.right_axis_annotations()
 
     def right_axis_annotations(self):
+        ax = self.storage_chart.ax
+        today = datetime.date.today()
+        ReservoirsBig3.add_two_series_delta_annotation(ax,
+                                                       self.powell_storage_time_series,
+                                                       self.powell_storage_projection_time_series,
+                                                       color='black',
+                                                       text_offset=-0.02,
+                                                       date=today)
+
+        ReservoirsBig3.add_delta_annotation(ax, self.powell_storage_time_series,
+                               start_date="2026-09-15", end_date=today,
+                                            # color='black',
+                                            linewidth=3.0,
+                                            annotation_side='right')
+
+        ReservoirsBig3.add_delta_annotation(ax, self.flaming_gorge_storage_time_series,
+                               start_date="2026-04-20", end_date=today,
+                                            # color='black',
+                                            linewidth=3.0,
+                                            annotation_side='right')
+
+
         for reservoirs in self.reservoir_lists:
             for reservoir in reservoirs:
                 if  reservoir.name == 'Lake Powell':
                     crit_points = getattr(reservoir, 'critical_elevations_feet', [])
                     if crit_points:
-                        if hasattr(self.line_chart, 'ax') and self.line_chart.ax is not None:
+                        if hasattr(self.storage_chart, 'ax') and self.storage_chart.ax is not None:
                             min_capacity = 0
-                            ax = self.line_chart.ax
                             for item in crit_points:
                                 if isinstance(item, (list, tuple)) and len(item) >= 3:
                                     if item[0] == 'Safe Power Head':
@@ -87,7 +113,6 @@ class ReservoirsBig3(ChartFrame):
                             elevation_3510_ft = getattr(reservoir, 'power_head_target_feet', 0)
                             elevation_3510_af = getattr(reservoir, 'power_head_target_af', 0)
                             if elevation_3510_af:
-                                ax = self.line_chart.ax
                                 ChartFrame.annotate_level(ax, elevation_3510_af-min_capacity, elevation_3510_ft,
                                                               'royalblue', draw_text=True, left_of_axis=True)
 
@@ -107,22 +132,25 @@ class ReservoirsBig3(ChartFrame):
             for reservoir in reservoirs:
                 if reservoir.name == 'Lake Powell':
                     powell_df = reservoir.df_daily
-                    time_series.append((reservoir.df_daily, ub.POWELL_ABOVE_3490, 'dodgerblue'))
+                    self.powell_storage_time_series = (reservoir.df_daily, ub.POWELL_ABOVE_3490, 'dodgerblue')
+                    time_series.append(self.powell_storage_time_series)
                     legend_variables.append((ub.POWELL_ABOVE_3490, 'dodgerblue'))
                     legend_studies = ReservoirsBig3.add_report_series(reservoir, time_series, 'End Of Month Storage', "#a0a0ff",
                                                      subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
+                    self.powell_storage_projection_time_series = time_series[0]
                 elif reservoir.name == 'Flaming Gorge':
                     time_series.append((reservoir.df_daily, ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
                     legend_variables.append(( ub.FLAMING_GORGE_ABOVE_5868, 'darkgreen'))
                     ReservoirsBig3.add_report_series(reservoir, time_series, 'Live Storage', "#50a050",
                                                      subtract=reservoir.power_head_min_af, is_storage=True, linewidth=2.5)
+                    self.flaming_gorge_storage_time_series = time_series[0]
 
-        self.line_chart = LineChart(
+        self.storage_chart = LineChart(
             time_series,
             title=f'Colorado River {self.name} 24 Month={self.report_name} - {Chart.month_to_short_name(today.month)} ' \
                 f'{today.day}, {today.year}  v{self.version}',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
-            show_x_labels = False,
+            show_x_labels = True,
             show_right_labels = True,
             percentage=0.50,
             y_min = 750_000,
@@ -131,9 +159,9 @@ class ReservoirsBig3(ChartFrame):
             legend_variables=legend_variables,
             legend_studies=legend_studies
         )
-        self.line_chart.set_start_date(graph_start_date)
-        self.line_chart.set_end_date(graph_end_date)
-        self.charts.append(self.line_chart)
+        self.storage_chart.set_start_date(graph_start_date)
+        self.storage_chart.set_end_date(graph_end_date)
+        self.charts.append(self.storage_chart)
 
         # Powell Inflows
         #
@@ -156,10 +184,10 @@ class ReservoirsBig3(ChartFrame):
         self.powell_inflows = LineChart(
             time_series, title='',
             start_date=self.start_nav.current_date, current_date=self.current_time_from_usbr, end_date=self.end_nav.current_date,
-            show_x_labels=True,
+            show_x_labels=False,
             percentage=0.20,
             y_units='CFS',
-            y_max=18_000,
+            y_max=30_000,
             y_min = 0,
             stacked=True,
             compact_legend=True,
@@ -250,6 +278,308 @@ class ReservoirsBig3(ChartFrame):
         self.powell_release_chart.set_start_date(graph_start_date)
         self.powell_release_chart.set_end_date(graph_end_date)
         self.charts.append(self.powell_release_chart)
+
+    @staticmethod
+    def add_two_series_delta_annotation(
+            ax,
+            ts1,
+            ts2,
+            date,
+            column1: str = None,
+            column2: str = None,
+            color: str = None,
+            linestyle: str = "--",
+            linewidth: float = 1.5,
+            text_offset: float = 0.0,  # now a vertical offset (fraction of y-span)
+            annotation_side: str = "right",  # "right" or "left"
+    ):
+        """
+        Draw a vertical dashed line (with solid end-caps) at `date` between the
+        values of two different time series on that date, and annotate the delta.
+
+        text_offset : float
+            Vertical offset as a fraction of the current y-axis span.
+            Positive moves the text up, negative moves it down.
+
+        annotation_side:
+            "right" → text to the right of the vertical line, left-justified
+            "left"  → text to the left of the vertical line, right-justified
+
+        Delta = value(ts1) - value(ts2).
+        """
+        if not isinstance(ts1, TimeSeries):
+            ts1 = TimeSeries.from_tuple(ts1)
+        if not isinstance(ts2, TimeSeries):
+            ts2 = TimeSeries.from_tuple(ts2)
+
+        col1 = column1 or ts1.col
+        col2 = column2 or ts2.col
+        line_color = color or ts1.color
+
+        def prepare(ts, col, name):
+            if ts.df is None or ts.df.empty or col not in ts.df.columns:
+                print(f"[add_two_series_delta_annotation] {name}: missing DataFrame or column '{col}' → returning None")
+                return None
+            df = ts.df.copy()
+            if "Date" not in df.columns:
+                print(f"[add_two_series_delta_annotation] {name}: no 'Date' column → returning None")
+                return None
+            df["Date"] = pd.to_datetime(df["Date"])
+            df = df.set_index("Date").sort_index()
+            return df
+
+        df1 = prepare(ts1, col1, "ts1")
+        df2 = prepare(ts2, col2, "ts2")
+        if df1 is None or df2 is None:
+            print(
+                "[add_two_series_delta_annotation] Could not prepare both series → returning None (no annotation drawn)")
+            return
+
+        dt = pd.Timestamp(date)
+
+        def nearest_value(df, col, label):
+            if df.empty:
+                print(f"[add_two_series_delta_annotation] {label}: DataFrame is empty → returning None")
+                return None
+
+            idx = df.index.get_indexer([dt], method="nearest")[0]
+            if idx == -1:
+                print(f"[add_two_series_delta_annotation] {label}: no nearest index for {dt.date()} → returning None")
+                return None
+
+            candidates = list(range(idx, -1, -1)) + list(range(idx + 1, len(df)))
+            for i in candidates:
+                val = df.iloc[i][col]
+                if pd.notna(val):
+                    try:
+                        numeric = float(val)
+                        matched_date = df.index[i]
+                        if matched_date.date() != dt.date():
+                            print(f"[add_two_series_delta_annotation] WARNING {label}: "
+                                  f"requested {dt.date()} but using {matched_date.date()} "
+                                  f"(value={numeric})")
+                        return numeric
+                    except (TypeError, ValueError):
+                        continue
+
+            print(
+                f"[add_two_series_delta_annotation] {label}: no non-NaN value found near {dt.date()} → returning None")
+            return None
+
+        v1 = nearest_value(df1, col1, "ts1")
+        v2 = nearest_value(df2, col2, "ts2")
+        if v1 is None or v2 is None:
+            print(
+                "[add_two_series_delta_annotation] Could not obtain both values → returning None (no annotation drawn)")
+            return
+
+        delta = v1 - v2
+
+        # Vertical dashed line
+        ax.plot(
+            [dt, dt],
+            [v1, v2],
+            color=line_color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            zorder=6,
+        )
+
+        # Short solid end-caps (same color)
+        x_span_days = (pd.Timestamp(ax.get_xlim()[1]) - pd.Timestamp(ax.get_xlim()[0])).days
+        cap_width_days = max(1, int(x_span_days * 0.008))
+        cap = pd.Timedelta(days=cap_width_days)
+
+        ax.plot([dt - cap, dt + cap], [v1, v1],
+                color=line_color, linestyle="-", linewidth=linewidth,
+                solid_capstyle="butt", zorder=6)
+        ax.plot([dt - cap, dt + cap], [v2, v2],
+                color=line_color, linestyle="-", linewidth=linewidth,
+                solid_capstyle="butt", zorder=6)
+
+        # Annotation with vertical offset
+        mid_y = (v1 + v2) / 2.0
+        y0, y1 = ax.get_ylim()
+        y_span = y1 - y0
+        y_offset = y_span * text_offset
+
+        sign = "+" if delta >= 0 else ""
+        label = f"{sign}{delta:,.1f}"
+
+        x_clearance = pd.Timedelta(days=max(1, int(x_span_days * 0.008)))
+
+        if annotation_side.lower() == "left":
+            xytext = (dt - x_clearance, mid_y + y_offset)
+            ha = "right"
+        else:
+            xytext = (dt + x_clearance, mid_y + y_offset)
+            ha = "left"
+
+        ax.annotate(
+            label,
+            xy=(dt, mid_y),
+            xytext=xytext,
+            textcoords="data",
+            ha=ha,
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color=line_color,
+            zorder=7,
+        )
+
+    @staticmethod
+    def add_delta_annotation(
+            ax,
+            ts,
+            start_date,
+            end_date,
+            column: str = None,
+            color: str = None,
+            linestyle: str = "--",
+            linewidth: float = 1.5,
+            text_offset: float = 0.0,  # now a vertical offset (fraction of y-span)
+            annotation_side: str = "right",  # "right" or "left"
+    ):
+        """
+        Draw a vertical dashed line at end_date between the values of the series
+        on start_date and end_date, with solid end-caps in the same color,
+        and annotate the delta.
+
+        text_offset : float
+            Vertical offset as a fraction of the current y-axis span.
+            Positive moves the text up, negative moves it down.
+            Use this to keep multiple annotations from overlapping.
+
+        annotation_side:
+            "right" → text to the right of the vertical line, left-justified
+            "left"  → text to the left of the vertical line, right-justified
+        """
+        if not isinstance(ts, TimeSeries):
+            ts = TimeSeries.from_tuple(ts)
+
+        col = column or ts.col
+        line_color = color or ts.color
+
+        if ts.df is None or ts.df.empty or col not in ts.df.columns:
+            print(f"[add_delta_annotation] Missing DataFrame or column '{col}' → returning None")
+            return
+
+        df = ts.df.copy()
+        if "Date" not in df.columns:
+            print("[add_delta_annotation] No 'Date' column → returning None")
+            return
+        df["Date"] = pd.to_datetime(df["Date"])
+        df = df.set_index("Date").sort_index()
+
+        start = pd.Timestamp(start_date)
+        end = pd.Timestamp(end_date)
+
+        def nearest_value(dt, label="value"):
+            if df.empty:
+                print(f"[add_delta_annotation] {label}: DataFrame is empty → returning None")
+                return None, None
+
+            idx = df.index.get_indexer([dt], method="nearest")[0]
+            if idx == -1:
+                print(f"[add_delta_annotation] {label}: no nearest index for {dt.date()} → returning None")
+                return None, None
+
+            candidates = list(range(idx, -1, -1)) + list(range(idx + 1, len(df)))
+            for i in candidates:
+                val = df.iloc[i][col]
+                if pd.notna(val):
+                    try:
+                        numeric = float(val)
+                        matched_date = df.index[i]
+                        if matched_date.date() != dt.date():
+                            print(f"[add_delta_annotation] WARNING {label}: "
+                                  f"requested {dt.date()} but using {matched_date.date()} "
+                                  f"(value={numeric})")
+                        return numeric, matched_date
+                    except (TypeError, ValueError):
+                        continue
+
+            print(f"[add_delta_annotation] {label}: no non-NaN value found near {dt.date()} → returning None")
+            return None, None
+
+        v_start, matched_start = nearest_value(start, label="start")
+        v_end, matched_end = nearest_value(end, label="end")
+        if v_start is None or v_end is None:
+            print(
+                "[add_delta_annotation] Could not obtain both start and end values → returning None (no annotation drawn)")
+            return
+
+        delta = v_end - v_start
+        vertical_x = end
+
+        # Vertical dashed line
+        ax.plot(
+            [vertical_x, vertical_x],
+            [v_start, v_end],
+            color=line_color,
+            linestyle=linestyle,
+            linewidth=linewidth,
+            zorder=6,
+        )
+
+        # Solid end-cap from actual start time/value to the vertical line
+        ax.plot(
+            [matched_start, vertical_x],
+            [v_start, v_start],
+            color=line_color,
+            linestyle="-",
+            linewidth=linewidth,
+            solid_capstyle="butt",
+            zorder=6,
+        )
+
+        # Short solid cap at the end value
+        x_span_days = (pd.Timestamp(ax.get_xlim()[1]) - pd.Timestamp(ax.get_xlim()[0])).days
+        cap_width_days = max(1, int(x_span_days * 0.008))
+        cap = pd.Timedelta(days=cap_width_days)
+
+        ax.plot(
+            [vertical_x - cap, vertical_x + cap],
+            [v_end, v_end],
+            color=line_color,
+            linestyle="-",
+            linewidth=linewidth,
+            solid_capstyle="butt",
+            zorder=6,
+        )
+
+        # Annotation with vertical offset
+        mid_y = (v_start + v_end) / 2.0
+        y0, y1 = ax.get_ylim()
+        y_span = y1 - y0
+        y_offset = y_span * text_offset  # positive = up, negative = down
+
+        sign = "+" if delta >= 0 else ""
+        label = f"{sign}{delta:,.1f}"
+
+        # Small fixed horizontal clearance so text doesn't sit on the line
+        x_clearance = pd.Timedelta(days=max(1, int(x_span_days * 0.008)))
+
+        if annotation_side.lower() == "left":
+            xytext = (vertical_x - x_clearance, mid_y + y_offset)
+            ha = "right"
+        else:  # "right"
+            xytext = (vertical_x + x_clearance, mid_y + y_offset)
+            ha = "left"
+
+        ax.annotate(
+            label,
+            xy=(vertical_x, mid_y),
+            xytext=xytext,
+            textcoords="data",
+            ha=ha,
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color=line_color,
+            zorder=7,
+        )
 
     @staticmethod
     def add_report_series(
