@@ -35,7 +35,7 @@ debug = True
 
 class USBRRise(object):
     """
-    Essential paramaters to load USBR Rise data
+    Essential parameters to load USBR Rise data
         https://data.usbr.gov/rise-api
         https://data.usbr.gov/time-series
     """
@@ -174,10 +174,9 @@ def annual_af(item_id, start_date='', end_date='', csv=False):
 
 
 def print_last_value(abbrev, a, alias=''):
-    # last_date = a['dt'][-1]
-    # last_val = a['val'][-1]
-    # print(f'\tUSBR - {abbrev:>8s} {last_date} {last_val} {alias}')
-    pass
+    last_date = a['dt'][-1]
+    last_val = a['val'][-1]
+    print(f'\tUSBR - {abbrev:>8s} {last_date} {last_val} {alias}')
 
 def daily_year_valid(daily_discharge_cfs, water_year_info:WaterYearInfo, file_path:Path|str)-> bool:
     valid:bool = False
@@ -196,12 +195,11 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
     if water_year_info is not None:
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
-        if water_year_info.is_current_water_year:
-            update = True
+        # Do NOT force update=True here; let is_stale decide
+        # if water_year_info.is_current_water_year:
+        #     update = True
 
-    # Dual-directory layout is now inside WaterYearCache
     cache = WaterYearCache.for_usbr(water_year_info)
-
     extension = '.csv' if csv else '.json'
 
     def fetch_fn(path: Path) -> None:
@@ -210,7 +208,6 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
     def parse_fn(path: Path):
         nonlocal info
         if csv:
-            # FIXME original CSV path
             print("FIXME USBR RISE csv load")
             return None
         else:
@@ -224,21 +221,20 @@ def load(item_id, water_year_info=None, start_date='', end_date='', csv=False, u
         parse_fn=parse_fn,
         suffix="",
         extension=extension,
-        force=update,
+        force=update,               # only True when the caller explicitly asks
         move_on_update=True,
         diff_on_update=True,
     )
 
     # if not alias and info is not None:
-    #    alias = info.get('Parameter Name')
-    # print_last_value(str(item_id), data, alias=alias)
+    #     alias = info.get('Parameter Name')
     return info, data
 
 def request_accum():
     url = 'https://www.usbr.gov/lc/region/g4000/riverops/webreports/hourlyweb.json'
     # url =  'https://www.usbr.gov/lc/region/g4000/riverops/webreports/accumweb.json'
     # https://www.usbr.gov/lc/region/g4000/hourly/levels.html
-    headers = {"Accept": "application/vnd.api+json"}
+    # headers = {"Accept": "application/vnd.api+json"}
     r = request_get(url)
     if r.status_code == 200:
         pass
@@ -258,9 +254,8 @@ def request_hdb(sdi:int, start_date:str, end_date:str)->float:
             if len(series):
                 data = series[0].get('Data', None)
                 if data is not None:
-                    days = len(data)
                     for day in data:
-                        t = day.get('t', None)
+                        # t = day.get('t', None)
                         v = day.get('v', None)
                         try:
                             total += float(v)
@@ -333,13 +328,13 @@ def load_catalog(catalog_path, unified_region_id, theme_id=0):
     return records
 
 
-def request_catalog(catalog_path, id, theme_id=0)->Dict:
-    records = {}
-    page_no = 1
+def request_catalog(catalog_path, record_id, theme_id=0)->Dict:
+    # records = {}
+    # page_no = 1
     num_items = 0
     total_items = 100
     while num_items < total_items:
-        url = f'https://data.usbr.gov/rise/api/catalog-record/{id}'
+        url = f'https://data.usbr.gov/rise/api/catalog-record/{record_id}'
 
         # url += '?page='
         # url += str(page_no)
@@ -390,7 +385,7 @@ def request_catalog(catalog_path, id, theme_id=0)->Dict:
 def load_catalog_items(catalog_record, prefix=''):
     try:
         attributes = catalog_record['attributes']
-        print(attributes['_id'], attributes['recordTitle'])
+        print(attributes['_id'], attributes['recordTitle'], prefix)
         relationships = catalog_record['relationships']
         catalog_items = relationships['catalogItems']
         for catalog_item in catalog_items['data']:
@@ -409,7 +404,7 @@ def request_get(url:str):
             r = requests.get(url, headers=headers, timeout=5)
             return r
         except requests.exceptions.ConnectTimeout as e:
-            print(f'USBR RISE request timeout error, retry {retries} of {max_retries}: ')
+            print(f'USBR RISE request timeout error, retry {retries} of {max_retries}: {e} ')
             retries += 1
     return {}
 
@@ -418,10 +413,10 @@ def request_location(location:dict)->Tuple[str, List[str]]:
     states:List[str] = []
     data:Optional[dict] = location.get('data', None)
     if data is not None:
-        id:Optional[str] = data.get('id', None)
+        record_id:Optional[str] = data.get('id', None)
         if id is not None:
             url = 'https://data.usbr.gov'
-            url += id
+            url += record_id
             print(f'USBR RISE location:  {url}')
             r = request_get(url)
             if r and r.status_code == 200:

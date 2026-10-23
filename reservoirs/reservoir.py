@@ -459,7 +459,10 @@ class Reservoir:
         for year in range(start_year, end_year+1):
             self.water_year_info = self.get_water_year_info(year, month=self.water_year_month)
             info, daily = usbr_rise.load(usbr_rise_id, water_year_info=self.water_year_info, alias=column_name)
-            df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=column_name)
+            if daily is not None:
+                df_utils.fill_df_from_structured_array(self.df_daily, daily, date_column_name='Date', value_column_name=column_name)
+            else:
+                print(f'{self.name} id={usbr_rise_id} {column_name} usbr_rise_load_daily failed')
         return daily
 
     def usgs_load_daily(self, gage_id:str, column_name:str, start_year:int=0, end_year:int=0, parameterCd='00060', statCd='00003', month=1):
@@ -680,6 +683,16 @@ class Reservoir:
 
         return self.active_capacity_af, daily_storage_af
 
+    @staticmethod
+    def _to_date(dt) -> date | None:
+        """Convert numpy.datetime64, datetime, or date to a plain date."""
+        if dt is None:
+            return None
+        if isinstance(dt, date) and not isinstance(dt, datetime.datetime):
+            return dt
+        # numpy.datetime64 or datetime.datetime
+        return pd.Timestamp(dt).date()
+
     def get_storage_cdss(self, abbreviation: str) -> float:
         column_name = self.name + '.' + all_b.STORAGE
         cdss.telemetry_station_daily_to_df(
@@ -698,7 +711,8 @@ class Reservoir:
             self.storage_yoy.append(self.get_value_months_or_years_earlier(column_name, last_dt, years=1))
         else:
             # From 1 year ago back to yoy_start_year
-            current_year = last_dt.year
+            last = Reservoir._to_date(last_dt)
+            current_year = last.year
             years_back = current_year - self.yoy_start_year
             for years_ago in range(1, years_back + 1):
                 self.storage_yoy.append(self.get_value_months_or_years_earlier(column_name, last_dt, years=years_ago))
@@ -818,8 +832,10 @@ class Reservoir:
         if usbr_rise_id:
             daily_release = self.usbr_rise_load_daily(usbr_rise_id, column_name)
             # date_time = daily_release['dt'][-1]
-            if len(daily_release):
+            if daily_release is not None and len(daily_release):
                 release = daily_release['val'][-1]
+            else:
+                print(f"{self.name} id={usbr_rise_id} {column_name} get_daily_and_last failed")
 
         return release
 
@@ -1630,6 +1646,8 @@ class SRPReservoir(Reservoir):
         if self.df_daily is not None:
             self.elevation_feet = self.df_daily.iloc[-1][all_b.ELEVATION]
             self.active_capacity_af = self.df_daily.iloc[-1][all_b.STORAGE]
+        else:
+            print(f'{self.name} Load data failed')
 
     @staticmethod
     def receive_data(name: str, df: pd.DataFrame, dt: datetime, data: Dict):
@@ -1693,7 +1711,7 @@ class ReservoirGroup:
 
         for r in self.reservoirs:
             active_capacity_af = getattr(r, 'active_capacity_af', 0)
-            if len(r.storage_yoy) and r.storage_yoy is not None:
+            if r.storage_yoy is not None and len(r.storage_yoy):
                 self.year_over_year_total += (active_capacity_af - r.storage_yoy[0][1])
 
             limited_access = 0

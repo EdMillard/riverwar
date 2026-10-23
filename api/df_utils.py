@@ -231,7 +231,7 @@ def fill_df_from_structured_array(
     Returns:
         Modified DataFrame (filled in-place)
     """
-    if len(arr) == 0:
+    if arr is not None and len(arr) == 0:
         return df
 
     if value_column_name not in df.columns:

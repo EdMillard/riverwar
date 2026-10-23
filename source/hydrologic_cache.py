@@ -153,12 +153,20 @@ class WaterYearCache:
 
     @staticmethod
     def is_stale(
-        path: Path,
-        water_year_info: WaterYearInfo | None,
-        last_date: date | datetime.datetime | np.datetime64 | None,
-        hours_offset: int = 48,
+            path: Path,
+            water_year_info: WaterYearInfo | None,
+            last_date: date | datetime.datetime | np.datetime64 | None,
+            hours_offset: int = 48,  # kept for backward compatibility, unused for current WY
     ) -> bool:
-        """Decide whether a cached file should be refreshed."""
+        """
+        Decide whether a cached file should be refreshed.
+
+        For a current water year the rule is:
+          - fresh if the last point is yesterday or today, OR
+          - if older, allow at most one refresh per calendar day after a lag cutoff
+            (default 10:00 America/Denver).
+        Historical years use the original end-date comparison.
+        """
         if not path.exists():
             return True
         if water_year_info is None:
@@ -167,10 +175,28 @@ class WaterYearCache:
         if water_year_info.is_current_water_year:
             if last_date is None:
                 return True
-            return WaterYearInfo.is_current_datetime_greater(
-                last_date, hours_offset=hours_offset
-            )
 
+            last = pd.Timestamp(last_date).date()
+            today = date.today()
+            yesterday = today - datetime.timedelta(days=1)
+
+            # Already have yesterday or today → fresh
+            if last >= yesterday:
+                return False
+
+            # Older than yesterday: allow one refresh after the lag cutoff
+            # (simple file-mtime check so we don't re-fetch repeatedly the same day)
+            try:
+                mtime = datetime.datetime.fromtimestamp(path.stat().st_mtime)
+                # If the file was already updated today, leave it alone
+                if mtime.date() == today:
+                    return False
+                # Otherwise allow the refresh (caller will write a new file)
+                return True
+            except OSError:
+                return True
+
+        # Non-current water year: original logic
         if last_date is None:
             return True
         last = pd.Timestamp(last_date).date()

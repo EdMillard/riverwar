@@ -238,14 +238,10 @@ def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=Non
     if water_year_info is not None:
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
-        if water_year_info.is_current_water_year:
-            update = True
 
     cache = WaterYearCache.for_cdss()
 
     def fetch_fn(path: Path) -> None:
-        # Re-use the original request logic by calling the low-level function
-        # that writes the JSON (adapted from the original body)
         base_url = "https://dwr.state.co.us/Rest/GET/api/v2/telemetrystations/telemetrytimeseriesday/"
         url = f"{base_url}?abbrev={abbrev}"
         if parameter:
@@ -279,14 +275,13 @@ def telemetry_station_time_series(logger, abbrev, parameter, water_year_info=Non
         parse_fn=parse_fn,
         suffix=parameter or "",
         extension='.json',
-        force=update,
+        force=update,               # only True when caller explicitly requests
         move_on_update=True,
         diff_on_update=True,
     )
 
     print_last_value(abbrev, time_series, alias=alias)
     return time_series
-
 
 def request_surface_waters_day(logger, abbrev, file_name, start_date=None, end_date=None, meas_type=None, alias=None):
     time_series = None
@@ -338,8 +333,6 @@ def surface_waters_day(logger, abbrev, water_year_info, meas_type=None, update=F
     if water_year_info is not None:
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
-        if water_year_info.is_current_water_year:
-            update = True
     else:
         logger.log_message(f'CDSS surface water request has no info: {abbrev}')
         return None
@@ -353,21 +346,15 @@ def surface_waters_day(logger, abbrev, water_year_info, meas_type=None, update=F
     def parse_fn(path: Path):
         return load_json(path, value_name='value')
 
-    suffix_parts = []
-    if meas_type:
-        suffix_parts.append(meas_type)
-    if file_prefix:
-        # file_prefix is applied by original cache_file_name; keep it in the key for compatibility
-        key = f"{file_prefix}_{abbrev}"
-    else:
-        key = abbrev
+    key = f"{file_prefix}_{abbrev}" if file_prefix else abbrev
+    suffix = meas_type or ""
 
     time_series = cache.load_or_fetch(
         key=key,
         water_year_info=water_year_info,
         fetch_fn=fetch_fn,
         parse_fn=parse_fn,
-        suffix='_'.join(suffix_parts) if suffix_parts else "",
+        suffix=suffix,
         extension='.json',
         force=update,
         move_on_update=True,
@@ -376,7 +363,6 @@ def surface_waters_day(logger, abbrev, water_year_info, meas_type=None, update=F
 
     print_last_value(abbrev, time_series, alias=alias)
     return time_series
-
 
 # https://dwr.state.co.us/Rest/GET/api/v2/structures/divrec/stagevolume?wdid=3203602
 def request_structures_divrec(logger, wdid, file_name:Path, start_date:str|None=None, end_date:str|None=None,
@@ -451,8 +437,6 @@ def structures_divrec(logger, wdid:str, water_year_info, meas_type:str='divrecda
     if water_year_info is not None:
         start_date = str(water_year_info.start_date)
         end_date = str(water_year_info.end_date)
-        if water_year_info.is_current_water_year:
-            update = True
     else:
         logger.log_message(f'CDSS structure divrec request has no info: {wdid}')
         return None
@@ -461,34 +445,24 @@ def structures_divrec(logger, wdid:str, water_year_info, meas_type:str='divrecda
 
     def fetch_fn(path: Path) -> None:
         request_structures_divrec(logger, wdid, path, start_date=start_date, end_date=end_date,
-                                   meas_type=meas_type, water_class_num=water_class_num, alias=alias, analyze=analyze)
+                                   meas_type=meas_type, water_class_num=water_class_num,
+                                   alias=alias, analyze=analyze)
 
     def parse_fn(path: Path):
-        if meas_type == 'stagevolume':
-            value_name = 'volume'
-        elif meas_type == 'divrecday':
-            value_name = 'dataValue'
-        else:
-            return None
+        value_name = 'volume' if meas_type == 'stagevolume' else 'dataValue'
         return load_json(path, value_name=value_name, date_name='dataMeasDate',
                          water_class_num=water_class_num, analyze=analyze)
 
-    suffix_parts = []
-    if meas_type:
-        suffix_parts.append(meas_type)
-    if water_class_num:
-        suffix_parts.append(water_class_num)
-    if file_prefix:
-        key = f"{file_prefix}_{wdid}"
-    else:
-        key = wdid
+    key = f"{file_prefix}_{wdid}" if file_prefix else wdid
+    suffix_parts = [p for p in (meas_type, water_class_num) if p]
+    suffix = '_'.join(suffix_parts)
 
     time_series = cache.load_or_fetch(
         key=key,
         water_year_info=water_year_info,
         fetch_fn=fetch_fn,
         parse_fn=parse_fn,
-        suffix='_'.join(suffix_parts) if suffix_parts else "",
+        suffix=suffix,
         extension='.json',
         force=update,
         move_on_update=True,

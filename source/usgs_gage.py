@@ -60,7 +60,8 @@ class USGSGage(object):
                  annual_min=0, annual_max=100, annual_interval=10, annual_unit='kaf',
                  year_interval=1, color='royalblue'):
         self.site = site
-        self.site_name = ''
+        self.site_name:str = ''
+        self.do_instantaneous_updates:bool = False
 
         if start_date:
             self.start_date = start_date.strip()
@@ -123,49 +124,54 @@ class USGSGage(object):
         if water_year_info is not None:
             self.start_date = water_year_info.start_date
             self.end_date = water_year_info.end_date
-            if water_year_info.is_current_water_year:
-                update = True
+            # if water_year_info.is_current_water_year:
+            #     update = True
         else:
             water_year_info = getattr(self, 'water_year_info', None)
 
         cache = WaterYearCache.for_usgs(water_year_info)
 
         def fetch_fn(path: Path) -> None:
-            self.request_daily_discharge(path, self.start_date, str(self.end_date), parameterCd=parameterCd, statCd=statCd)
+            self.request_daily_discharge(path, self.start_date, str(self.end_date),
+                                         parameterCd=parameterCd, statCd=statCd)
 
         def parse_fn(path: Path):
             return self.load_time_series_csv(str(path), parameterCd=parameterCd, statCd=statCd)
+
+        # Smarter staleness: for current water year, only refresh once per day after lag cutoff
+        force = update
+        if water_year_info is not None and water_year_info.is_current_water_year and not update:
+            # Let the cache decide; we will only force if truly stale by the new rule
+            force = False
 
         data = cache.load_or_fetch(
             key=self.site,
             water_year_info=water_year_info,
             fetch_fn=fetch_fn,
             parse_fn=parse_fn,
-            # suffix=f"{parameterCd}_{statCd}",
-            suffix=f"",
+            suffix="",
             extension='.csv',
-            force=update,
+            force=force,
             move_on_update=True,
             diff_on_update=True,
         )
 
-        if water_year_info is not None and water_year_info.end_date >= datetime.date.today() and data is not None and len(data):
+        # Always attempt instantaneous for current water year, independent of daily cache
+        if self.do_instantaneous_updates and (water_year_info is not None and
+                water_year_info.is_current_water_year and
+                data is not None and len(data)):
             latest = self.request_instantaneous_value_discharge(parameterCd=parameterCd)
-            if latest and isinstance(latest, tuple):
+            if latest and isinstance(latest, tuple) and len(latest) == 2:
                 try:
-                    data = np.append(data, np.array([latest], dtype=data.dtype))
+                    # Append only if the timestamp is newer than the last daily point
+                    last_daily = pd.Timestamp(data[-1]['dt'])
+                    inst_ts = pd.Timestamp(latest[0])
+                    if inst_ts > last_daily:
+                        data = np.append(data, np.array([latest], dtype=data.dtype))
                 except Exception:
                     pass
 
         print_last_value(self.site, data, alias=alias)
-
-        # value_column = f'{parameterCd}_{statCd}'
-        # summary = usgs_csv_summary(file_path, value_column=value_column)
-        #print(f"{file_path} {summary}")
-        # value_cfs = summary['total_sum']
-        # value_af = value_cfs * 1.983459
-       #  print(f"\t{file_path} {summary['first_date']}-{summary['last_date']} {value_af:10.2f} AF")
-
         return data
 
     def load_time_series_csv(self, filename:str, parameterCd:str ='00060', statCd:str ='00003'):
