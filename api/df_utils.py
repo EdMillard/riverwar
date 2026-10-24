@@ -210,6 +210,41 @@ def subtract_columns_by_year(
 
     main_df[new_col] = result
 
+def extend_years_with_nan(df: pd.DataFrame, min_year: int, year_col: str = "Year") -> pd.DataFrame:
+    if df.empty or year_col not in df.columns:
+        return df
+
+    existing_min = int(df[year_col].min())
+    if min_year >= existing_min:
+        return df.copy()
+
+    full_years = pd.DataFrame({year_col: range(min_year, existing_min)})
+    extended: pd.DataFrame = pd.concat([full_years, df], ignore_index=True) # type: ignore[assignment]
+    return extended.sort_values(year_col).reset_index(drop=True)
+
+from typing import cast
+import pandas as pd
+
+def extend_years_with_zero(df: pd.DataFrame, min_year: int, year_col: str = "Year") -> pd.DataFrame:
+    """Prepend years from min_year up to the first year in df, filled with 0."""
+    if df.empty or year_col not in df.columns:
+        return df
+
+    existing_min = int(df[year_col].min())
+    if min_year >= existing_min:
+        return df.copy()
+
+    # Missing early years, all data columns = 0
+    missing_years = range(min_year, existing_min)
+    data_cols = [c for c in df.columns if c != year_col]
+
+    missing = pd.DataFrame({year_col: missing_years})
+    for col in data_cols:
+        missing[col] = 0
+
+    extended = cast(pd.DataFrame, pd.concat([missing, df], ignore_index=True))
+    return extended.reset_index(drop=True)
+
 def fill_df_from_structured_array(
     df: pd.DataFrame,
     arr: np.ndarray,

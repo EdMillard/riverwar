@@ -47,6 +47,13 @@ class BarGroup:
     label: str
     series: List[BarSeries] = field(default_factory=list)
 
+    def rotate_left(self, n: int) -> None:
+        """Move the first n elements to the end of the list."""
+        if not self.series or n <= 0:
+            return
+        n = n % len(self.series)
+        self.series = self.series[n:] + self.series[:n]
+
     @classmethod
     def from_tuples(cls, label: str, series_list: List[Tuple]) -> "BarGroup":
         series = []
@@ -56,7 +63,8 @@ class BarGroup:
                 series.append(BarSeries(df=df, col=col, color=color))
             elif len(item) == 4:
                 df, col, color, overrides = item
-                series.append(BarSeries(df=df, col=col, color=color, color_overrides=overrides))
+                series.append(BarSeries(df=df, col=col, color=color))
+                # series.append(BarSeries(df=df, col=col, color=color, color_overrides=overrides))
             else:
                 raise ValueError(f"Unexpected series tuple length: {len(item)}")
         return cls(label=label, series=series)
@@ -470,7 +478,7 @@ class MultiBarChart(Chart):
             for _, row in df.iterrows():
                 year = int(row['Year'])
                 val = pd.to_numeric(row[s.col], errors='coerce')
-                if pd.notna(val) and val > 0:
+                if pd.notna(val):
                     yearly.setdefault(year, []).append(
                         (val, display_label, s.color, s.color_overrides)
                     )
@@ -692,6 +700,7 @@ class MultiBarChart(Chart):
             'y_text': y_text,
             'cap': cap,
         }
+
     def enable_draggable_vline(self, callback=None, color='#d62728', linewidth=1.6,
                                alpha=0.9, initial_year=None):
         """
