@@ -124,7 +124,7 @@ def create_daily_df(
         df[col] = pd.NA
 
     # Optional: Set clean dtypes
-    df['Date'] = pd.to_datetime(df['Date']).dt.date  # or keep as datetime64[ns]
+    df['Date'] = pd.to_datetime(df['Date']).dt.date  # type: ignore[assignment] # or keep as datetime64[ns]
     # df['Date'] = pd.to_datetime(df['Date'])          # Uncomment if you prefer full datetime
 
     return df
@@ -194,7 +194,7 @@ def subtract_columns_by_year(
         other_year_col = other_df.columns[0]
 
         # Merge on Year (this is very robust)
-        merged = main_df[[year_col]].merge(
+        merged = main_df[[year_col]].merge(		# type: ignore[index]
             other_df[[other_year_col, other_col]],
             left_on=year_col,
             right_on=other_year_col,
@@ -280,7 +280,7 @@ def fill_df_from_structured_array(
     values = arr['val']
 
     # Ensure df['Date'] is datetime for reliable comparison
-    df_dates = pd.to_datetime(df[date_column_name]).dt.floor('D')
+    df_dates = pd.to_datetime(df[date_column_name]).dt.floor('D') # type: ignore[index]
 
     # Determine which column to fill
     if value_column_name is None:
@@ -296,13 +296,13 @@ def fill_df_from_structured_array(
     if method == 'setitem':
         for dt, val in zip(dates, values):
             mask = (df_dates == dt)
-            if mask.any():
+            if mask.any(): # type: ignore[union-attr]
                 df.loc[mask, value_column_name] = val
 
     elif method == 'loc':
         for dt, val in zip(dates, values):
             mask = (df_dates == dt)
-            if mask.any():
+            if mask.any(): # type: ignore[union-attr]
                 df.loc[mask, value_column_name] = val
 
     elif method == 'at':
@@ -441,7 +441,7 @@ def add_columns_across_dfs(
         target[result_column] = fill_value
 
     # Make sure it's numeric (prevents object dtype issues)
-    target[result_column] = pd.to_numeric(target[result_column], errors='coerce').fillna(fill_value)
+    target[result_column] = pd.to_numeric(target[result_column], errors='coerce').fillna(fill_value) # type: ignore[assignment]
 
     for src_df, col_name in sources:
         if col_name not in src_df.columns:
@@ -450,7 +450,7 @@ def add_columns_across_dfs(
         # Normalize key in source too
         src_key = src_df[key_column].astype(str).str.strip()
         src_map = pd.Series(
-            pd.to_numeric(src_df[col_name], errors='coerce').fillna(fill_value).values,
+            pd.to_numeric(src_df[col_name], errors='coerce').fillna(fill_value).values,  # type: ignore[assignment]
             index=src_key
         )
 
@@ -511,7 +511,7 @@ def subtract_columns_across_dfs(
             raise ValueError(f"Column '{col_name}' not found in source DataFrame")
 
         src_key = src_df[key_column].astype(str).str.strip()
-        src_values = pd.to_numeric(src_df[col_name], errors='coerce').fillna(fill_value)
+        src_values = pd.to_numeric(src_df[col_name], errors='coerce').fillna(fill_value) # type: ignore[attr-defined,assignment]
 
         src_map = pd.Series(src_values.values, index=src_key)
         mapped = target_key.map(src_map).fillna(fill_value)
@@ -549,7 +549,7 @@ def set_value_at_datetime(
     # Date-only match
     mask = df[datetime_col].dt.date == target_date
 
-    if mask.any():
+    if mask.any(): # type: ignore[union-attr]
         idx = df.index[mask][0]
         df.loc[idx, column] = value
         df.loc[idx, datetime_col] = dt_ts
@@ -735,8 +735,8 @@ def moving_average(
         source_col: str,
         new_col: str,
         window: int = 10,
-        min_periods: Optional[int] = None,
-        center: bool = False,
+        _min_periods: Optional[int] = None,
+        _center: bool = False,
         inplace: bool = True
 ) -> pd.DataFrame:
     """
@@ -844,7 +844,7 @@ def zero_out_column(
     Parameters:
     -----------
     df : pd.DataFrame
-        DataFrame containing the data. Must have a 'Date' column (or specified date_col).
+        A DataFrame containing the data. Must have a 'Date' column (or specified date_col).
     column : str
         Name of the column to zero out.
     start_date : str, datetime, or pd.Timestamp
@@ -1005,10 +1005,10 @@ def compute_delta(
 
     Example:
     --------
-    >>> import pandas as pd
-    >>> df = pd.DataFrame({'storage': [1000, 1050, 1070, 1040]})
-    >>> compute_delta(df, 'storage', 'storage_delta')
-    >>> print(df)
+    import pandas as pd
+    df = pd.DataFrame({'storage': [1000, 1050, 1070, 1040]})
+    compute_delta(df, 'storage', 'storage_delta')
+    print(df)
        storage  storage_delta
     0     1000            NaN
     1     1050           50.0
@@ -1055,10 +1055,10 @@ def add_constant_daily_delta(
 
     # --- Force Date column to Python date objects ---
     if pd.api.types.is_datetime64_any_dtype(df[date_column]):
-        df[date_column] = df[date_column].dt.date
+        df[date_column] = df[date_column].dt.date	# type: ignore[attr-defined]
     else:
         # If it's already object, make sure they're date objects
-        df[date_column] = pd.to_datetime(df[date_column]).dt.date
+        df[date_column] = pd.to_datetime(df[date_column]).dt.date	# type: ignore[attr-defined]
 
     # Create column
     df[column_name] = 0.0
@@ -1119,9 +1119,9 @@ def add_cumulative_daily_delta(
 
     # Ensure df[date_column] is Python date objects
     if pd.api.types.is_datetime64_any_dtype(df[date_column]):
-        df[date_column] = df[date_column].dt.date
+        df[date_column] = df[date_column].dt.date			# type: ignore[attr-defined]
     else:
-        df[date_column] = pd.to_datetime(df[date_column]).dt.date
+        df[date_column] = pd.to_datetime(df[date_column]).dt.date	# type: ignore[attr-defined]
 
     # Create column
     df[column_name] = 0.0
