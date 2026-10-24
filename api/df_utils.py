@@ -21,10 +21,9 @@ SOFTWARE.
 """
 from datetime import date
 import numpy as np
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional, cast
 import pandas as pd
 from datetime import datetime
-
 
 def create_df(min_year: int, max_year: int, headers: List[str], zero=False):
     years = list(range(min_year, max_year + 1))
@@ -210,40 +209,72 @@ def subtract_columns_by_year(
 
     main_df[new_col] = result
 
-def extend_years_with_nan(df: pd.DataFrame, min_year: int, year_col: str = "Year") -> pd.DataFrame:
+def extend_years(
+    df: pd.DataFrame,
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None,
+    year_col: str = "Year",
+    fill_value: float | None = None,   # None → NaN, 0 → zeros, etc.
+) -> pd.DataFrame:
+    """
+    Extend a yearly DataFrame backward and/or forward.
+
+    - min_year: add years from min_year up to the current minimum (if earlier)
+    - max_year: add years from the current maximum up to max_year (if later)
+    - fill_value: value to put in the new rows (None → NaN)
+    """
     if df.empty or year_col not in df.columns:
         return df
 
     existing_min = int(df[year_col].min())
-    if min_year >= existing_min:
+    existing_max = int(df[year_col].max())
+
+    pieces = []
+
+    # Prepend earlier years
+    if min_year is not None and min_year < existing_min:
+        early = pd.DataFrame({year_col: range(min_year, existing_min)})
+        if fill_value is not None:
+            data_cols = [c for c in df.columns if c != year_col]
+            for col in data_cols:
+                early[col] = fill_value
+        pieces.append(early)
+
+    pieces.append(df)
+
+    # Append later years
+    if max_year is not None and max_year > existing_max:
+        late = pd.DataFrame({year_col: range(existing_max + 1, max_year + 1)})
+        if fill_value is not None:
+            data_cols = [c for c in df.columns if c != year_col]
+            for col in data_cols:
+                late[col] = fill_value
+        pieces.append(late)
+
+    if len(pieces) == 1:
         return df.copy()
 
-    full_years = pd.DataFrame({year_col: range(min_year, existing_min)})
-    extended: pd.DataFrame = pd.concat([full_years, df], ignore_index=True) # type: ignore[assignment]
+    extended = cast(pd.DataFrame, pd.concat(pieces, ignore_index=True))
     return extended.sort_values(year_col).reset_index(drop=True)
 
-from typing import cast
-import pandas as pd
 
-def extend_years_with_zero(df: pd.DataFrame, min_year: int, year_col: str = "Year") -> pd.DataFrame:
-    """Prepend years from min_year up to the first year in df, filled with 0."""
-    if df.empty or year_col not in df.columns:
-        return df
+# Convenience wrappers that match your old names
+def extend_years_with_nan(
+    df: pd.DataFrame,
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None,
+    year_col: str = "Year",
+) -> pd.DataFrame:
+    return extend_years(df, min_year=min_year, max_year=max_year, year_col=year_col, fill_value=None)
 
-    existing_min = int(df[year_col].min())
-    if min_year >= existing_min:
-        return df.copy()
 
-    # Missing early years, all data columns = 0
-    missing_years = range(min_year, existing_min)
-    data_cols = [c for c in df.columns if c != year_col]
-
-    missing = pd.DataFrame({year_col: missing_years})
-    for col in data_cols:
-        missing[col] = 0
-
-    extended = cast(pd.DataFrame, pd.concat([missing, df], ignore_index=True))
-    return extended.reset_index(drop=True)
+def extend_years_with_zero(
+    df: pd.DataFrame,
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None,
+    year_col: str = "Year",
+) -> pd.DataFrame:
+    return extend_years(df, min_year=min_year, max_year=max_year, year_col=year_col, fill_value=0)
 
 def fill_df_from_structured_array(
     df: pd.DataFrame,
