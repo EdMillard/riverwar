@@ -54,7 +54,6 @@ class DemandChartFrame(ChartFrame):
         super().__init__(notebook, page_name=self.name)
 
     def create_reservoir_bar_chart(self):
-        # ============= BIG 2 RESERVOIR BAR CHART ==============
         lake_powell = LakePowell(upstream=[])
         df_powell = lake_powell.load_data_annual(start_year=self.start_year)
         df_powell = df_utils.extend_years_with_zero(df_powell, 1906)

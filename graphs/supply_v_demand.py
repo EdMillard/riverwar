@@ -152,9 +152,11 @@ class Compact1906To1971(DemandChartFrame):
         self.df_cu_1906_2006:Optional[pd.DataFrame] = None
 
         super().__init__(notebook_frame, demand,
-                         name='Compact', start_year=1906, end_year=2024, version=0.4)
+                         name='Demand', start_year=1906, end_year=2024, version=0.4)
 
         self.right_axis_annotations()
+        self.bottom_axis_annotations()
+
         self.multi_bar_chart.enable_draggable_vline(
             callback=self.on_line_moved,
             color='black',
@@ -165,36 +167,58 @@ class Compact1906To1971(DemandChartFrame):
         self.df_cu_1906_2006 = sheet.read_csv('data/Colorado_River/usbr_colorado_river_use_since_1906.csv',
                                          sep='\s+', na_values=["---", "-", "*******"])
         df_cu_1906_2024 = df_utils.extend_years(self.df_cu_1906_2006, max_year=2024)
-        series = [
-            (self.df_cu_1906_2006, "Upper Basin", Colors.UB),
-            (self.df_cu_1906_2006, "Mexico", lb.MX_COLOR),
-            (self.df_cu_1906_2006, "CA", Colors.CA1),
-            (self.df_cu_1906_2006, "AZ", Colors.AZ1),
-            (self.df_cu_1906_2006, "NV", Colors.NV1),
-        ]
-        left_bar_series = []
 
-        self.demand_pie_chart = PieChart(
-            series,
-            title=f'Colorado River {self.name}',
-            year=self.current_year,
-            left_bar_series=left_bar_series,
-            version=self.version
-        )
-        # self.charts.append(self.demand_pie_chart)
+        lb_column_map = {
+            "AZ Colorado River": "AZ",
+            "CA Total CUL": "CA",
+            "NV Total CUL": "NV",
+            "Mexico": "Mexico",
+        }
+        df_utils.copy_columns_by_key(self.demand.df_lb_cul, df_cu_1906_2024, lb_column_map, overwrite=True)
+        ub_column_map = {
+            "UB Total": "Upper Basin",
+        }
+        df_utils.copy_columns_by_key(self.demand.df_ub_cul, df_cu_1906_2024, ub_column_map)
+        if 0:
+            series = [
+                (df_cu_1906_2024, "Upper Basin", Colors.UB),
+                (df_cu_1906_2024, "Mexico", lb.MX_COLOR),
+                (df_cu_1906_2024, "CA", Colors.CA1),
+                (df_cu_1906_2024, "AZ", Colors.AZ1),
+                (df_cu_1906_2024, "NV", Colors.NV1),
+            ]
 
-        self.create_demand_bar_chart()
+            left_bar_series = []
+
+            self.demand_pie_chart = PieChart(
+                series,
+                title=f'Colorado River {self.name}',
+                year=self.current_year,
+                left_bar_series=left_bar_series,
+                version=self.version
+            )
+            self.charts.append(self.demand_pie_chart)
+
+        self.create_demand_bar_chart(df_cu_1906_2024)
         self.create_reservoir_bar_chart()
         self.on_line_moved(1922)
 
-    def create_demand_bar_chart(self):
-        wedges_cul = self.demand.demand_series
-        demand_cul_bar = BarGroup.from_tuples("", wedges_cul)
-        demand_cul_bar.rotate_left(7)
+    def create_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
+        series = ('', [
+            (df_cu_1906_2024, "CA", Colors.CA),
+            (df_cu_1906_2024, "NV", Colors.NV1),
+            (df_cu_1906_2024, "AZ", Colors.AZ),
+            (df_cu_1906_2024, "Upper Basin", Colors.UB),
+            (df_cu_1906_2024, "Mexico", lb.MX_COLOR),
+        ])
+
+        # wedges_cul = self.demand.demand_series
+        # demand_cul_bar = BarGroup.from_tuples("", wedges_cul)
+        # demand_cul_bar.rotate_left(7)
         self.demand_chart = MultiBarChart(
             title=f'Colorado River {self.name}',
             percentage=0.75,
-            groups=[demand_cul_bar],
+            groups=[series],
             start_year=self.start_year,
             end_year=self.end_year,
             x_min = 0,
@@ -205,15 +229,54 @@ class Compact1906To1971(DemandChartFrame):
         self.charts.append(self.demand_chart)
 
     def right_axis_annotations(self):
-        ax = self.demand_chart.ax
-        ChartFrame.annotate_level(ax, 7.5, '7.5',
-                                      'maroon', draw_text=True, draw_line=True,
-                                      left_of_axis=False)
+        if self.demand_chart is not None:
+            ax = self.demand_chart.ax
+            ChartFrame.annotate_level(ax, 7.5, '7.5',
+                                          'maroon', draw_text=True, draw_line=True,
+                                          left_of_axis=False)
+            ChartFrame.annotate_level(ax, 4.4, '4.4',
+                                          'maroon', draw_text=True, draw_line=True,
+                                          left_of_axis=False)
 
-        ax = self.demand_chart.ax
-        ChartFrame.annotate_level(ax, 4.4, '4.4',
-                                      'maroon', draw_text=True, draw_line=True,
-                                      left_of_axis=False)
+    def _annotate_bottom(self, ax, year, label, offset_lines=0):
+        self.demand_chart.annotate_value(
+            ax,
+            year=year,
+            label=label,
+            color="black",
+            position="below_bottom",
+            draw_line=False,
+            draw_outline=False,
+            fontsize=7,
+            offset_lines=offset_lines
+        )
+
+    def bottom_axis_annotations(self):
+        if self.demand_chart is not None:
+            ax = self.demand_chart.ax
+            self._annotate_bottom(ax, 1906, "IID\nBreach Fixed", offset_lines=2)
+            self._annotate_bottom(ax, 1908, "Palo Verde", offset_lines=1)
+            self._annotate_bottom(ax, 1909, "Gunnison")
+            self._annotate_bottom(ax, 1922, "Compact")
+            self._annotate_bottom(ax, 1915, "Grand\nValley")
+            self._annotate_bottom(ax, 1929, "BCPA")
+            self._annotate_bottom(ax, 1931, "AZ v CA", offset_lines=1)
+            self._annotate_bottom(ax, 1941, "CA\nAqueduct", offset_lines=1)
+            self._annotate_bottom(ax, 1936, "Moffat")
+            self._annotate_bottom(ax, 1947, "Big Thompson", offset_lines=3)
+            self._annotate_bottom(ax, 1944, "MX Treaty")
+            self._annotate_bottom(ax, 1951, "Wellton\nMohawk")
+            self._annotate_bottom(ax, 1964, "Roberts", offset_lines=2)
+            self._annotate_bottom(ax, 1964, "AZ v CA")
+            self._annotate_bottom(ax, 1971, "Central\nUtah", offset_lines=2)
+            self._annotate_bottom(ax, 1972, "Fryark")
+            self._annotate_bottom(ax, 1968, "CRBPA", offset_lines=1)
+            self._annotate_bottom(ax, 1984, "Dolores", offset_lines=1)
+            self._annotate_bottom(ax, 1985, "CAP")
+            self._annotate_bottom(ax, 2003, "QSA")
+            self._annotate_bottom(ax, 2007, "2007\nGuidelines", offset_lines=1)
+            self._annotate_bottom(ax, 2012, "Delta\nPulse")
+            self._annotate_bottom(ax, 2018, "DCP")
 
 class Compact1922(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
@@ -304,9 +367,9 @@ if __name__ == "__main__":
     rw = RiverWar()
     nf = NotebookFrame([], rw)
 
-    d = Demand(rw)
+    d = Demand(rw, show_tributaries=False)
 
-    SupplyVDemand(nf, d)
+    # SupplyVDemand(nf, d)
     Compact1906To1971(nf, d)
     # Compact1922(nf, d)
     # Compact1929(nf, d)

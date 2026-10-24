@@ -506,47 +506,94 @@ class MultiBarChart(Chart):
                        position='above_top',
                        draw_line=True,
                        draw_outline=True,
-                       fontsize=9):
-        """
-        Annotate a single year on the top or bottom x-axis.
-        draw_line=False → draw a short arrow just outside the label instead.
-        When position='below_bottom' and x-axis labels are hidden,
-        the annotation is shifted up by roughly one font size.
-        """
+                       fontsize=9,
+                       offset_lines=0):
         if not hasattr(self, 'year_to_idx') or self.year_to_idx is None:
             return None
         if year not in self.year_to_idx:
             return None
+        if offset_lines not in (0, 1, 2, 3):
+            raise ValueError("offset_lines must be 0, 1, 2, or 3")
 
         x = self.year_to_idx[year]
         trans = ax.get_xaxis_transform()
 
-        # Extra upward shift for below_bottom when tick labels are off
-        below_bottom_boost = 0.0
-        if position == 'below_bottom' and not self.show_x_labels:
-            below_bottom_boost = 0.035
+        # Approximate one font height in axes-fraction units
+        line_height_frac = (fontsize / 72.0) / ax.figure.get_figheight() * 1.15
+
+        # Extra space needed when x-axis tick labels are visible
+        label_clearance = 0.0
+        if position == 'below_bottom' and getattr(self, 'show_x_labels', True):
+            # Just clear the tick labels (about half a font height)
+            label_clearance = 0.025
 
         if position == 'above_top':
-            y_frac, va = 1.025, 'bottom'
+            base_y, va = 1.025, 'bottom'
             arrow_dir = 'down'
+            offset_sign = +1
+            fixed_marker_y = 1.012
         elif position == 'below_top':
-            y_frac, va = 0.975, 'top'
+            base_y, va = 0.975, 'top'
             arrow_dir = 'up'
+            offset_sign = -1
+            fixed_marker_y = 0.988
         elif position == 'above_bottom':
-            y_frac, va = 0.025, 'bottom'
+            base_y, va = 0.025, 'bottom'
             arrow_dir = 'down'
+            offset_sign = +1
+            fixed_marker_y = 0.012
         elif position == 'below_bottom':
-            y_frac, va = -0.045 + below_bottom_boost, 'top'
+            base_y, va = -0.045, 'top'
             arrow_dir = 'up'
+            offset_sign = -1
+            # Fixed marker sits just below the axis, or further down
+            # if tick labels are present
+            fixed_marker_y = -0.012 - label_clearance
         else:
-            y_frac, va = 1.025, 'bottom'
+            base_y, va = 1.025, 'bottom'
             arrow_dir = 'down'
+            offset_sign = +1
+            fixed_marker_y = 1.012
 
-        # Optional vertical line
+        # Only the text is offset
+        y_frac = base_y + offset_sign * offset_lines * line_height_frac
+
         vline = None
+        marker = None
+        connector = None
+
         if draw_line:
             vline = ax.axvline(x, color=color, linestyle='--', linewidth=1.2,
                                alpha=0.8, zorder=3)
+        else:
+            # Short fixed arrow — stays next to the axis (or below labels)
+            length = 0.010
+            if arrow_dir == 'up':
+                start_y = fixed_marker_y
+                end_y = fixed_marker_y + length
+            else:
+                start_y = fixed_marker_y
+                end_y = fixed_marker_y - length
+
+            marker = ax.annotate(
+                '', xy=(x, end_y), xytext=(x, start_y),
+                xycoords=trans, textcoords=trans,
+                arrowprops=dict(arrowstyle='-|>', color=color,
+                                lw=1.0, mutation_scale=8),
+                annotation_clip=False,
+                zorder=5,
+            )
+
+            # Connector starts from the fixed marker (which already accounts for labels)
+            if offset_lines > 0:
+                connector = ax.annotate(
+                    '', xy=(x, y_frac), xytext=(x, fixed_marker_y),
+                    xycoords=trans, textcoords=trans,
+                    arrowprops=dict(arrowstyle='-', color=color, lw=1.0,
+                                    linestyle='--', alpha=0.55),
+                    annotation_clip=False,
+                    zorder=4,
+                )
 
         edge = color if draw_outline else "none"
 
@@ -555,37 +602,12 @@ class MultiBarChart(Chart):
                        ha='center', va=va,
                        fontsize=fontsize, color=color, fontweight='bold',
                        clip_on=False,
-                       bbox=dict(boxstyle="round,pad=0.25",
+                       bbox=dict(boxstyle="round,pad=0.12",
                                  facecolor="white", alpha=0.95,
                                  edgecolor=edge, linewidth=0.8),
                        zorder=10)
 
-        # Small arrow just outside the label
-        arrow = None
-        if not draw_line:
-            gap = 0.004
-            length = 0.008
-            nudge = 0.004  # ~2–3 px — more visible
-
-            if arrow_dir == 'down':
-                # above_top / above_bottom: push arrow down
-                start_y = y_frac - gap - nudge
-                end_y = start_y - length
-            else:
-                # below_top / below_bottom: push arrow up
-                start_y = y_frac + gap + nudge
-                end_y = start_y + length
-
-            arrow = ax.annotate(
-                '', xy=(x, end_y), xytext=(x, start_y),
-                xycoords=trans, textcoords=trans,
-                arrowprops=dict(arrowstyle='-|>', color=color,
-                                lw=1.0, mutation_scale=8),
-                annotation_clip=False,
-                zorder=12,
-            )
-
-        return {'vline': vline, 'text': text, 'arrow': arrow}
+        return {'vline': vline, 'marker': marker, 'text': text, 'connector': connector}
 
     def annotate_range(self, ax, start_year, end_year, label,
                        line_color, text_color=None,

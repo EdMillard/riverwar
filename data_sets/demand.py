@@ -36,6 +36,7 @@ class Colors:
     WY = '#a0a0ff'
     NM = '#c0c0ff'
 
+    CA = 'maroon'
     CA1 = '#ef2828'
     CA2 = '#ff4040'
     CA3 = '#ff6060'
@@ -44,7 +45,7 @@ class Colors:
     NV1 = 'gray'
     NV2 = 'lightgray'
 
-    AZ = '#cd5906'
+    AZ = lb.PHX_COLOR
     AZ1 = '#ef5926'
     AZ2 = '#ef6936'
     AZ3 = '#ef7946'
@@ -59,7 +60,7 @@ class Colors:
 
 
 class Demand:
-    def __init__(self, river_war:RiverWar):
+    def __init__(self, river_war:RiverWar, show_tributaries: bool = False):
         self.df_ub_cul: Optional[pd.DataFrame] = None
         self.df_lb_cul: Optional[pd.DataFrame] = None
         self.df_ub_users: Optional[pd.DataFrame] = None
@@ -71,7 +72,7 @@ class Demand:
         self.evap_totals: Optional[Tuple, List[Any]] = None
         self.trib_totals: Optional[Tuple, List[Any]] = None
 
-        self.demand_series:List[Tuple] = self.build_data(river_war, show_tributaries=True)
+        self.demand_series:List[Tuple] = self.build_data(river_war, show_tributaries=show_tributaries)
 
 
     @staticmethod
