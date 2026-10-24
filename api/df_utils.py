@@ -491,10 +491,76 @@ def add_columns_across_dfs(
 
     return target
 
+def copy_columns_by_key(
+    src_df: pd.DataFrame,
+    dst_df: pd.DataFrame,
+    column_map: Dict[str, str],
+    key_column: str = "Year",
+    overwrite: bool = False,
+    inplace: bool = True,
+) -> pd.DataFrame:
+    """
+    Copy columns from src_df into dst_df, aligned on key_column.
 
-import pandas as pd
-from typing import List, Tuple, Optional
+    Parameters
+    ----------
+    src_df : DataFrame
+        Source data.
+    dst_df : DataFrame
+        Destination data (modified copy returned unless inplace=True).
+    column_map : dict
+        {src_column_name: dst_column_name}
+        Keys must exist in src_df; values are the target column names in dst_df.
+    key_column : str, default "Year"
+        Column used to align rows. Supports both integer Year and datetime Date.
+    overwrite : bool, default False
+        If True, always write the source value.
+        If False, only write when the destination cell is NaN.
+    inplace : bool, default False
+        If True, modify dst_df directly and return it.
+        If False, return a modified copy.
 
+    Returns
+    -------
+    DataFrame
+        dst_df with the requested columns copied/updated.
+    """
+    if key_column not in src_df.columns or key_column not in dst_df.columns:
+        raise ValueError(f"key_column '{key_column}' must exist in both DataFrames")
+
+    target = dst_df if inplace else dst_df.copy()
+
+    # Build a lookup from key → row index in the destination
+    # (handles both Year and Date cleanly)
+    dst_key_to_idx = {
+        key: idx for idx, key in zip(target.index, target[key_column])
+        if pd.notna(key)
+    }
+
+    for src_col, dst_col in column_map.items():
+        if src_col not in src_df.columns:
+            raise ValueError(f"Source column '{src_col}' not found in src_df")
+
+        # Ensure destination column exists
+        if dst_col not in target.columns:
+            target[dst_col] = pd.NA
+
+        # Iterate source rows and copy where keys match
+        for _, src_row in src_df.iterrows():
+            key = src_row[key_column]
+            if pd.isna(key) or key not in dst_key_to_idx:
+                continue
+
+            dst_idx = dst_key_to_idx[key]
+            src_val = src_row[src_col]
+
+            if pd.isna(src_val):
+                continue
+
+            if overwrite or pd.isna(target.at[dst_idx, dst_col]):
+                target.at[dst_idx, dst_col] = src_val
+
+    return target
 
 def subtract_columns_across_dfs(
         target_df: pd.DataFrame,
