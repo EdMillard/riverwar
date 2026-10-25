@@ -32,7 +32,7 @@ import colorado.lb as lb
 import colorado.ub as ub
 import colorado.allb as all_b
 from api import df_utils
-from typing import Optional
+from typing import Optional, List
 
 class SupplyVDemand(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
@@ -43,6 +43,7 @@ class SupplyVDemand(DemandChartFrame):
             callback=self.on_line_moved,
             color='black',
             initial_year=2026,
+            show_year_label=True,
         )
 
     def create_toolbar(self):
@@ -147,10 +148,11 @@ class SupplyVDemand(DemandChartFrame):
         self.current_year += 1
 
 class Demand1906To1971(DemandChartFrame):
-    def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
+    def __init__(self, notebook_frame: NotebookFrame, demand: Demand):
         self.demand_chart = None
         self.ub_demand_chart = None
-        self.df_cu_1906_2006:Optional[pd.DataFrame] = None
+        self.df_cu_1906_2006: Optional[pd.DataFrame] = None
+        self._syncing_lines = False  # prevent re-entrancy
 
         super().__init__(notebook_frame, demand,
                          name='Demand', start_year=1906, end_year=2024, version=0.4)
@@ -158,11 +160,16 @@ class Demand1906To1971(DemandChartFrame):
         self.right_axis_annotations()
         self.bottom_axis_annotations()
 
-        self.multi_bar_chart.enable_draggable_vline(
-            callback=self.on_line_moved,
-            color='black',
-            initial_year=1922,
-        )
+        # Enable draggable lines only on charts that support them
+        for chart in self.charts:
+            if hasattr(chart, 'enable_draggable_vline'):
+                show_label = (chart is self.demand_chart)
+                chart.enable_draggable_vline(
+                    callback=self.on_line_moved,
+                    color='black',
+                    initial_year=1922,
+                    show_year_label=show_label,
+                )
 
     def load_charts(self):
 
@@ -254,7 +261,8 @@ class Demand1906To1971(DemandChartFrame):
             x_min = 0,
             y_max=5.0,
             y_min=0,
-            show_x_labels=False
+            show_x_labels=False,
+            legend_loc = 'upper left',
         )
         self.charts.append(self.ub_demand_chart)
 
@@ -275,23 +283,30 @@ class Demand1906To1971(DemandChartFrame):
             x_min = 0,
             y_max=15,
             y_min=0,
-            show_x_labels=True
+            show_x_labels=True,
+            legend_loc='upper left',
         )
         self.charts.append(self.demand_chart)
 
     def on_line_moved(self, year):
-        if year == self.current_year:
+        if self._syncing_lines or year == self.current_year:
             return
+
         self.current_year = year
-
-        if hasattr(self, 'canvas') and self.canvas is not None:
-            self.canvas.draw()
-            self.canvas.Refresh()
-
-        # if self.demand_chart is not None:
-        #     self.demand_chart.update_for_year(self.current_year)
-        # if self.ub_demand_chart is not None:
-        #     self.ub_demand_chart.update_for_year(self.current_year)
+        self._syncing_lines = True
+        try:
+            for chart in self.charts:
+                if chart is None or not hasattr(chart, '_vline'):
+                    continue
+                if year in getattr(chart, 'year_to_idx', {}):
+                    idx = chart.year_to_idx[year]
+                    chart._vline.set_xdata([idx, idx])
+                    # Also move the year label if this chart is showing one
+                    if getattr(chart, '_show_year_label', False):
+                        chart._update_year_label(idx)
+                    chart.fig.canvas.draw_idle()
+        finally:
+            self._syncing_lines = False
 
     def right_axis_annotations(self):
         if self.demand_chart is not None:

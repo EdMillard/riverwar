@@ -80,7 +80,8 @@ class DemandChartFrame(ChartFrame):
             x_min = 0,
             y_max=27,
             y_min=3,
-            show_x_labels=show_x_labels
+            show_x_labels=show_x_labels,
+            legend_loc='upper left',
         )
         self.charts.append(self.multi_bar_chart)
 

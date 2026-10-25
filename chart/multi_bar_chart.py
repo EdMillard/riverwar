@@ -93,7 +93,8 @@ class MultiBarChart(Chart):
                  y_label: str = "",
                  y_units: Literal['MAF', 'TAF', 'AF', 'FT', 'CFS'] = 'MAF',
                  y_divisor: float | None = None,
-                 annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None
+                 annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None,
+                 legend_loc: str = 'best',
     ):
         self.year_to_idx = None
         super().__init__([], start_date, current_date, end_date, y_label=y_label, y_units=y_units, y_divisor=y_divisor, percentage=percentage)
@@ -139,6 +140,7 @@ class MultiBarChart(Chart):
         self.fig = None
 
         self.original_groups = self.groups
+        self.legend_loc = legend_loc
 
     def setup_year_xaxis(self, ax, years: List[int], max_ticks: int = 25, fontsize: int = 10):
         """Standalone reusable X-axis setup for year-based charts."""
@@ -349,7 +351,7 @@ class MultiBarChart(Chart):
 
         if unique_legend:
             ax.legend(unique_legend.values(), unique_legend.keys(),
-                      loc='best',
+                      loc=self.legend_loc,
                       fontsize=9,
                       frameon=True,
                       ncol=1)
@@ -724,10 +726,14 @@ class MultiBarChart(Chart):
         }
 
     def enable_draggable_vline(self, callback=None, color='#d62728', linewidth=1.6,
-                               alpha=0.9, initial_year=None):
+                               alpha=0.9, initial_year=None,
+                               show_year_label=False, year_label_color=None,
+                               year_label_fontsize=9):
         """
         Click-and-drag vertical line that snaps to the nearest year index.
         callback(year) receives the year the line is currently snapped to.
+        If show_year_label=True, a year label is drawn centered on the line
+        just below the top of the axes.
         """
         if self.ax is None or self.year_to_idx is None:
             raise RuntimeError("Call create_figure() before enabling the draggable line")
@@ -745,6 +751,13 @@ class MultiBarChart(Chart):
         )
         self._vline_callback = callback
         self._vline_dragging = False
+        self._show_year_label = show_year_label
+        self._year_label_color = year_label_color or color
+        self._year_label_fontsize = year_label_fontsize
+        self._year_label = None
+
+        if self._show_year_label:
+            self._update_year_label(x0)
 
         canvas = self.fig.canvas
         self._vline_cids = [
@@ -775,12 +788,42 @@ class MultiBarChart(Chart):
         if contains:
             self._vline_dragging = True
 
+    def _update_year_label(self, idx):
+        """Create or move the year label centered on the vline, just below the top."""
+        if not self._show_year_label:
+            return
+
+        year = self._index_to_year(int(idx))
+        if year is None:
+            return
+
+        trans = self.ax.get_xaxis_transform()
+        y_frac = 0.975  # just below the top of the axes
+
+        if self._year_label is None:
+            self._year_label = self.ax.text(
+                idx, y_frac, str(year),
+                transform=trans,
+                ha='center', va='top',
+                fontsize=self._year_label_fontsize,
+                color=self._year_label_color,
+                fontweight='bold',
+                clip_on=False,
+                bbox=dict(boxstyle="round,pad=0.15",
+                          facecolor="white", alpha=0.9,
+                          edgecolor=self._year_label_color, linewidth=0.6),
+                zorder=21
+            )
+        else:
+            self._year_label.set_position((idx, y_frac))
+            self._year_label.set_text(str(year))
+
     def _on_vline_motion(self, event):
         if not self._vline_dragging or event.inaxes != self.ax or event.xdata is None:
             return
-        # Snap the drawn line to the nearest integer index
         idx = int(round(event.xdata))
         self._vline.set_xdata([idx, idx])
+        self._update_year_label(idx)
         self._report(idx)
         self.fig.canvas.draw_idle()
 
@@ -791,8 +834,10 @@ class MultiBarChart(Chart):
         if event.xdata is not None:
             idx = int(round(event.xdata))
             self._vline.set_xdata([idx, idx])
+            self._update_year_label(idx)
             self._report(idx)
         self.fig.canvas.draw_idle()
+
 
     def disable_draggable_vline(self):
         """Remove the line and disconnect events."""
