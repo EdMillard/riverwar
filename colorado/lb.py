@@ -31,10 +31,12 @@ III_A_LB = 'III(a) Lower'
 III_B = 'III(b)'
 LB_CUL = 'LB CUL'
 
-HOOVER_USGS = 'Hoover USGS'
 NIB_MORELOS_USGS = 'NIB USGS Morelos'
+SIB_SAN_LUIS_USGS = 'SIB USGS San Luis' # Discontinued 1986
 
+HOOVER_USGS = 'Hoover USGS'
 HOOVER_RELEASE = 'Hoover Release'
+
 H_M = 'Hv-Mx'
 DIFF_7_5 = 'Diff 7.5'
 MX_TREATY = 'MX TREATY'

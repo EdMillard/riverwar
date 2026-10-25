@@ -26,7 +26,7 @@ from demand_chart_frame import DemandChartFrame
 from sheet import sheet
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
-from chart.multi_bar_chart import MultiBarChart, BarGroup
+from chart.multi_bar_chart import MultiBarChart
 from colorado.river_war import RiverWar
 import colorado.lb as lb
 import colorado.ub as ub
@@ -164,21 +164,55 @@ class Compact1906To1971(DemandChartFrame):
         )
 
     def load_charts(self):
+
+        # Bureau estimated diversions/consumptive use 1906-2006 (Fairly trustwortht)
         self.df_cu_1906_2006 = sheet.read_csv('data/Colorado_River/usbr_colorado_river_use_since_1906.csv',
                                          sep='\s+', na_values=["---", "-", "*******"])
-        df_cu_1906_2024 = df_utils.extend_years(self.df_cu_1906_2006, max_year=2024)
 
+        # Estimated Mexico use 1907-1970 (Not trustworthy)
+        df_mexico_treaty_guess = sheet.read_csv('data/Colorado_River/mexico_guess_1907_1963.csv',
+                                         sep='\s+', na_values=["---", "-", "*******"])
+        df_utils.divide_columns(df_mexico_treaty_guess, 'estimated_AF', 'acres_approx', 'AF per acre')
+
+        df_cu_1906_2024 = df_utils.extend_years(self.df_cu_1906_2006, max_year=2024)
+        mexico_guess_column_map = {
+            "estimated_AF": "Mexico Treaty",
+        }
+        df_utils.copy_columns_by_key(df_mexico_treaty_guess, df_cu_1906_2024, mexico_guess_column_map, overwrite=True)
+
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_in_excess.csv', sep='\s+')
+        sheet.merge_annual_column(df_cu_1906_2024, df_mx, "MX in excess", divisor=1)
+
+        # sheet.usgs_annuals(df_cu_1906_2024, '09522000', self.start_year, self.end_year, title=lb.NIB_MORELOS_USGS, divisor=1)
+        # mexico_usgs = [lb.NIB_MORELOS_USGS, lb.SIB_SAN_LUIS_USGS]   # Ends in 1986
+        # df_utils.add_column_sum(df_cu_1906_2024, mexico_usgs, "Mexico USGS")
+
+        # Bureau CUL data 1971-2024 (Very trustworthy)
         lb_column_map = {
             "AZ Colorado River": "AZ",
             "CA Total CUL": "CA",
             "NV Total CUL": "NV",
-            "Mexico": "Mexico",
+            "Mexico": "Mexico Treaty",
         }
         df_utils.copy_columns_by_key(self.demand.df_lb_cul, df_cu_1906_2024, lb_column_map, overwrite=True)
         ub_column_map = {
             "UB Total": "Upper Basin",
         }
         df_utils.copy_columns_by_key(self.demand.df_ub_cul, df_cu_1906_2024, ub_column_map)
+
+        # Mexico Delta, 2005 to present off annual reports
+        #
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_minute_319.csv', sep='\s+')
+        sheet.merge_annual_column(df_cu_1906_2024, df_mx, "MX minute 319", divisor=1)
+        mexico_delta = ["MX in excess", "MX minute 319"]
+        df_utils.add_column_sum(df_cu_1906_2024, mexico_delta, "Mexico Delta")
+
+        df_utils.subtract_column(df_cu_1906_2024, 'Mexico', 'Mexico Treaty', 'Delta')
+        delta_map = {
+            "Mexico Delta": "Delta",
+        }
+        df_utils.copy_columns_by_key(df_cu_1906_2024, df_cu_1906_2024, delta_map)
+        pass
         if 0:
             series = [
                 (df_cu_1906_2024, "Upper Basin", Colors.UB),
@@ -209,7 +243,8 @@ class Compact1906To1971(DemandChartFrame):
             (df_cu_1906_2024, "NV", Colors.NV1),
             (df_cu_1906_2024, "AZ", Colors.AZ),
             (df_cu_1906_2024, "Upper Basin", Colors.UB),
-            (df_cu_1906_2024, "Mexico", lb.MX_COLOR),
+            (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
+            (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
         ])
 
         # wedges_cul = self.demand.demand_series
@@ -271,7 +306,7 @@ class Compact1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1971, "Central\nUtah", offset_lines=2)
             self._annotate_bottom(ax, 1972, "Fryark")
             self._annotate_bottom(ax, 1968, "CRBPA", offset_lines=1)
-            self._annotate_bottom(ax, 1984, "Dolores", offset_lines=1)
+            self._annotate_bottom(ax, 1984, "Dolores", offset_lines=2)
             self._annotate_bottom(ax, 1985, "CAP")
             self._annotate_bottom(ax, 2003, "QSA")
             self._annotate_bottom(ax, 2007, "2007\nGuidelines", offset_lines=1)
