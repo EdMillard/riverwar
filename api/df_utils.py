@@ -562,6 +562,39 @@ def copy_columns_by_key(
 
     return target
 
+def divide_columns(df, num_col, den_col, result_col):
+    """
+    Divide one named column by another and write to a third column.
+    Handles NaNs (propagates them) and zeros in the denominator
+    (sets result to NaN instead of inf).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame
+    num_col : str
+        Name of the numerator column
+    den_col : str
+        Name of the denominator column
+    result_col : str
+        Name of the column to store the result
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with the new/updated column (modified in place)
+    """
+    if num_col not in df.columns or den_col not in df.columns:
+        raise ValueError(f"Columns '{num_col}' or '{den_col}' not found in DataFrame")
+
+    # Perform division and replace ±inf with NaN
+    df[result_col] = (
+        df[num_col]
+        .div(df[den_col])
+        .replace([np.inf, -np.inf], np.nan)
+    )
+    return df
+
 def subtract_columns_across_dfs(
         target_df: pd.DataFrame,
         from_column: str,  # ← Column to subtract FROM
