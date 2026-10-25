@@ -55,6 +55,7 @@ class Colors:
     AZ7 = '#efdd99'
 
     MX = 'goldenrod'
+    MX_CIENEGA = 'cyan'
     MX_DELTA = 'lightblue'
 
     LB = 'maroon'

@@ -169,6 +169,7 @@ class MultiBarChart(Chart):
         else:
             ax.set_xticks(tick_positions)
             ax.set_xticklabels(tick_labels, rotation=0, ha='center', fontsize=fontsize)
+            ax.tick_params(axis='x', which='major', pad=-(fontsize * 0.05))
 
     def setup_yaxis(self, ax):
         """Smart Y-axis with good label visibility on small values.
@@ -235,7 +236,7 @@ class MultiBarChart(Chart):
         ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
         ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
 
-        ax.grid(True, which='major', axis='y', linestyle='-', linewidth=1.2, color='black', alpha=0.7)
+        ax.grid(True, which='major', axis='y', linestyle='-', linewidth=0.6, color='black', alpha=0.6)
         ax.grid(True, which='minor', axis='y', linestyle='--', linewidth=0.6, color='gray', alpha=0.5)
 
         if data_min >= 0 and self.y_min is None:

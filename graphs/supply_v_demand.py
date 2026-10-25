@@ -217,6 +217,9 @@ class Demand1906To1971(DemandChartFrame):
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_minute_319.csv', sep='\s+')
         sheet.merge_annual_column(df_cu_1906_2024, df_mx, "MX minute 319", divisor=1)
 
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_minute_242_bypass.csv', sep='\s+')
+        sheet.merge_annual_column(df_cu_1906_2024, df_mx, "Cienega", divisor=1)
+
         mexico_delta = ["MX in excess", "MX minute 319"]
         df_utils.add_column_sum(df_cu_1906_2024, mexico_delta, "Mexico Delta")
 
@@ -274,6 +277,7 @@ class Demand1906To1971(DemandChartFrame):
             (df_cu_1906_2024, "AZ", Colors.AZ),
             (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
             (self.demand.df_lb_cul, lb.LB_TRIBUTARY_CUL, 'orange'),
+            (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
             (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
         ])
         self.demand_chart = MultiBarChart(
@@ -371,7 +375,7 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1985, "CAP", color=Colors.LB)
             self._annotate_bottom(ax, 2003, "QSA", color=Colors.LB)
             self._annotate_bottom(ax, 2007, "2007\nGuidelines", offset_lines=1)
-            self._annotate_bottom(ax, 2012, "Delta\nPulse", color=Colors.LB)
+            self._annotate_bottom(ax, 2014, "Delta\nPulse", color=Colors.LB)
             self._annotate_bottom(ax, 2018, "DCP")
 
 class Compact1922(DemandChartFrame):
