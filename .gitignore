@@ -3,6 +3,11 @@ comm
 cache
 pdf/
 img/
+data/
+doc/
+excel/
+client_secret.json
+token.pickle
 pdf_reader/data
 .idea
 __pycache__/
