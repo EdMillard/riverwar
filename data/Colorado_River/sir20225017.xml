@@ -1,0 +1,869 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book SYSTEM "BITS-book2.dtd">
+<book xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:mml="http://www.w3.org/1998/Math/MathML" dtd-version="2.0" xml:lang="EN">
+<collection-meta collection-type="series">
+<title-group>
+<title>U.S. Geological Survey Scientific Investigations Report</title>
+<alt-title alt-title-type="pub-short-title">Scientific Investigations Report</alt-title>
+<alt-title alt-title-type="pub-acronym-title">SIR</alt-title>
+</title-group>
+<issn publication-format="print">2328-031X</issn>
+<issn publication-format="online">2328-0328</issn>
+</collection-meta>
+<book-meta><book-id book-id-type="publisher-id">2022-5017</book-id><book-id book-id-type="doi">10.3133/sir20225017</book-id><book-title-group>
+<book-title>Elevation-Area-Capacity Relationships of Lake Powell in 2018 and Estimated Loss of Storage Capacity Since 1963</book-title>
+<alt-title alt-title-type="sentence-case">Elevation-area-capacity relationships of Lake Powell in 2018 and estimated loss of storage capacity since 1963</alt-title>
+<alt-title alt-title-type="running-head">Elevation-area-capacity relationships of Lake Powell in 2018 and estimated loss of storage capacity since 1963</alt-title>
+</book-title-group><contrib-group content-type="program-note">
+<contrib>
+<collab>Water Resources Mission Area</collab>
+</contrib>
+</contrib-group><contrib-group content-type="collaborator">
+<contrib>
+<collab>Prepared in cooperation with the Bureau of Reclamation</collab>
+</contrib>
+</contrib-group><contrib-group content-type="authors">
+<contrib contrib-type="author"><string-name><x>By</x><x> </x><given-names>Jonathan Casey</given-names><x> </x><surname>Root</surname></string-name><x> and </x></contrib>
+<contrib contrib-type="author"><string-name><given-names>Daniel K.</given-names><x> </x><surname>Jones</surname></string-name></contrib>
+</contrib-group><pub-date date-type="pub"><year>2022</year></pub-date><book-volume-number/><publisher>
+<publisher-name>U.S. Geological Survey</publisher-name>
+<publisher-loc>Reston, Virginia</publisher-loc>
+</publisher><edition/><abstract>
+<title>Abstract</title>
+<p>Lake Powell is the second largest constructed water reservoir by storage capacity in the United States and represents a critical component in management of water resources in the Colorado River Basin. The reservoir provides hydroelectric power generation at Glen Canyon Dam, banks water storage for the Upper Colorado River Basin, stabilizes water commitments downstream, and buffers the Lower Colorado River Basin, including Lake Mead, against sedimentation and fluctuations in hydrological conditions. With completion of the dam in 1963, Lake Powell steadily filled with water before reaching full pool in 1980 and has become a popular destination for recreation, welcoming more than 4 million visitors per year. Since the early 2000s, severe drought and increases in water demand have resulted in a significant drop in reservoir elevation and stored water, prompting a heightened level of interest in the current state and future of Lake Powell.</p>
+<p>Beginning in 2017, the U.S. Geological Survey, in cooperation with the Bureau of Reclamation, completed topobathymetric surveys of Lake Powell for the first update of elevation-area-capacity relationships since 1986. This report presents results of these surveys and comparisons with estimates from previous surveys. The storage volume and surface area, as of completion of the topobathymetric survey in spring 2018, are calculated at 0.33-foot (0.10-meter) increments for elevations ranging from 3,120.08 to 3,717.19 feet above the North American Vertical Datum of 1988 (NAVD 88). Between 0.33-foot increments, the storage volumes and areas were linearly interpolated at 0.01-foot intervals. Interpolation error in the 0.01-foot interval estimates was assessed at lower (3,160.00–3,161.00 feet above NAVD 88), middle (3,400.00–3,401.00 feet above NAVD 88), and upper (3,700.00–3,711.00 feet above NAVD 88) elevations. The interpolated storage capacity and area estimates are comparable to the measured values with differences ranging from 0.00 to 0.02 percent and from −0.01 to 0.03 percent, respectively.</p>
+<p>Current storage capacity at full pool (3702.91 feet above NAVD 88) is 25,160,000 acre-feet. Compared to previously published estimates, this volume represents a 6.79 percent or 1,833,000-acre-foot decrease in storage capacity from 1963 to 2018 and a 4.00 percent or 1,049,000-acre-foot decrease from 1986 to 2018. Areal extent, as of spring 2018, at full pool is 159,200 acres, which represents a 1.33-percent decrease from 1963 to 2018 and a 0.96 percent decrease from 1986 to 2018.</p>
+</abstract><custom-meta-group>
+<custom-meta><meta-name>Online Only</meta-name><meta-value>True</meta-value></custom-meta>
+</custom-meta-group><notes notes-type="further-information"><p>For more information on the USGS—the Federal source for science about the Earth, its natural and living resources, natural hazards, and the environment—visit <ext-link>https://www.usgs.gov</ext-link> or call 1–888–ASK–USGS.</p></notes><notes notes-type="overview"><p>For an overview of USGS information products, including maps, imagery, and publications, visit <ext-link>https://store.usgs.gov/</ext-link>.</p></notes><notes notes-type="disclaimer"><p>Any use of trade, firm, or product names is for descriptive purposes only and does not imply endorsement by the U.S. Government.</p></notes><notes notes-type="permissions"><p>Although this information product, for the most part, is in the public domain, it also may contain copyrighted materials as noted in the text. Permission to reproduce copyrighted items must be secured from the copyright owner.</p></notes></book-meta>
+<front-matter>
+<front-matter-part>
+<named-book-part-body>
+<fig fig-type="cover"><caption><p>Cover: (Front) Lake Powell, March 25, 2020. Photograph taken by Casey Root. (Back) Glen Canyon Dam, December 2, 2018. Photograph taken by Casey Root.</p></caption></fig>
+</named-book-part-body>
+</front-matter-part>
+<ack>
+<title>Acknowledgments</title>
+<p>Funding for the data acquisition and work detailed in this report was provided by the Bureau of Reclamation.</p>
+<p>Bathymetric data collection and processing was completed by Robert Baskin from the U.S. Geological Survey Utah Water Science Center and Brian Andrews, Wayne Baldwin, Charles Worley, Jane Denny, David Foster, Barry Irwin, Eric Moore, and Alexander Nichols from the U.S. Geological Survey Woods Hole Coastal and Marine Science Center. Integration of the lidar and bathymetric data was performed at the U.S. Geological Survey Earth Resources Observation and Science Center by Sandra Poppenga, Jeff Danielson, and Dean Tyler. Jed Parker, Nate Clifton, and Beau Uriona of the Bureau of Reclamation provided scientific support and managed lidar data acquisition.</p>
+<p>The authors would also like to thank the scientists not specifically mentioned here for their efforts and contributions to this project, the organizations and cooperators that worked with the U.S. Geological Survey, the reviewers for their insight and expertise, and the editorial staff for their ability to effectively communicate this report to the public.</p>
+</ack>
+<front-matter-part book-part-type="Conversion-Factors">
+<book-part-meta>
+<title-group>
+<title>Conversion Factors</title>
+</title-group>
+</book-part-meta>
+<named-book-part-body>
+<table-wrap id="ta" position="float">
+<caption>
+<title>U.S. customary units to International System of Units</title>
+</caption>
+<table rules="groups">
+<col width="32.54%"/>
+<col width="26.69%"/>
+<col width="40.77%"/>
+<thead>
+<tr>
+<td valign="top" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Multiply</td>
+<td valign="top" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">By</td>
+<td valign="top" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">To obtain</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th colspan="3" valign="top" align="center" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt" scope="col">Length</th>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">inch (in.)</td>
+<td valign="top" align="char" char=".">2.54</td>
+<td valign="top" align="left">centimeter (cm)</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">inch (in.)</td>
+<td valign="top" align="char" char=".">25.4</td>
+<td valign="top" align="left">millimeter (mm)</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">foot (ft)</td>
+<td valign="top" align="char" char=".">0.3048</td>
+<td valign="top" align="left">meter (m)</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">mile (mi)</td>
+<td valign="top" align="char" char=".">1.609</td>
+<td valign="top" align="left">kilometer (km)</td>
+</tr>
+<tr>
+<th colspan="3" valign="top" align="center" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt" scope="col">Area</th>
+</tr>
+<tr>
+<td valign="top" align="left" style="border-top: solid 0.50pt" scope="row">acre</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt">4,047</td>
+<td valign="top" align="left" style="border-top: solid 0.50pt">square meter (m<sup>2</sup>)</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">acre</td>
+<td valign="top" align="char" char=".">0.004047</td>
+<td valign="top" align="left">square kilometer (km<sup>2</sup>)</td>
+</tr>
+<tr>
+<td valign="top" align="left" style="border-bottom: solid 0.50pt" scope="row">square mile (mi<sup>2</sup>)</td>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt">2.590</td>
+<td valign="top" align="left" style="border-bottom: solid 0.50pt">square kilometer (km<sup>2</sup>)</td>
+</tr>
+<tr>
+<th colspan="3" valign="top" align="center" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt" scope="col">Volume</th>
+</tr>
+<tr>
+<td valign="top" align="left" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt" scope="row">acre-foot (acre-ft)</td>
+<td valign="top" align="char" char="," style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">1,233x10<sup>−6</sup></td>
+<td valign="top" align="left" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">cubic kilometer (km<sup>3</sup>)</td>
+</tr>
+</tbody></table></table-wrap>
+<p>Temperature in degrees Fahrenheit (°F) may be converted to degrees Celsius (°C) as follows:</p>
+<p>°C = (°F − 32) / 1.8.</p>
+</named-book-part-body>
+</front-matter-part>
+<front-matter-part book-part-type="Datums">
+<book-part-meta>
+<title-group>
+<title>Datums</title>
+</title-group>
+</book-part-meta>
+<named-book-part-body>
+<p>Vertical coordinate information is referenced to the North American Vertical Datum of 1988.</p>
+<p>Horizontal coordinate information is referenced to the North American Datum of 1983 with the National Adjustment of 2011. Historical data were transformed from the North American Datum of 1927.</p>
+<p>Data used in this report are in the Universal Transverse Mercator Zone 12 projection.</p>
+<p>All elevations are referenced to the North American Vertical Datum of 1988 unless otherwise noted. The conversion factor from the National Geodetic Vertical Datum of 1929 to North American Vertical Datum of 1988 in this study area is 2.913 feet, as determined using the VERTCON tool produced by the National Oceanic and Atmospheric Administration (<ext-link ext-link-type="uri" xlink:href="https://geodesy.noaa.gov/VERTCON3/">https://geodesy.noaa.gov/VERTCON3/</ext-link>) for vertically transforming geospatial data. This conversion was calculated for the U.S. Geological Survey reservoir elevation station (09379900) located at 36.9369326, −111.4837694 (<xref ref-type="bibr" rid="r62">U.S. Geological Survey, 2021</xref>).</p>
+</named-book-part-body>
+</front-matter-part>
+<front-matter-part book-part-type="Supplemental-Information-">
+<book-part-meta>
+<title-group>
+<title>Supplemental Information </title>
+</title-group>
+</book-part-meta>
+<named-book-part-body>
+<p>Elevation-area-capacity relationships presented here are not directly comparable to those used in Bureau of Reclamation operations at Glen Canyon Dam.</p>
+</named-book-part-body>
+</front-matter-part>
+<glossary content-type="Abbreviations">
+<title>Abbreviations</title>
+<def-list>
+<def-item><term>CARIS HIPS</term><def><p>Computer Aided Resource Information System Hydrographic Information Processing System</p></def></def-item>
+<def-item><term>DEM</term><def><p>digital elevation model</p></def></def-item>
+<def-item><term>EROS</term><def><p>U.S. Geological Survey Earth Resources Observation and Science Center</p></def></def-item>
+<def-item><term>NOAA</term><def><p>National Oceanic and Atmospheric Administration</p></def></def-item>
+<def-item><term>Reclamation</term><def><p>Bureau of Reclamation</p></def></def-item>
+<def-item><term>RMSEz</term><def><p>root mean square error in the vertical direction</p></def></def-item>
+<def-item><term>STAID</term><def><p>U.S. Geological Survey Station Identifier</p></def></def-item>
+<def-item><term>TBDEM</term><def><p>topobathymetric digital elevation model</p></def></def-item>
+<def-item><term>USCS</term><def><p>U.S. customary system</p></def></def-item>
+<def-item><term>USGS</term><def><p>U.S. Geological Survey</p></def></def-item>
+</def-list>
+</glossary>
+</front-matter>
+<book-body>
+<book-part>
+<body>
+<sec>
+<title>Introduction</title>
+<p>The U.S. Geological Survey (USGS), in cooperation with the Bureau of Reclamation (Reclamation), surveyed Lake Powell between fall 2017 and spring 2018 to produce an integrated topobathymetric dataset, which comprises topographic light detection and ranging (lidar) data (land elevation) and multibeam bathymetry (bed elevation of a water body), for the purposes of calculating the elevation-area-capacity relationships in Lake Powell. Lake Powell is located on the Colorado River across the Utah–Arizona border (<xref ref-type="fig" rid="fig01">fig. 1</xref>) and was created by the closure of Glen Canyon Dam in March 1963. Nearly 200 miles of the Colorado River has been flooded upstream from the dam. The reservoir storage capacity of Lake Powell is surpassed in the United States only by Lake Mead, which is approximately 300 miles downstream on the Colorado River. Lake Powell is a key component to water management in the burgeoning American southwest. In addition to annually hosting over 4 million visitors to Glen Canyon National Recreation Area (<xref ref-type="bibr" rid="r46">National Park Service, 2021a</xref>), Lake Powell supplies water to over 40 million people and supports 16 million jobs within and beyond the Colorado River Basin (<xref ref-type="fig" rid="fig01">fig. 1</xref>; <xref ref-type="bibr" rid="r29">James and others, 2014</xref>).</p>
+<fig id="fig01" position="float" fig-type="figure"><label>Figure 1</label><caption><p>Location of Lake Powell and the Glen Canyon National Recreation Area, Utah and Arizona. Stream lines and watershed boundaries from U.S. Geological Survey NHDPlus High Resolution dataset (<xref ref-type="bibr" rid="r61">U.S. Geological Survey, 2018</xref>). Political boundaries and locations modified from U.S. Geological Survey and other federal and state geospatial data. Horizontal coordinates referenced to the North American Datum of 1983 with the National Adjustment of 2011.</p><p content-type="toc">1.	Map showing location of Lake Powell and the Glen Canyon National Recreation Area, Utah and Arizona</p></caption>
+<long-desc>1. Lake Powell and the Glen Canyon National Recreation Area shown on a colored map.</long-desc><graphic xlink:href="sac21-3150_fig01"/></fig>
+<p>Though the instrumental record of the Upper Colorado River Basin is robust, with daily streamgage monitoring dating to the 20th century (<xref ref-type="bibr" rid="r62">U.S. Geological Survey, 2021</xref>), only two published studies have estimated the Lake Powell storage capacity: (1) the original, pre-Glen Canyon Dam elevation-area-capacity tables (Bureau of <xref ref-type="bibr" rid="r8">Reclamation, 1963</xref>) that were calculated from contour maps and (2) a reservoir-wide, range-line bathymetric survey that was completed 25 years post-impoundment in 1986 (<xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>). Both studies utilized the best-available technology at the time but lacked the precision of current surveying methods. Lake Powell has continuously trapped sediment from the sediment-laden Colorado and San Juan Rivers at the uppermost extents of the reservoir (in other words, the river deltas), diminishing the storage capacity at the highest elevations of the reservoir. Since the early 2000s, extended drought in the American southwest (<xref ref-type="bibr" rid="r67">Woodhouse and others, 2010</xref>; <xref ref-type="bibr" rid="r15">Cook and others, 2015</xref>; <xref ref-type="bibr" rid="r60">Udall and Overpeck, 2017</xref>; <xref ref-type="bibr" rid="r69">Xiao and others, 2018</xref>; <xref ref-type="bibr" rid="r37">McCabe and others, 2020</xref>; <xref ref-type="bibr" rid="r66">Williams and others, 2020</xref>) has resulted in unprecedented drops in reservoir elevation in 2022 (Bureau of <xref ref-type="bibr" rid="r12">Reclamation, 2022</xref>), further exacerbating storage losses through declining river flow (<xref ref-type="bibr" rid="r38">Miller and others, 2016</xref>; <xref ref-type="bibr" rid="r36">McCabe and others, 2017</xref>; <xref ref-type="bibr" rid="r55">Rumsey and others, 2017</xref>; <xref ref-type="bibr" rid="r68">Woodhouse and Pederson, 2018</xref>; <xref ref-type="bibr" rid="r41">Milly and Dunne, 2020</xref>; <xref ref-type="bibr" rid="r39">Miller and others, 2021a</xref>; <xref ref-type="bibr" rid="r40">Miller and others, 2021b</xref>; <xref ref-type="bibr" rid="r56">Rumsey and others, 2021</xref>) and by increasing evapotranspiration rates (<xref ref-type="bibr" rid="r32">Kingston and others, 2009</xref>; <xref ref-type="bibr" rid="r26">Helfer and others, 2012</xref>; <xref ref-type="bibr" rid="r15">Cook and others, 2015</xref>). Because of this storage loss, increasingly high water demands, and ongoing hydrologic and climatic changes to the Upper Colorado River Basin, an updated elevation-area-capacity table utilizing high-precision topobathymetric survey methods is necessary to estimate current storage capacity in Lake Powell.</p>
+<sec>
+<title>Purpose and Scope</title>
+<p>Bathymetric and topographic lidar surveys were done in 2017 (<xref ref-type="bibr" rid="r4">Andrews and others, 2018</xref>) and 2018, respectively, and integrated into a seamless topobathymetric digital elevation model (TBDEM; <xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>) to determine storage capacity and areal extent of Lake Powell. This report (1) describes the methods used to modify an existing TBDEM of Lake Powell (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>) to eliminate potential biases in storage capacity computations; (2) describes methods used to calculate the elevation-area-capacity relationships derived from the modified version of the TBDEM (<xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>); (3) presents the updated elevation-area-capacity relationships and associated error assessments; and (4) compares these updated elevation-area-capacity relationships with historical datasets and estimates from pre-impoundment (Bureau of <xref ref-type="bibr" rid="r8">Reclamation, 1963</xref>) and the 1986 survey (<xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>). Herein, our results provide contextual basis for analyzing the expected reservoir life of Lake Powell, though any such presumptions are beyond the scope of this study and are not addressed. Explicit comparisons with operational elevation-area-capacity tables, which are independently calculated, are also not addressed because the calculation methodologies are not directly comparable. Error in elevation-area-capacity relationships is estimated, with vertical accuracy in the 2017 bathymetric dataset providing the most reasonable error for the TBDEM. Additional errors could be due, in part, to differing survey methodologies. Sediment deposition is recognized as the principal cause for storage loss over time; however, modes and rates of sedimentation are not considered.</p>
+</sec>
+<sec>
+<title>Study Area</title>
+<p>Lake Powell is located on the border of Utah and Arizona, with maximum extents that flood nearly 200 miles upstream on the Colorado River. The lands surrounding the reservoir, the Glen Canyon National Recreation Area, are under the stewardship of the National Park Service and Reclamation (<xref ref-type="fig" rid="fig01">fig. 1</xref>). Commissioned in 1956, under the Colorado River Storage Project, the 710-feet (ft) Glen Canyon Dam was completed in March 1963 and rises to its spillway crest elevation of 3,717.91 ft above the North American Vertical Datum of 1988 (NAVD 88), with full-pool storage designated at 3,702.91 ft above NAVD 88. A historic maximum reservoir elevation of 3,708.34 ft above NAVD 88 occurred in spring 1983 when the Glen Canyon Dam spillways were damaged and temporarily closed during a period of particularly heavy runoff and high inflow (<xref ref-type="fig" rid="fig02">figs. 2<italic>A</italic>, <italic>B</italic></xref>). Though the reservoir remained at nearly full pool for parts of the 1980s and 1990s, the elevation has fluctuated for much of Lake Powell’s history (<xref ref-type="fig" rid="fig02">fig. 2<italic>A</italic></xref>).</p>
+<fig id="fig02" position="float" fig-type="figure"><label>Figure 2</label><caption><p>Reservoir elevation and measured inflow by calendar year since 1961. <italic>A</italic>, Daily record of reservoir elevation of Lake Powell (Bureau of <xref ref-type="bibr" rid="r12">Reclamation, 2022</xref>), annual maximums and minimums, separated by the annual mean (labeled years represent elevations within calendar year); <italic>B</italic>, Combined quarterly average of the primary water sources to Lake Powell (Colorado, Green, San Juan, Dirty Devil, and San Rafael Rivers) with the annual maximums and minimums separated at the annual mean (labeled years represent January 1 of each year) at U.S. Geological Survey streamgages (<xref ref-type="bibr" rid="r62">U.S. Geological Survey, 2021</xref>).</p><p content-type="toc">2.	Graphs showing reservoir elevation and measured inflow by calendar year since 1961</p></caption>
+<long-desc>2. Lake Powell reservoir elevation and measured inflow since 1961.</long-desc><graphic xlink:href="sac21-3150_fig02"/></fig>
+<p>The reservoir elevation for Lake Powell has been reported daily since December 28, 1963, by Reclamation, in addition to other parameters such as storage, inflow, and outflow. Reservoir elevation is recorded hourly, relative to the National Geodetic Vertical Datum of 1929 (NGVD 29), in a stilling well within Glen Canyon Dam, and the last value of each day, at 11:00 p.m. (Mountain Standard Time), is reported (Bureau of <xref ref-type="bibr" rid="r12">Reclamation, 2022</xref>; available for download at <ext-link ext-link-type="uri" xlink:href="https://data.usbr.gov/">https://data.usbr.gov/</ext-link>). The USGS deployed a radar-based, water-stage recorder on the bridge next to the west forebay of Glen Canyon Dam on April 18, 2019 (USGS Station ID [STAID] 09379900, available at <ext-link ext-link-type="uri" xlink:href="https://waterdata.usgs.gov/ut/nwis/inventory/?site_no=09379900">https://waterdata.usgs.gov/ut/nwis/inventory/?site_no=09379900</ext-link>; <xref ref-type="bibr" rid="r62">U.S. Geological Survey, 2021</xref>). Reservoir elevation is recorded at 15-minute intervals relative to NGVD 29 and NAVD 88. Independent survey errors will result in minor differences between reservoir elevations reported by Reclamation and USGS. A formal comparison of data collection methodologies and error quantification is outside the scope of this report; an evaluation of elevation-area-capacity relationships reported herein relative to real-time water surface elevations is not investigated. Additional surveying, which involved examining datums by perpetuating elevation to a variety of objective points from fiducial benchmarks, was done to characterize the differences in datums at Glen Canyon Dam (<xref ref-type="bibr" rid="r23">Gibson and others, 2021</xref>). This survey provided additional verification of vertical accuracy in the topobathymetric dataset (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>).</p>
+<p>The main tributaries of Lake Powell are the Colorado and San Juan Rivers, with substantially lesser contribution from the Escalante and Dirty Devil Rivers (<xref ref-type="fig" rid="fig01">fig. 1</xref>). The USGS has maintained streamgage records for all primary inputs dating to the early 20th century, providing a long-term streamflow record for reservoir monitoring and hydrological context above Glen Canyon Dam (<xref ref-type="bibr" rid="r62">U.S. Geological Survey, 2021</xref>). The combined discharges from the nearest gages to Lake Powell for the Colorado (STAID 09180500), Green (STAID 09315000), San Juan (STAID 09379500), Escalante (STAID 09337500), Dirty Devil (STAID 09333500), and San Rafael (STAID 09328500) Rivers approximate an expected total measured inflow (<xref ref-type="fig" rid="fig02">fig. 2<italic>B</italic></xref>) that is independent from derived inflow by <xref ref-type="bibr" rid="r12">Reclamation (2022)</xref>. Fluctuations in reservoir elevation have been historically proportional to fluctuations in combined discharge.</p>
+<p>The current areal extent of the reservoir at full pool is approximately 250 square miles (mi<sup>2</sup>), reaching Cataract Canyon on the Colorado River and Clay Hills Crossing on the San Juan River (<xref ref-type="fig" rid="fig01">fig. 1</xref>). The reservoir and surrounding Glen Canyon National Recreation Area are classified as arid desert, with an average annual precipitation of 6 inches and summer temperatures up to 110 degrees Fahrenheit (°F; <xref ref-type="bibr" rid="r47">National Park Service, 2021b</xref>). Because of the climate and its porous sandstone substrate, losses to evaporation and bank storage are substantial (<xref ref-type="bibr" rid="r43">Myers, 2013</xref>; <xref ref-type="bibr" rid="r21">Friedrich and others, 2018</xref>). Stable isotope analysis of surface water entering Lake Powell indicates that little evaporation occurs in the upper Colorado River but increases moving downstream, particularly in Lake Powell and Lake Mead (<xref ref-type="bibr" rid="r24">Guay and others, 2006</xref>). <xref ref-type="bibr" rid="r7">Reclamation (1950)</xref> estimated an annual evaporation rate of 63.0 inches during the planning stages of Lake Powell. Using evaporation data collected between May 1973 and December 1974, the average annual total evaporation at Lake Powell was estimated at 69.48 inches by using mass-transfer methods (<xref ref-type="bibr" rid="r28">Jacoby and others, 1977</xref>). <xref ref-type="bibr" rid="r11">Reclamation (1986)</xref> estimated annual average evaporation at 68.32 inches for January 1965 through May 1979, incorporating the findings of <xref ref-type="bibr" rid="r28">Jacoby and others (1977)</xref> to calibrate its mass-transfer coefficient. Because evaporation at Lake Powell has not been recently studied, estimates at Lake Mead could be used as a proxy at Lake Powell given the reservoirs’ proximity and similar reservoir characteristics. Annual evaporation estimates at Lake Mead, using the eddy-covariance method, were 74.07–81.65 inches between March 2010 and February 2012 (<xref ref-type="bibr" rid="r42">Moreo and Swancar, 2013</xref>) and 74.65 inches between March 2010 and April 2019 (<xref ref-type="bibr" rid="r17">Earp and Moreo, 2021</xref>). Cumulative water loss to bank storage in Lake Powell is estimated at approximately 15,000,000 acre-feet through 2011 (<xref ref-type="bibr" rid="r43">Myers, 2013</xref>) or 300,000 acre-feet per year since Glen Canyon Dam closed in 1963. Releases from Glen Canyon Dam to Lake Mead account for approximately 90 percent of the flow into the Lower Colorado River Basin (<xref ref-type="bibr" rid="r49">Ostroff and others, 2017</xref>; <xref ref-type="bibr" rid="r35">Lukas and Payton, 2020</xref>; <xref ref-type="bibr" rid="r37">McCabe and others, 2020</xref>; <xref ref-type="bibr" rid="r58">Tillman and others, 2020</xref>).</p>
+<p>The distinctive red rocks of the Colorado Plateau characterize the regional bedrock and range in age from Late Pennsylvanian to Late Cretaceous periods (318–66 million years ago). Cliff-forming units, primarily the Navajo Sandstone and Wingate Sandstone of the aptly named Glen Canyon Group, construct the deep and narrow canyons of Lake Powell. Incision of the Colorado River into the bedrock over the last 5 million years formed Glen Canyon (<xref ref-type="bibr" rid="r3">Anderson and others, 2010</xref>), which was renowned for its natural beauty (<xref ref-type="bibr" rid="r52">Powell, 1875</xref>). The region is culturally significant to Native Americans, and Navajo Mountain, a prominent laccolith south of the confluence of the Colorado River and San Juan River, is an important landmark in Navajo and Hopi history (<xref ref-type="bibr" rid="r34">Luckert, 1977</xref>; <xref ref-type="bibr" rid="r5">Bernardini and others, 2021; Navajo Nation Parks &amp; Recreation, 2022</xref><xref ref-type="bibr" rid="r48"/>).</p>
+</sec>
+<sec>
+<title>Previous Reservoir Surveys</title>
+<p>Reclamation published two surveys with estimates of elevation-area-capacity relationships of Lake Powell: (1) the original, pre-Glen Canyon Dam storage estimates (Bureau of <xref ref-type="bibr" rid="r8">Reclamation, 1963</xref>) and (2) an extensive range-line survey completed in the summer and fall of 1986 (<xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>).</p>
+<p>Detailed contour maps of Glen Canyon were commissioned during the planning stages of Lake Powell to estimate storage capacity (<xref ref-type="bibr" rid="r18">Fairchild Aerial Surveys, Inc., 1947</xref>; <xref ref-type="bibr" rid="r1">Alster and Associates, Inc., 1959</xref>; <xref ref-type="bibr" rid="r22">Gessel and Rutledge, 1962</xref>). These contour maps were recently digitized and developed into a digital elevation model (DEM; <xref ref-type="bibr" rid="r54">Root and others, 2019</xref>). The Colorado and San Juan River arms were separately surveyed and had contour intervals of 10 and 20 ft, respectively. Area and storage capacity estimates were calculated at 1.0-ft and 0.01-ft elevation intervals, respectively. Linear interpolations were used for intermediate intervals in the storage capacity calculations (Bureau of <xref ref-type="bibr" rid="r8">Reclamation, 1963</xref>).</p>
+<p>A bathymetric survey completed by Reclamation (<xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>) used the range-line method, as described by <xref ref-type="bibr" rid="r6">Blanton (1982)</xref>, to collect 409 bank-to-bank cross-sections of Lake Powell between April 1986 and July 1987. Though previous range-line surveys had been done between 1968 and 1973 (Bureau of <xref ref-type="bibr" rid="r9">Reclamation, 1973</xref>), these surveys were limited in their coverage. The 1986 survey produced the first reservoir-wide bathymetric data since impoundment. The complexity of the environment and inherent limitations of early positioning systems warranted the use of a variety of techniques across the reservoir to georeference the measured reservoir depths, which are described in <xref ref-type="bibr" rid="r19">Ferrari (1988)</xref>. A bathymetric contour map was developed from range-line data and used to calculate elevation-area-capacity relationships with the Reclamation Area-Capacity Computation Program (Bureau of <xref ref-type="bibr" rid="r10">Reclamation, 1985</xref>). Abbreviated tables from this study were published at elevation intervals of 20 ft (<xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>).</p>
+<p>Several studies have been done on sedimentation and storage loss in Lake Powell, though they do not include reservoir-wide estimates for storage capacity. To monitor sedimentation, Reclamation performed a series of sediment monitoring range-line surveys of the deltaic regions of the Colorado and San Juan Rivers between 1968 and 1973 (Bureau of <xref ref-type="bibr" rid="r9">Reclamation, 1973</xref>; <xref ref-type="bibr" rid="r33">Lazenby and Nelson, 1976</xref>). Other early surveys were done through the Lake Powell Research Project (<xref ref-type="bibr" rid="r57">Spydell, 1975</xref>; <xref ref-type="bibr" rid="r14">Condit and others, 1978</xref>; <xref ref-type="bibr" rid="r51">Potter and Drake, 1989</xref>), a National Science Foundation-funded, interdisciplinary collaboration that included natural and social scientists whose purpose was to observe the effects of water management in the Lake Powell region. As part of sediment and water-chemistry studies in Lake Powell, the USGS completed several single-beam, longitudinal profiles along the river thalwegs (<xref ref-type="bibr" rid="r59">Twichell and others, 2001</xref>; <xref ref-type="bibr" rid="r25">Hart and others, 2005</xref>; <xref ref-type="bibr" rid="r27">Hornewer, 2014</xref>). The first multibeam bathymetric survey was done in 2005 (<xref ref-type="bibr" rid="r13">Clarke and others, 2005</xref>; <xref ref-type="bibr" rid="r53">Pratson and others, 2008</xref>), though storage capacity estimates were not calculated.</p>
+</sec>
+<sec>
+<title>Reservoir Survey 2017–18</title>
+<p>A TBDEM is a continuous representation of subaerial topography and submerged bathymetry. <xref ref-type="bibr" rid="r50">Poppenga and others (2020)</xref> created a TBDEM of Lake Powell from four data sources: (1) 2017 2-meter (m) multibeam bathymetry (<xref ref-type="bibr" rid="r4">Andrews and others, 2018</xref>); (2) 2018 1-m topographic lidar point-cloud dataset contracted by Reclamation; (3) 2-m historical digital elevation model (DEM) interpolated from 1947 and 1959 contour maps (<xref ref-type="bibr" rid="r54">Root and others, 2019</xref>); and (4) 10-m interpolated topography where gaps exist between data sources (<xref ref-type="fig" rid="fig03">fig. 3</xref>). These datasets were mosaiced together by generating spatial seamlines with a blending width of 5 m. Where overlap between datasets existed, topographic lidar was given the highest priority, bathymetry the second highest priority, historical DEM third highest priority, and interpolated gap-filling topography had the lowest priority. Priority was based on cell size of the source data.</p>
+<fig id="fig03" position="float" fig-type="figure"><label>Figure 3</label><caption><p>Select locations in Lake Powell that display data sources for the original (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>) and modified topobathymetric digital elevation models (TBDEMs; <xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>). <italic>A</italic>, Spatial metadata for the TBDEM in the Colorado River delta region. Cross-section A–A′ is referenced in <xref ref-type="fig" rid="fig04">figure 4<italic>A</italic></xref><italic>;</italic> <italic>B</italic>, Spatial metadata for the TBDEM in the San Juan River delta region.</p><p content-type="toc">3.	Maps showing select locations in Lake Powell that display data sources for the original and modified topobathymetric digital elevation models</p></caption>
+<long-desc>3. The source datasets for the topobathymetric digital elevation models from select locations in Lake Powell.</long-desc><graphic xlink:href="sac21-3150_fig03"/></fig>
+<p>A dual-head Reson T20-P multibeam echosounder was used to collect reservoir-wide high-resolution bathymetry between October 8 and November 15, 2017 (<xref ref-type="bibr" rid="r4">Andrews and others, 2018</xref>). Reservoir water surface elevations ranged between 3,629.18 and 3,631.20 ft above NAVD 88 during the bathymetric survey. Differential Global Positioning System (DGPS) data and vessel roll, pitch, heave, and yaw were collected with an inertial navigation system and depth data collected with the multibeam echosounder were integrated during the survey using HYPACK data acquisition software (version 2017, 17.1.3.0; <ext-link ext-link-type="uri" xlink:href="https://www.hypack.com/">https://www.hypack.com/</ext-link>). Post-survey, the raw depth data were processed with Computer Aided Resource Information System Hydrographic Information Processing System (CARIS HIPS; versions 10.2 and 10.4; <ext-link ext-link-type="uri" xlink:href="http://www.teledynecaris.com/en/products/hips-and-sips/">http://www.teledynecaris.com/en/products/hips-and-sips/</ext-link>), which included applying an adjustment for changes in sound velocity with depth and removing erroneous points, such as noise, in individual multibeam swaths. The raw DGPS data were processed with POSPac Mobile Mapping Suite software (version 8.1; <ext-link ext-link-type="uri" xlink:href="https://www.applanix.com/products/pospac-mms.htm">https://www.applanix.com/products/pospac-mms.htm</ext-link>), which uses Applanix SmartBase technology to improve the horizontal and vertical accuracy of the navigation solution. The improved solution was applied to the depth data in CARIS HIPS. The post-processed bathymetric dataset was exported as 6.6-ft per pixel ASCII files referenced to Universal Transverse Mercator (UTM) Zone 12N, World Geodetic System 84 (WGS 84) and WGS 84 ellipsoidal heights. Vertical accuracy of the post-processed bathymetry dataset is approximately 1 percent of water depth, which ranged between approximately 15 and 500 ft. The inertial navigation system used in the survey has an additional theoretical vertical accuracy on the order of hundredths of an inch. Vertical transformations from WGS 84 to NAVD 88 during post-processing corrections introduced an additional ±3.0 inches of vertical uncertainty. Horizontal positioning of the raw data is accurate to 1.6–6.6 m but may be as accurate as less than 4 inches after post processing.</p>
+<p>The lidar topographic data were acquired during a 2-day airborne survey on April 2 and April 3, 2018, and completed by The Atlantic Group, LLC (https://www.atlantic.tech), under contract by Reclamation. This dataset is not independently published as of the release of this report. A Pacific Aerospace PAC750XL (N750VX) outfitted with a Leica ALS70-HP topographic lidar system was used for data collection, with a maximum flying height of 11,500 ft above ground level. The vertical accuracy of the point cloud and bare-earth data were assessed to the American Society for Photogrammetry and Remote Sensing Positional Accuracy Standards for Digital Geospatial Data (<xref ref-type="bibr" rid="r2">American Society for Photogrammetry and Remote Sensing, 2015</xref>). There were 28 distributed check points, including 21 non-vegetated and 7 vegetated, with ground-cover classifications that included open terrain, urban terrain, bare earth, brush, and high grass) measured to assess the accuracy of the lidar data. Vertical error of all check points at the 95-percent confidence level ranged between 0.092 and 0.134 m (0.3018–0.4396 ft) and root mean square error in the vertical direction (RMSEz) ranged between 0.048 and 0.068 m (0.1575–0.2231 ft). In the inundated river and delta regions, where lidar did not penetrate, the DEM was hydro-flattened so that the water surface behaved like a lake rather than a river with a gradient. A constant elevation value of 3,612.76 ft above NAVD 88, representing the water surface elevation of the reservoir during the survey, was applied to these areas.</p>
+<p>Gaps between the 2017 bathymetry and 2018 lidar datasets were inevitable in shallow regions of the reservoir where the multibeam vessel was incapable of accessing and lidar could not penetrate the water surface. Interpolation errors in the TBDEM appear at the location of those gaps because of a lack of topographic or bathymetric data. To create a continuous surface, the gaps were seamlessly assimilated with the U.S. Geological Survey Coastal National Elevation Database methodology of interpolation (<xref ref-type="bibr" rid="r16">Danielson and others, 2016</xref>) or filled with a pre-Glen Canyon Dam DEM (<xref ref-type="bibr" rid="r54">Root and others, 2019</xref>). Additionally, a hydro-flattened elevation of 3612.76 ft above NAVD 88 was applied to the water surfaces of the Colorado and San Juan Rivers upstream from the deltas where water was too shallow for the multibeam vessel to access and lidar data recovery was poor. The hydro-flattened water surface in the rivers was not corrected by <xref ref-type="bibr" rid="r50">Poppenga and others (2020)</xref> because there was no alternate data source and further manipulation of topography would introduce additional error; thus, the hydro-flattened surface was the most transparent and decipherable solution.</p>
+<p><xref ref-type="bibr" rid="r54">Root and others (2019)</xref> digitized the pre-Glen Canyon Dam contour maps (<xref ref-type="bibr" rid="r18">Fairchild Aerial Surveys, Inc., 1947</xref>; <xref ref-type="bibr" rid="r1">Alster and Associates, Inc., 1959</xref>) and created a DEM of Glen Canyon prior to the impoundment of Lake Powell. The Colorado River arm, from the site of Glen Canyon Dam to Cataract Canyon, was surveyed in 1958 and 1959 at a contour interval of 10 ft. The San Juan River arm was surveyed in 1947 at a contour interval of 20 ft from the confluence of the San Juan and Colorado Rivers through Mexican Hat, Utah. Horizontal data were transformed from the State Plane Coordinate System, based on the North American Datum of 1927 (NAD 27), to Zone 12N of the Universal Transverse Mercator coordinate system, North American Datum of 1983 with the National Adjustment of 2011. Vertical data were transformed from the NGVD 29 to NAVD 88 using the correction rasters developed for the National Oceanic and Atmospheric Administration (NOAA) VDatum vertical datum transformation tool (<xref ref-type="bibr" rid="r44">National Oceanic and Atmospheric Administration, 2019</xref>). A hydrologically corrected, 2-m DEM was created from the digitized contours with the Topo to Raster tool in ArcMap (version 10.6.1; <ext-link ext-link-type="uri" xlink:href="https://www.esri.com/en-us/arcgis/products/arcgis-desktop/overview">https://www.esri.com/en-us/arcgis/products/arcgis-desktop/overview</ext-link>). Vertical accuracy with respect to the original contour maps was reviewed, though a formal error analysis was not performed. The vertical error in this dataset is, at least, equal to the contour interval (10 or 20 ft) that represents that area of the DEM.</p>
+<p>The 2017 bathymetry and 2018 lidar topography do not always overlap or abut. Sizeable gaps between the datasets were filled with interpolated topography to create a continuous surface. The edges of the bathymetry and lidar topography were converted to points and then interpolated within the gaps at a 33-ft (10-m) cell size using ArcGIS Topo to Raster. This methodology was primarily utilized in the northeast region of the dataset. <xref ref-type="bibr" rid="r50">Poppenga and others (2020)</xref> include spatial metadata of source inputs, and <xref ref-type="bibr" rid="r30">Jones and Root (2021)</xref> include an updated version of this metadata with the modified TBDEM.</p>
+</sec>
+</sec>
+<sec>
+<title>Methods</title>
+<p>The datasets and methods used to calculate elevation-area-capacity relationships in Lake Powell are described in this section. The TBDEM created by <xref ref-type="bibr" rid="r50">Poppenga and others (2020)</xref> required modifications for the purpose of this study. This section describes the modifications that were made to the original TBDEM (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>) and the alternate sources of data that were incorporated into a modified TBDEM (<xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>). Discussion is provided for vertical datum conversions because previous storage capacity estimates of Lake Powell were made prior to the adoption of the NAVD 88. Calculations for elevation-area-capacity relationships of the modified TBDEM at 0.33-ft (0.10-m) intervals and linear interpolations at 0.01-ft intervals and error estimates also are detailed.</p>
+<sec>
+<title>Modifications to the 2017–18 Topobathymetric Digital Elevation Model</title>
+<p>The assimilation of interpolated data, incorporation of historical data, and hydro-flattening technique into the TBDEM provides the topobathymetric surface in the absence of data but will cause inconsistencies with the true bathymetric surface that are difficult to quantify. Though these inconsistencies may misrepresent a small fraction (less than 10 percent) of the total TBDEM area, these regions are expected to have the largest volumetric change due to sedimentation at the river deltas. In context of extensive sedimentation observed in the Colorado and San Juan River deltas and inflows (<xref ref-type="bibr" rid="r33">Lazenby and Nelson, 1976</xref>; <xref ref-type="bibr" rid="r14">Condit and others, 1978</xref>; <xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>; <xref ref-type="bibr" rid="r51">Potter and Drake, 1989</xref>; <xref ref-type="bibr" rid="r25">Hart and others, 2005</xref>; <xref ref-type="bibr" rid="r20">Ferrari, 2006</xref>; <xref ref-type="bibr" rid="r53">Pratson and others, 2008</xref>; <xref ref-type="bibr" rid="r27">Hornewer, 2014</xref>), further modifications were made to the original TBDEM (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>) prior to calculating storage capacity relationships (<xref ref-type="table" rid="t01">table 1</xref>; <xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>). Specifically, these modifications (1) address gaps in the dataset where the historical DEM (<xref ref-type="bibr" rid="r54">Root and others, 2019</xref>) was incorporated and where sediment has since been deposited and (2) replace the constant, hydro-flattened elevation in the river channel upstream from the Colorado and San Juan deltas with alternate topographic data sources.</p>
+<table-wrap id="t01" position="float">
+<label>Table 1</label><caption><title>Datasets incorporated into the modified topobathymetric digital elevation model (TBDEM). Resolution is provided in published units (SI).</title>
+<p content-type="toc">1.	Datasets incorporated into the modified topobathymetric digital elevation model</p>
+<p>[mi<sup>2</sup>, square miles; USGS, U.S. Geological Survey; m, meters; DEM, digital elevation model; USGS, U.S. Geological Survey; Reclamation, Bureau of Reclamation; UDNR, Utah Department of National Resources; NPS, National Park Service; UGRC, Utah Geospatial Resource Center; n/a, interpolated data does not have acquisition date]</p>
+</caption>
+<table rules="groups">
+<col width="16.79%"/>
+<col width="16.42%"/>
+<col width="19.16%"/>
+<col width="15.03%"/>
+<col width="10.42%"/>
+<col width="11.89%"/>
+<col width="10.29%"/>
+<thead>
+<tr>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Data source</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">In-text reference</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Source</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Data type</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Year(s) acquired</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Published resolution</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Coverage <break/>(mi<sup>2</sup>)</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td valign="top" align="left" style="border-top: solid 0.50pt" scope="row">Lake Powell Arizona-Utah bathymetry</td>
+<td valign="top" align="left" style="border-top: solid 0.50pt"><xref ref-type="bibr" rid="r4">Andrews and others (2018)</xref></td>
+<td valign="top" align="center" style="border-top: solid 0.50pt">USGS</td>
+<td valign="top" align="left" style="border-top: solid 0.50pt">Multibeam bathymetry</td>
+<td valign="top" align="center" style="border-top: solid 0.50pt">2017</td>
+<td valign="top" align="char" char=" " style="border-top: solid 0.50pt">2 m</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt">129.6</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">Lake Powell Arizona-Utah lidar</td>
+<td valign="top" align="left"><xref ref-type="bibr" rid="r50">Poppenga and others (2020)</xref></td>
+<td valign="top" align="center">Reclamation</td>
+<td valign="top" align="left">Topographic lidar</td>
+<td valign="top" align="center">2018</td>
+<td valign="top" align="char" char=" ">1 m</td>
+<td valign="top" align="char" char=".">150.3</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">Pre-Dam Lake Powell DEM</td>
+<td valign="top" align="left"><xref ref-type="bibr" rid="r54">Root and others (2019)</xref></td>
+<td valign="top" align="center">Reclamation/USGS</td>
+<td valign="top" align="left">Historical DEM</td>
+<td valign="top" align="center">1947, 1959</td>
+<td valign="top" align="char" char=" ">2 m</td>
+<td valign="top" align="char" char=".">19.1</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">Lake Powell TBDEM, hydro-flattened</td>
+<td valign="top" align="left"><xref ref-type="bibr" rid="r50">Poppenga and others (2020)</xref></td>
+<td valign="top" align="center">USGS</td>
+<td valign="top" align="left">Hydro-flattened</td>
+<td valign="top" align="center">n/a</td>
+<td valign="top" align="char" char=" ">10 m</td>
+<td valign="top" align="char" char=".">3.3</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">Modified TBDEM, filled sinks</td>
+<td valign="top" align="left"><xref ref-type="bibr" rid="r30">Jones and Root (2021)</xref></td>
+<td valign="top" align="center">USGS</td>
+<td valign="top" align="left">Void fill areas</td>
+<td valign="top" align="center">n/a</td>
+<td valign="top" align="char" char=" ">2 m</td>
+<td valign="top" align="char" char=".">3.0</td>
+</tr>
+<tr>
+<td valign="top" align="left" scope="row">Colorado, Green, Yampa River lidar</td>
+<td valign="top" align="left"><xref ref-type="bibr" rid="r64">Utah Geospatial Resource Center (2017)</xref></td>
+<td valign="top" align="center">UDNR/NPS</td>
+<td valign="top" align="left">Topographic lidar</td>
+<td valign="top" align="center">2015</td>
+<td valign="top" align="char" char=".">0.5 m</td>
+<td valign="top" align="char" char=".">4.8</td>
+</tr>
+<tr>
+<td valign="top" align="left" style="border-bottom: solid 0.50pt" scope="row">Utah statewide auto-correlated DEM</td>
+<td valign="top" align="left" style="border-bottom: solid 0.50pt"><xref ref-type="bibr" rid="r63">Utah Geospatial Resource Center (2007)</xref></td>
+<td valign="top" align="center" style="border-bottom: solid 0.50pt">UGRC</td>
+<td valign="top" align="left" style="border-bottom: solid 0.50pt">Topographic lidar</td>
+<td valign="top" align="center" style="border-bottom: solid 0.50pt">2006</td>
+<td valign="top" align="char" char=" " style="border-bottom: solid 0.50pt">5 m</td>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt">2.9</td>
+</tr>
+</tbody></table></table-wrap>
+<p>Regions of the topobathymetric data that incorporated the historical DEM were modified with a reasonable expectation of sedimentation in Lake Powell. In many places in the reservoir, particularly where steep cliffs are predominant, the historical DEM was an acceptable substitution for data gaps. In other regions, with shallower topography or near the river deltas, the historical DEM does not account for large volumes of accumulated sediment. Steep, sharp drop-offs at the interface between bathymetry and lidar data are most pronounced at the edges of the thalweg where the reservoir narrows into the river channel, creating artifact trenches nearly 165 ft deep where they are, in fact, filled with reservoir sediment. To create a surface that best represents the topography in these areas, these artifacts were individually identified in the delta regions and filled using the Fill tool in ArcMap (version 10.6.1; <xref ref-type="fig" rid="fig04">fig. 4</xref>).</p>
+<fig id="fig04" position="float" fig-type="figure"><label>Figure 4</label><caption><p>Select locations in Lake Powell that highlight modifications made on the topobathymetric digital elevation model (TBDEM; <xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>). Colors represent topographic, bathymetric, and interpolated data sources for the TBDEM. <italic>A,</italic> Topobathymetric cross section across the Colorado River arm of Lake Powell on line A–A′ (see <xref ref-type="fig" rid="fig03">fig. 3<italic>A</italic></xref> for location), with modified regions that account for sedimentation (diagonal lines). These trenches are unfilled in the unmodified TBDEM (gray); <italic>B,</italic> Longitudinal profile of the San Juan River thalweg across the delta during the 2017 bathymetric survey. The unmodified TBDEM (gray) represents the top of the delta with a constant, hydro-flattened elevation of 3,612.76 ft above the North American Vertical Datum of 1988 that does not capture upstream sediment accumulation nor river gradient. Using alternate data sources (see <xref ref-type="table" rid="t01">table 1</xref>), the modified TBDEM (diagonal lines) provides a more reasonable estimate of river channel elevations.</p><p content-type="toc">4.	Graphs showing select locations in Lake Powell that highlight modifications made on the topobathymetric digital elevation model</p></caption>
+<long-desc>4. Modifications on the topobathymetric digital elevation model are highlighted at selected locations in Lake Powell.</long-desc><graphic xlink:href="sac21-3150_fig04"/></fig>
+<p>Two substitute elevation datasets were incorporated into the modified TBDEM to replace the zones in the original TBDEM where the river thalwegs are represented with a hydro-flattened elevation value of 3,612.76 ft above NAVD 88 (<xref ref-type="fig" rid="fig04">fig. 4</xref>). The first dataset is a 0.5-m DEM derived from lidar data acquired in October and November 2015 by the Utah Division of Forestry, Fire And State Lands and the National Park Service (<xref ref-type="bibr" rid="r64">Utah Geospatial Resource Center, 2017</xref>). The dataset covers 152 mi<sup>2</sup> of the Colorado, Green, and Yampa river channels in Utah and Colorado, with a sampling density of eight points per square meter. The vertical accuracy of the 2015 DEM was assessed with 72 total check points, including 40 non-vegetated and 32 vegetated. For non-vegetated check points, the 95-percent confidence level was 0.4406 ft (0.1343 m), with a RMSEz of 0.2247 ft (0.0685 m); for vegetated check points, the 95-percent confidence level was 0.1367 m (0.4485 ft), with a RMSEz of 0.0697 m (0.2287 ft). The second dataset is a 5-m DEM created from lidar that was collected in July 2006 (<xref ref-type="bibr" rid="r63">Utah Geospatial Resource Center, 2007</xref>) when the lake was at a comparable elevation to the TBDEM datasets (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>). Vertical accuracy was tested on 190 check points, which resulted in 2 check points being removed due to unacceptable accuracy. The 95-percent confidence level is 12.64 ft (3.854 m), with a RMSEz of 6.453 ft (1.967 m). The course of the San Juan River, over subaerially exposed reservoir sediment, is similar to present day based on satellite imagery. The vertical difference of the water surface elevation of the San Juan River as it incises the reservoir sediment (since 2006) is unknown because other elevation datasets that could improve this estimate were not available for the region.</p>
+<p>Using the TBDEM spatial metadata as a mask to exclude areas where modifications were not necessary (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>), the substitute elevation datasets were mosaiced over the hydro-flattened regions of the unmodified TBDEM using the ‘Mosaic to New Raster’ tool in ArcMap (version 10.6.1). Source inputs were not reassembled due to processing capacity limitations. A 10-m buffer accounted for the difference in cell size between the input datasets. Because the reservoir had not flooded this region between acquisitions of the 2015 and 2018 lidar (<xref ref-type="fig" rid="fig02">fig. 2</xref>), the full extent of the 2015 dataset, including areas outside of the hydro-flattened zone, was used to avoid potential conflicts with the 2018 TBDEM related to changes in topography over time. The resulting raster was matched by cell coordinate location to the original TBDEM, and the substitute datasets were resampled using a cubic convolution to conform with the 1-m cell size. The 2006 5-m DEM primarily is used on the San Juan River arm and had several anomalous sinks that were adjacent to vertical cliffs; these sinks were individually filled.</p>
+</sec>
+<sec>
+<title>Calculation of Elevation-Area-Capacity Relationships</title>
+<p>Elevation-area-capacity relationships were derived from a script written in the Python coding language (Python Software Foundation, Python Language Reference, version 2.7, available at <ext-link ext-link-type="uri" xlink:href="http://www.python.org">http://www.python.org</ext-link>) that utilizes Esri’s Storage Capacity tool, part of the Spatial Analyst Supplemental Toolbox (version 1.4, <ext-link ext-link-type="uri" xlink:href="https://www.arcgis.com/home/item.html?id=3528bd72847c439f88190a137a1d0e67">https://www.arcgis.com/home/item.html?id=3528bd72847c439f88190a137a1d0e67</ext-link>). The script requires three inputs: (1) a DEM, (2) a polygon boundary of the spatial extent of the computation, and (3) the elevation range and interval to calculate the elevation-area-capacity values within. Starting at the minimum elevation value provided, the script iteratively tabulates the total area and volume within the provided polygon extent below each elevation increment. Due to the computational requirements of the analysis, the script was adapted for use on the Yeti high performance computing cluster at the USGS Advanced Research Computing Center in Denver, Colorado (<ext-link ext-link-type="uri" xlink:href="https://www.usgs.gov/core-science-systems/sas/arc">https://www.usgs.gov/core-science-systems/sas/arc</ext-link>). The inputs used to compute elevation-area-capacity relationships for Lake Powell included the modified TBDEM (available for download through ScienceBase at <ext-link ext-link-type="uri" xlink:href="https://doi.org/10.5066/P9H60YCF">https://doi.org/10.5066/P9H60YCF</ext-link>; <xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>) and a reservoir mask that excludes areas below the Glen Canyon Dam.</p>
+<p>Units of the original TBDEM (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>) are in the International System of Units (SI). Primary storage capacity calculations were made in SI, with an elevation range of 950.98–1,133.03 m above NAVD 88 (3,120.01–3,717.29 ft above NAVD 88) at increments of 0.10 m (0.33 ft). These results were then converted to the U.S. customary system (USCS), in accordance with Reclamation operational standards at Glen Canyon Dam and historical estimates of storage capacity. All subsequent calculations were done with USCS results.</p>
+<p>Resulting 0.33-ft (0.10-m) relationships were used to generate elevation-area-capacity values at 0.01-ft increments by linearly interpolating values between each 0.33-ft (0.10-m) incremental pair. The 0.01-ft interpolated interval was calculated at the request of Reclamation.</p>
+<p>Additional storage capacity calculations were done for error assessment at matching 0.01-ft increments for lower (3,160.00–3,161.00 ft above NAVD 88), middle (3,400.00–3,401.00 ft above NAVD 88), and upper (3,700.00–3,711.00 ft above NAVD 88) elevations. Values were generated following the same procedures outlined for the original 0.33-ft (0.10-m) increment calculations, thereby providing a one-to-one comparison dataset against the linearly interpolated values for these discrete elevation bands.</p>
+</sec>
+<sec>
+<title>Vertical Datum Conversions</title>
+<p>The TBDEM is referenced to the NAVD 88 using the Geoid12B geoid and horizontally referenced to the North American Datum of 1983 with the National Adjustment of 2011, UTM Zone 12 projection (<xref ref-type="bibr" rid="r50">Poppenga and others, 2020</xref>). Historical data (<xref ref-type="bibr" rid="r54">Root and others, 2019</xref>) were referenced to NGVD 29 and have been transformed to NAVD 88. Transformation from NGVD 29 to NAVD 88 is determined by adding a constant conversion value to elevations in NGVD 29 for the area of interest. Correction values are stored in a georeferenced grid (0.05 decimal-degree cell size) developed for the NOAA VDatum (v4.0) vertical datum transformation tool (<xref ref-type="bibr" rid="r44">National Oceanic and Atmospheric Administration, 2019</xref>). The conversion value for elevations at the dam used in this study is +2.913 ft from NGVD 29 to NAVD 88 and was selected from the land surface east of Glen Canyon Dam using the NOAA VERTCON tool (<xref ref-type="bibr" rid="r45">National Oceanic and Atmospheric Administration, 2021</xref>). This conversion was calculated for the USGS reservoir elevation station (09379901) located at 36.9369326, −111.4837694.</p>
+</sec>
+</sec>
+<sec>
+<title>Results</title>
+<p>This section details elevation-area-capacity relationships in Lake Powell derived from the 2017–18 reservoir survey, along with associated low, middle, and high elevation band error assessment results. These results are compared with previously published estimates of storage capacity and areal extent of Lake Powell by Bureau of <xref ref-type="bibr" rid="r8">Reclamation (1963)</xref> and <xref ref-type="bibr" rid="r19">Ferrari (1988)</xref>. A table of summarized elevation-area-capacity relationships and graphs that show change in storage capacity between surveys are presented in this section. The modified TBDEM is available as a USGS ScienceBase data release at <ext-link ext-link-type="uri" xlink:href="https://doi.org/10.5066/P9H60YCF">https://doi.org/10.5066/P9H60YCF</ext-link> (<xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>). The complete elevation-area-capacity tables and error analysis of linear interpolations are available as a USGS ScienceBase data release at <ext-link ext-link-type="uri" xlink:href="https://doi.org/10.5066/P9O3IPG3">https://doi.org/10.5066/P9O3IPG3</ext-link> (<xref ref-type="bibr" rid="r31">Jones and Root, 2022</xref>).</p>
+<sec>
+<title>Elevation-Area-Capacity Relationships and Comparisons With Previous Surveys</title>
+<p>Results from the 2017–18 survey indicate that the total storage capacity and areal extent at full pool (3,702.91 ft above NAVD 88) are 25,160,000 acre-feet and 159,200 acres, respectively. These values represent a decrease in storage capacity of 1,833,000 acre-feet or 6.79 percent from 1963 to 2018 and a 1,048,000 acre-ft or 4.00 percent decrease from 1986 to 2018. The decrease in areal coverage is 2,142 acres or 1.33 percent from 1963 to 2018 and 1,536 acres or 0.96 percent from 1986 to 2018. The elevation-area-capacity relationships are summarized in <xref ref-type="fig" rid="fig05">figures 5</xref> and <xref ref-type="fig" rid="fig06">6</xref>, and <xref ref-type="table" rid="t02">table 2</xref>. Calculated elevation-area-capacity relationships at 0.33-ft (0.10-m) calculated increments and 0.01-ft interpolated increments are available for download at <ext-link ext-link-type="uri" xlink:href="https://doi.org/10.5066/P9O3IPG3">https://doi.org/10.5066/P9O3IPG3</ext-link> (<xref ref-type="bibr" rid="r31">Jones and Root, 2022</xref>).</p>
+<table-wrap id="t02" position="float">
+<label>Table 2</label><caption><title>Summary of previous and current elevation-area-capacity relationships in Lake Powell (including benchmark elevations; in feet above NGVD 29: full pool, 3,700; inactive storage, 3,490; dead storage, 3,370).</title>
+<p content-type="toc">2.	Summary of previous and current elevation-area-capacity relationships in Lake Powell (including benchmark elevations)</p>
+<p>[ft, feet; NGVD 29, National Geodetic Vertical Datum of 1929; NAVD 88, North American Vertical Datum of 1988; acre-ft, acre-feet; n/a, area and storage capacity for given elevation are not published]</p>
+</caption>
+<table rules="groups">
+<col width="9.16%"/>
+<col width="9.87%"/>
+<col width="7.84%"/>
+<col width="12.21%"/>
+<col width="8.34%"/>
+<col width="10.75%"/>
+<col width="8.34%"/>
+<col width="10.75%"/>
+<col width="12.14%"/>
+<col width="10.6%"/>
+<thead>
+<tr>
+<td rowspan="2" valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Elevation <break/>(ft) NGVD 29</td>
+<td rowspan="2" valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Elevation (ft) <break/>NAVD 88</td>
+<td valign="middle" colspan="2" align="center" scope="colgroup" style="border-top: solid 0.50pt; border-right: solid 0.50pt; border-bottom: solid 0.50pt">1963<sup>1</sup></td>
+<td valign="middle" colspan="2" align="center" scope="colgroup" style="border-left: solid 0.50pt; border-top: solid 0.50pt; border-right: solid 0.50pt; border-bottom: solid 0.50pt">1986<sup>2</sup></td>
+<td valign="middle" colspan="2" align="center" scope="colgroup" style="border-left: solid 0.50pt; border-top: solid 0.50pt; border-bottom: solid 0.50pt">2017–18<sup>3</sup></td>
+<td rowspan="2" valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Loss of capacity, 1963–2018 <break/>(percentage)<sup>4</sup></td>
+<td rowspan="2" valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Percentage of capacity at full pool<sup>5</sup></td>
+</tr>
+<tr>
+<td valign="middle" colspan="1" align="center" scope="colgroup" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Area <break/>(acres)</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-right: solid 0.50pt; border-bottom: solid 0.50pt">Storage capacity <break/>(acre-ft)</td>
+<td valign="middle" align="center" scope="col" style="border-left: solid 0.50pt; border-top: solid 0.50pt; border-bottom: solid 0.50pt">Area <break/>(acres)</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-right: solid 0.50pt; border-bottom: solid 0.50pt">Storage capacity <break/>(acre-ft)</td>
+<td valign="middle" align="center" scope="col" style="border-left: solid 0.50pt; border-top: solid 0.50pt; border-bottom: solid 0.50pt">Area <break/>(acres)</td>
+<td valign="middle" align="center" scope="col" style="border-top: solid 0.50pt; border-bottom: solid 0.50pt">Storage capacity <break/>(acre-ft)</td>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt" scope="row">3,700</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt">3,702.91</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt">161,390</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt; border-right: solid 0.50pt">27,000,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt; border-top: solid 0.50pt">160,784</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt; border-right: solid 0.50pt">26,214,861</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt; border-top: solid 0.50pt">159,248</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt">25,166,112</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt">6.79</td>
+<td valign="top" align="char" char="." style="border-top: solid 0.50pt">100.00</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,680</td>
+<td valign="top" align="char" char=".">3,682.91</td>
+<td valign="top" align="char" char=".">147,490</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">23,914,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">145,647</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">23,150,551</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">144,148</td>
+<td valign="top" align="char" char=".">22,128,694</td>
+<td valign="top" align="char" char=".">7.47</td>
+<td valign="top" align="char" char=".">87.93</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,660</td>
+<td valign="top" align="char" char=".">3,662.91</td>
+<td valign="top" align="char" char=".">134,280</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">21,097,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">130,899</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">20,385,098</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">130,204</td>
+<td valign="top" align="char" char=".">19,389,066</td>
+<td valign="top" align="char" char=".">8.10</td>
+<td valign="top" align="char" char=".">77.04</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,640</td>
+<td valign="top" align="char" char=".">3,642.91</td>
+<td valign="top" align="char" char=".">121,510</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">18,540,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">118,054</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">17,895,574</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">117,446</td>
+<td valign="top" align="char" char=".">16,912,555</td>
+<td valign="top" align="char" char=".">8.78</td>
+<td valign="top" align="char" char=".">67.20</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,620</td>
+<td valign="top" align="char" char=".">3,622.91</td>
+<td valign="top" align="char" char=".">109,690</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">16,229,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">105,929</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">15,655,745</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">103,666</td>
+<td valign="top" align="char" char=".">14,700,802</td>
+<td valign="top" align="char" char=".">9.42</td>
+<td valign="top" align="char" char=".">58.42</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,600</td>
+<td valign="top" align="char" char=".">3,602.91</td>
+<td valign="top" align="char" char=".">98,470</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">14,148,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">95,387</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">13,642,587</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">90,587</td>
+<td valign="top" align="char" char=".">12,770,822</td>
+<td valign="top" align="char" char=".">9.73</td>
+<td valign="top" align="char" char=".">50.75</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,580</td>
+<td valign="top" align="char" char=".">3,582.91</td>
+<td valign="top" align="char" char=".">88,150</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">12,284,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">85,667</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">11,832,048</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">80,358</td>
+<td valign="top" align="char" char=".">11,064,223</td>
+<td valign="top" align="char" char=".">9.93</td>
+<td valign="top" align="char" char=".">43.96</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,560</td>
+<td valign="top" align="char" char=".">3,562.91</td>
+<td valign="top" align="char" char=".">78,810</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">10,616,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">75,981</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">10,215,568</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">71,295</td>
+<td valign="top" align="char" char=".">9,548,005</td>
+<td valign="top" align="char" char=".">10.06</td>
+<td valign="top" align="char" char=".">37.94</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,540</td>
+<td valign="top" align="char" char=".">3,542.91</td>
+<td valign="top" align="char" char=".">69,700</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">9,133,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">67,206</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">8,783,697</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">63,339</td>
+<td valign="top" align="char" char=".">8,202,881</td>
+<td valign="top" align="char" char=".">10.18</td>
+<td valign="top" align="char" char=".">32.59</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,520</td>
+<td valign="top" align="char" char=".">3,522.91</td>
+<td valign="top" align="char" char=".">61,750</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">7,820,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">59,476</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">7,516,870</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">56,052</td>
+<td valign="top" align="char" char=".">7,009,771</td>
+<td valign="top" align="char" char=".">10.36</td>
+<td valign="top" align="char" char=".">27.85</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,500</td>
+<td valign="top" align="char" char=".">3,502.91</td>
+<td valign="top" align="char" char=".">54,790</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">6,656,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">52,386</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">6,398,246</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">49,057</td>
+<td valign="top" align="char" char=".">5,959,757</td>
+<td valign="top" align="char" char=".">10.46</td>
+<td valign="top" align="char" char=".">23.68</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,490</td>
+<td valign="top" align="char" char=".">3,492.91</td>
+<td valign="top" align="char" char=".">51,600</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">6,124,000</td>
+<td valign="top" align="center" style="border-left: solid 0.50pt">n/a</td>
+<td valign="top" align="center" style="border-right: solid 0.50pt">n/a</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">45,864</td>
+<td valign="top" align="char" char=".">5,485,084</td>
+<td valign="top" align="char" char=".">10.43</td>
+<td valign="top" align="char" char=".">21.80</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,480</td>
+<td valign="top" align="char" char=".">3,482.91</td>
+<td valign="top" align="char" char=".">48,590</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">5,623,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">46,275</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">5,411,639</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">43,040</td>
+<td valign="top" align="char" char=".">5,041,128</td>
+<td valign="top" align="char" char=".">10.35</td>
+<td valign="top" align="char" char=".">20.03</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,460</td>
+<td valign="top" align="char" char=".">3,462.91</td>
+<td valign="top" align="char" char=".">42,110</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">4,717,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">40,361</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">4,545,281</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">37,852</td>
+<td valign="top" align="char" char=".">4,232,898</td>
+<td valign="top" align="char" char=".">10.26</td>
+<td valign="top" align="char" char=".">16.82</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,440</td>
+<td valign="top" align="char" char=".">3,442.91</td>
+<td valign="top" align="char" char=".">35,830</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">3,938,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">34,699</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">3,794,678</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">32,902</td>
+<td valign="top" align="char" char=".">3,526,543</td>
+<td valign="top" align="char" char=".">10.45</td>
+<td valign="top" align="char" char=".">14.01</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,420</td>
+<td valign="top" align="char" char=".">3,422.91</td>
+<td valign="top" align="char" char=".">30,650</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">3,275,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">30,045</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">3,147,240</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">28,472</td>
+<td valign="top" align="char" char=".">2,914,717</td>
+<td valign="top" align="char" char=".">11.00</td>
+<td valign="top" align="char" char=".">11.58</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,400</td>
+<td valign="top" align="char" char=".">3,402.91</td>
+<td valign="top" align="char" char=".">26,680</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">2,704,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">26,062</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">2,586,177</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">25,019</td>
+<td valign="top" align="char" char=".">2,378,132</td>
+<td valign="top" align="char" char=".">12.05</td>
+<td valign="top" align="char" char=".">9.45</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,380</td>
+<td valign="top" align="char" char=".">3,382.91</td>
+<td valign="top" align="char" char=".">22,480</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">2,213,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">22,102</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">2,104,540</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">20,442</td>
+<td valign="top" align="char" char=".">1,927,743</td>
+<td valign="top" align="char" char=".">12.89</td>
+<td valign="top" align="char" char=".">7.66</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,370</td>
+<td valign="top" align="char" char=".">3,372.91</td>
+<td valign="top" align="char" char=".">20,640</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">1,998,000</td>
+<td valign="top" align="center" style="border-left: solid 0.50pt">n/a</td>
+<td valign="top" align="center" style="border-right: solid 0.50pt">n/a</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">18,915</td>
+<td valign="top" align="char" char=".">1,731,287</td>
+<td valign="top" align="char" char=".">13.35</td>
+<td valign="top" align="char" char=".">6.88</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,360</td>
+<td valign="top" align="char" char=".">3,362.91</td>
+<td valign="top" align="char" char=".">18,970</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">1,800,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">18,504</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">1,698,475</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">17,424</td>
+<td valign="top" align="char" char=".">1,550,496</td>
+<td valign="top" align="char" char=".">13.86</td>
+<td valign="top" align="char" char=".">6.16</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,340</td>
+<td valign="top" align="char" char=".">3,342.91</td>
+<td valign="top" align="char" char=".">15,990</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">1,452,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">15,698</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">1,356,447</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">15,124</td>
+<td valign="top" align="char" char=".">1,225,879</td>
+<td valign="top" align="char" char=".">15.57</td>
+<td valign="top" align="char" char=".">4.87</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,320</td>
+<td valign="top" align="char" char=".">3,322.91</td>
+<td valign="top" align="char" char=".">13,870</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">1,155,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">13,603</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">1,063,436</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">13,129</td>
+<td valign="top" align="char" char=".">941,803</td>
+<td valign="top" align="char" char=".">18.46</td>
+<td valign="top" align="char" char=".">3.74</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,300</td>
+<td valign="top" align="char" char=".">3,302.91</td>
+<td valign="top" align="char" char=".">12,110</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">897,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">11,906</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">808,350</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">11,482</td>
+<td valign="top" align="char" char=".">696,244</td>
+<td valign="top" align="char" char=".">22.38</td>
+<td valign="top" align="char" char=".">2.77</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,280</td>
+<td valign="top" align="char" char=".">3,282.91</td>
+<td valign="top" align="char" char=".">10,490</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">671,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">10,299</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">586,303</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">9,240</td>
+<td valign="top" align="char" char=".">484,015</td>
+<td valign="top" align="char" char=".">27.87</td>
+<td valign="top" align="char" char=".">1.92</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,260</td>
+<td valign="top" align="char" char=".">3,262.91</td>
+<td valign="top" align="char" char=".">8,460</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">482,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">8,044</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">402,872</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">7,592</td>
+<td valign="top" align="char" char=".">318,506</td>
+<td valign="top" align="char" char=".">33.92</td>
+<td valign="top" align="char" char=".">1.27</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,240</td>
+<td valign="top" align="char" char=".">3,242.91</td>
+<td valign="top" align="char" char=".">6,960</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">329,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">6,752</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">254,905</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">6,148</td>
+<td valign="top" align="char" char=".">180,056</td>
+<td valign="top" align="char" char=".">45.27</td>
+<td valign="top" align="char" char=".">0.72</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,220</td>
+<td valign="top" align="char" char=".">3,222.91</td>
+<td valign="top" align="char" char=".">5,600</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">203,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">5,114</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">136,241</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">3,910</td>
+<td valign="top" align="char" char=".">77,944</td>
+<td valign="top" align="char" char=".">61.60</td>
+<td valign="top" align="char" char=".">0.31</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,200</td>
+<td valign="top" align="char" char=".">3,202.91</td>
+<td valign="top" align="char" char=".">4,100</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">106,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">3,381</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">51,290</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">2,013</td>
+<td valign="top" align="char" char=".">15,199</td>
+<td valign="top" align="char" char=".">85.66</td>
+<td valign="top" align="char" char=".">0.06</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." scope="row">3,180</td>
+<td valign="top" align="char" char=".">3,182.91</td>
+<td valign="top" align="char" char=".">2,370</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">42,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">1,249</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt">4,995</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt">76</td>
+<td valign="top" align="char" char=".">3,199</td>
+<td valign="top" align="char" char=".">92.38</td>
+<td valign="top" align="char" char=".">0.01</td>
+</tr>
+<tr>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt" scope="row">3,160</td>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt">3,162.91</td>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt">1,050</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt; border-bottom: solid 0.50pt">8,000</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt; border-bottom: solid 0.50pt">0</td>
+<td valign="top" align="char" char="." style="border-right: solid 0.50pt; border-bottom: solid 0.50pt">0</td>
+<td valign="top" align="char" char="." style="border-left: solid 0.50pt; border-bottom: solid 0.50pt">0</td>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt">0</td>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt">100.00</td>
+<td valign="top" align="char" char="." style="border-bottom: solid 0.50pt">0.00</td>
+</tr>
+</tbody></table>
+<table-wrap-foot>
+<fn id="t02n1"><label><sup>1</sup></label><p>From Bureau of <xref ref-type="bibr" rid="r8">Reclamation (1963)</xref>.</p></fn>
+<fn id="t02n2"><label><sup>2</sup></label><p>From <xref ref-type="bibr" rid="r19">Ferrari (1988)</xref>.</p></fn>
+<fn id="t02n3"><label><sup>3</sup></label><p>Calculated from modified topobathymetric digital elevation model (TBDEM; <xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>) after <xref ref-type="bibr" rid="r50">Poppenga and others (2020)</xref>.</p></fn>
+<fn id="t02n4"><label><sup>4</sup></label><p>Percent change in storage capacity from 1963 to 2017–18 surveys.</p></fn>
+<fn id="t02n5"><label><sup>5</sup></label><p>Percent of current storage capacity at full pool for a given elevation according to the 2017–18 TBDEM.</p></fn></table-wrap-foot>
+</table-wrap>
+<fig id="fig05" position="float" fig-type="figure"><label>Figure 5</label><caption><p>Storage capacity (bottom axis, black lines) and areal extent (top axis, blue lines) of the reservoir calculated from the modified topobathymetric digital elevation model (<xref ref-type="bibr" rid="r30">Jones and Root, 2021, 2022</xref><xref ref-type="bibr" rid="r31"/>) at 0.1-meter intervals. Values were linearly interpolated at 0.003048-meter intervals between the calculated areas and volumes. Previous estimates of storage capacity and areal extent (Bureau of <xref ref-type="bibr" rid="r8">Reclamation, 1963</xref>; <xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>) are shown for comparison. Benchmark elevations related to dam operations include the levels for flood control (grey), active storage (blue), inactive storage (yellow), and dead storage (red).</p><p content-type="toc">5.	Graph showing storage capacity and areal extent of the reservoir calculated from modified topobathymetric digital elevation model at 0.1-meter intervals</p></caption>
+<long-desc>5. Storage capacity and areal extent of Lake Powell at 0.1-meter intervals.</long-desc><graphic xlink:href="sac21-3150_fig05"/></fig>
+<fig id="fig06" position="float" fig-type="figure"><label>Figure 6</label><caption><p>Difference in storage capacity by <italic>A</italic>, absolute storage capacity; and <italic>B</italic>, percent from 1963 (solid line) and 1986 (dashed line) to 2018 (<xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>; <xref ref-type="bibr" rid="r31">Jones and Root, 2022</xref>). Benchmark elevations related to dam operations include the levels for flood control (grey), active storage (blue), inactive storage (yellow), and dead storage (red). A 100-percent difference in storage capacity would indicate a complete loss of storage capacity. A sharp decrease in percent difference between 1986 and 2018 is present at low elevations; this deflection from the trend toward 100-percent storage loss likely reflects error that exceeds storage capacity at the lowest elevations.</p><p content-type="toc">6.	Graphs showing the difference in storage capacity by absolute volume and percent from 1963 and 1986 to 2018</p></caption>
+<long-desc>6. Difference in storage capacity by absolute volume and percent from 1963 and 1986 to 2018.</long-desc><graphic xlink:href="sac21-3150_fig06"/></fig>
+<p>Error analysis of the interpolated relationships was performed at 0.01-ft intervals across three elevation bands: (1) lower (3,160.00–3,161.00 ft above NAVD 88); (2) middle (3,400.00–3,401.00 ft above NAVD 88); and (3) upper (3,700.00–3,711.00 ft above NAVD 88). The interpolated values are comparable to the calculated values, with differences ranging from −0.01 to 0.03 percent and 0 to 0.02 percent for area and storage capacity calculations, respectively. The error analysis for all interpolated values is available for download at <ext-link ext-link-type="uri" xlink:href="https://doi.org/10.5066/P9O3IPG3">https://doi.org/10.5066/P9O3IPG3</ext-link> (<xref ref-type="bibr" rid="r31">Jones and Root, 2022</xref>).</p>
+<p>Intermediate reservoir elevations include critical benchmarks for the management of Lake Powell and operations at Glen Canyon Dam. The dead storage elevation (3,372.91 ft above NAVD 88), which is the reservoir level below all hydroelectric penstocks and other outlet works, has decreased in storage capacity by 152,900 acre-feet or 8.11 percent from 1963 to 2018 and 27,100 acre-feet or 1.54 percent from 1986 to 2018. The inactive storage level (up to 3,492.91 ft above NAVD 88) represents the lowest reservoir elevation that all hydroelectric penstocks are submerged. Storage capacity at the inactive storage level has decreased by approximately 599,900 acre-feet or 9.84 percent from 1963 to 2018 and 333,000 acre-feet or 5.72 percent from 1986 to 2018.</p>
+<p>These results reflect the elevation-area-capacity relationships determined in this study and are not directly comparable to values used for operations at Glen Canyon Dam. Direct comparisons to Reclamation operational relationships are outside the scope of this report.</p>
+</sec>
+<sec>
+<title>Sources of Error in Topobathymetric Dataset</title>
+<p>Sources of error in the TBDEM and elevation-area-capacity calculations are difficult to identify and quantify. Random errors in topographic and bathymetric surveying are small and are ignored here. Systematic errors are difficult to identify, though each dataset was independently assessed for error prior to being assembled into the TBDEM. Interpolation errors are quantifiable, but this was not calculated because of the number of datasets and range of acquisition dates for each survey.</p>
+<p>Because the TBDEM comprises sources with different resolutions, coverages, and known errors, the vertical error can be reasonably quantified. The data sources that most represent the TBDEM by area are the 2017 bathymetry (<xref ref-type="bibr" rid="r4">Andrews and others, 2018</xref>) and 2018 lidar. The bathymetry includes a majority of storage capacity in Lake Powell below the minimum reservoir elevation during the survey (3629.18 ft above NAVD 88). This elevation corresponds to 61.05 percent storage capacity at full pool. The remaining volume is primarily defined by the 2018 lidar, with a minority contribution from the historical DEM and interpolated topography. The vertical error of the bathymetry is 1 percent of water depth or up to 5 ft of error at the maximum water depth (approximately 500 ft). The average water depth of the bathymetric survey, using the highest reservoir elevation to difference the bathymetry, is 142 ft. This average depth equates to a 1.42 ft error but is likely to vary with location in the reservoir. Vertical error of the lidar at 95-percent confidence level is less than 0.5 ft. The greatest vertical error all associated datasets is in the 2006 statewide auto-correlated DEM (<xref ref-type="bibr" rid="r63">Utah Geospatial Resource Center, 2007</xref>), with a 95-percent confidence level of 12.64 ft and RMSEz of 6.453 ft. These errors are substantial but only representative of approximately 3.44 percent of the TBDEM area and only in select regions where hydro-flattened topography was used (see spatial metadata for <xref ref-type="bibr" rid="r30">Jones and Root, 2021</xref>). Thus, the bathymetric dataset is most likely to provide a reasonable error for elevation-area-capacity relationships. Conservatively, a vertical error in reservoir elevation of ±1.42 ft is suggested for the results provided here. At full pool (3,702.91 ft above NAVD 88), this error approximately corresponds with storage capacity between 24,940,671 and 25,392,938 acre-feet or a range of 452,267 acre-feet.</p>
+</sec>
+</sec>
+<sec>
+<title>Discussion on Rates of Storage Loss</title>
+<p>Between 1963 and 2018, the average annual loss in storage capacity was approximately 33,270 acre-feet per year. Deposition at the deltas of the sediment-laden Colorado and San Juan Rivers is the primary cause of storage loss in Lake Powell (Bureau of <xref ref-type="bibr" rid="r9">Reclamation, 1973</xref>; <xref ref-type="bibr" rid="r14">Condit and others, 1978</xref>; <xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>; <xref ref-type="bibr" rid="r51">Potter and Drake, 1989</xref>; <xref ref-type="bibr" rid="r65">Vernieu, 1997</xref>; <xref ref-type="bibr" rid="r20">Ferrari, 2006</xref>; <xref ref-type="bibr" rid="r53">Pratson and others, 2008</xref>). Using the elevation-area-capacity data available from the two previous survey and storage capacity studies (Bureau of <xref ref-type="bibr" rid="r8">Reclamation, 1963</xref>; <xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>), the average annual storage loss was similar. From the closing of Glen Canyon Dam in March 1963 through September 1986, Lake Powell had lost 33,390 acre-feet in storage capacity per year; from September 1986 through the April 2018, 33,180 acre-feet per year was lost. The interplay between new sediment entering the reservoir and the remobilization of previously deposited sediment from higher elevations may bias these rates and is not considered here.</p>
+<p>Advancements in bathymetric survey technology over time has allowed for greater spatial coverage, accuracy, and density of bathymetric data which reduces the need to interpolate over large survey errors in the final DEM. The range-line (Bureau of <xref ref-type="bibr" rid="r9">Reclamation, 1973</xref>; <xref ref-type="bibr" rid="r19">Ferrari, 1988</xref>) and single-beam (<xref ref-type="bibr" rid="r59">Twichell and others, 2001</xref>; <xref ref-type="bibr" rid="r25">Hart and others, 2005</xref>; <xref ref-type="bibr" rid="r27">Hornewer, 2014</xref>) surveys represent two-dimensional bathymetry in a specific location. The modern multibeam bathymetric survey (<xref ref-type="bibr" rid="r4">Andrews and others, 2018</xref>) represents the most comprehensive and high-resolution survey of Lake Powell to date. Comparisons between the storage capacity estimates derived from the pre-Glen Canyon Dam topographic survey, the 1986 range-line bathymetry, and 2017 multibeam bathymetry and 2018 lidar datasets are complicated because the error is different for each survey used to estimate storage capacity. An assessment of error in storage capacity estimates because of different survey methodologies, which would include a combination of independent survey and interpolation errors that are difficult to quantify, was beyond the scope of this study.</p>
+<p>As a first-order approximation, the average annual loss of storage loss in Lake Powell indicates the remaining volume at full pool will be filled in approximately 750 years. However, the reservoir fills laterally, from the deltas toward Glen Canyon Dam, and would likely cease to be useful sooner. Estimating the remaining useful life of Lake Powell is multifaceted and beyond the scope of this study. This approximation would need to include accounting for benchmark elevations at Glen Canyon Dam, dynamic river discharge and sedimentation rates, the spatial distribution of sediments, climate sensitivity, and potential sediment mitigation activities such as dredging.</p>
+<p>The distribution of absolute storage-capacity change since 2018 at reservoir elevations is not linear, with the greatest changes in storage capacity observed in elevations ranging between approximately 3,250–3,350 and 3,600–3,700 ft above NAVD 88 (<xref ref-type="fig" rid="fig06">fig. 6</xref>). In the lowest elevations, the initial (in other words, pre-Glen Canyon Dam) storage capacity is comparatively small and was largely filled by sediment prior to the 1986 survey; though the percent loss is high, the absolute volume loss is comparatively small to that observed at higher elevations. Also, these elevations were likely impounded by coffer dams that were installed in 1960 to divert the Colorado River around the Glen Canyon Dam construction site and may have been accumulating sediment at a rate similar to that at the deltas during construction. Storage losses observed between approximately 3,600 and 3,700 ft above NAVD 88 include the highstand, or period of high reservoir level, of the late 1970s through early 2000s and lowstand, or period of low reservoir level, from the early 2000s to present day.</p>
+</sec>
+<sec>
+<title>Summary</title>
+<p>The completion of Glen Canyon Dam by the Bureau of Reclamation (Reclamation) in 1963 created Lake Powell and provided the means to supply water to a growing population in the American southwest. A bathymetric survey of the reservoir was completed in 1986 to measure the change in storage capacity since impoundment. In 2017 and 2018, the U.S. Geological Survey and Reclamation completed extensive surveys of the reservoir utilizing high-resolution multibeam bathymetry and lidar. These data were merged into a seamless topobathymetric dataset, which was subsequently revised to calculate new elevation-area-capacity relationships. This collaborative effort provides a revised and high-resolution estimate of storage capacity in Lake Powell and an updated topobathymetric surface to support water availability studies amidst prolonged drought. The preceding report summarizes the updated elevation-area-capacity relationships, describes the surveying methods and elevation-area-capacity calculations, and provides comparisons of the updated elevation-area-capacity relationships with previous estimates.</p>
+<p>Storage capacity and areal extent of Lake Powell was determined for a range of elevations from 3,120 to 3,717.20 ft above the North American Vertical Datum of 1988 (NAVD 88). The updated elevation-area-capacity relationships indicate Lake Powell has lost 1,833,000 acre-feet or 6.79 percent of its storage capacity at full pool (3,702.91 ft above NAVD 88) since construction was completed in 1963 through 2018. With consideration to potential error in the topobathymetric dataset, the loss of storage capacity ranges between 1,607,000 and 2,059,000 acre-feet. The reduction in storage capacity is attributed to sedimentation at the deltas of the Colorado and San Juan Rivers. Decreases in storage capacity were largest for the reservoir at elevations above 3,600 ft above NAVD 88, which coincide with frequent reservoir elevations since the 1970s. Historical surveys were limited by comparatively coarser survey techniques than those used for the 2017–18 topobathymetric digital elevation model, though the average annual storage loss between surveys remained similar since impoundment in 1963. With increasing demands on water in the Colorado River Basin amidst a decadal-scale drought, these results provide critical information to support water resource management in Lake Powell and beyond.</p>
+</sec>
+</body>
+</book-part>
+</book-body>
+<book-back>
+<ref-list>
+<title>References Cited</title>
+<ref id="r1"><mixed-citation publication-type="web">Alster and Associates, Inc., 1959, Glen Canyon unit-Arizona, Utah, Lake Powell topography: Project 557-414, sheets 63–353, accessed June 23, 2021, at <ext-link ext-link-type="uri" xlink:href="https://collections.lib.utah.edu/">https://collections.lib.utah.edu/</ext-link>.</mixed-citation></ref>
+<ref id="r2"><mixed-citation publication-type="journal"><person-group person-group-type="author"><collab>American Society for Photogrammetry and Remote Sensing</collab></person-group>, <year>2015</year>, <article-title>Photogrammetric engineering &amp; remote sensing</article-title>: <source>American Society for Photogrammetry and Remote Sensing</source>, v. <volume>81</volume>, <issue>no. 3</issue>, p. <fpage>1</fpage>–<lpage>26</lpage>, accessed February 18, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.14358/PERS.81.3.A1-A26</pub-id>.</mixed-citation></ref>
+<ref id="r3"><mixed-citation publication-type="web">Anderson, P.B., Willis, G.C., Chidsey, T.C., Jr., and Sprinkel, D.A., 2010, Geology of Glen Canyon National Recreation Area, Utah-Arizona, <italic>in</italic> Geology of Utah’s parks and monuments: Utah Geological Association and Bryce Canyon Natural History Association, Salt Lake City, Utah, accessed March 10, 2020, at <ext-link ext-link-type="uri" xlink:href="https://www.researchgate.net/publication/292768738_Geology_of_Glen_Canyon_National_Recreation_Area_Utah-Arizona">https://www.researchgate.net/publication/292768738_Geology_of_Glen_Canyon_National_Recreation_Area_Utah-Arizona</ext-link>.</mixed-citation></ref>
+<ref id="r4"><mixed-citation publication-type="web">Andrews, B.D., Baldwin, W.E., Worley, C.R., Baskin, R.L., Denny, J.F., Foster, D.S., Irwin, B.J., Moore, E.M., and Nichols, A.R., 2018, High-resolution geophysical data collected in Lake Powell, Utah-Arizona: U.S. Geological Survey Field Activity 2017-049-FA, accessed December 12, 2019, at <pub-id pub-id-type="doi">https://doi.org/10.5066/P90BU2VS</pub-id>.</mixed-citation></ref>
+<ref id="r5"><mixed-citation publication-type="book">Bernardini, W., Koyiyumptewa, S.B., Schachner, G., and Kuwanwisiwma, L.J. (eds.), 2021, Becoming Hopi: A History: The University of Arizona Press, Tucson, 650 p., accessed February 18, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.2307/j.ctv1q8tg8h</pub-id>.</mixed-citation></ref>
+<ref id="r6"><mixed-citation publication-type="web">Blanton, J.O., III, 1982, Procedures for monitoring reservoir sedimentation: Technical guideline for Bureau of Reclamation, 52 p., accessed September 21, 2021, at <ext-link ext-link-type="uri" xlink:href="https://water.usgs.gov/osw/ressed/references/Procedures-for-Monitoring-Reservoir-Sedimentation.pdf">https://water.usgs.gov/osw/ressed/references/Procedures-for-Monitoring-Reservoir-Sedimentation.pdf</ext-link>.</mixed-citation></ref>
+<ref id="r7"><mixed-citation publication-type="other">Bureau of Reclamation, 1950, Colorado River storage project and participating projects—Upper Colorado River Basin: Bureau of Reclamation Project Planning Report 4-8a.81–2, 310 p.</mixed-citation></ref>
+<ref id="r8"><mixed-citation publication-type="web">Bureau of Reclamation, 1963, Colorado River storage project, Glen Canyon unit, Lake Powell, area and capacity tables: Salt Lake City, Utah, Bureau of Reclamation, 120 p., accessed March 19, 2020, at <ext-link ext-link-type="uri" xlink:href="https://digitalcommons.usu.edu/elusive_docs/28">https://digitalcommons.usu.edu/elusive_docs/28</ext-link>.</mixed-citation></ref>
+<ref id="r9"><mixed-citation publication-type="book">Bureau of <person-group person-group-type="author"><collab>Reclamation</collab></person-group>, <year>1973</year>, <source>1973 Lake Powell sedimentation surveys, Colorado River storage project</source>: <publisher-loc>Montrose, Colo.</publisher-loc>, <publisher-name>Glen Canyon Unit</publisher-name>, <size units="page">59</size> p.</mixed-citation></ref>
+<ref id="r10"><mixed-citation publication-type="web">Bureau of Reclamation, 1985, Area-capacity computation program user manual: Denver, Colo., Division of Planning Technical Services, Engineering and Research Center, U.S. Department of the Interior, Bureau of Reclamation, 112 p., accessed September 13, 2021, at <ext-link ext-link-type="uri" xlink:href="https://www.usbr.gov/tsc/techreferences/reservoir/Area-CapacityComputationProgram_UserManual_1985.pdf">https://www.usbr.gov/tsc/techreferences/reservoir/Area-CapacityComputationProgram_UserManual_1985.pdf</ext-link>.</mixed-citation></ref>
+<ref id="r11"><mixed-citation publication-type="book">Bureau of Reclamation, 1986, Lake Powell evaporation: Salt Lake City, Utah, Bureau of Reclamation, Upper Colorado Regional Office, 27 p.</mixed-citation></ref>
+<ref id="r12"><mixed-citation publication-type="web">Bureau of Reclamation, 2022, Lake Powell Glen Canyon Dam and powerplant water operations monitoring data from upper Colorado hydrologic database: Bureau of Reclamation, accessed February 4, 2022, at <ext-link ext-link-type="uri" xlink:href="https://data.usbr.gov/catalog/2362">https://data.usbr.gov/catalog/2362</ext-link>.</mixed-citation></ref>
+<ref id="r13"><mixed-citation publication-type="web">Clarke, J.E.H., Beaudoin, J., Pratson, L., Anderson, M., Granet, J., Newcombe, L., Ferrari, R.L., and Rice, M., 2005, Lake Powell multibeam mapping 2005: University of New Brunswick.</mixed-citation></ref>
+<ref id="r14"><mixed-citation publication-type="web">Condit, W., Drake, C.L., Mayer, L., and Spydell, L., 1978, Sedimentation in Lake Powell: Lake Powell Research Project Bulletin, no. 64, June 1978, accessed December 10, 2019, at <ext-link ext-link-type="uri" xlink:href="https://collections.lib.utah.edu/ark:/87278/s68k7c1h">https://collections.lib.utah.edu/ark:/87278/s68k7c1h</ext-link>.</mixed-citation></ref>
+<ref id="r15"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Cook</surname>, <given-names>B.I.</given-names></string-name>, <string-name><surname>Ault</surname>, <given-names>T.R.</given-names></string-name>, and <string-name><surname>Smerdon</surname>, <given-names>J.E.</given-names></string-name></person-group>, <year>2015</year>, <article-title>Unprecedented 21st century drought risk in the American Southwest and Central Plains</article-title>: <source>Science Advances</source>, v. <volume>1</volume>, no. <issue>1</issue>, p. <elocation-id>e1400082</elocation-id>, accessed September 15, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1126/sciadv.1400082</pub-id>.</mixed-citation></ref>
+<ref id="r16"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Danielson</surname>, <given-names>J.J.</given-names></string-name>, <string-name><surname>Poppenga</surname>, <given-names>S.K.</given-names></string-name>, <string-name><surname>Brock</surname>, <given-names>J.C.</given-names></string-name>, <string-name><surname>Evans</surname>, <given-names>G.A.</given-names></string-name>, <string-name><surname>Tyler</surname>, <given-names>D.J.</given-names></string-name>, <string-name><surname>Gesch</surname>, <given-names>D.B.</given-names></string-name>, <string-name><surname>Thatcher</surname>, <given-names>C.A.</given-names></string-name>, and <string-name><surname>Barras</surname>, <given-names>J.A.</given-names></string-name></person-group>, <year>2016</year>, <article-title>Topobathymetric elevation model development using a new methodology—Coastal national elevation database</article-title>: <source>Journal of Coastal Research</source>, v. <volume>76</volume>, p. <fpage>75</fpage>–<lpage>89</lpage>, accessed December 17, 2019, at <pub-id pub-id-type="doi">https://doi.org/10.2112/SI76-008</pub-id>.</mixed-citation></ref>
+<ref id="r17"><mixed-citation publication-type="book">Earp, K.J., and Moreo, M.T., 2021, Evaporation from Lake Mead and Lake Mohave, Nevada and Arizona, 2010–2019: U.S. Geological Survey Open-File Report 2021–1022, 36 p., accessed October 29, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.3133/ofr20211022</pub-id>.</mixed-citation></ref>
+<ref id="r18"><mixed-citation publication-type="web">Fairchild Aerial Surveys, Inc., 1947, Bluff project-Utah—San Juan River survey topography, San Juan River strip: Los Angeles, Calif., specification no. R4-1.1, contract no. 177r-125, 40 sheets, scale 1:12000, accessed June 23, 2021, at <ext-link ext-link-type="uri" xlink:href="https://collections.lib.utah.edu/">https://collections.lib.utah.edu/</ext-link>.</mixed-citation></ref>
+<ref id="r19"><mixed-citation publication-type="web">Ferrari, R.L., 1988, 1986 Lake Powell survey: Denver, Colo., Glen Canyon Unit, Surface Water Branch, Earth Sciences Division, Denver Office, U.S. Department of the Interior, Bureau of Reclamation Technical Report REC-ERC-88-6, 68 p, accessed September 21, 2021, at <ext-link ext-link-type="uri" xlink:href="https://www.usbr.gov/tsc/techreferences/reservoir/1986%20Lake%20Powell%20Survey.pdf">https://www.usbr.gov/tsc/techreferences/reservoir/1986%20Lake%20Powell%20Survey.pdf</ext-link>.</mixed-citation></ref>
+<ref id="r20"><mixed-citation publication-type="web">Ferrari, R.L., 2006, Reconnaissance techniques for reservoir surveys: Denver, Colo., U.S. Department of the Interior, Bureau of Reclamation, Technical Service Center, accessed December 10, 2019, at <ext-link ext-link-type="uri" xlink:href="https://www.usbr.gov/tsc/techreferences/mands/mands-pdfs/ReconnaissanceTechniqueResSurveys04-2006_508.pdf">https://www.usbr.gov/tsc/techreferences/mands/mands-pdfs/ReconnaissanceTechniqueResSurveys04-2006_508.pdf</ext-link>.</mixed-citation></ref>
+<ref id="r21"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Friedrich</surname>, <given-names>K.</given-names></string-name>, <string-name><surname>Grossman</surname>, <given-names>R.L.</given-names></string-name>, <string-name><surname>Huntington</surname>, <given-names>J.</given-names></string-name>, <string-name><surname>Blanken</surname>, <given-names>P.D.</given-names></string-name>, <string-name><surname>Lenters</surname>, <given-names>J.</given-names></string-name>, <string-name><surname>Holman</surname>, <given-names>K.D.</given-names></string-name>, <string-name><surname>Gochis</surname>, <given-names>D.</given-names></string-name>, <string-name><surname>Livneh</surname>, <given-names>B.</given-names></string-name>, <string-name><surname>Prairie</surname>, <given-names>J.</given-names></string-name>, <string-name><surname>Skeie</surname>, <given-names>E.</given-names></string-name>, <string-name><surname>Healey</surname>, <given-names>N.C.</given-names></string-name>, <string-name><surname>Dahm</surname>, <given-names>K.</given-names></string-name>, <string-name><surname>Pearson</surname>, <given-names>C.</given-names></string-name>, <string-name><surname>Finnessey</surname>, <given-names>T.</given-names></string-name>, <string-name><surname>Hook</surname>, <given-names>S.J.</given-names></string-name>, and <string-name><surname>Kowalski</surname>, <given-names>T.</given-names></string-name></person-group>, <year>2018</year>, <article-title>Reservoir evaporation in the western United States—Current science, challenges, and future needs</article-title>: <source>Bulletin of the American Meteorological Society</source>, v. <volume>99</volume>, no. <issue>1</issue>, p. <fpage>167</fpage>–<lpage>187</lpage>, accessed June 17, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1175/BAMS-D-15-00224.1</pub-id>.</mixed-citation></ref>
+<ref id="r22"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Gessel</surname>, <given-names>C.D.</given-names></string-name>, and <string-name><surname>Rutledge</surname>, <given-names>D.H.</given-names></string-name></person-group>, <year>1962</year>, <article-title>Large-scale mapping of Lake Powell</article-title>: <source>Journal of the Surveying and Mapping Division</source>, v. <volume>88</volume>, no. <issue>1</issue>, p. <fpage>17</fpage>–<lpage>27</lpage>, accessed March 6, 2020, at <pub-id pub-id-type="doi">https://doi.org/10.1061/JSUEAX.0000083</pub-id>.</mixed-citation></ref>
+<ref id="r23"><mixed-citation publication-type="web">Gibson, T.L., Mendoza, V.A., Umphres, G.D., Rydlund, P.H., Densmore, B.K., and Voss, J.D., 2021, Survey data collection for the Bureau of Reclamation at Glen Canyon Dam near Page, Arizona, November 2020: U.S. Geological Survey data release, accessed July 22, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.5066/P9R8RG8Y</pub-id>.</mixed-citation></ref>
+<ref id="r24"><mixed-citation publication-type="book">Guay, B.E., Eastoe, C.J., Bassett, R., and Long, A., 2006, Identifying sources of groundwater in the lower Colorado River valley, USA, with δ<sup>18</sup>O, δD, and <sup>3</sup>H—Implications for river water accounting: Hydrogeology Journal, v. 14, p. 146–158, accessed June 30, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1007/s10040-004-0334-4</pub-id>.</mixed-citation></ref>
+<ref id="r25"><mixed-citation publication-type="book">Hart, R.J., Taylor, H.E., Antweiler, R.C., Graham, D.D., Fisk, G.G., Riggins, S.G., and Flynn, M.E., 2005, Sediment chemistry of the Colorado River delta of Lake Powell, Utah, 2001: U.S. Geological Survey Open-File Report 2005–1178, 33 p., accessed March 6, 2020, at <pub-id pub-id-type="doi">https://doi.org/10.3133/ofr20051178</pub-id>.</mixed-citation></ref>
+<ref id="r26"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Helfer</surname>, <given-names>F.</given-names></string-name>, <string-name><surname>Lemckert</surname>, <given-names>C.</given-names></string-name>, and <string-name><surname>Zhang</surname>, <given-names>H.</given-names></string-name></person-group>, <year>2012</year>, <article-title>Impacts of climate change on temperature and evaporation from a large reservoir in Australia</article-title>: <source>Journal of Hydrology</source>, v. <volume>475</volume>, p. <fpage>365</fpage>–<lpage>378</lpage>, accessed September 15, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1016/j.jhydrol.2012.10.008</pub-id>.</mixed-citation></ref>
+<ref id="r27"><mixed-citation publication-type="book">Hornewer, N.J., 2014, Sediment and water chemistry of the San Juan River and Escalante River deltas of Lake Powell, Utah, 2010–2011: U.S. Geological Survey Open-File Report 2014–1096, 18 p., accessed December 10, 2019, at <pub-id pub-id-type="doi">https://doi.org/10.3133/ofr20141096</pub-id>.</mixed-citation></ref>
+<ref id="r28"><mixed-citation publication-type="other">Jacoby, G.C., Jr., Nelson, R., Patch, S., and Anderson, O.L., 1977, Evaporation, bank storage, and water budget at Lake Powell: Lake Powell Research Project Bulletin, no. 48, July 1977.</mixed-citation></ref>
+<ref id="r29"><mixed-citation publication-type="web">James, T., Evans, A., Madly, E., and Kelly, C., 2014, The economic importance of the Colorado River to the basin region: L. William Seidman Research Institute, Arizona State University, accessed February 3, 2022, at <ext-link ext-link-type="uri" xlink:href="https://businessforwater.org/wp-content/uploads/2016/12/PTF-Final-121814.pdf">https://businessforwater.org/wp-content/uploads/2016/12/PTF-Final-121814.pdf</ext-link>.</mixed-citation></ref>
+<ref id="r30"><mixed-citation publication-type="web">Jones, D.K., and Root, J.C., 2021, Modified topobathymetric elevation data for Lake Powell: U.S. Geological Survey data release, accessed July 19, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.5066/P9H60YCF</pub-id>.</mixed-citation></ref>
+<ref id="r31"><mixed-citation publication-type="web">Jones, D.K., and Root, J.C, 2022, Elevation-area-capacity tables for Lake Powell, 2018: U.S. Geological Survey data release, available at <ext-link ext-link-type="uri" xlink:href="https://doi.org/10.5066/P9O3IPG3">https://doi.org/10.5066/P9O3IPG3</ext-link>.</mixed-citation></ref>
+<ref id="r32"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Kingston</surname>, <given-names>D.G.</given-names></string-name>, <string-name><surname>Todd</surname>, <given-names>M.C.</given-names></string-name>, <string-name><surname>Taylor</surname>, <given-names>R.G.</given-names></string-name>, <string-name><surname>Thompson</surname>, <given-names>J.R.</given-names></string-name>, and <string-name><surname>Arnell</surname>, <given-names>N.W.</given-names></string-name></person-group>, <year>2009</year>, <article-title>Uncertainty in the estimation of potential evapotranspiration under climate change</article-title>: <source>Geophysical Research Letters</source>, v. <volume>36</volume>, no. <issue>20</issue>, accessed September 21, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1029/2009GL040267</pub-id>.</mixed-citation></ref>
+<ref id="r33"><mixed-citation publication-type="confproc">Lazenby, J., and Nelson, L., 1976, Lake Powell sedimentation surveys: Federal Interagency Sedimentation Conference Proceedings, Water Resources Council, Sedimentation Committee, no. 3, p. 4.52–4.63.</mixed-citation></ref>
+<ref id="r34"><mixed-citation publication-type="book">Luckert, K.W., 1977, Navajo Mountain and Rainbow Bridge religion: The Museum of Northern Arizona, Flagstaff, 157 p.</mixed-citation></ref>
+<ref id="r35"><mixed-citation publication-type="web">Lukas, J., and Payton, E., 2020, Colorado River basin climate and hydrology—State of the Science: University of Colorado Boulder Western Water Assessment, 520 p., accessed March 5, 2021, at <ext-link ext-link-type="uri" xlink:href="https://wwa.colorado.edu/publications/reports/CRBreport/">https://wwa.colorado.edu/publications/reports/CRBreport/</ext-link>.</mixed-citation></ref>
+<ref id="r36"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>McCabe</surname>, <given-names>G.J.</given-names></string-name>, <string-name><surname>Wolock</surname>, <given-names>D.M.</given-names></string-name>, <string-name><surname>Pederson</surname>, <given-names>G.T.</given-names></string-name>, <string-name><surname>Woodhouse</surname>, <given-names>C.A.</given-names></string-name>, and <string-name><surname>McAfee</surname>, <given-names>S.</given-names></string-name></person-group>, <year>2017</year>, <article-title>Evidence that recent warming is reducing upper Colorado River flows</article-title>: <source>Earth Interactions</source>, v. <volume>21</volume>, <issue>no. 10</issue>, p. <fpage>1</fpage>–<lpage>14</lpage>, accessed September 13, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1175/EI-D-17-0007.1</pub-id>.</mixed-citation></ref>
+<ref id="r37"><mixed-citation publication-type="book">McCabe, G.J., Wolock, D.M., Woodhouse, C.A., Pederson, G.T., McAfee, S.A., Gray, S., and Csank, A., 2020, Basinwide hydroclimatic drought in the Colorado River Basin: Earth Interactions, v. 24, no. 2, p. 1–20, accessed September 13, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1175/EI-D-20-0001.1</pub-id>.</mixed-citation></ref>
+<ref id="r38"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Miller</surname>, <given-names>M.P.</given-names></string-name>, <string-name><surname>Buto</surname>, <given-names>S.G.</given-names></string-name>, <string-name><surname>Susong</surname>, <given-names>D.D.</given-names></string-name>, and <string-name><surname>Rumsey</surname>, <given-names>C.A.</given-names></string-name></person-group>, <year>2016</year>, <article-title>The importance of base flow in sustaining surface water flow in the Upper Colorado River Basin</article-title>: <source>Water Resources Research</source>, v. <volume>52</volume>, no. <issue>5</issue>, p. <fpage>3547</fpage>–<lpage>3562</lpage>, accessed September 15, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1002/2015WR017963</pub-id>.</mixed-citation></ref>
+<ref id="r39"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Miller</surname>, <given-names>O.L.</given-names></string-name>, <string-name><surname>Miller</surname>, <given-names>M.P.</given-names></string-name>, <string-name><surname>Longley</surname>, <given-names>P.C.</given-names></string-name>, <string-name><surname>Alder</surname>, <given-names>J.R.</given-names></string-name>, <string-name><surname>Bearup</surname>, <given-names>L.A.</given-names></string-name>, <string-name><surname>Pruitt</surname>, <given-names>T.</given-names></string-name>, <string-name><surname>Jones</surname>, <given-names>D.K.</given-names></string-name>, <string-name><surname>Putman</surname>, <given-names>A.L.</given-names></string-name>, <string-name><surname>Rumsey</surname>, <given-names>C.A.</given-names></string-name>, and <string-name><surname>McKinney</surname>, <given-names>T.</given-names></string-name></person-group>, <year>2021</year><comment>a</comment>, <article-title>How will baseflow respond to climate change in the upper Colorado River Basin?</article-title>: <source>Geophysical Research Letters</source>, v. <volume>48</volume>, <issue>no. 22</issue>, accessed January 11, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.1029/2021GL095085</pub-id>.</mixed-citation></ref>
+<ref id="r40"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Miller</surname>, <given-names>O.L.</given-names></string-name>, <string-name><surname>Putman</surname>, <given-names>A.L.</given-names></string-name>, <string-name><surname>Alder</surname>, <given-names>J.</given-names></string-name>, <string-name><surname>Miller</surname>, <given-names>M.</given-names></string-name>, <string-name><surname>Jones</surname>, <given-names>D.K.</given-names></string-name>, and <string-name><surname>Wise</surname>, <given-names>D.R.</given-names></string-name></person-group>, <year>2021</year><comment>b</comment>, <article-title>Changing climate drives future streamflow declines and challenges in meeting water demand across the southwestern United States</article-title>: <source>Journal of Hydrology: X</source>, v. <volume>11</volume>, p. <elocation-id>100074</elocation-id>, accessed September 21, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1016/j.hydroa.2021.100074</pub-id>.</mixed-citation></ref>
+<ref id="r41"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Milly</surname>, <given-names>P.C.D.</given-names></string-name>, and <string-name><surname>Dunne</surname>, <given-names>K.A.</given-names></string-name></person-group>, <year>2020</year>, <article-title>Colorado River flow dwindles as warming-driven loss of reflective snow energizes evaporation</article-title>: <source>Science</source>, v. <volume>367</volume>, <issue>no. 6483</issue>, p. <fpage>1252</fpage>–<lpage>1255</lpage>, accessed May 15, 2020, at <pub-id pub-id-type="doi">https://doi.org/10.1126/science.aay9187</pub-id>.</mixed-citation></ref>
+<ref id="r42"><mixed-citation publication-type="book">Moreo, M.T., and Swancar, A., 2013, Evaporation from Lake Mead, Nevada and Arizona, March 2010 through February 2012: U.S. Geological Survey Scientific Investigations Report 2013–5229, 40 p., accessed June 17, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.3133/sir20135229</pub-id>.</mixed-citation></ref>
+<ref id="r43"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Myers</surname>, <given-names>T.</given-names></string-name></person-group>, <year>2013</year>, <article-title>Loss rates from Lake Powell and their impact on management of the Colorado River</article-title>: <source>Journal of the American Water Resources Association</source>, v. <volume>49</volume>, no. <issue>5</issue>, p. <fpage>1213</fpage>–<lpage>1224</lpage>, accessed June 17, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1111/jawr.12081</pub-id>.</mixed-citation></ref>
+<ref id="r44"><mixed-citation publication-type="web">National Oceanic and Atmospheric Administration (NOAA), 2019, VDatum, version 4.0, accessed December 10, 2019, at <ext-link ext-link-type="uri" xlink:href="https://vdatum.noaa.gov/">https://vdatum.noaa.gov/</ext-link>.</mixed-citation></ref>
+<ref id="r45"><mixed-citation publication-type="web">National Oceanic and Atmospheric Administration (NOAA), 2021, VERTCON, version 3.0, accessed February 3, 2021, at <ext-link ext-link-type="uri" xlink:href="https://geodesy.noaa.gov/VERTCON3/">https://geodesy.noaa.gov/VERTCON3/</ext-link>.</mixed-citation></ref>
+<ref id="r46"><mixed-citation publication-type="web">National Park Service, 2021a, Glen Canyon National Recreation Area—Annual park recreation visitation (1964–Last Calendar Year): National Park Service, accessed June 23, 2021, at <ext-link ext-link-type="uri" xlink:href="https://irma.nps.gov/STATS">https://irma.nps.gov/STATS</ext-link>.</mixed-citation></ref>
+<ref id="r47"><mixed-citation publication-type="web">National Park Service, 2021b, Lake Powell weather: National Park Service, accessed June 23, 2021, at <ext-link ext-link-type="uri" xlink:href="https://www.nps.gov/glca/planyourvisit/weather.htm">https://www.nps.gov/glca/planyourvisit/weather.htm</ext-link>.</mixed-citation></ref>
+<ref id="r48"><mixed-citation publication-type="web">Navajo Nation Parks &amp; Recreation, 2022, Navajo tribal park rules &amp; regulations: Navajo Nation Parks &amp; Recreation, accessed February 18, 2022, at <ext-link ext-link-type="uri" xlink:href="https://navajonationparks.org/rules-regulations/">https://navajonationparks.org/rules-regulations/</ext-link>.</mixed-citation></ref>
+<ref id="r49"><mixed-citation publication-type="web">Ostroff, A.C., Muhlfeld, C.C., Lambert, P.M., Booth, N.L., Carter, S.L., Stoker, J.M., and Focazio, M.J., 2017, USGS integrated drought science: U.S. Geological Survey Circular 1430, 32 p., accessed March 5, 2021, at <ext-link ext-link-type="uri" xlink:href="http://pubs.er.usgs.gov/publication/cir1430">http://pubs.er.usgs.gov/publication/cir1430</ext-link>.</mixed-citation></ref>
+<ref id="r50"><mixed-citation publication-type="web">Poppenga, S.K., Danielson, J.J., and Tyler, D.J., 2020, One meter topobathymetric digital elevation model for Lake Powell, Arizona-Utah, 1947–2018: U.S. Geological data release, accessed June 18, 2020, at <pub-id pub-id-type="doi">https://doi.org/10.5066/P9XX0J1Y</pub-id>.</mixed-citation></ref>
+<ref id="r51"><mixed-citation publication-type="book"><person-group person-group-type="author"><string-name><surname>Potter</surname>, <given-names>L.D.</given-names></string-name>, and <string-name><surname>Drake</surname>, <given-names>C.L.</given-names></string-name></person-group>, <year>1989</year>, <source>Lake Powell—Virgin flow to dynamo</source>: <publisher-loc>Albuquerque</publisher-loc>, <publisher-name>University of New Mexico Press</publisher-name>, <size units="page">311</size> p.</mixed-citation></ref>
+<ref id="r52"><mixed-citation publication-type="other">Powell, J.W., 1875, Exploration of the Colorado River of the West and its tributaries: Explored in 1869, 1870, 1871, and 1872, under the direction of the Secretary of the Smithsonian Institution: U.S. Geological Survey Monograph, 291 p., accessed February 18, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.3133/70039238</pub-id>.</mixed-citation></ref>
+<ref id="r53"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Pratson</surname>, <given-names>L.</given-names></string-name>, <string-name><surname>Hughes-Clarke</surname>, <given-names>J.</given-names></string-name>, <string-name><surname>Anderson</surname>, <given-names>M.</given-names></string-name>, <string-name><surname>Gerber</surname>, <given-names>T.</given-names></string-name>, <string-name><surname>Twichell</surname>, <given-names>D.</given-names></string-name>, <string-name><surname>Ferrari</surname>, <given-names>R.</given-names></string-name>, <string-name><surname>Nittrouer</surname>, <given-names>C.</given-names></string-name>, <string-name><surname>Beaudoin</surname>, <given-names>J.</given-names></string-name>, <string-name><surname>Granet</surname>, <given-names>J.</given-names></string-name>, and <string-name><surname>Crockett</surname>, <given-names>J.</given-names></string-name></person-group>, <year>2008</year>, <article-title>Timing and patterns of basin infilling as documented in Lake Powell during a drought</article-title>: <source>Geology</source>, v. <volume>36</volume>, no. <issue>11</issue>, p. <fpage>843</fpage>–<lpage>846</lpage>, accessed December 10, 2019, at <pub-id pub-id-type="doi">https://doi.org/10.1130/G24733A.1</pub-id>.</mixed-citation></ref>
+<ref id="r54"><mixed-citation publication-type="web">Root, J.C., Hynek, S.A., DiViesti, D.N., and Gushue, T.M., 2019, Digital elevation model of Glen Canyon prior to the flooding of Lake Powell from historic topographic surveys, Utah and Arizona: U.S. Geological Survey data release, accessed December 17, 2019, at <pub-id pub-id-type="doi">https://doi.org/10.5066/P9368XHU</pub-id>.</mixed-citation></ref>
+<ref id="r55"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Rumsey</surname>, <given-names>C.A.</given-names></string-name>, <string-name><surname>Miller</surname>, <given-names>M.P.</given-names></string-name>, <string-name><surname>Schwarz</surname>, <given-names>G.E.</given-names></string-name>, <string-name><surname>Hirsch</surname>, <given-names>R.M.</given-names></string-name>, and <string-name><surname>Susong</surname>, <given-names>D.D.</given-names></string-name></person-group>, <year>2017</year>, <article-title>The role of baseflow in dissolved solids delivery to streams in the Upper Colorado River Basin</article-title>: <source>Hydrological Processes</source>, v. <volume>31</volume>, <issue>no. 26</issue>, p. <fpage>4705</fpage>–<lpage>4718</lpage>, accessed January 11, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.1002/hyp.11390</pub-id>.</mixed-citation></ref>
+<ref id="r56"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Rumsey</surname>, <given-names>C.A.</given-names></string-name>, <string-name><surname>Miller</surname>, <given-names>O.</given-names></string-name>, <string-name><surname>Hirsch</surname>, <given-names>R.M.</given-names></string-name>, <string-name><surname>Marston</surname>, <given-names>T.M.</given-names></string-name>, and <string-name><surname>Susong</surname>, <given-names>D.D.</given-names></string-name></person-group>, <year>2021</year>, <article-title>Substantial declines in salinity observed across the upper Colorado River Basin during the 20th century, 1929–2019</article-title>: <source>Water Resources Research</source>, v. <volume>57</volume>, no. <issue>5</issue>, accessed September 15, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1029/2020WR028581</pub-id>.</mixed-citation></ref>
+<ref id="r57"><mixed-citation publication-type="thesis">Spydell, D.R., 1975, Recent patterns of sedimentation in Lake Powell, Arizona-Utah: Dartmouth College thesis, 73 p.</mixed-citation></ref>
+<ref id="r58"><mixed-citation publication-type="book">Tillman, F.D., Gangopadhyay, S., and Pruitt, T., 2020, Trends in recent historical and projected climate data for the Colorado River Basin and potential effects on groundwater availability: U.S. Geological Survey Scientific Investigations Report 2020–5107, 24 p., accessed June 7, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.3133/sir20205107</pub-id>.</mixed-citation></ref>
+<ref id="r59"><mixed-citation publication-type="web">Twichell, D.C., Cross, V.A., and Pratson, L., 2001, Raw HYPACK navigation collected in Lake Powell, Utah, and Arizona, from May 3 to May 5, 2001: U.S. Geological Survey Field Activity 2001-088-FA, accessed June 23, 2021, at <ext-link ext-link-type="uri" xlink:href="https://cmgds.marine.usgs.gov/fan_info.php?fan=2001-088-FA">https://cmgds.marine.usgs.gov/fan_info.php?fan=2001-088-FA</ext-link>.</mixed-citation></ref>
+<ref id="r60"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Udall</surname>, <given-names>B.</given-names></string-name>, and <string-name><surname>Overpeck</surname>, <given-names>J.</given-names></string-name></person-group>, <year>2017</year>, <article-title>The twenty-first century Colorado River hot drought and implications for the future</article-title>: <source>Water Resources Research</source>, v. <volume>53</volume>, <issue>no. 3</issue>, p. <fpage>2404</fpage>–<lpage>2418</lpage>, accessed January 11, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.1002/2016WR019638</pub-id>.</mixed-citation></ref>
+<ref id="r61"><mixed-citation publication-type="web">U.S. Geological Survey, 2018, USGS National Hydrography Dataset Plus High Resolution (NHDPlus HR) for 4-digit Hydrologic Unit 1401–1408 (published August 13, 2018): U.S. Geological Survey, accessed September 3, 2021, at <ext-link ext-link-type="uri" xlink:href="https://www.sciencebase.gov/catalog/item/57645ff2e4b07657d19ba8e8">https://www.sciencebase.gov/catalog/item/57645ff2e4b07657d19ba8e8</ext-link>.</mixed-citation></ref>
+<ref id="r62"><mixed-citation publication-type="web">U.S. Geological Survey, 2021, National Water Information System—Web interface, USGS Water Data for the Nation: accessed September 20, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.5066/F7P55KJN</pub-id>/.</mixed-citation></ref>
+<ref id="r63"><mixed-citation publication-type="web">Utah Geospatial Resource Center, 2007, 5m auto-correlated Arc grid DEM from 1m GSD NAIP Imagery: Topographic data collected in 2006, accessed December 17, 2019, at <ext-link ext-link-type="uri" xlink:href="https://raster.utah.gov/">https://raster.utah.gov/</ext-link>.</mixed-citation></ref>
+<ref id="r64"><mixed-citation publication-type="web">Utah Geospatial Resource Center, 2017, 2015 Colorado, Green, and Yampa Rivers LiDAR elevation data: topographic data collected in 2015, accessed January 13, 2020, at <ext-link ext-link-type="uri" xlink:href="https://gis.utah.gov/data/elevation-and-terrain/2015-lidar-rivers/">https://gis.utah.gov/data/elevation-and-terrain/2015-lidar-rivers/</ext-link>.</mixed-citation></ref>
+<ref id="r65"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Vernieu</surname>, <given-names>W.S.</given-names></string-name></person-group>, <year>1997</year>, <article-title>Effects of reservoir drawdown on resuspension of deltaic sediments in Lake Powell</article-title>: <source>Lake and Reservoir Management</source>, v. <volume>13</volume>, <issue>no. 1</issue>, p. <fpage>67</fpage>–<lpage>78</lpage>, accessed September 16, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1080/07438149709354298</pub-id>.</mixed-citation></ref>
+<ref id="r66"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Williams</surname>, <given-names>A.P.</given-names></string-name>, <string-name><surname>Cook</surname>, <given-names>E.R.</given-names></string-name>, <string-name><surname>Smerdon</surname>, <given-names>J.E.</given-names></string-name>, <string-name><surname>Cook</surname>, <given-names>B.I.</given-names></string-name>, <string-name><surname>Abatzoglou</surname>, <given-names>J.T.</given-names></string-name>, <string-name><surname>Bolles</surname>, <given-names>K.</given-names></string-name>, <string-name><surname>Baek</surname>, <given-names>S.H.</given-names></string-name>, <string-name><surname>Badger</surname>, <given-names>A.M.</given-names></string-name>, and <string-name><surname>Livneh</surname>, <given-names>B.</given-names></string-name></person-group>, <year>2020</year>, <article-title>Large contribution from anthropogenic warming to an emerging North American megadrought</article-title>: <source>Science</source>, v. <volume>368</volume>, <issue>no. 6488</issue>, p. <fpage>314</fpage>–<lpage>318</lpage>, accessed January 11, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.1126/science.aaz9600</pub-id>.</mixed-citation></ref>
+<ref id="r67"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Woodhouse</surname>, <given-names>C.A.</given-names></string-name>, <string-name><surname>Meko</surname>, <given-names>D.M.</given-names></string-name>, <string-name><surname>MacDonald</surname>, <given-names>G.M.</given-names></string-name>, <string-name><surname>Stahle</surname>, <given-names>D.W.</given-names></string-name>, and <string-name><surname>Cook</surname>, <given-names>E.R.</given-names></string-name></person-group>, <year>2010</year>, <article-title>A 1,200-year perspective of 21st century drought in southwestern North America—</article-title><source>Proceedings of the National Academy of Sciences of the United States of America</source>: v. <volume>107</volume>, <issue>no. 50</issue>, p. <fpage>21283</fpage>–<lpage>21288</lpage>, accessed January 11, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.1073/pnas.0911197107</pub-id>.</mixed-citation></ref>
+<ref id="r68"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Woodhouse</surname>, <given-names>C.A.</given-names></string-name>, and <string-name><surname>Pederson</surname>, <given-names>G.T.</given-names></string-name></person-group>, <year>2018</year>, <article-title>Investigating runoff efficiency in upper Colorado River streamflow over past centuries</article-title>: <source>Water Resources Research</source>, v. <volume>54</volume>, no. <issue>1</issue>, p. <fpage>286</fpage>–<lpage>300</lpage>, accessed September 15, 2021, at <pub-id pub-id-type="doi">https://doi.org/10.1002/2017WR021663</pub-id>.</mixed-citation></ref>
+<ref id="r69"><mixed-citation publication-type="journal"><person-group person-group-type="author"><string-name><surname>Xiao</surname>, <given-names>M.</given-names></string-name>, <string-name><surname>Udall</surname>, <given-names>B.</given-names></string-name>, and <string-name><surname>Lettenmaier</surname>, <given-names>D.P.</given-names></string-name></person-group>, <year>2018</year>, <article-title>On the causes of declining Colorado River streamflows</article-title>: <source>Water Resources Research</source>, v. <volume>54</volume>, <issue>no. 9</issue>, p. <fpage>6739</fpage>–<lpage>6756</lpage>, accessed January 11, 2022, at <pub-id pub-id-type="doi">https://doi.org/10.1029/2018WR023153</pub-id>.</mixed-citation></ref>
+</ref-list>
+<glossary content-type="Glossary">
+<title>Glossary</title>
+<def-list>
+<def-item><term><bold>Active storage</bold></term><def><p>This range of reservoir elevations, from 1,064.6 to 1,128.65 meters (3,492.91–3,702.91 feet), represents the levels that all penstocks and river outlets at Glen Canyon Dam are submerged.</p></def></def-item>
+<def-item><term><bold>Area-Capacity Computation Program</bold></term><def><p>Software developed by the Bureau of Reclamation to determine elevation-area-capacity relationships that are independent from the results in this report.</p></def></def-item>
+<def-item><term><bold>Coastal National Elevation Database topobathymetric digital elevation model (TBDEM) interpolation</bold></term><def><p>Methodology for developing TBDEMs that assimilates topographic and bathymetric data sources into a seamless surface.</p></def></def-item>
+<def-item><term><bold>Datum conversion</bold></term><def><p>Datasets published prior to 1988 are originally referenced to the National Geodetic Vertical Datum of 1929 (NGVD 29); for clarity, all elevations have been converted to the North American Vertical Datum of 1988 (NAVD 88), unless otherwise noted, with a conversion factor of +0.887 meter (2.91 feet) from NGV29 to NAVD 88.</p></def></def-item>
+<def-item><term><bold>Dead storage</bold></term><def><p>This benchmark elevation, at 1,028.06 meters (3,372.91 feet), represents the lowest level that water can be released through Glen Canyon Dam.</p></def></def-item>
+<def-item><term><bold>Elevation-area-capacity relationship</bold></term><def><p>The cumulative areal extent and storage capacity, or volume, at a given reservoir elevation.</p></def></def-item>
+<def-item><term><bold>Flood-control stage</bold></term><def><p>As Glen Canyon Dam crests at 1,133.22 meters (3,717.91 feet), all reservoir levels above 1,128.65 meters (3,702.91 feet) are considered a risk to overflowing the dam.</p></def></def-item>
+<def-item><term><bold>Hydro-flatten</bold></term><def><p>Hydro-flattening is post-processing of topographic data to reflect flat-water surfaces. In this report, the regions of the topobathymetric digital elevation model that are active rivers (that is, upstream from the surveyed reservoir but within the reservoir limits) were hydro-flattened and do not reflect the river gradient.</p></def></def-item>
+<def-item><term><bold>Inactive storage</bold></term><def><p>This range of reservoir elevations, from 1,028.06 to 1,064.6 meters (3,372.91–3,492.91 feet), represents the levels that penstocks and river outlets at Glen Canyon Dam begin to be subaerially exposed and limit generation of hydroelectric generation.</p></def></def-item>
+<def-item><term><bold>Pre-Glen Canyon Dam digital elevation model (DEM)</bold></term><def><p>A DEM derived from pre-Glen Canyon Dam topographic surveys in 1947 for the San Juan River arm and 1959 for the Colorado River arm.</p></def></def-item>
+<def-item><term><bold>Range line</bold></term><def><p>A form of bathymetric surveying that consisted of measuring existing sediment profiles with an echosounder, typically from bank to bank in a reservoir.</p></def></def-item>
+<def-item><term><bold>Reservoir lifespan</bold></term><def><p>The expected amount of time a reservoir can reasonably maintain its ability to functionally store water.</p></def></def-item>
+<def-item><term><bold>Sedimentation rate</bold></term><def><p>The rate that sediment is deposited as a volume or mass per unit time. This report does not investigate sediment or modes of sedimentation and referencing loss of storage capacity as a sedimentation rate is not advised.</p></def></def-item>
+<def-item><term><bold>Storage Capacity tool for ArcGIS</bold></term><def><p>A tool packaged with the Spatial Analyst Supplemental Toolbox for ArcGIS by Esri. This tool creates a table of surface area and storage capacity, or volume, for an input surface raster at desired elevations. The script was modified for use on the Yeti supercomputer.</p></def></def-item>
+<def-item><term><bold>Topobathymetry</bold></term><def><p>An integrated, multi-source dataset of topographic and bathymetric elevation data.</p></def></def-item>
+<def-item><term><bold>Yeti</bold></term><def><p>High-performance computing cluster at the U.S. Geological Survey Advanced Research Computing in Denver, Colorado, that was used to calculate the elevation-area-capacity relationships for Lake Powell.</p></def></def-item>
+</def-list>
+</glossary>
+<notes notes-type="colophon">
+<sec>
+<p>For more information concerning the research in this report, contact the</p>
+<p content-type="indent">Director, Utah Water Science Center</p>
+<p content-type="indent">U.S. Geological Survey</p>
+<p content-type="indent">2329 West Orton Circle</p>
+<p content-type="indent">Salt Lake City, Utah 84119-2047</p>
+<p content-type="indent">801-908-5000</p>
+<p content-type="indent"><ext-link ext-link-type="uri" xlink:href="https://ut.water.usgs.gov">https://ut.water.usgs.gov</ext-link></p>
+<p>Publishing support provided by the U.S. Geological Survey</p>
+<p content-type="indent">Science Publishing Network, Sacramento Publishing Service Center</p>
+</sec>
+</notes>
+</book-back>
+</book>
