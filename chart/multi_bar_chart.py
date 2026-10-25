@@ -728,17 +728,18 @@ class MultiBarChart(Chart):
     def enable_draggable_vline(self, callback=None, color='#d62728', linewidth=1.6,
                                alpha=0.9, initial_year=None,
                                show_year_label=False, year_label_color=None,
-                               year_label_fontsize=9):
+                               year_label_fontsize=9,
+                               show_bar_values=False, bar_value_color='black',
+                               bar_value_fontsize=7.5):
         """
-        Click-and-drag vertical line that snaps to the nearest year index.
-        callback(year) receives the year the line is currently snapped to.
-        If show_year_label=True, a year label is drawn centered on the line
-        just below the top of the axes.
+        ...
+        If show_bar_values=True, labels are drawn in the middle of each stacked
+        segment for the year the line is on (value of that segment only).
         """
         if self.ax is None or self.year_to_idx is None:
             raise RuntimeError("Call create_figure() before enabling the draggable line")
 
-        # Starting position (integer index)
+        # Starting position
         if initial_year is not None and initial_year in self.year_to_idx:
             x0 = float(self.year_to_idx[initial_year])
         else:
@@ -756,8 +757,15 @@ class MultiBarChart(Chart):
         self._year_label_fontsize = year_label_fontsize
         self._year_label = None
 
+        self._show_bar_values = show_bar_values
+        self._bar_value_color = bar_value_color
+        self._bar_value_fontsize = bar_value_fontsize
+        self._bar_value_texts = []  # list of Text artists
+
         if self._show_year_label:
             self._update_year_label(x0)
+        if self._show_bar_values:
+            self._update_bar_value_labels(x0)
 
         canvas = self.fig.canvas
         self._vline_cids = [
@@ -787,6 +795,100 @@ class MultiBarChart(Chart):
         contains, _ = self._vline.contains(event)
         if contains:
             self._vline_dragging = True
+
+    def _update_bar_value_labels(self, idx):
+        """Place labels for the year under the vline.
+        - Exactly 2 groups: left-bar value left of the line (right-aligned),
+          right-bar value right of the line (left-aligned).
+        - Any other number of groups: centered inside each stack segment.
+        - Special case: segment starts inside the axes but extends above the top
+          → place label just below the year-label position.
+        Zero values are omitted.
+        """
+        if not self._show_bar_values:
+            return
+
+        # Clear previous labels
+        for t in self._bar_value_texts:
+            t.remove()
+        self._bar_value_texts.clear()
+
+        year = self._index_to_year(int(idx))
+        if year is None:
+            return
+
+        n_groups = len(self.groups)
+        if n_groups == 0:
+            return
+
+        group_width = 0.78 / n_groups
+        offset = 0.18
+
+        # Visible y-range (data coordinates)
+        y_bottom, y_top = self.ax.get_ylim()
+
+        # Position just below the year label (or the same spot if year label is off)
+        font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
+        special_y = y_top - (y_top - y_bottom) * (0.04 + font_height_frac * 1.6)
+
+        for g_idx, group in enumerate(self.groups):
+            yearly = MultiBarChart._get_yearly_stacked_data(group.series)
+            segments = yearly.get(year, [])
+            if not segments:
+                continue
+
+            bar_x = idx - 0.4 + (g_idx + 0.5) * group_width
+
+            if n_groups == 2:
+                if g_idx == 0:
+                    label_x = idx - offset
+                    ha = 'right'
+                else:
+                    label_x = idx + offset
+                    ha = 'left'
+            else:
+                label_x = bar_x
+                ha = 'center'
+
+            bottom = 0.0
+            for val, label, color, overrides in segments:
+                height = val / self.y_divisor
+                if abs(val) < 1e-6 or height <= 0:
+                    bottom += max(height, 0.0)
+                    continue
+
+                top = bottom + height
+
+                # Special case: bottom visible, top clipped above the axes
+                if bottom < y_top and top > y_top:
+                    mid_y = special_y
+                else:
+                    geometric_mid = bottom + height / 2.0
+                    nudge = min(height * 0.04, 0.08)
+                    mid_y = geometric_mid - nudge
+
+                txt = (f"{val / self.y_divisor:.1f}"
+                       if abs(val / self.y_divisor) < 10
+                       else f"{val / self.y_divisor:.0f}")
+
+                text = self.ax.text(
+                    label_x, mid_y, txt,
+                    ha=ha, va='center',
+                    fontsize=self._bar_value_fontsize,
+                    color=self._bar_value_color,
+                    fontweight='bold',
+                    zorder=25,
+                    clip_on=True,
+                    bbox=dict(
+                        boxstyle="round,pad=0.18",
+                        facecolor="white",
+                        alpha=0.8,
+                        edgecolor="none",
+                        linewidth=0,
+                    ),
+                )
+                self._bar_value_texts.append(text)
+                bottom += height
 
     def _update_year_label(self, idx):
         """Create or move the year label centered on the vline, just below the top."""
@@ -824,6 +926,7 @@ class MultiBarChart(Chart):
         idx = int(round(event.xdata))
         self._vline.set_xdata([idx, idx])
         self._update_year_label(idx)
+        self._update_bar_value_labels(idx)
         self._report(idx)
         self.fig.canvas.draw_idle()
 
@@ -835,9 +938,9 @@ class MultiBarChart(Chart):
             idx = int(round(event.xdata))
             self._vline.set_xdata([idx, idx])
             self._update_year_label(idx)
+            self._update_bar_value_labels(idx)
             self._report(idx)
         self.fig.canvas.draw_idle()
-
 
     def disable_draggable_vline(self):
         """Remove the line and disconnect events."""

@@ -163,12 +163,14 @@ class Demand1906To1971(DemandChartFrame):
         # Enable draggable lines only on charts that support them
         for chart in self.charts:
             if hasattr(chart, 'enable_draggable_vline'):
+                show_bar_values = True,
                 show_label = (chart is self.demand_chart)
                 chart.enable_draggable_vline(
                     callback=self.on_line_moved,
                     color='black',
                     initial_year=1922,
                     show_year_label=show_label,
+                    show_bar_values=show_bar_values
                 )
 
     def load_charts(self):
@@ -301,9 +303,15 @@ class Demand1906To1971(DemandChartFrame):
                 if year in getattr(chart, 'year_to_idx', {}):
                     idx = chart.year_to_idx[year]
                     chart._vline.set_xdata([idx, idx])
-                    # Also move the year label if this chart is showing one
+
+                    # Year label (if this chart is showing one)
                     if getattr(chart, '_show_year_label', False):
                         chart._update_year_label(idx)
+
+                    # Bar-segment value labels (if this chart is showing them)
+                    if getattr(chart, '_show_bar_values', False):
+                        chart._update_bar_value_labels(idx)
+
                     chart.fig.canvas.draw_idle()
         finally:
             self._syncing_lines = False
