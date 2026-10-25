@@ -53,7 +53,10 @@ class DemandChartFrame(ChartFrame):
 
         super().__init__(notebook, page_name=self.name)
 
-    def create_reservoir_bar_chart(self):
+        if self.toolbar is not None:
+            self.toolbar.Hide()
+
+    def create_reservoir_bar_chart(self, show_x_labels=True):
         lake_powell = LakePowell(upstream=[])
         df_powell = lake_powell.load_data_annual(start_year=self.start_year)
         df_powell = df_utils.extend_years_with_zero(df_powell, 1906)
@@ -77,7 +80,7 @@ class DemandChartFrame(ChartFrame):
             x_min = 0,
             y_max=27,
             y_min=3,
-            show_x_labels=True
+            show_x_labels=show_x_labels
         )
         self.charts.append(self.multi_bar_chart)
 

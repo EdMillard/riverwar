@@ -54,10 +54,14 @@ class Colors:
     AZ6 = '#efbb77'
     AZ7 = '#efdd99'
 
-    UB = '#8080ff'
-    EVAP = '#c5a67a'
     MX = 'goldenrod'
     MX_DELTA = 'lightblue'
+
+    LB = 'maroon'
+    UB = '#8080ff'
+
+    EVAP = '#c5a67a'
+
 
 class Demand:
     def __init__(self, river_war:RiverWar, show_tributaries: bool = False):
