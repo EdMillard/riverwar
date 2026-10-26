@@ -29,6 +29,7 @@ from typing import List, Optional, Tuple, Dict, Any, Literal
 from dataclasses import dataclass, field
 from collections import defaultdict
 from chart.chart import Chart
+import time
 
 
 @dataclass
@@ -95,6 +96,7 @@ class MultiBarChart(Chart):
                  y_divisor: float | None = None,
                  annotations: List[Tuple[float, float, List[Tuple[str, Tuple[pd.DataFrame, str]]]]] | None = None,
                  legend_loc: str = 'best',
+                 custom_legend: Optional[List[Tuple[str, str]]] = None,
     ):
         self.year_to_idx = None
         super().__init__([], start_date, current_date, end_date, y_label=y_label, y_units=y_units, y_divisor=y_divisor, percentage=percentage)
@@ -141,6 +143,7 @@ class MultiBarChart(Chart):
 
         self.original_groups = self.groups
         self.legend_loc = legend_loc
+        self.custom_legend = custom_legend
 
     def setup_year_xaxis(self, ax, years: List[int], max_ticks: int = 25, fontsize: int = 10):
         """Standalone reusable X-axis setup for year-based charts."""
@@ -258,7 +261,8 @@ class MultiBarChart(Chart):
             for year in yearly:
                 all_years.add(year)
 
-        years = sorted(y for y in all_years if self.start_year <= y <= self.end_year)
+        # years = sorted(y for y in all_years if self.start_year <= y <= self.end_year)
+        years = list(range(self.start_year, self.end_year + 1))
         if not years:
             ax.text(0.5, 0.5, "No valid yearly data", ha='center', va='center', fontsize=14)
             return
@@ -296,7 +300,9 @@ class MultiBarChart(Chart):
                     height = val / self.y_divisor
                     ax.bar(bar_positions[i], height, width=group_width - spacing,
                            bottom=bottom, color=bar_color, edgecolor='none',
-                           linewidth=0.8, label=label, zorder=5)
+                           linewidth=0.8,
+                           label=None if self.custom_legend is not None else label,
+                           zorder=5)
                     bottom += height
                     max_height = max(max_height, bottom)
 
@@ -350,12 +356,30 @@ class MultiBarChart(Chart):
                 if display_label not in unique_legend:
                     unique_legend[display_label] = proxy
 
-        if unique_legend:
-            ax.legend(unique_legend.values(), unique_legend.keys(),
-                      loc=self.legend_loc,
-                      fontsize=9,
-                      frameon=True,
-                      ncol=1)
+        # Legend
+        if self.custom_legend is not None:
+            # Suppress any auto-labels that came from ax.bar(..., label=...)
+            handles = [
+                Patch(facecolor=color, edgecolor='none', alpha=0.85, label=label)
+                for label, color in self.custom_legend
+            ]
+            ax.legend(
+                handles,
+                [label for label, _ in self.custom_legend],
+                loc=self.legend_loc,
+                fontsize=9,
+                frameon=True,
+                ncol=1,
+            )
+        elif unique_legend:
+            ax.legend(
+                unique_legend.values(),
+                unique_legend.keys(),
+                loc=self.legend_loc,
+                fontsize=9,
+                frameon=True,
+                ncol=1,
+            )
 
         # Y-axis
         self.setup_yaxis(ax)
@@ -368,6 +392,24 @@ class MultiBarChart(Chart):
 
         for ann in self.annotations:
             self.add_total_annotations(ann)
+
+    def set_custom_legend(self, entries: List[Tuple[str, str]], loc: Optional[str] = None):
+        """Replace the legend with a manual list of (label, color) pairs."""
+        if self.ax is None:
+            raise RuntimeError("Call create_figure() first")
+        handles = [
+            Patch(facecolor=color, edgecolor='none', alpha=0.85, label=label)
+            for label, color in entries
+        ]
+        self.ax.legend(
+            handles,
+            [label for label, _ in entries],
+            loc=loc or self.legend_loc,
+            fontsize=9,
+            frameon=True,
+            ncol=1,
+        )
+        self.fig.canvas.draw_idle()
 
     def _plot_lines(self, ax, line_list, year_to_idx, zorder=10, linewidth=3.0, alpha=0.95):
         if not line_list:
@@ -731,7 +773,8 @@ class MultiBarChart(Chart):
                                show_year_label=False, year_label_color=None,
                                year_label_fontsize=9,
                                show_bar_values=False, bar_value_color='black',
-                               bar_value_fontsize=7.5):
+                               bar_value_fontsize=7.5,
+                               bar_values_split_label=False):
         """
         ...
         If show_bar_values=True, labels are drawn in the middle of each stacked
@@ -762,6 +805,7 @@ class MultiBarChart(Chart):
         self._bar_value_color = bar_value_color
         self._bar_value_fontsize = bar_value_fontsize
         self._bar_value_texts = []  # list of Text artists
+        self._bar_values_split_label = bar_values_split_label
 
         if self._show_year_label:
             self._update_year_label(x0)
@@ -773,6 +817,8 @@ class MultiBarChart(Chart):
             canvas.mpl_connect('button_press_event', self._on_vline_press),
             canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
             canvas.mpl_connect('button_release_event', self._on_vline_release),
+            canvas.mpl_connect('scroll_event', self._on_vline_scroll),
+            canvas.mpl_connect('key_press_event', self._on_vline_key),
         ]
         self.fig.canvas.draw_idle()
 
@@ -797,25 +843,107 @@ class MultiBarChart(Chart):
         if contains:
             self._vline_dragging = True
 
+    def _on_vline_scroll(self, event):
+        if event.inaxes != self.ax or not hasattr(self, '_vline'):
+            return
+
+        current_x = self._vline.get_xdata()[0]
+        step = 1 if event.button == 'up' else -1
+        new_idx = int(round(current_x + step))
+
+        if not self.year_to_idx:
+            return
+        min_idx = min(self.year_to_idx.values())
+        max_idx = max(self.year_to_idx.values())
+        new_idx = max(min_idx, min(max_idx, new_idx))
+
+        if new_idx == int(round(current_x)):
+            return
+
+        self._vline.set_xdata([new_idx, new_idx])
+        self._update_year_label(new_idx)
+        self._update_bar_value_labels(new_idx)
+        self._report(new_idx)
+
+        # Throttle: only draw every ~30 ms
+        if not hasattr(self, '_last_draw_time'):
+            self._last_draw_time = 0
+        now = time.time()
+        if now - self._last_draw_time > 0.03:
+            self.fig.canvas.draw_idle()
+            self._last_draw_time = now
+
+    def _on_vline_motion(self, event):
+        if not self._vline_dragging or event.inaxes != self.ax or event.xdata is None:
+            return
+        idx = int(round(event.xdata))
+        self._vline.set_xdata([idx, idx])
+        self._update_year_label(idx)
+        self._update_bar_value_labels(idx)
+        self._report(idx)
+        self.fig.canvas.draw_idle()
+
+    def _on_vline_key(self, event):
+        """Move the vline exactly one year with left/right arrow keys."""
+        if not hasattr(self, '_vline') or self._vline is None:
+            return
+        if event.key not in ('left', 'right'):
+            return
+
+        current_x = self._vline.get_xdata()[0]
+        step = -1 if event.key == 'left' else 1
+        new_idx = int(round(current_x + step))
+
+        if not self.year_to_idx:
+            return
+        min_idx = min(self.year_to_idx.values())
+        max_idx = max(self.year_to_idx.values())
+        new_idx = max(min_idx, min(max_idx, new_idx))
+
+        if new_idx == int(round(current_x)):
+            return
+
+        self._vline.set_xdata([new_idx, new_idx])
+        self._update_year_label(new_idx)
+        self._update_bar_value_labels(new_idx)
+        self._report(new_idx)
+        self.fig.canvas.draw_idle()
+
+    def _on_vline_release(self, event):
+        if not self._vline_dragging:
+            return
+        self._vline_dragging = False
+        if event.xdata is not None:
+            idx = int(round(event.xdata))
+            self._vline.set_xdata([idx, idx])
+            self._update_year_label(idx)
+            self._update_bar_value_labels(idx)
+            self._report(idx)
+        self.fig.canvas.draw_idle()
+
+    def disable_draggable_vline(self):
+        """Remove the line and disconnect events."""
+        if hasattr(self, '_vline_cids'):
+            for cid in self._vline_cids:
+                self.fig.canvas.mpl_disconnect(cid)
+            self._vline_cids = []
+        if hasattr(self, '_vline') and self._vline in self.ax.lines:
+            self._vline.remove()
+        self._vline_dragging = False
+        self.fig.canvas.draw_idle()
+
     def _update_bar_value_labels(self, idx):
         """Place labels for the year under the vline.
-        - Exactly 2 groups: left-bar value left of the line (right-aligned),
-          right-bar value right of the line (left-aligned).
-        - Any other number of groups: centered inside each stack segment.
-        - Special case: segment starts inside the axes but extends above the top
-          → place label just below the year-label position.
-        Zero values are omitted.
+        Reuses existing Text artists when possible for performance.
         """
         if not self._show_bar_values:
             return
 
-        # Clear previous labels
-        for t in self._bar_value_texts:
-            t.remove()
-        self._bar_value_texts.clear()
-
         year = self._index_to_year(int(idx))
         if year is None:
+            # Hide all existing labels
+            for t in self._bar_value_texts:
+                t.set_visible(False)
             return
 
         n_groups = len(self.groups)
@@ -832,6 +960,9 @@ class MultiBarChart(Chart):
         font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
         special_y = y_top - (y_top - y_bottom) * (0.04 + font_height_frac * 1.6)
 
+        # Collect the labels we need this frame
+        needed = []  # list of (x, y, text, ha)
+
         for g_idx, group in enumerate(self.groups):
             yearly = MultiBarChart._get_yearly_stacked_data(group.series)
             segments = yearly.get(year, [])
@@ -840,7 +971,13 @@ class MultiBarChart(Chart):
 
             bar_x = idx - 0.4 + (g_idx + 0.5) * group_width
 
-            if n_groups == 2:
+            if self._bar_values_split_label:
+                # Label on the left (right-justified), value on the right (left-justified)
+                label_x_left = idx - offset
+                label_x_right = idx + offset
+                ha_left = 'right'
+                ha_right = 'left'
+            elif n_groups == 2:
                 if g_idx == 0:
                     label_x = idx - offset
                     ha = 'right'
@@ -868,12 +1005,30 @@ class MultiBarChart(Chart):
                     nudge = min(height * 0.04, 0.08)
                     mid_y = geometric_mid - nudge
 
-                txt = (f"{val / self.y_divisor:.1f}"
+                txt = (f"{val / self.y_divisor:.3f}"
                        if abs(val / self.y_divisor) < 10
-                       else f"{val / self.y_divisor:.0f}")
+                       else f"{val / self.y_divisor:.1f}")
 
+                if self._bar_values_split_label:
+                    # Label left, value right
+                    needed.append((label_x_left, mid_y, label, ha_left))
+                    needed.append((label_x_right, mid_y, txt, ha_right))
+                else:
+                    needed.append((label_x, mid_y, txt, ha))
+
+                bottom += height
+
+        # Reuse existing Text artists; create only if we need more
+        for i, (x, y, txt, ha) in enumerate(needed):
+            if i < len(self._bar_value_texts):
+                text = self._bar_value_texts[i]
+                text.set_position((x, y))
+                text.set_text(txt)
+                text.set_ha(ha)
+                text.set_visible(True)
+            else:
                 text = self.ax.text(
-                    label_x, mid_y, txt,
+                    x, y, txt,
                     ha=ha, va='center',
                     fontsize=self._bar_value_fontsize,
                     color=self._bar_value_color,
@@ -881,7 +1036,7 @@ class MultiBarChart(Chart):
                     zorder=25,
                     clip_on=True,
                     bbox=dict(
-                        boxstyle="round,pad=0.18",
+                        boxstyle="round,pad=0.02",  # was 0.18
                         facecolor="white",
                         alpha=0.8,
                         edgecolor="none",
@@ -889,7 +1044,10 @@ class MultiBarChart(Chart):
                     ),
                 )
                 self._bar_value_texts.append(text)
-                bottom += height
+
+        # Hide any leftover labels we no longer need
+        for j in range(len(needed), len(self._bar_value_texts)):
+            self._bar_value_texts[j].set_visible(False)
 
     def _update_year_label(self, idx):
         """Create or move the year label centered on the vline, just below the top."""
@@ -921,38 +1079,6 @@ class MultiBarChart(Chart):
             self._year_label.set_position((idx, y_frac))
             self._year_label.set_text(str(year))
 
-    def _on_vline_motion(self, event):
-        if not self._vline_dragging or event.inaxes != self.ax or event.xdata is None:
-            return
-        idx = int(round(event.xdata))
-        self._vline.set_xdata([idx, idx])
-        self._update_year_label(idx)
-        self._update_bar_value_labels(idx)
-        self._report(idx)
-        self.fig.canvas.draw_idle()
-
-    def _on_vline_release(self, event):
-        if not self._vline_dragging:
-            return
-        self._vline_dragging = False
-        if event.xdata is not None:
-            idx = int(round(event.xdata))
-            self._vline.set_xdata([idx, idx])
-            self._update_year_label(idx)
-            self._update_bar_value_labels(idx)
-            self._report(idx)
-        self.fig.canvas.draw_idle()
-
-    def disable_draggable_vline(self):
-        """Remove the line and disconnect events."""
-        if hasattr(self, '_vline_cids'):
-            for cid in self._vline_cids:
-                self.fig.canvas.mpl_disconnect(cid)
-            self._vline_cids = []
-        if hasattr(self, '_vline') and self._vline in self.ax.lines:
-            self._vline.remove()
-        self._vline_dragging = False
-        self.fig.canvas.draw_idle()
 
     def annotate_year_indicators(self, ax, indicators: List[List[Tuple[int, str, str]]],
                                  bar_height_frac: float = 0.5,

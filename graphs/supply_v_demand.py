@@ -32,7 +32,7 @@ import colorado.lb as lb
 import colorado.ub as ub
 import colorado.allb as all_b
 from api import df_utils
-from typing import Optional, List
+from typing import Optional
 
 class SupplyVDemand(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
@@ -149,29 +149,39 @@ class SupplyVDemand(DemandChartFrame):
 
 class Demand1906To1971(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand: Demand):
-        self.demand_chart = None
+        self.natural_flow_chart = None
         self.ub_demand_chart = None
+        self.lb_demand_chart = None
+        self.lb_trib_chart = None
+
         self.df_cu_1906_2006: Optional[pd.DataFrame] = None
         self._syncing_lines = False  # prevent re-entrancy
 
         super().__init__(notebook_frame, demand,
                          name='Demand', start_year=1906, end_year=2024, version=0.4)
-
-        self.right_axis_annotations()
         self.top_axis_annotations()
+        if self.ub_demand_chart is not None:
+            self.ub_demand_chart.set_custom_legend([("Upper Basin", Colors.UB)])
+        self.right_axis_annotations()
         self.bottom_axis_annotations()
 
         # Enable draggable lines only on charts that support them
         for chart in self.charts:
+            if chart == self.ub_demand_chart:
+                bar_values_split_label = True
+            else:
+                bar_values_split_label = False
+
             if hasattr(chart, 'enable_draggable_vline'):
                 show_bar_values = True,
-                show_label = (chart is self.demand_chart)
+                show_label = (chart is self.lb_demand_chart)
                 chart.enable_draggable_vline(
                     callback=self.on_line_moved,
                     color='black',
                     initial_year=1922,
                     show_year_label=show_label,
-                    show_bar_values=show_bar_values
+                    show_bar_values=show_bar_values,
+                    bar_values_split_label=bar_values_split_label
                 )
 
     def load_charts(self):
@@ -230,36 +240,54 @@ class Demand1906To1971(DemandChartFrame):
         }
         df_utils.copy_columns_by_key(df_cu_1906_2024, df_cu_1906_2024, delta_map)
 
-        if 0:
-            series = [
-                (df_cu_1906_2024, "Upper Basin", Colors.UB),
-                (df_cu_1906_2024, "Mexico", lb.MX_COLOR),
-                (df_cu_1906_2024, "CA", Colors.CA1),
-                (df_cu_1906_2024, "AZ", Colors.AZ1),
-                (df_cu_1906_2024, "NV", Colors.NV1),
-            ]
+        self.create_natural_flow_bar_chart(df_cu_1906_2024)
+        self.create_ub_demand_bar_chart(df_cu_1906_2024)
+        # self.create_lb_trib_bar_chart(df_cu_1906_2024)
+        self.create_lb_demand_bar_chart(df_cu_1906_2024)
+        #self.create_demand_pie_chart(df_cu_1906_2024)
 
-            left_bar_series = []
-
-            self.demand_pie_chart = PieChart(
-                series,
-                title=f'Colorado River {self.name}',
-                year=self.current_year,
-                left_bar_series=left_bar_series,
-                version=self.version
-            )
-            self.charts.append(self.demand_pie_chart)
-
-        self.create_demand_bar_chart(df_cu_1906_2024)
-        self.create_reservoir_bar_chart(show_x_labels=False)
+        # self.create_reservoir_bar_chart(show_x_labels=False)
         self.on_line_moved(1922)
 
-    def create_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
+    def create_natural_flow_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
         series = ('', [
-            (df_cu_1906_2024, "Upper Basin", Colors.UB),
+            (self.demand.natural_flow_data.df, "Natural Lees Ferry", Colors.NATURAL_FLOW),
         ])
-        self.ub_demand_chart = MultiBarChart(
+        self.natural_flow_chart = MultiBarChart(
             title=f'Colorado River {self.name}     ver={self.version}',
+            percentage=0.20,
+            groups=[series],
+            start_year=self.start_year,
+            end_year=self.end_year,
+            x_min = 0,
+            y_max=25.0,
+            y_min=4.0,
+            show_x_labels=False,
+            legend_loc = 'upper center',
+        )
+        self.charts.append(self.natural_flow_chart)
+
+    def create_ub_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
+
+        if 1:
+            df_ub_cul = self.demand.df_ub_cul
+            df_utils.zero_out_column(df_cu_1906_2024,  "Upper Basin", 1971, self.end_year, date_col='Year', use_nan=True)
+            df_utils.copy_column(df_ub_cul, df_ub_cul, ub.UB_RESERVOIR_EVAP, 'Evap')
+            series = ('', [
+                (df_cu_1906_2024, "Upper Basin", Colors.UB),
+                (df_ub_cul, ub.CO_WEST_SLOPE, Colors.CO),
+                (df_ub_cul, ub.CU_UT, Colors.UT),
+                (df_ub_cul, ub.CU_WY, Colors.WY),
+                (df_ub_cul, ub.CU_NM, Colors.NM),
+                (df_ub_cul, 'Evap', 'cornflowerblue'),
+            ])
+        else:
+            series = ('', [
+                (df_cu_1906_2024, "Upper Basin", Colors.UB),
+            ])
+        self.ub_demand_chart = MultiBarChart(
+            # title=f'Colorado River {self.name}     ver={self.version}',
+            title="",
             percentage=0.20,
             groups=[series],
             start_year=self.start_year,
@@ -268,32 +296,82 @@ class Demand1906To1971(DemandChartFrame):
             y_max=5.0,
             y_min=0,
             show_x_labels=False,
+            custom_legend=[("Upper Basin", Colors.UB)],
             legend_loc = 'upper left',
         )
         self.charts.append(self.ub_demand_chart)
+
+    def create_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
+        lb_column_map = {
+            lb.LB_RESERVOIR_EVAP: "LB Evap",
+            lb.SALTON_INFLOW: "Salton Inflow",
+        }
+        df_utils.copy_columns_by_key(self.demand.df_lb_cul, df_cu_1906_2024, lb_column_map)
 
         series = ('', [
             (df_cu_1906_2024, "CA", Colors.CA),
             (df_cu_1906_2024, "NV", Colors.NV1),
             (df_cu_1906_2024, "AZ", Colors.AZ),
             (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
-            (self.demand.df_lb_cul, lb.LB_TRIBUTARY_CUL, 'orange'),
             (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
+            (df_cu_1906_2024, "LB Evap", Colors.EVAP),
             (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
         ])
-        self.demand_chart = MultiBarChart(
+        self.lb_demand_chart = MultiBarChart(
             title=f'',
             percentage=0.60,
             groups=[series],
             start_year=self.start_year,
             end_year=self.end_year,
             x_min = 0,
-            y_max=15,
+            y_max=11,
             y_min=0,
             show_x_labels=True,
             legend_loc='upper left',
         )
-        self.charts.append(self.demand_chart)
+        self.charts.append(self.lb_demand_chart)
+
+    def create_lb_trib_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
+        lb_trib_column_map = {
+             lb.LB_TRIBUTARY_CUL: "LB Tributary CU",
+        }
+        df_utils.copy_columns_by_key(self.demand.df_lb_cul, df_cu_1906_2024, lb_trib_column_map)
+        series = ('', [
+            (df_cu_1906_2024, "LB Tributary CU", 'orange'),
+        ])
+        self.lb_trib_chart = MultiBarChart(
+            title=f'',
+            percentage=0.20,
+            groups=[series],
+            start_year=self.start_year,
+            end_year=self.end_year,
+            x_min = 0,
+            y_max=4.5,
+            y_min=0,
+            show_x_labels=True,
+            legend_loc='upper left',
+        )
+        self.charts.append(self.lb_trib_chart)
+
+    def create_demand_pie_chart(self, df_cu_1906_2024: pd.DataFrame):
+        series = [
+            (df_cu_1906_2024, "Upper Basin", Colors.UB),
+            (df_cu_1906_2024, "Mexico", lb.MX_COLOR),
+            (df_cu_1906_2024, "CA", Colors.CA1),
+            (df_cu_1906_2024, "AZ", Colors.AZ1),
+            (df_cu_1906_2024, "NV", Colors.NV1),
+        ]
+
+        left_bar_series = []
+
+        self.demand_pie_chart = PieChart(
+            series,
+            title=f'Colorado River {self.name}',
+            year=self.current_year,
+            left_bar_series=left_bar_series,
+            version=self.version
+        )
+        self.charts.append(self.demand_pie_chart)
 
     def on_line_moved(self, year):
         if self._syncing_lines or year == self.current_year:
@@ -322,8 +400,8 @@ class Demand1906To1971(DemandChartFrame):
             self._syncing_lines = False
 
     def right_axis_annotations(self):
-        if self.demand_chart is not None:
-            ax = self.demand_chart.ax
+        if self.lb_demand_chart is not None:
+            ax = self.lb_demand_chart.ax
             ChartFrame.annotate_level(ax, 9.0, '9.0',
                                           'black', draw_text=True, draw_line=True,
                                           left_of_axis=False)
@@ -338,7 +416,7 @@ class Demand1906To1971(DemandChartFrame):
                                           left_of_axis=False)
 
     def _annotate_bottom(self, ax, year, label, offset_lines=0, color='black'):
-        self.demand_chart.annotate_value(
+        self.lb_demand_chart.annotate_value(
             ax,
             year=year,
             label=label,
@@ -366,8 +444,8 @@ class Demand1906To1971(DemandChartFrame):
             )
 
     def bottom_axis_annotations(self):
-        if self.demand_chart is not None:
-            ax = self.demand_chart.ax
+        if self.lb_demand_chart is not None:
+            ax = self.lb_demand_chart.ax
             self._annotate_bottom(ax, 1906, "IID", offset_lines=0, color=Colors.LB)
             self._annotate_bottom(ax, 1908, "Palo Verde", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1909, "Gunnison", offset_lines=2, color=Colors.UB)
@@ -375,20 +453,24 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1922, "Compact")
             self._annotate_bottom(ax, 1915, "Grand\nValley", color=Colors.UB)
             self._annotate_bottom(ax, 1929, "BCPA", offset_lines=0)
-            self._annotate_bottom(ax, 1931, "AZ v CA", offset_lines=2)
             self._annotate_bottom(ax, 1933, "Depression", offset_lines=1)
+            self._annotate_bottom(ax, 1931, "AZ v CA", offset_lines=2)
             self._annotate_bottom(ax, 1936, "Moffat", offset_lines=2, color=Colors.UB)
-            self._annotate_bottom(ax, 1941, "MWD", offset_lines=0, color=Colors.LB)
-            self._annotate_bottom(ax, 1944, "MX Treaty", offset_lines=1)
-            self._annotate_bottom(ax, 1947, "Big Thompson", offset_lines=2, color=Colors.UB)
+            self._annotate_bottom(ax, 1944, "MX Treaty", offset_lines=0)
+            self._annotate_bottom(ax, 1940, "All Am", offset_lines=1, color=Colors.LB)
+            self._annotate_bottom(ax, 1941, "MWD", offset_lines=2, color=Colors.LB)
+            self._annotate_bottom(ax, 1947, "Coachella", offset_lines=1, color=Colors.LB)
+            self._annotate_bottom(ax, 1947, "Northern", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1951, "Wellton", color=Colors.LB)
             self._annotate_bottom(ax, 1964, "Roberts", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1964, "AZ v CA")
-            self._annotate_bottom(ax, 1971, "CUP", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1972, "Fryark", color=Colors.UB)
+            self._annotate_bottom(ax, 1971, "LV", offset_lines=1, color=Colors.LB)  # LVVWD
+            self._annotate_bottom(ax, 1971, "CUP", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1968, "CRBPA", offset_lines=1)
             self._annotate_bottom(ax, 1984, "Dolores", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1985, "CAP", color=Colors.LB)
+            self._annotate_bottom(ax, 1991, "SNWA", color=Colors.LB)
             self._annotate_bottom(ax, 2003, "QSA", color=Colors.LB)
             self._annotate_bottom(ax, 2007, "2007\nGuidelines", offset_lines=1)
             self._annotate_bottom(ax, 2014, "Delta\nPulse", color=Colors.LB)

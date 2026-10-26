@@ -32,9 +32,10 @@ from colorado.river_war import RiverWar
 class Colors:
     """Shared color constants for demand charts."""
     CO = '#c050c0'
-    UT = '#8080ff'
-    WY = '#a0a0ff'
-    NM = '#c0c0ff'
+    UT = '#6060ff'
+    WY = '#A0A0ff'
+    # NM = '#A0A0ff'
+    NM = '#A0A0ff'
 
     CA = 'maroon'
     CA1 = '#ef2828'
@@ -61,6 +62,8 @@ class Colors:
     LB = 'maroon'
     UB = '#8080ff'
 
+    NATURAL_FLOW = "cornflowerblue"
+
     EVAP = '#c5a67a'
 
     Wet = "green"
@@ -83,7 +86,6 @@ class Demand:
         (1906, Colors.Wet, "Wet"),
         (1907, Colors.Wet, "Wet"),
         (1909, Colors.Wet, "Wet"),
-        (1911, Colors.Wet, "SW Colorado Flood"),
         (1912, Colors.Wet, "Wet"),
         (1914, Colors.Wet, "Wet"),
         (1916, Colors.Wet, "Wet"),
@@ -97,13 +99,14 @@ class Demand:
 
         # 1930s
         (1931, Colors.Drought, "Drought"),
+        (1932, Colors.Wet, "Wet"),
         (1934, Colors.Drought, "Severe Drought"),
-        (1936, Colors.Drought, "Drought"),
-        (1939, Colors.Drought, "Drought"),
+        (1938, Colors.Wet, "Wet"),
         (1940, Colors.Drought, "Drought"),
 
         # 1940's
         (1941, Colors.Wet, "Wet"),
+        (1942, Colors.Wet, "Wet"),
 
         # mid-century
         (1952, Colors.Wet, "Wet"),
@@ -111,18 +114,29 @@ class Demand:
         (1954, Colors.Drought, "Drought"),
         (1955, Colors.Drought, "Drought"),
         (1956, Colors.Drought, "Drought"),
+        (1957, Colors.Wet, "Wet"),
+        (1959, Colors.Drought, "Drought"),
+        (1961, Colors.Drought, "Drought"),
+        (1962, Colors.Wet, "Wet"),
+        (1963, Colors.Drought, "Drought"),
+        (1965, Colors.Wet, "Wet"),
 
         # 1970s
+        (1973, Colors.Wet, "Wet"),
         (1977, Colors.Drought, "Severe Drought"),
+        (1979, Colors.Wet, "Wet"),
 
         # 1980s wet
+        (1981, Colors.Drought, "Drought"),
         (1983, Colors.Wet, "Wet"),
         (1984, Colors.Wet, "Wet"),
+        (1985, Colors.Wet, "Wet"),
         (1986, Colors.Wet, "Wet"),
 
         # late 80s / 90s
         (1989, Colors.Drought, "Drought"),
         (1990, Colors.Drought, "Drought"),
+        (1993, Colors.Wet, "Wet"),
         (1995, Colors.Wet, "Wet"),
         (1997, Colors.Wet, "Wet"),
 
@@ -135,9 +149,8 @@ class Demand:
 
         # 2010s
         (2011, Colors.Wet, "Wet"),
-        (2012, Colors.Drought, "Drought"),
+        (2012, Colors.Drought, "Severe Drought"),
         (2013, Colors.Drought, "Drought"),
-        (2017, Colors.Wet, "Wet"),
         (2018, Colors.Drought, "Drought"),
         (2019, Colors.Wet, "Wet"),
 

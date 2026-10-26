@@ -537,6 +537,8 @@ def copy_columns_by_key(
         if pd.notna(key)
     }
 
+    written_cols = []
+
     for src_col, dst_col in column_map.items():
         if src_col not in src_df.columns:
             raise ValueError(f"Source column '{src_col}' not found in src_df")
@@ -544,6 +546,8 @@ def copy_columns_by_key(
         # Ensure destination column exists
         if dst_col not in target.columns:
             target[dst_col] = pd.NA
+
+        written_cols.append(dst_col)
 
         # Iterate source rows and copy where keys match
         for _, src_row in src_df.iterrows():
@@ -559,6 +563,11 @@ def copy_columns_by_key(
 
             if overwrite or pd.isna(target.at[dst_idx, dst_col]):
                 target.at[dst_idx, dst_col] = src_val
+
+    # Force written columns to float64 so <NA> becomes np.nan
+    for col in written_cols:
+        if col in target.columns:
+            target[col] = pd.to_numeric(target[col], errors="coerce")
 
     return target
 
@@ -961,51 +970,67 @@ def copy_rows_by_year(
     print(f"✅ Copied {len(columns_to_copy)} columns from source into target by Year match")
 
 def zero_out_column(
-        df: pd.DataFrame,
-        column: str,
-        start_date: Union[str, datetime, pd.Timestamp],
-        end_date: Union[str, datetime, pd.Timestamp],
-        date_col: str = "Date",
-        inclusive: bool = True
+    df: pd.DataFrame,
+    column: str,
+    start_date: Union[str, datetime, pd.Timestamp, int],
+    end_date: Union[str, datetime, pd.Timestamp, int],
+    date_col: str = "Date",
+    inclusive: bool = True,
+    use_nan: bool = False
 ) -> None:
     """
-    Zero out a specified column in the DataFrame between start_date and end_date (in place).
+    Zero out (or set to NaN) a specified column in the DataFrame between start_date and end_date (in place).
+    Works with either a datetime column or an integer Year column.
 
     Parameters:
     -----------
     df : pd.DataFrame
-        A DataFrame containing the data. Must have a 'Date' column (or specified date_col).
+        A DataFrame containing the data. Must have a 'Date' or 'Year' column (or specified date_col).
     column : str
         Name of the column to zero out.
-    start_date : str, datetime, or pd.Timestamp
-        Start date (e.g., '2023-01-01').
-    end_date : str, datetime, or pd.Timestamp
-        End date.
+    start_date : str, datetime, pd.Timestamp, or int
+        Start date (e.g., '2023-01-01') or start year (e.g., 2020).
+    end_date : str, datetime, pd.Timestamp, or int
+        End date or end year.
     date_col : str, default "Date"
-        Name of the date column.
+        Name of the date/year column. Use "Year" for integer-year DataFrames.
     inclusive : bool, default True
-        Whether to include both start_date and end_date.
+        Whether to include both start and end.
+    use_nan : bool, default False
+        If True, set matching values to NaN instead of 0.
 
     Returns:
     --------
     None - modifies the DataFrame in place.
     """
-    # Ensure Date column is datetime
-    if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
-        df[date_col] = pd.to_datetime(df[date_col])
+    if date_col not in df.columns:
+        raise ValueError(f"Column '{date_col}' not found in DataFrame")
 
-    # Convert start/end to datetime
-    start = pd.to_datetime(start_date)
-    end = pd.to_datetime(end_date)
+    series = df[date_col]
 
-    # Create mask
-    if inclusive:
-        mask = (df[date_col] >= start) & (df[date_col] <= end)
+    # Integer / numeric Year column
+    if pd.api.types.is_integer_dtype(series) or pd.api.types.is_numeric_dtype(series):
+        start = int(start_date) if not isinstance(start_date, int) else start_date
+        end = int(end_date) if not isinstance(end_date, int) else end_date
+        if inclusive:
+            mask = (series >= start) & (series <= end)
+        else:
+            mask = (series > start) & (series < end)
+
+    # Datetime column
     else:
-        mask = (df[date_col] > start) & (df[date_col] < end)
+        if not pd.api.types.is_datetime64_any_dtype(series):
+            df[date_col] = pd.to_datetime(series)
+            series = df[date_col]
+        start = pd.to_datetime(start_date)
+        end = pd.to_datetime(end_date)
+        if inclusive:
+            mask = (series >= start) & (series <= end)
+        else:
+            mask = (series > start) & (series < end)
 
-    # Zero out in place
-    df.loc[mask, column] = 0
+    # Set to NaN or 0
+    df.loc[mask, column] = np.nan if use_nan else 0
 
 def zero_out_column_seasonal(
         df: pd.DataFrame,
