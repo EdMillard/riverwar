@@ -17,7 +17,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
+from matplotlib.patches import Patch
 from matplotlib.figure import Figure
 import matplotlib.ticker as ticker
 from matplotlib.patches import Rectangle
@@ -953,3 +953,98 @@ class MultiBarChart(Chart):
             self._vline.remove()
         self._vline_dragging = False
         self.fig.canvas.draw_idle()
+
+    def annotate_year_indicators(self, ax, indicators: List[List[Tuple[int, str, str]]],
+                                 bar_height_frac: float = 0.5,
+                                 y_offset_frac: float = 0.035,
+                                 row_spacing_frac: float = 0.0,
+                                 legend_entries: Optional[List[Tuple[str, str]]] = None):
+        if not hasattr(self, 'year_to_idx') or self.year_to_idx is None:
+            return
+
+        # Remove previous indicator patches
+        if hasattr(self, '_indicator_patches'):
+            for p in self._indicator_patches:
+                try:
+                    p.remove()
+                except Exception:
+                    pass
+        self._indicator_patches = []
+
+        # Approximate one font height in axes-fraction units
+        fontsize = 10
+        fig_height = ax.figure.get_figheight()
+        font_height_frac = (fontsize / 72.0) / fig_height
+        bar_height = font_height_frac * bar_height_frac
+
+        trans = ax.get_xaxis_transform()
+
+        # Group indicators by year so we can decide stacking per year
+        from collections import defaultdict
+        year_indicators = defaultdict(list)  # year -> list of (color, label, preferred_row)
+
+        for row_idx, row in enumerate(indicators):
+            for year, color, label in row:
+                if year in self.year_to_idx:
+                    year_indicators[year].append((color, label, row_idx))
+
+        # Draw: for each year, place on lowest available rows (prefer row 0 if free)
+        # Widen so adjacent years of the same color touch and form a continuous bar
+        for year, items in year_indicators.items():
+            x = self.year_to_idx[year]
+            width = 1.0  # full year width so neighbors touch
+
+            # Sort so preferred row 0 comes first; if multiple, stack them
+            items.sort(key=lambda t: t[2])
+
+            for stack_idx, (color, _label, _preferred_row) in enumerate(items):
+                # stack_idx 0 sits highest (closest to top), later ones lower
+                # row_spacing_frac = 0 so rows touch
+                y_top = 1.0 - y_offset_frac - (stack_idx * (bar_height + row_spacing_frac))
+                y_bottom = y_top - bar_height
+
+                rect = Rectangle(
+                    (x - width / 2, y_bottom),
+                    width,
+                    bar_height,
+                    transform=trans,
+                    facecolor=color,
+                    edgecolor='none',
+                    alpha=0.85,
+                    zorder=15,
+                    clip_on=False,
+                )
+                ax.add_patch(rect)
+                self._indicator_patches.append(rect)
+
+        # Legend handling (deduplicated)
+        if legend_entries is not None:
+            handles, labels = ax.get_legend_handles_labels()
+
+            seen = set()
+            clean_handles = []
+            clean_labels = []
+            for h, lab in zip(handles, labels):
+                if lab not in seen:
+                    seen.add(lab)
+                    clean_handles.append(h)
+                    clean_labels.append(lab)
+
+            for color, label in legend_entries:
+                if label not in seen:
+                    clean_handles.append(
+                        Patch(facecolor=color, edgecolor='none', alpha=0.85, label=label)
+                    )
+                    clean_labels.append(label)
+                    seen.add(label)
+
+            ax.legend(
+                clean_handles,
+                clean_labels,
+                loc='upper left',
+                fontsize=9,
+                frameon=True,
+                ncol=1,
+            )
+
+        ax.figure.canvas.draw_idle()

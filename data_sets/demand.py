@@ -54,7 +54,7 @@ class Colors:
     AZ6 = '#efbb77'
     AZ7 = '#efdd99'
 
-    MX = 'goldenrod'
+    MX = 'darkgreen'
     MX_CIENEGA = 'cyan'
     MX_DELTA = 'lightblue'
 
@@ -63,8 +63,91 @@ class Colors:
 
     EVAP = '#c5a67a'
 
+    Wet = "green"
+    Drought = "red"
+    Monsoon = "black"
 
 class Demand:
+    monsoon_years = [
+        (1911, Colors.Monsoon, "SW Colorado Flood of the century"),
+        (2005, Colors.Monsoon, "Monsoon"),
+        (2006, Colors.Monsoon, "Monsoon"),
+        (2013, Colors.Monsoon, "Monsoon"),
+        (2014, Colors.Monsoon, "Monsoon"),
+        (2017, Colors.Monsoon, "Monsoon"),
+        (2022, Colors.Monsoon, "Monsoon"),
+        (2026, Colors.Monsoon, "SW Colorado Flood of the century"),
+    ]
+    wet_v_dry_years = [
+
+        (1906, Colors.Wet, "Wet"),
+        (1907, Colors.Wet, "Wet"),
+        (1909, Colors.Wet, "Wet"),
+        (1911, Colors.Wet, "SW Colorado Flood"),
+        (1912, Colors.Wet, "Wet"),
+        (1914, Colors.Wet, "Wet"),
+        (1916, Colors.Wet, "Wet"),
+        (1917, Colors.Wet, "Wet"),
+        (1920, Colors.Wet, "Wet"),
+        (1921, Colors.Wet, "Wet"),
+        (1922, Colors.Wet, "Wet"),
+        (1923, Colors.Wet, "Wet"),
+        (1927, Colors.Wet, "Wet"),
+        (1929, Colors.Wet, "Wet"),
+
+        # 1930s
+        (1931, Colors.Drought, "Drought"),
+        (1934, Colors.Drought, "Severe Drought"),
+        (1936, Colors.Drought, "Drought"),
+        (1939, Colors.Drought, "Drought"),
+        (1940, Colors.Drought, "Drought"),
+
+        # 1940's
+        (1941, Colors.Wet, "Wet"),
+
+        # mid-century
+        (1952, Colors.Wet, "Wet"),
+        (1953, Colors.Drought, "Drought"),
+        (1954, Colors.Drought, "Drought"),
+        (1955, Colors.Drought, "Drought"),
+        (1956, Colors.Drought, "Drought"),
+
+        # 1970s
+        (1977, Colors.Drought, "Severe Drought"),
+
+        # 1980s wet
+        (1983, Colors.Wet, "Wet"),
+        (1984, Colors.Wet, "Wet"),
+        (1986, Colors.Wet, "Wet"),
+
+        # late 80s / 90s
+        (1989, Colors.Drought, "Drought"),
+        (1990, Colors.Drought, "Drought"),
+        (1995, Colors.Wet, "Wet"),
+        (1997, Colors.Wet, "Wet"),
+
+        # 2000s
+        (2000, Colors.Drought, "Millennial Drought Started"),
+        (2001, Colors.Drought, "Drought"),
+        (2002, Colors.Drought, "Severe Drought"),
+        (2003, Colors.Drought, "Drought"),
+        (2004, Colors.Drought, "Drought"),
+
+        # 2010s
+        (2011, Colors.Wet, "Wet"),
+        (2012, Colors.Drought, "Drought"),
+        (2013, Colors.Drought, "Drought"),
+        (2017, Colors.Wet, "Wet"),
+        (2018, Colors.Drought, "Drought"),
+        (2019, Colors.Wet, "Wet"),
+
+        # 2020s
+        (2020, Colors.Drought, "Drought"),
+        (2021, Colors.Drought, "Severe Drought"),
+        (2022, Colors.Drought, "Drought"),
+        (2023, Colors.Wet, "Wet"),
+    ]
+
     def __init__(self, river_war:RiverWar, show_tributaries: bool = False):
         self.df_ub_cul: Optional[pd.DataFrame] = None
         self.df_lb_cul: Optional[pd.DataFrame] = None

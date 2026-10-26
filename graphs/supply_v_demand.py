@@ -158,6 +158,7 @@ class Demand1906To1971(DemandChartFrame):
                          name='Demand', start_year=1906, end_year=2024, version=0.4)
 
         self.right_axis_annotations()
+        self.top_axis_annotations()
         self.bottom_axis_annotations()
 
         # Enable draggable lines only on charts that support them
@@ -349,6 +350,21 @@ class Demand1906To1971(DemandChartFrame):
             offset_lines=offset_lines
         )
 
+    def top_axis_annotations(self):
+        if self.ub_demand_chart is not None:
+            legend_entries = [
+                (Colors.Drought, "Drought"),
+                (Colors.Wet, "Wet"),
+                (Colors.Monsoon, "Monsoon"),
+            ]
+            self.ub_demand_chart.annotate_year_indicators(
+                self.ub_demand_chart.ax,
+                [Demand.wet_v_dry_years, Demand.monsoon_years],
+                legend_entries=legend_entries,
+                bar_height_frac=1,
+                y_offset_frac=.01
+            )
+
     def bottom_axis_annotations(self):
         if self.demand_chart is not None:
             ax = self.demand_chart.ax
@@ -378,89 +394,6 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 2014, "Delta\nPulse", color=Colors.LB)
             self._annotate_bottom(ax, 2018, "DCP")
 
-class Compact1922(DemandChartFrame):
-    def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
-        super().__init__(notebook_frame, demand,
-                         name='Boulder Canyon Project Act', start_year=1906, end_year=2024, version=0.4)
-
-    def load_charts(self):
-        series = [
-            (7_500_000, "Upper Basin", Colors.UT),
-            (750_000, "Mexico", lb.MX_COLOR),
-            (7_500_000, "Lower Basin", Colors.CA1),
-            (1_000_000, "III(b)", Colors.CA2),
-        ]
-        left_bar_series = []
-
-        self.demand_pie_chart = PieChart(
-            series,
-            title=f'Colorado River Compact {self.name}',
-            year=self.current_year,
-            left_bar_series=left_bar_series,
-            version=self.version
-        )
-        self.charts.append(self.demand_pie_chart)
-
-        self.create_reservoir_bar_chart()
-        self.on_line_moved(1929)
-
-class Compact1929(DemandChartFrame):
-    def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
-        super().__init__(notebook_frame, demand,
-                         name='Boulder Canyon Project Act',  start_year=1906, end_year=2024, version=0.4)
-
-    def load_charts(self):
-        series = [
-            (7_500_000, "Upper Basin", Colors.UT),
-            (750_000, "Mexico", lb.MX_COLOR),
-            (4_400_000, "CA", Colors.CA1),
-            (1_000_000, "III(b)", Colors.CA2),
-            (300_000, "NV", Colors.NV2),
-            (2_800_000, "AZ", Colors.AZ1),
-        ]
-        left_bar_series = []
-
-        self.demand_pie_chart = PieChart(
-            series,
-            title=f'Colorado River {self.name}',
-            year=self.current_year,
-            left_bar_series=left_bar_series,
-            version=self.version
-        )
-        self.charts.append(self.demand_pie_chart)
-
-        self.create_reservoir_bar_chart()
-        self.on_line_moved(1929)
-
-class Compact1944(DemandChartFrame):
-    def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
-        super().__init__(notebook_frame, demand,
-                         name='Mexico Treaty',  start_year=1906, end_year=2024, version=0.4)
-
-    def load_charts(self):
-        series = [
-            (7_500_000, "Upper Basin", Colors.UT),
-            (1_500_000, "Mexico", lb.MX_COLOR),
-            (4_400_000, "CA", Colors.CA1),
-            (1_000_000, "III(b)", Colors.CA2),
-            (300_000, "NV", Colors.NV2),
-            (2_800_000, "AZ", Colors.AZ1),
-        ]
-        left_bar_series = []
-
-        self.demand_pie_chart = PieChart(
-            series,
-            title=f'Colorado River {self.name}',
-            year=self.current_year,
-            left_bar_series=left_bar_series,
-            version=self.version
-        )
-        self.charts.append(self.demand_pie_chart)
-
-        self.create_reservoir_bar_chart()
-        self.on_line_moved(1944)
-
-
 if __name__ == "__main__":
     app = wx.App(False)
 
@@ -471,9 +404,6 @@ if __name__ == "__main__":
 
     # SupplyVDemand(nf, d)
     Demand1906To1971(nf, d)
-    # Compact1922(nf, d)
-    # Compact1929(nf, d)
-    # Compact1944(nf, d)
 
     nf.Show()
     app.MainLoop()

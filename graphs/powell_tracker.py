@@ -183,7 +183,7 @@ class PowellTracker(ChartFrame):
             show_x_labels=False,
             percentage=0.20,
             y_units='CFS',
-            y_max=30_000,
+            y_max=45_000,
             y_min = 0,
             stacked=True,
             compact_legend=True,
