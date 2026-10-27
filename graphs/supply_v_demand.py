@@ -158,7 +158,7 @@ class Demand1906To1971(DemandChartFrame):
         self._syncing_lines = False  # prevent re-entrancy
 
         super().__init__(notebook_frame, demand,
-                         name='Demand', start_year=1906, end_year=2024, version=0.4)
+                         name='Demand', start_year=1906, end_year=2025, version=0.4)
         self.top_axis_annotations()
         if self.ub_demand_chart is not None:
             self.ub_demand_chart.set_custom_legend([("Upper Basin", Colors.UB)])
@@ -174,7 +174,7 @@ class Demand1906To1971(DemandChartFrame):
 
             if hasattr(chart, 'enable_draggable_vline'):
                 show_bar_values = True,
-                show_label = (chart is self.lb_demand_chart)
+                show_label = (chart is self.natural_flow_chart)
                 chart.enable_draggable_vline(
                     callback=self.on_line_moved,
                     color='black',
@@ -313,9 +313,9 @@ class Demand1906To1971(DemandChartFrame):
             series = ('', [
                 # CA
                 (df_cu_1906_2024, "CA", Colors.CA),
-                (df_lb_cul, lb.SALTON_INFLOW, Colors.CA_SALTON, {'hatch': '-', 'hatch_color': '#c040c0'}),
-                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial Valley'}),
-                (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, Colors.CA_MWD, {'label': 'Metropolitan'}),
+                (df_lb_cul, lb.SALTON_INFLOW, Colors.CA_SALTON, {'label': 'Salton', 'hatch': '-', 'hatch_color': '#c040c0'}),
+                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
+                (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, Colors.CA_MWD, {'label': 'MWD'}),
                 (df_lb_cul, lb.PALO_VERDE_CU, Colors.CA_PALO_VERDE, {'label': 'Palo Verde'}),
                 (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4),
 
@@ -328,14 +328,15 @@ class Demand1906To1971(DemandChartFrame):
                 (df_cu_1906_2024, "AZ", Colors.AZ),
                 (df_lb_cul, lb.AZ_MAINSTEM, Colors.AZ),
                 (df_lb_cul, lb.AZ_CRIT_CU, Colors.AZ, {'label': 'CRIT'}),
-                (df_lb_cul, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton Mohawk'}),
+                (df_lb_cul, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton'}),
                 (df_lb_cul, lb.AZ_CAP, Colors.AZ1, {'label': 'CAP'}),
                 (ltsc_df, lb.AZ_LTSC_STORED, Colors.AZ2,
-                 {'label': 'CAP Aquifer Store', 'hatch': '|', 'hatch_color': '#ff8080'}),
+                 {'label': 'AZ Aquifer', 'hatch': '|', 'hatch_color': '#ff8080'}),
 
-                (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
                 (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
-                (df_cu_1906_2024, "LB Evap", Colors.EVAP),
+
+                (df_cu_1906_2024, "Mexico Treaty",  Colors.MX, {'label': 'MX'}),
+                (df_cu_1906_2024, "LB Evap", Colors.EVAP, {'label': 'Evap'}),
                 (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
             ])
         else:

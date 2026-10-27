@@ -40,7 +40,10 @@ class BarSeries:
     color: str
     color_overrides: Optional[List[Tuple[float, str]]] = None   # (value, color)
     label: Optional[str] = None                                 # optional display override
-
+    hatch: Optional[str] = None
+    hatch_color: Optional[str] = None
+    edgecolor: Optional[str] = None
+    linewidth: Optional[float] = None
 
 @dataclass
 class BarGroup:
@@ -63,13 +66,21 @@ class BarGroup:
                 df, col, color = item
                 series.append(BarSeries(df=df, col=col, color=color))
             elif len(item) == 4:
-                df, col, color, overrides = item
-                series.append(BarSeries(df=df, col=col, color=color))
-                # series.append(BarSeries(df=df, col=col, color=color, color_overrides=overrides))
+                df, col, color, options = item
+                options = options or {}
+                series.append(BarSeries(
+                    df=df,
+                    col=col,
+                    color=color,
+                    label=options.get('label'),
+                    hatch=options.get('hatch'),
+                    hatch_color=options.get('hatch_color'),
+                    edgecolor=options.get('edgecolor'),
+                    linewidth=options.get('linewidth'),
+                ))
             else:
                 raise ValueError(f"Unexpected series tuple length: {len(item)}")
         return cls(label=label, series=series)
-
 
 class MultiBarChart(Chart):
     def __init__(self,
@@ -261,7 +272,6 @@ class MultiBarChart(Chart):
             for year in yearly:
                 all_years.add(year)
 
-        # years = sorted(y for y in all_years if self.start_year <= y <= self.end_year)
         years = list(range(self.start_year, self.end_year + 1))
         if not years:
             ax.text(0.5, 0.5, "No valid yearly data", ha='center', va='center', fontsize=14)
@@ -280,15 +290,20 @@ class MultiBarChart(Chart):
         self._plot_lines(ax, self.underlay_lines, self.year_to_idx, zorder=1, linewidth=2.8, alpha=0.85)
 
         # Bars
-        for g_idx, (_, yearly_data) in enumerate(group_data):
+        for g_idx, (group, yearly_data) in enumerate(zip(self.groups, group_data)):
+            # group_data currently stores (label, yearly) — adjust if you keep the old tuple form
+            # Prefer walking the original groups so we have access to the BarSeries objects
+            yearly_data = MultiBarChart._get_yearly_stacked_data(group.series)
             bar_positions = x - 0.4 + (g_idx + 0.5) * group_width
+
             for i, year in enumerate(years):
                 if self.x_min is not None and year < self.x_min:
                     continue
                 if self.x_max is not None and year > self.x_max:
                     continue
+
                 bottom = 0.0
-                for val, label, color, overrides in yearly_data.get(year, []):
+                for s_idx, (val, label, color, overrides) in enumerate(yearly_data.get(year, [])):
                     # Per-bar color override by value match
                     bar_color = color
                     if overrides:
@@ -297,12 +312,47 @@ class MultiBarChart(Chart):
                                 bar_color = ov_color
                                 break
 
+                    # Recover the owning BarSeries so we can apply its style
+                    # (yearly data does not currently carry the series object)
+                    series_obj = None
+                    if s_idx < len(group.series):
+                        series_obj = group.series[s_idx]
+
                     height = val / self.y_divisor
-                    ax.bar(bar_positions[i], height, width=group_width - spacing,
-                           bottom=bottom, color=bar_color, edgecolor='none',
-                           linewidth=0.8,
-                           label=None if self.custom_legend is not None else label,
-                           zorder=5)
+
+                    # Defaults
+                    edge = 'none'
+                    lw = 0.0
+                    hatch = None
+                    hatch_color = bar_color
+
+                    if series_obj is not None:
+                        if series_obj.edgecolor is not None:
+                            edge = series_obj.edgecolor
+                        if series_obj.linewidth is not None:
+                            lw = series_obj.linewidth
+                        hatch = series_obj.hatch
+                        hatch_color = series_obj.hatch_color or series_obj.color
+
+                    bar_kwargs = dict(
+                        width=group_width - spacing,
+                        bottom=bottom,
+                        color=bar_color,
+                        edgecolor=edge,
+                        linewidth=lw,
+                        label=None if self.custom_legend is not None else label,
+                        zorder=5,
+                    )
+
+                    if hatch:
+                        bar_kwargs['hatch'] = hatch
+                        # Prefer hatch color for the edge when a hatch is present
+                        # (matches pie-chart behavior) unless an explicit edgecolor was given
+                        if series_obj is None or series_obj.edgecolor is None:
+                            bar_kwargs['edgecolor'] = hatch_color
+
+                    ax.bar(bar_positions[i], height, **bar_kwargs)
+
                     bottom += height
                     max_height = max(max_height, bottom)
 
@@ -346,19 +396,19 @@ class MultiBarChart(Chart):
         for group in self.groups:
             for s in group.series:
                 clean_label = s.label or s.col.replace('_', ' ')
-                display_label = f"{group.label} {clean_label}"
+                display_label = f"{group.label} {clean_label}".strip()
 
                 proxy = Rectangle((0, 0), 1, 1,
                                   fc=s.color,
-                                  ec='white',
-                                  linewidth=0.8)
+                                  ec=s.edgecolor or 'white',
+                                  linewidth=s.linewidth or 0.8,
+                                  hatch=s.hatch)
 
                 if display_label not in unique_legend:
                     unique_legend[display_label] = proxy
 
         # Legend
         if self.custom_legend is not None:
-            # Suppress any auto-labels that came from ax.bar(..., label=...)
             handles = [
                 Patch(facecolor=color, edgecolor='none', alpha=0.85, label=label)
                 for label, color in self.custom_legend
@@ -388,7 +438,6 @@ class MultiBarChart(Chart):
 
         ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
         ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
-        # Grid is fully controlled inside setup_yaxis (no override here)
 
         for ann in self.annotations:
             self.add_total_annotations(ann)
@@ -844,11 +893,27 @@ class MultiBarChart(Chart):
             self._vline_callback(year)
 
     def _on_vline_press(self, event):
-        if event.inaxes != self.ax or event.button != 1:
+        if event.inaxes != self.ax or event.button != 1 or event.xdata is None:
             return
-        contains, _ = self._vline.contains(event)
-        if contains:
-            self._vline_dragging = True
+
+        # Jump the line to the click location immediately
+        idx = int(round(event.xdata))
+
+        # Clamp to valid year range
+        if self.year_to_idx:
+            min_idx = min(self.year_to_idx.values())
+            max_idx = max(self.year_to_idx.values())
+            idx = max(min_idx, min(max_idx, idx))
+
+        self._vline.set_xdata([idx, idx])
+        self._update_year_label(idx)
+        self._update_bar_value_labels(idx)
+        self._report(idx)
+
+        # Start dragging so further motion continues to move it
+        self._vline_dragging = True
+
+        self.fig.canvas.draw_idle()
 
     def _on_vline_scroll(self, event):
         if event.inaxes != self.ax or not hasattr(self, '_vline'):
