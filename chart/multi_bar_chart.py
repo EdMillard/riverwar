@@ -461,13 +461,20 @@ class MultiBarChart(Chart):
                     zorder=zorder,
                     alpha=alpha)
 
-    def create_figure(self, width_inch: Optional[float] = None, height_inch: Optional[float] = None):
+    def create_figure(
+            self,
+            width_inch: Optional[float] = None,
+            height_inch: Optional[float] = None,
+            dpi: int = 145,
+    ):
         if width_inch is not None:
             self.width_inch = width_inch
         if height_inch is not None:
             self.height_inch = height_inch
 
-        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=145)
+        # Option A: just pass a smaller figsize when you want higher dpi
+        fig = Figure(figsize=(self.width_inch, self.height_inch), dpi=dpi)
+
         self.ax = fig.add_subplot(111)
 
         self.create_bar_chart(self.ax)

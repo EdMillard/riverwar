@@ -969,6 +969,47 @@ def copy_rows_by_year(
 
     print(f"✅ Copied {len(columns_to_copy)} columns from source into target by Year match")
 
+def store_value_closest_day(
+        df: pd.DataFrame,
+        column: str,
+        value: float,
+        target_date: Union[date, datetime, pd.Timestamp, np.datetime64],
+        date_col: str = "Date",
+) -> pd.DataFrame:
+    """
+    Store `value` in `column` on the row whose date is closest to `target_date`.
+
+    Parameters
+    ----------
+    df : DataFrame with a daily date column
+    column : name of the column to write into
+    value : value to store
+    target_date : date, datetime, Timestamp, or datetime64
+    date_col : name of the date column (default "Date")
+
+    Returns
+    -------
+    DataFrame with the value written (modified in place and returned)
+    """
+    if date_col not in df.columns:
+        raise KeyError(f"Date column '{date_col}' not found")
+    if column not in df.columns:
+        df[column] = pd.NA  # create column if it doesn't exist
+
+    # Normalize target to midnight Timestamp
+    target = pd.Timestamp(target_date).normalize()
+
+    # Ensure date column is datetime and normalized
+    dates = pd.to_datetime(df[date_col]).dt.normalize()
+
+    # Find index of closest day
+    diffs = (dates - target).abs()
+    closest_idx = diffs.idxmin()
+
+    df.loc[closest_idx, column] = value
+    return df
+
+
 def zero_out_column(
     df: pd.DataFrame,
     column: str,

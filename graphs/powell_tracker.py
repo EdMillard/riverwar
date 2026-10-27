@@ -76,19 +76,19 @@ class PowellTracker(ChartFrame):
                                                        self.powell_storage_projection_time_series,
                                                        color='black',
                                                        text_offset=-0.02,
-                                                       date=today)
+                                                       date=today, font_size=11)
 
         ChartFrame.add_delta_annotation(ax, self.powell_storage_time_series,
                                start_date="2026-09-15", end_date=today,
                                             # color='black',
                                             linewidth=3.0,
-                                            annotation_side='right')
+                                            annotation_side='right', font_size=11)
 
         ChartFrame.add_delta_annotation(ax, self.flaming_gorge_storage_time_series,
                                start_date="2026-04-20", end_date=today,
                                             # color='black',
                                             linewidth=3.0,
-                                            annotation_side='right')
+                                            annotation_side='right', font_size=11)
 
 
         for reservoirs in self.reservoir_lists:

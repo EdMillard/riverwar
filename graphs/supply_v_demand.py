@@ -167,7 +167,7 @@ class Demand1906To1971(DemandChartFrame):
 
         # Enable draggable lines only on charts that support them
         for chart in self.charts:
-            if chart == self.ub_demand_chart:
+            if chart == self.ub_demand_chart or chart == self.lb_demand_chart:
                 bar_values_split_label = True
             else:
                 bar_values_split_label = False
@@ -267,9 +267,8 @@ class Demand1906To1971(DemandChartFrame):
         )
         self.charts.append(self.natural_flow_chart)
 
-    def create_ub_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
-
-        if 1:
+    def create_ub_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
+        if use_cul:
             df_ub_cul = self.demand.df_ub_cul
             df_utils.zero_out_column(df_cu_1906_2024,  "Upper Basin", 1971, self.end_year, date_col='Year', use_nan=True)
             df_utils.copy_column(df_ub_cul, df_ub_cul, ub.UB_RESERVOIR_EVAP, 'Evap')
@@ -285,6 +284,7 @@ class Demand1906To1971(DemandChartFrame):
             series = ('', [
                 (df_cu_1906_2024, "Upper Basin", Colors.UB),
             ])
+
         self.ub_demand_chart = MultiBarChart(
             # title=f'Colorado River {self.name}     ver={self.version}',
             title="",
@@ -301,22 +301,53 @@ class Demand1906To1971(DemandChartFrame):
         )
         self.charts.append(self.ub_demand_chart)
 
-    def create_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
-        lb_column_map = {
-            lb.LB_RESERVOIR_EVAP: "LB Evap",
-            lb.SALTON_INFLOW: "Salton Inflow",
-        }
-        df_utils.copy_columns_by_key(self.demand.df_lb_cul, df_cu_1906_2024, lb_column_map)
+    def create_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
+        if use_cul:
+            df_lb_cul = self.demand.df_lb_cul
+            ltsc_df = self.demand.az_ltsc_data.df
 
-        series = ('', [
-            (df_cu_1906_2024, "CA", Colors.CA),
-            (df_cu_1906_2024, "NV", Colors.NV1),
-            (df_cu_1906_2024, "AZ", Colors.AZ),
-            (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
-            (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
-            (df_cu_1906_2024, "LB Evap", Colors.EVAP),
-            (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
-        ])
+            df_utils.zero_out_column(df_cu_1906_2024,  "CA", 1971, self.end_year, date_col='Year', use_nan=True)
+            df_utils.zero_out_column(df_cu_1906_2024,  "AZ", 1971, self.end_year, date_col='Year', use_nan=True)
+            df_utils.zero_out_column(df_cu_1906_2024,  "NV", 1971, self.end_year, date_col='Year', use_nan=True)
+
+            series = ('', [
+                # CA
+                (df_cu_1906_2024, "CA", Colors.CA),
+                (df_lb_cul, lb.SALTON_INFLOW, Colors.CA_SALTON, {'hatch': '-', 'hatch_color': '#c040c0'}),
+                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial Valley'}),
+                (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, Colors.CA_MWD, {'label': 'Metropolitan'}),
+                (df_lb_cul, lb.PALO_VERDE_CU, Colors.CA_PALO_VERDE, {'label': 'Palo Verde'}),
+                (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4),
+
+                # NV
+                (df_cu_1906_2024, "NV", Colors.NV1),
+                (df_lb_cul, lb.NV_COLORADO_RIVER_TOTAL, Colors.NV2, {'label': 'NV'}),
+                # (df_lb_cul, lb.NV_TRIBUTARY_CUL, Colors.NV1, {'label': 'NV Trib'}),
+
+                # AZ
+                (df_cu_1906_2024, "AZ", Colors.AZ),
+                (df_lb_cul, lb.AZ_MAINSTEM, Colors.AZ),
+                (df_lb_cul, lb.AZ_CRIT_CU, Colors.AZ, {'label': 'CRIT'}),
+                (df_lb_cul, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton Mohawk'}),
+                (df_lb_cul, lb.AZ_CAP, Colors.AZ1, {'label': 'CAP'}),
+                (ltsc_df, lb.AZ_LTSC_STORED, Colors.AZ2,
+                 {'label': 'CAP Aquifer Store', 'hatch': '|', 'hatch_color': '#ff8080'}),
+
+                (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
+                (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
+                (df_cu_1906_2024, "LB Evap", Colors.EVAP),
+                (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
+            ])
+        else:
+            series = ('', [
+                (df_cu_1906_2024, "CA", Colors.CA),
+                (df_cu_1906_2024, "NV", Colors.NV1),
+                (df_cu_1906_2024, "AZ", Colors.AZ),
+                (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
+                (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
+                (df_cu_1906_2024, "LB Evap", Colors.EVAP),
+                (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
+            ])
         self.lb_demand_chart = MultiBarChart(
             title=f'',
             percentage=0.60,

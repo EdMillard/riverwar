@@ -38,17 +38,23 @@ class Colors:
     NM = '#A0A0ff'
 
     CA = 'maroon'
+    CA_SALTON = '#000000'
+    CA_IMPERIAL = '#800000'
+    CA_MWD = '#c03030'
+    CA_PALO_VERDE = '#ff0000'
+    CA_MAINSTEM = '#ff2020'
+
     CA1 = '#ef2828'
     CA2 = '#ff4040'
     CA3 = '#ff6060'
     CA4 = '#ff8080'
 
-    NV1 = 'gray'
+    NV1 = 'lightgray'
     NV2 = 'lightgray'
 
-    AZ = lb.PHX_COLOR
-    AZ1 = '#ef5926'
-    AZ2 = '#ef6936'
+    AZ = '#ef5926'
+    AZ1 = '#ff8866'
+    AZ2 = '#ffaa88'
     AZ3 = '#ef7946'
     AZ4 = '#ef8956'
     AZ5 = '#ef9966'

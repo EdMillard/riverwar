@@ -981,6 +981,7 @@ class ChartFrame(wx.Panel):
             linewidth: float = 1.5,
             text_offset: float = 0.0,  # now a vertical offset (fraction of y-span)
             annotation_side: str = "right",  # "right" or "left"
+            font_size:float=9.0
     ):
         """
         Draw a vertical dashed line (with solid end-caps) at `date` between the
@@ -1111,7 +1112,7 @@ class ChartFrame(wx.Panel):
             textcoords="data",
             ha=ha,
             va="center",
-            fontsize=9,
+            fontsize=font_size,
             fontweight="bold",
             color=line_color,
             zorder=7,
@@ -1129,6 +1130,7 @@ class ChartFrame(wx.Panel):
             linewidth: float = 1.5,
             text_offset: float = 0.0,  # now a vertical offset (fraction of y-span)
             annotation_side: str = "right",  # "right" or "left"
+            font_size: float = 9
     ):
         """
         Draw a vertical dashed line at end_date between the values of the series
@@ -1264,7 +1266,7 @@ class ChartFrame(wx.Panel):
             textcoords="data",
             ha=ha,
             va="center",
-            fontsize=9,
+            fontsize=font_size,
             fontweight="bold",
             color=line_color,
             zorder=7,
