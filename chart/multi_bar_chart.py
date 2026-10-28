@@ -32,6 +32,17 @@ from chart.chart import Chart
 import time
 
 
+class _AnnotationSet:
+    """One complete set of draggable annotation artists."""
+    def __init__(self):
+        self.vline = None
+        self.year_label = None
+        self.bar_value_texts = []
+        self.side_lines = []
+        self.top_total_texts = []
+        self.idx = None
+
+
 @dataclass
 class BarSeries:
     """One stacked series inside a BarGroup."""
@@ -291,8 +302,6 @@ class MultiBarChart(Chart):
 
         # Bars
         for g_idx, (group, yearly_data) in enumerate(zip(self.groups, group_data)):
-            # group_data currently stores (label, yearly) — adjust if you keep the old tuple form
-            # Prefer walking the original groups so we have access to the BarSeries objects
             yearly_data = MultiBarChart._get_yearly_stacked_data(group.series)
             bar_positions = x - 0.4 + (g_idx + 0.5) * group_width
 
@@ -304,7 +313,6 @@ class MultiBarChart(Chart):
 
                 bottom = 0.0
                 for s_idx, (val, label, color, overrides) in enumerate(yearly_data.get(year, [])):
-                    # Per-bar color override by value match
                     bar_color = color
                     if overrides:
                         for ov_val, ov_color in overrides:
@@ -312,15 +320,12 @@ class MultiBarChart(Chart):
                                 bar_color = ov_color
                                 break
 
-                    # Recover the owning BarSeries so we can apply its style
-                    # (yearly data does not currently carry the series object)
                     series_obj = None
                     if s_idx < len(group.series):
                         series_obj = group.series[s_idx]
 
                     height = val / self.y_divisor
 
-                    # Defaults
                     edge = 'none'
                     lw = 0.0
                     hatch = None
@@ -346,8 +351,6 @@ class MultiBarChart(Chart):
 
                     if hatch:
                         bar_kwargs['hatch'] = hatch
-                        # Prefer hatch color for the edge when a hatch is present
-                        # (matches pie-chart behavior) unless an explicit edgecolor was given
                         if series_obj is None or series_obj.edgecolor is None:
                             bar_kwargs['edgecolor'] = hatch_color
 
@@ -838,15 +841,6 @@ class MultiBarChart(Chart):
                                bar_value_bg_alpha=0.85,
                                dual_side_lines: bool = False,
                                top_total_columns: Optional[List[str]] = None):
-        """
-        ...
-        If show_bar_values=True, labels are drawn in the middle of each stacked
-        segment for the year the line is on (value of that segment only).
-
-        If dual_side_lines=True, the single center line is hidden and two
-        vertical lines are drawn at the outer left and right edges of the
-        annotation bubbles.
-        """
         if self.ax is None or self.year_to_idx is None:
             raise RuntimeError("Call create_figure() before enabling the draggable line")
 
@@ -857,54 +851,93 @@ class MultiBarChart(Chart):
             xlim = self.ax.get_xlim()
             x0 = float(round((xlim[0] + xlim[1]) / 2))
 
-        self._vline = self.ax.axvline(
-            x0, color=color, linewidth=linewidth, alpha=alpha,
-            linestyle='-', zorder=20, picker=8
-        )
+        # Shared settings
         self._vline_callback = callback
         self._vline_dragging = False
         self._show_year_label = show_year_label
         self._year_label_color = year_label_color or color
         self._year_label_fontsize = year_label_fontsize
-        self._year_label = None
-
-        self._bar_value_color = bar_value_color  # default white
+        self._bar_value_color = bar_value_color
         self._bar_value_fontsize = bar_value_fontsize
-        self._bar_value_texts = []
         self._bar_values_split_label = bar_values_split_label
-        self._bar_value_bgcolor = bar_value_bgcolor  # default black
+        self._bar_value_bgcolor = bar_value_bgcolor
         self._bar_value_bg_alpha = bar_value_bg_alpha
         self._show_bar_values = show_bar_values
         self._dual_side_lines = dual_side_lines
-        self._side_lines = []
         self._top_total_columns = set(top_total_columns or [])
-        self._top_total_texts = []
+        self._vline_color = color
+        self._vline_linewidth = linewidth
+        self._vline_alpha = alpha
 
-        if dual_side_lines:
-            # Keep the center line for picking/interaction but make it invisible
-            self._vline.set_visible(False)
-            # Create two side lines (positioned later)
+        # Multi-set support
+        self._annotation_sets: List[_AnnotationSet] = []
+        self._active_set: Optional[_AnnotationSet] = None
+
+        # Create the primary set
+        primary = self._create_annotation_set(x0)
+        self._annotation_sets.append(primary)
+        self._active_set = primary
+
+        # Back-compat aliases so existing update methods still work
+        self._vline = primary.vline
+        self._year_label = primary.year_label
+        self._bar_value_texts = primary.bar_value_texts
+        self._side_lines = primary.side_lines
+        self._top_total_texts = primary.top_total_texts
+
+        if self._show_year_label:
+            self._update_year_label(x0)
+        if self._show_bar_values:
+            self._update_bar_value_labels(x0)
+
+        canvas = self.fig.canvas
+        self._vline_cids = [
+            canvas.mpl_connect('button_press_event', self._on_vline_press),
+            canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
+            canvas.mpl_connect('button_release_event', self._on_vline_release),
+            canvas.mpl_connect('scroll_event', self._on_vline_scroll),
+            canvas.mpl_connect('key_press_event', self._on_vline_key),
+        ]
+        self.fig.canvas.draw_idle()
+
+    def _create_annotation_set(self, x0: float) -> _AnnotationSet:
+        """Create a fresh set of artists at the given x position."""
+        s = _AnnotationSet()
+        s.idx = int(round(x0))
+
+        s.vline = self.ax.axvline(
+            x0, color=self._vline_color, linewidth=self._vline_linewidth,
+            alpha=self._vline_alpha, linestyle='-', zorder=20, picker=8
+        )
+
+        if self._dual_side_lines:
+            s.vline.set_visible(False)
             for _ in range(2):
                 line = self.ax.axvline(
-                    x0, color=color, linewidth=linewidth, alpha=alpha,
-                    linestyle='-', zorder=19, visible=False
+                    x0, color=self._vline_color, linewidth=self._vline_linewidth,
+                    alpha=self._vline_alpha, linestyle='-', zorder=19, visible=False
                 )
-                self._side_lines.append(line)
+                s.side_lines.append(line)
 
-            if self._show_year_label:
-                self._update_year_label(x0)
-            if self._show_bar_values:
-                self._update_bar_value_labels(x0)
+        return s
 
-            canvas = self.fig.canvas
-            self._vline_cids = [
-                canvas.mpl_connect('button_press_event', self._on_vline_press),
-                canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
-                canvas.mpl_connect('button_release_event', self._on_vline_release),
-                canvas.mpl_connect('scroll_event', self._on_vline_scroll),
-                canvas.mpl_connect('key_press_event', self._on_vline_key),
-            ]
-            self.fig.canvas.draw_idle()
+    def _remove_annotation_set(self, s: _AnnotationSet):
+        """Remove all artists belonging to a set."""
+        if s.vline is not None and s.vline in self.ax.lines:
+            s.vline.remove()
+        for line in s.side_lines:
+            if line in self.ax.lines:
+                line.remove()
+        for t in s.bar_value_texts + s.top_total_texts:
+            try:
+                t.remove()
+            except Exception:
+                pass
+        if s.year_label is not None:
+            try:
+                s.year_label.remove()
+            except Exception:
+                pass
 
     def _index_to_year(self, idx):
         """Reverse lookup: integer index → year."""
@@ -924,23 +957,48 @@ class MultiBarChart(Chart):
         if event.inaxes != self.ax or event.button != 1 or event.xdata is None:
             return
 
-        # Jump the line to the click location immediately
         idx = int(round(event.xdata))
-
-        # Clamp to valid year range
         if self.year_to_idx:
             min_idx = min(self.year_to_idx.values())
             max_idx = max(self.year_to_idx.values())
             idx = max(min_idx, min(max_idx, idx))
 
-        self._vline.set_xdata([idx, idx])
+        shift = event.key == 'shift' or (hasattr(event, 'modifiers') and 'shift' in event.modifiers)
+
+        if shift:
+            # Freeze current active set and create a new one
+            new_set = self._create_annotation_set(idx)
+            self._annotation_sets.append(new_set)
+            self._active_set = new_set
+            # Point the back-compat attributes at the new set so updates hit it
+            self._vline = new_set.vline
+            self._year_label = new_set.year_label
+            self._bar_value_texts = new_set.bar_value_texts
+            self._side_lines = new_set.side_lines
+            self._top_total_texts = new_set.top_total_texts
+        else:
+            # Normal click: keep only the primary set and move it
+            primary = self._annotation_sets[0]
+            # Remove every set except the primary
+            for extra in self._annotation_sets[1:]:
+                self._remove_annotation_set(extra)
+            self._annotation_sets = [primary]
+            self._active_set = primary
+            # Restore back-compat pointers
+            self._vline = primary.vline
+            self._year_label = primary.year_label
+            self._bar_value_texts = primary.bar_value_texts
+            self._side_lines = primary.side_lines
+            self._top_total_texts = primary.top_total_texts
+
+            primary.vline.set_xdata([idx, idx])
+            primary.idx = idx
+
+        # Update the (new) active set
         self._update_year_label(idx)
         self._update_bar_value_labels(idx)
         self._report(idx)
-
-        # Start dragging so further motion continues to move it
         self._vline_dragging = True
-
         self.fig.canvas.draw_idle()
 
     def _on_vline_scroll(self, event):
@@ -961,6 +1019,8 @@ class MultiBarChart(Chart):
             return
 
         self._vline.set_xdata([new_idx, new_idx])
+        if self._active_set is not None:
+            self._active_set.idx = new_idx
         self._update_year_label(new_idx)
         self._update_bar_value_labels(new_idx)
         self._report(new_idx)
@@ -978,6 +1038,8 @@ class MultiBarChart(Chart):
             return
         idx = int(round(event.xdata))
         self._vline.set_xdata([idx, idx])
+        if self._active_set is not None:
+            self._active_set.idx = idx
         self._update_year_label(idx)
         self._update_bar_value_labels(idx)
         self._report(idx)
@@ -1004,6 +1066,8 @@ class MultiBarChart(Chart):
             return
 
         self._vline.set_xdata([new_idx, new_idx])
+        if self._active_set is not None:
+            self._active_set.idx = new_idx
         self._update_year_label(new_idx)
         self._update_bar_value_labels(new_idx)
         self._report(new_idx)
@@ -1016,6 +1080,8 @@ class MultiBarChart(Chart):
         if event.xdata is not None:
             idx = int(round(event.xdata))
             self._vline.set_xdata([idx, idx])
+            if self._active_set is not None:
+                self._active_set.idx = idx
             self._update_year_label(idx)
             self._update_bar_value_labels(idx)
             self._report(idx)
@@ -1027,94 +1093,12 @@ class MultiBarChart(Chart):
             for cid in self._vline_cids:
                 self.fig.canvas.mpl_disconnect(cid)
             self._vline_cids = []
-        if hasattr(self, '_vline') and self._vline in self.ax.lines:
-            self._vline.remove()
-        if hasattr(self, '_side_lines'):
-            for line in self._side_lines:
-                if line in self.ax.lines:
-                    line.remove()
-            self._side_lines = []
+        if hasattr(self, '_annotation_sets'):
+            for s in self._annotation_sets:
+                self._remove_annotation_set(s)
+            self._annotation_sets = []
+        self._active_set = None
         self._vline_dragging = False
-        self.fig.canvas.draw_idle()
-
-    def enable_draggable_vline(self, callback=None, color='#d62728', linewidth=1.6,
-                               alpha=0.9, initial_year=None,
-                               show_year_label=False, year_label_color=None,
-                               year_label_fontsize=9,
-                               show_bar_values=False, bar_value_color='white',
-                               bar_value_fontsize=7.5,
-                               bar_values_split_label=False,
-                               bar_value_bgcolor='black',
-                               bar_value_bg_alpha=0.85,
-                               dual_side_lines: bool = False,
-                               top_total_columns: Optional[List[str]] = None):
-        """
-        ...
-        If show_bar_values=True, labels are drawn in the middle of each stacked
-        segment for the year the line is on (value of that segment only).
-
-        If dual_side_lines=True, the single center line is hidden and two
-        vertical lines are drawn at the outer left and right edges of the
-        annotation bubbles.
-        """
-        if self.ax is None or self.year_to_idx is None:
-            raise RuntimeError("Call create_figure() before enabling the draggable line")
-
-        # Starting position
-        if initial_year is not None and initial_year in self.year_to_idx:
-            x0 = float(self.year_to_idx[initial_year])
-        else:
-            xlim = self.ax.get_xlim()
-            x0 = float(round((xlim[0] + xlim[1]) / 2))
-
-        self._vline = self.ax.axvline(
-            x0, color=color, linewidth=linewidth, alpha=alpha,
-            linestyle='-', zorder=20, picker=8
-        )
-        self._vline_callback = callback
-        self._vline_dragging = False
-        self._show_year_label = show_year_label
-        self._year_label_color = year_label_color or color
-        self._year_label_fontsize = year_label_fontsize
-        self._year_label = None
-
-        self._bar_value_color = bar_value_color  # default white
-        self._bar_value_fontsize = bar_value_fontsize
-        self._bar_value_texts = []
-        self._bar_values_split_label = bar_values_split_label
-        self._bar_value_bgcolor = bar_value_bgcolor  # default black
-        self._bar_value_bg_alpha = bar_value_bg_alpha
-        self._show_bar_values = show_bar_values
-        self._dual_side_lines = dual_side_lines
-        self._side_lines = []
-        self._top_total_columns = set(top_total_columns or [])
-        self._top_total_texts = []
-
-        if dual_side_lines:
-            # Keep the center line for picking/interaction but make it invisible
-            self._vline.set_visible(False)
-            # Create two side lines (positioned later)
-            for _ in range(2):
-                line = self.ax.axvline(
-                    x0, color=color, linewidth=linewidth, alpha=alpha,
-                    linestyle='-', zorder=19, visible=False
-                )
-                self._side_lines.append(line)
-
-        # These must run regardless of dual_side_lines
-        if self._show_year_label:
-            self._update_year_label(x0)
-        if self._show_bar_values:
-            self._update_bar_value_labels(x0)
-
-        canvas = self.fig.canvas
-        self._vline_cids = [
-            canvas.mpl_connect('button_press_event', self._on_vline_press),
-            canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
-            canvas.mpl_connect('button_release_event', self._on_vline_release),
-            canvas.mpl_connect('scroll_event', self._on_vline_scroll),
-            canvas.mpl_connect('key_press_event', self._on_vline_key),
-        ]
         self.fig.canvas.draw_idle()
 
     def _update_bar_value_labels(self, idx):
@@ -1297,15 +1281,10 @@ class MultiBarChart(Chart):
                     height = raw_val / self.y_divisor
                     cumulative += height
 
-                    print(f"[top-total] year={year} group={group.label!r} "
-                          f"col={col_name!r} height={height:.4f} cumulative={cumulative:.4f} "
-                          f"in_list={col_name in self._top_total_columns}")
-
                     if col_name in self._top_total_columns and height > 0:
                         top_y = bottom + height
                         label_y = top_y + (y_top - y_bottom) * 0.025
                         total_txt = (f"{cumulative:.3f}" if abs(cumulative) < 10 else f"{cumulative:.1f}")
-                        print(f"  --> placing '{total_txt}' at x={bar_center:.3f} y={label_y:.3f}")
                         top_needed.append((bar_center, label_y, total_txt))
 
                     bottom += max(height, 0.0)
@@ -1352,8 +1331,8 @@ class MultiBarChart(Chart):
             self.fig.canvas.draw()
 
             renderer = self.fig.canvas.get_renderer()
-            left_inner = float('-inf')  # right edge of label bubbles
-            right_inner = float('inf')  # left edge of value bubbles
+            left_inner = float('-inf')   # right edge of label bubbles
+            right_inner = float('inf')   # left edge of value bubbles
 
             for text in self._bar_value_texts:
                 if not text.get_visible():
@@ -1412,6 +1391,9 @@ class MultiBarChart(Chart):
                           edgecolor=self._year_label_color, linewidth=0.6),
                 zorder=21
             )
+            # Store it on the active set as well
+            if self._active_set is not None:
+                self._active_set.year_label = self._year_label
         else:
             self._year_label.set_position((idx, y_frac))
             self._year_label.set_text(str(year))
