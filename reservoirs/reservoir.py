@@ -469,18 +469,20 @@ class Reservoir:
         return daily
 
     def usgs_load_daily(self, gage_id: str, column_name: str, start_year: int = 0, end_year: int = 0,
-                        parameterCd='00060', statCd='00003', month=1):
-        daily = 0
+                        parameterCd='00060', statCd='00003', month=1,
+                        do_instantaneous=False):
+        daily_cfs = None
         start_year, end_year = self.resolve_water_year_range(start_year, end_year)
 
         for year in range(start_year, end_year + 1):
             water_year_info = self.get_water_year_info(year, month=self.water_year_month)
             gage = USGSGage(gage_id, water_year_info)
             daily_cfs = gage.daily_discharge(water_year_info=water_year_info, alias=column_name,
-                                             parameterCd=parameterCd, statCd=statCd)
+                                             parameterCd=parameterCd, statCd=statCd,
+                                             do_instantaneous=do_instantaneous)
             df_utils.fill_df_from_structured_array(self.df_daily, daily_cfs, date_column_name='Date',
                                                    value_column_name=column_name)
-        return daily
+        return daily_cfs
 
     def get_elevation(self, usbr_rise_id:int, column_name:str)->Tuple[datetime, float]:
         when = Reservoir.compare_to_today(self.current_date)

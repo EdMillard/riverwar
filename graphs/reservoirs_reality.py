@@ -227,7 +227,7 @@ class ReservoirsReality(ChartFrame):
         srp = SRP()
         aquifers = Aquifers()
 
-        self.show_upper_basin_reservoirs = True
+        self.show_upper_basin_reservoirs = False
         if self.show_upper_basin_reservoirs:
             # Participating Units
             # CO

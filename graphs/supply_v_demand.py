@@ -1,4 +1,4 @@
-"""
+'''
 Copyright (c) 2025 Ed Millard
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,7 +18,50 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-"""
+'''
+# Data Sources
+# I started from:
+# USBR Colorado River Uses 1906-2006
+#    https://usbr.gov/lc/region/g4000/uses.html
+#
+# History and sources (from the page notes)
+#     Upper Basin 1906–1970: Provided by the Colorado River Board of California.
+#     Upper Basin 1971–1995: Bureau of Reclamation Revised Upper Colorado River Consumptive Uses and Losses Reports.
+#     Upper Basin 1996–2000: Bureau of Reclamation Colorado River Consumptive Uses and Losses Report: 1996–2000.
+#     Upper Basin 2001–2005: Provisional Consumptive Uses and Losses Report: 2001–2005.
+#     (Related reports were historically linked at http://www.usbr.gov/uc/library/envdocs/reports/crs/crsul.html)
+#     Lower Basin prior to 1914: Unavailable.
+#     Lower Basin 1914–1963: Provided by individual users (agricultural districts, MWD, etc.).
+#     Lower Basin after 1963: From Reclamation Article V Records (post-Arizona v. California decree accounting).
+#        These figures are not reduced for unmeasured return-flow credits.
+#
+# Additions::
+# Lower Basin CUL (1971–2024):
+#     https://www.usbr.gov/lc/region/g4000/4200Rpts/CULReport/1971-2024%20Lower%20Colorado%20River%20System%20CUL%20Data.xlsx
+#
+# Upper Basin CUL (1971-2024):
+#     https://www.usbr.gov/uc/DocLibrary/Reports/ConsumptiveUsesLosses/v24.5_CUL_ResultsCU_CY.xlsx
+#     https://www.usbr.gov/uc/DocLibrary/Reports/ConsumptiveUsesLosses/v24.5_CUL_ResultsCU_WY_Annual.xlsx
+#     https://www.usbr.gov/uc/DocLibrary/Reports/ConsumptiveUsesLosses/v24.5_CUL_ResultsCU.xlsx
+#     https://www.usbr.gov/uc/DocLibrary/Reports/ConsumptiveUsesLosses/v24.5_UB_CU_WY_Annual.xlsx
+#
+# USGS Reports
+#   Summary of Records of Surface Waters at Base Stations in Colorado River Basin 1891-1938
+#   https://pubs.usgs.gov/wsp/0918/report.pdf
+#
+# Colorado River Water Supply Its Magnitude and  Distribution 1969
+#   https://pubs.usgs.gov/pp/0486d/report.pdf
+#
+# Surface waters 1945
+#   https://pubs.usgs.gov/wsp/1039/report.pdf
+#
+# Surface waters 1949
+#   https://pubs.usgs.gov/wsp/1149/report.pdf
+#
+# My Lower Colorado Annual Report digitization 1964-2021 (Im update the files I need for 2022-2025)
+# This gets me LB individual users and through 2025 (no LB tributaries)
+# https://github.com/EdMillard/riverwar/tree/main/data/USBR_Reports
+#
 import pandas as pd
 import wx
 from data_sets.demand import Demand, Colors
@@ -154,11 +197,11 @@ class Demand1906To1971(DemandChartFrame):
         self.lb_demand_chart = None
         self.lb_trib_chart = None
 
-        self.df_cu_1906_2006: Optional[pd.DataFrame] = None
+        self.df: Optional[pd.DataFrame] = None
         self._syncing_lines = False  # prevent re-entrancy
 
         super().__init__(notebook_frame, demand,
-                         name='Demand', start_year=1906, end_year=2025, version=0.4)
+                         name='Demand', start_year=1904, end_year=2026, version=0.5)
         self.top_axis_annotations()
         if self.ub_demand_chart is not None:
             self.ub_demand_chart.set_custom_legend([("Upper Basin", Colors.UB)])
@@ -188,8 +231,44 @@ class Demand1906To1971(DemandChartFrame):
 
         # Bureau estimated diversions/consumptive use 1906-2006 (Fairly trustworthy)
         #
-        self.df_cu_1906_2006 = sheet.read_csv('data/Colorado_River/usbr_colorado_river_use_since_1906.csv',
+        self.df = sheet.read_csv('data/Colorado_River/usbr_colorado_river_use_since_1906.csv',
                                          sep='\s+', na_values=["---", "-", "*******"])
+        self.df = df_utils.extend_years(self.df, min_year=1904, max_year=2026)
+
+        # Gila at Dome confluence 1 mile above Yuma
+        sheet.usgs_annuals(self.df, '09520500', 1929, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1000000) # Has missing years
+        # Yuma Gage 5-6 miles above Alamo
+        sheet.usgs_annuals(self.df, '09521000', 1904, 1964, title="Yuma USGS", divisor=1)
+        # Mexico border
+        sheet.usgs_annuals(self.df, '09522000', 1950, self.end_year, title=lb.NIB_MORELOS_USGS)
+
+        # Salton Sea
+        sheet.usgs_annuals(self.df, '10254730', 1961, self. end_year, title=lb.ALAMO_RIVER,divisor=1) # 1960 is partial
+        sheet.usgs_annuals(self.df, '10255550', 1961, self.end_year, title=lb.NEW_RIVER,divisor=1) # New goes back to 1943
+        sheet.usgs_annuals(self.df, '10259540', 1961, self.end_year, title=lb.WHITEWATER,divisor=1)
+        df_utils.add_column_sum(self.df, [lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER], lb.SALTON_INFLOW)
+
+        # Alamo Canal 1909-1938
+        df_alamo = sheet.read_csv('data/Colorado_River/alamo_1909_1938.csv', sep=',')
+        alamo_column_map = { "CY_Runoff_acre_ft": "Alamo" }
+        df_utils.copy_columns_by_key(df_alamo, self.df, alamo_column_map, overwrite=True)
+        df_utils.divide_by_constant(self.df, "Alamo", 2.0, 'Alamo Split')
+
+        # Volcano Island Supplement to Imperial on top of Alamo 1916-1921
+        df_volcano = sheet.read_csv('data/Colorado_River/volcamo_lake_1916_1921.csv', sep=',')
+        volcano_column_map = { "Water_Year_Runoff_AF": "Volcano" }
+        df_utils.copy_columns_by_key(df_volcano, self.df, volcano_column_map, overwrite=True)
+
+        # Delta early years is Yume Gage - ALamo - Volcano - Small Yuma diversion
+        #
+        df_utils.subtract_column(self.df, "Yuma USGS", "Alamo", "Delta", clip_negative_to_zero=True)
+        df_utils.subtract_column(self.df, "Delta", "Volcano", "Delta")
+        # df_utils.zero_out_column(self.df, "Delta", 1939, 1965, date_col='Year', use_nan=True)
+
+        # Palo Verde 1922-1938
+        df_palo_verde = sheet.read_csv('data/Colorado_River/palo_verde_1922_1938.csv', sep=',')
+        palo_verde_column_map = { "Net_WY_Runoff_AF": "Palo Verde" }
+        df_utils.copy_columns_by_key(df_palo_verde, self.df, palo_verde_column_map, overwrite=True)
 
         # Estimated Mexico use 1907-1970 (Not trustworthy)
         #
@@ -197,11 +276,8 @@ class Demand1906To1971(DemandChartFrame):
                                          sep='\s+', na_values=["---", "-", "*******"])
         df_utils.divide_columns(df_mexico_treaty_guess, 'estimated_AF', 'acres_approx', 'AF per acre')
 
-        df_cu_1906_2024 = df_utils.extend_years(self.df_cu_1906_2006, max_year=2024)
-        mexico_guess_column_map = {
-            "estimated_AF": "Mexico Treaty",
-        }
-        df_utils.copy_columns_by_key(df_mexico_treaty_guess, df_cu_1906_2024, mexico_guess_column_map, overwrite=True)
+        mexico_guess_column_map = { "estimated_AF": "Mexico Treaty",}
+        df_utils.copy_columns_by_key(df_mexico_treaty_guess, self.df, mexico_guess_column_map, overwrite=True)
 
         # Bureau CUL data 1971-2024 (Very trustworthy)
         # Lower Basin CUL
@@ -211,40 +287,43 @@ class Demand1906To1971(DemandChartFrame):
             lb.NV_COLORADO_RIVER_TOTAL: "NV",
             "Mexico": "Mexico Treaty",
         }
-        df_utils.copy_columns_by_key(self.demand.df_lb_cul, df_cu_1906_2024, lb_column_map, overwrite=True)
+        df_utils.copy_columns_by_key(self.demand.df_lb_cul, self.df, lb_column_map, overwrite=True)
+
+        # Replace CA with Imperial and Palo Verde
+        # df_utils.subtract_column(self.df, 'Alamo', "Alamo Split", "Imperial")
+        # df_utils.subtract_column(self.df, 'CA', "Imperial", "Palo Verde")
+        df_utils.zero_out_column(self.df, "CA", 1909, 1937, date_col='Year', use_nan=True)
 
         # Upper Basin CUL
         #
-        ub_column_map = {
-            "UB Total": "Upper Basin",
-        }
-        df_utils.copy_columns_by_key(self.demand.df_ub_cul, df_cu_1906_2024, ub_column_map)
+        ub_column_map = { "UB Total": "Upper Basin", }
+        df_utils.copy_columns_by_key(self.demand.df_ub_cul, self.df, ub_column_map)
 
         # Mexico Delta, 2005 to present from annual reports
         #
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_in_excess.csv', sep='\s+')
-        sheet.merge_annual_column(df_cu_1906_2024, df_mx, "MX in excess", divisor=1)
+        sheet.merge_annual_column(self.df, df_mx, "MX in excess", divisor=1)
 
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_minute_319.csv', sep='\s+')
-        sheet.merge_annual_column(df_cu_1906_2024, df_mx, "MX minute 319", divisor=1)
+        sheet.merge_annual_column(self.df, df_mx, "MX minute 319", divisor=1)
 
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_minute_242_bypass.csv', sep='\s+')
-        sheet.merge_annual_column(df_cu_1906_2024, df_mx, "Cienega", divisor=1)
+        sheet.merge_annual_column(self.df, df_mx, "Cienega", divisor=1)
 
         mexico_delta = ["MX in excess", "MX minute 319"]
-        df_utils.add_column_sum(df_cu_1906_2024, mexico_delta, "Mexico Delta")
+        df_utils.add_column_sum(self.df, mexico_delta, "Mexico Delta")
 
-        df_utils.subtract_column(df_cu_1906_2024, 'Mexico', 'Mexico Treaty', 'Delta')
+        df_utils.subtract_column(self.df, 'Mexico', 'Mexico Treaty', 'Delta')
         delta_map = {
             "Mexico Delta": "Delta",
         }
-        df_utils.copy_columns_by_key(df_cu_1906_2024, df_cu_1906_2024, delta_map)
+        df_utils.copy_columns_by_key(self.df, self.df, delta_map)
 
-        self.create_natural_flow_bar_chart(df_cu_1906_2024)
-        self.create_ub_demand_bar_chart(df_cu_1906_2024)
-        # self.create_lb_trib_bar_chart(df_cu_1906_2024)
-        self.create_lb_demand_bar_chart(df_cu_1906_2024)
-        #self.create_demand_pie_chart(df_cu_1906_2024)
+        self.create_natural_flow_bar_chart(self.df)
+        self.create_ub_demand_bar_chart(self.df)
+        # self.create_lb_trib_bar_chart(self.df)
+        self.create_lb_demand_bar_chart(self.df)
+        #self.create_demand_pie_chart(self.df)
 
         # self.create_reservoir_bar_chart(show_x_labels=False)
         self.on_line_moved(1922)
@@ -254,7 +333,7 @@ class Demand1906To1971(DemandChartFrame):
             (self.demand.natural_flow_data.df, "Natural Lees Ferry", Colors.NATURAL_FLOW),
         ])
         self.natural_flow_chart = MultiBarChart(
-            title=f'Colorado River {self.name}     ver={self.version}',
+            # title=f'Colorado River {self.name}     ver={self.version}',
             percentage=0.20,
             groups=[series],
             start_year=self.start_year,
@@ -310,13 +389,23 @@ class Demand1906To1971(DemandChartFrame):
             df_utils.zero_out_column(df_cu_1906_2024,  "AZ", 1971, self.end_year, date_col='Year', use_nan=True)
             df_utils.zero_out_column(df_cu_1906_2024,  "NV", 1971, self.end_year, date_col='Year', use_nan=True)
 
+            lb_column_map = {
+                "Imperial CU": "Imperial",
+                "Palo Verde CU": "Palo Verde"
+            }
+            df_utils.copy_columns_by_key(df_lb_cul, df_cu_1906_2024, lb_column_map, overwrite=False)
+
+            df_utils.subtract_column_by_year(df_cu_1906_2024, "CA", lb.SALTON_INFLOW, result_column="CA",
+                                             start_year=1961, end_year=1970)
             series = ('', [
                 # CA
+                (df_cu_1906_2024, lb.SALTON_INFLOW, Colors.CA_SALTON, {'label': 'Salton'}),
                 (df_cu_1906_2024, "CA", Colors.CA),
-                (df_lb_cul, lb.SALTON_INFLOW, Colors.CA_SALTON, {'label': 'Salton', 'hatch': '-', 'hatch_color': '#c040c0'}),
-                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
+                (df_cu_1906_2024, "Alamo", Colors.CA_ALAMO ),
+                (df_cu_1906_2024, "Volcano", Colors.CA_VOLCANO),
+                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL),
                 (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, Colors.CA_MWD, {'label': 'MWD'}),
-                (df_lb_cul, lb.PALO_VERDE_CU, Colors.CA_PALO_VERDE, {'label': 'Palo Verde'}),
+                (df_cu_1906_2024, "Palo Verde", Colors.CA_PALO_VERDE),
                 (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4),
 
                 # NV
@@ -330,8 +419,7 @@ class Demand1906To1971(DemandChartFrame):
                 (df_lb_cul, lb.AZ_CRIT_CU, Colors.AZ, {'label': 'CRIT'}),
                 (df_lb_cul, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton'}),
                 (df_lb_cul, lb.AZ_CAP, Colors.AZ1, {'label': 'CAP'}),
-                (ltsc_df, lb.AZ_LTSC_STORED, Colors.AZ2,
-                 {'label': 'AZ Aquifer', 'hatch': '|', 'hatch_color': '#ff8080'}),
+                (ltsc_df, lb.AZ_LTSC_STORED, Colors.AZ2, {'label': 'AZ Aquifer'}),
 
                 (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
 
@@ -349,6 +437,13 @@ class Demand1906To1971(DemandChartFrame):
                 (df_cu_1906_2024, "LB Evap", Colors.EVAP),
                 (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
             ])
+        legend = [
+            ("CA", Colors.MX),
+            ("AZ", Colors.AZ),
+            ("NV", Colors.NV1),
+            ("CA", Colors.CA),
+            ("Alamo", Colors.CA_ALAMO)
+        ]
         self.lb_demand_chart = MultiBarChart(
             title=f'',
             percentage=0.60,
@@ -359,6 +454,7 @@ class Demand1906To1971(DemandChartFrame):
             y_max=11,
             y_min=0,
             show_x_labels=True,
+            custom_legend=legend,
             legend_loc='upper left',
         )
         self.charts.append(self.lb_demand_chart)
@@ -494,6 +590,7 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1947, "Coachella", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1947, "Northern", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1951, "Wellton", color=Colors.LB)
+            self._annotate_bottom(ax, 1959, "MWD\u2191", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1964, "Roberts", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1964, "AZ v CA")
             self._annotate_bottom(ax, 1972, "Fryark", color=Colors.UB)

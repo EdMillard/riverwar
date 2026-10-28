@@ -39,9 +39,11 @@ class Colors:
 
     CA = 'maroon'
     CA_SALTON = '#000000'
+    CA_ALAMO = 'gray'
+    CA_VOLCANO = 'darkgray'
     CA_IMPERIAL = '#800000'
-    CA_MWD = '#c03030'
-    CA_PALO_VERDE = '#ff0000'
+    CA_MWD = '#a03030'
+    CA_PALO_VERDE = '#c03030'
     CA_MAINSTEM = '#ff2020'
 
     CA1 = '#ef2828'

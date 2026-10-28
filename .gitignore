@@ -3,9 +3,9 @@ comm
 cache
 pdf/
 img/
-data/
 doc/
 excel/
+bots/
 client_secret.json
 token.pickle
 pdf_reader/data

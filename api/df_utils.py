@@ -401,6 +401,7 @@ def add_column_sum(df: pd.DataFrame,
                    sum_column_name: str = 'total_sum') -> pd.DataFrame:
     """
     Add (or update) a column with the row-wise sum of specified columns.
+    NaN values are ignored. If all values in a row are NaN, the result is NaN.
     Creates the target column if it doesn't exist.
 
     Parameters:
@@ -420,8 +421,8 @@ def add_column_sum(df: pd.DataFrame,
     if missing:
         raise ValueError(f"Columns not found in DataFrame: {missing}")
 
-    # Add / overwrite the sum column
-    df[sum_column_name] = df[cols_to_sum].sum(axis=1)
+    # Sum while ignoring NaNs; return NaN if all values in the row are NaN
+    df[sum_column_name] = df[cols_to_sum].sum(axis=1, min_count=1)
 
     return df
 
@@ -570,6 +571,37 @@ def copy_columns_by_key(
             target[col] = pd.to_numeric(target[col], errors="coerce")
 
     return target
+
+def divide_by_constant(df, num_col, constant, result_col):
+    """
+    Divide a named column by a constant and write to a result column.
+    Handles NaNs (propagates them) and zero constant (sets result to NaN).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame
+    num_col : str
+        Name of the numerator column
+    constant : float or int
+        Constant value to divide by
+    result_col : str
+        Name of the column to store the result
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with the new/updated column (modified in place)
+    """
+    if num_col not in df.columns:
+        raise ValueError(f"Column '{num_col}' not found in DataFrame")
+
+    if constant == 0:
+        df[result_col] = np.nan
+    else:
+        df[result_col] = df[num_col] / constant
+
+    return df
 
 def divide_columns(df, num_col, den_col, result_col):
     """
@@ -744,7 +776,9 @@ def subtract_column(
         col1: str,
         col2: str,
         result_column: str = 'difference',
-        inplace: bool = True
+        inplace: bool = True,
+        clip_negative_to_zero: bool = False,
+        pass_col1_when_col2_nan: bool = True
 ) -> pd.DataFrame:
     """
     Subtract one column from another and store the result in a new column.
@@ -756,6 +790,10 @@ def subtract_column(
         col2 (str): Column to subtract (subtrahend). Result = col1 - col2.
         result_column (str): Name of the column to store the result.
         inplace (bool): Whether to modify the DataFrame in place (default True).
+        clip_negative_to_zero (bool): If True, any negative result is set to 0
+                                      (default False).
+        pass_col1_when_col2_nan (bool): If True, where col2 is NaN/NA the result
+                                        is set to col1 (default True).
 
     Returns:
         pd.DataFrame: The modified DataFrame.
@@ -774,8 +812,100 @@ def subtract_column(
     else:
         target = df.copy()
 
-    # Perform subtraction and create/update column
-    target[result_column] = target[col1] - target[col2]
+    # Perform subtraction
+    result = target[col1] - target[col2]
+
+    # Where col2 is NaN/NA, pass col1 through
+    if pass_col1_when_col2_nan:
+        result = result.where(target[col2].notna(), target[col1])
+
+    # Optionally clamp negatives to zero
+    if clip_negative_to_zero:
+        result = result.clip(lower=0)
+
+    # Create/update column
+    target[result_column] = result
+
+    return target
+
+def subtract_column_by_year(
+        df: pd.DataFrame,
+        col1: str,
+        col2: str,
+        start_year: int,
+        end_year: int,
+        result_column: str = 'difference',
+        year_column: str = 'Year',
+        inplace: bool = True,
+        clip_negative_to_zero: bool = False,
+        pass_col1_when_col2_nan: bool = True
+) -> pd.DataFrame:
+    """
+    Subtract one column from another and store the result, but only for rows
+    whose Year falls between start_year and end_year (inclusive).
+    Rows outside that range are left unchanged.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to modify.
+        col1 (str): Column to subtract from (minuend).
+        col2 (str): Column to subtract (subtrahend). Result = col1 - col2.
+        start_year (int): First year (inclusive) to apply the subtraction.
+        end_year (int): Last year (inclusive) to apply the subtraction.
+        result_column (str): Name of the column to store the result.
+        year_column (str): Name of the year column (default 'Year').
+        inplace (bool): Whether to modify the DataFrame in place (default True).
+        clip_negative_to_zero (bool): If True, any negative result is set to 0.
+        pass_col1_when_col2_nan (bool): If True, where col2 is NaN/NA the result
+                                        is set to col1.
+
+    Returns:
+        pd.DataFrame: The modified DataFrame.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("Input must be a pandas DataFrame")
+
+    # Check required columns exist
+    required = [col1, col2, year_column]
+    missing = [col for col in required if col not in df.columns]
+    if missing:
+        raise ValueError(f"Columns not found in DataFrame: {missing}")
+
+    if start_year > end_year:
+        raise ValueError(f"start_year ({start_year}) must be <= end_year ({end_year})")
+
+    # Work on a copy or inplace
+    if inplace:
+        target = df
+    else:
+        target = df.copy()
+
+    # Boolean mask for the year range
+    year_mask = (target[year_column] >= start_year) & (target[year_column] <= end_year)
+
+    if not year_mask.any():
+        # Nothing to do; return as-is
+        return target
+
+    # Compute the subtraction only for the selected rows
+    result = target.loc[year_mask, col1] - target.loc[year_mask, col2]
+
+    # Where col2 is NaN/NA, pass col1 through
+    if pass_col1_when_col2_nan:
+        result = result.where(
+            target.loc[year_mask, col2].notna(),
+            target.loc[year_mask, col1]
+        )
+
+    # Optionally clamp negatives to zero
+    if clip_negative_to_zero:
+        result = result.clip(lower=0)
+
+    # Ensure the result column exists (create with NaN if missing)
+    if result_column not in target.columns:
+        target[result_column] = pd.NA
+
+    # Write results only inside the year range; leave everything else untouched
+    target.loc[year_mask, result_column] = result
 
     return target
 

@@ -1,3 +1,14 @@
+# https://usbr.gov/lc/region/g4000/uses.html
+#
+# History and sources (from the page notes)
+# Upper Basin 1906–1970: Provided by the Colorado River Board of California.
+# Upper Basin 1971–1995: Bureau of Reclamation Revised Upper Colorado River Consumptive Uses and Losses Reports.
+# Upper Basin 1996–2000: Bureau of Reclamation Colorado River Consumptive Uses and Losses Report: 1996–2000.
+# Upper Basin 2001–2005: Provisional Consumptive Uses and Losses Report: 2001–2005.
+# (Related reports were historically linked at http://www.usbr.gov/uc/library/envdocs/reports/crs/crsul.html)
+# Lower Basin prior to 1914: Unavailable.
+# Lower Basin 1914–1963: Provided by individual users (agricultural districts, MWD, etc.).
+# Lower Basin after 1963: From Reclamation Article V Records (post-Arizona v. California decree accounting). These figures are not reduced for unmeasured return-flow credits.
 Year "Upper Basin" "Lower Basin" AZ CA NV Mexico
 1906 1157000      -      -      -      - 19482300
 1907 1399001      -      -      -      - 25503900

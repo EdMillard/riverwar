@@ -33,6 +33,7 @@ import pandas as pd
 from datetime import datetime
 import json
 from pathlib import Path
+from bots.ucrc import ucrc
 
 import matplotlib
 import os
@@ -43,6 +44,23 @@ os.environ['QT_SILENT'] = '1'
 
 _lake_pleasant:Optional[lake_pleasant.LakePleasant] = None
 _srp:SRP = SRP()
+
+def run_twice_daily_tasks():
+    """New function that runs twice a day."""
+    mt_tz = pytz.timezone("US/Mountain")
+    now_mt = datetime.now(mt_tz)
+    print(f"\n=== Twice-daily task started: {now_mt.strftime('%Y-%m-%d %I:%M %p')} MT ===")
+
+    # ---- Put your twice-daily work here ----
+    # Example: call the UCRC meeting notice checker
+    # from ucrc_meeting_notice import main as check_ucrc
+    # check_ucrc()
+    print("Running twice-daily tasks...")
+    # ----------------------------------------
+    ucrc()
+
+    print("✅ Twice-daily tasks completed.")
+
 
 def run_daily_tasks():
     global _lake_pleasant
@@ -167,22 +185,32 @@ def download_denverwater_reservoirs():
 def chronos():
     mt_tz = pytz.timezone("US/Mountain")
 
-    schedule_time = "07:00"  # 7:00 AM Mountain Time (auto handles MST/MDT)
+    daily_time = "07:00"          # existing once-a-day schedule
+    twice_morning = "07:00"       # twice-daily morning
+    twice_afternoon = "17:00"     # twice-daily afternoon (5 PM)
 
-    print("Daily Scheduler Started (Colorado Mountain Time)")
-    print(f"Tasks scheduled daily at {schedule_time} MT")
+    print("Scheduler Started (Colorado Mountain Time)")
+    print(f"Daily tasks scheduled at {daily_time} MT")
+    print(f"Twice-daily tasks scheduled at {twice_morning} and {twice_afternoon} MT")
     print(f"Current time: {datetime.now(mt_tz).strftime('%Y-%m-%d %I:%M %p %Z')}\n")
 
-    # Schedule the job - pytz automatically adjusts for DST
-    schedule.every().day.at(schedule_time).do(run_daily_tasks)
+    # Existing once-a-day job (unchanged)
+    schedule.every().day.at(daily_time).do(run_daily_tasks)
 
-    # Optional: Run immediately when the script starts (great for testing)
+    # New function — twice a day
+    schedule.every().day.at(twice_morning).do(run_twice_daily_tasks)
+    schedule.every().day.at(twice_afternoon).do(run_twice_daily_tasks)
+
+    # Run everything immediately on startup
+    print("Running all tasks once at startup...")
+    run_twice_daily_tasks()
     run_daily_tasks()
+    print("Startup run complete.\n")
 
     # Keep script alive
     while True:
         schedule.run_pending()
-        time.sleep(60)  # Check every minute
+        time.sleep(60)
 
 if __name__ == "__main__":
     chronos()

@@ -59,6 +59,7 @@ class Navajo(Reservoir):
         self.turbine_intake_af = 0
 
         self.special_levels = [
+            (6009.7, 778_106, "Sep 16", "above"),
             (self.power_head_min_feet, self.power_head_min_af, "Pump"),
         ]
 

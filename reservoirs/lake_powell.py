@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from pathlib import Path
 import copy
-from datetime import date
+from datetime import date, datetime
 from api import df_utils
 from reservoirs.reservoir import Reservoir
 from source.usgs_gage import USGSGage
@@ -29,8 +29,9 @@ import colorado.ub as ub
 import colorado.lb as lb
 import colorado.allb as all_b
 from sheet import sheet
-from typing import List, Optional
+from typing import List, Optional, Union
 import pandas as pd
+import numpy as np
 from scipy.interpolate import interp1d
 import warnings
 
@@ -78,12 +79,15 @@ class LakePowell(Reservoir):
         self.special_levels = [
             (self.power_head_target_feet, self.power_head_target_af, "Critical"),
             (self.power_head_min_feet, self.power_head_min_af, "Intakes"),
-            (self.dead_pool_feet, self.dead_pool_af, "Dead\nPool"),
+            (3516.62, 5_074_900, "Sep 15", "above")
+            # RISE doesn't include dead pool
+            # (self.dead_pool_feet, self.dead_pool_af, "Dead\nPool"),
         ]
 
         self.critical_elevations_feet = [("Safe Power Head", self.power_head_min_feet, self.power_head_min_af, Reservoir.non_power_pool_color),
                                          ("Min Power Head", self.power_head_target_feet, self.power_head_target_af, Reservoir.low_power_pool_color),
-                                         ("Dead Pool", self.dead_pool_feet, self.dead_pool_af, Reservoir.dead_pool_color)]
+                                         # ("Dead Pool", self.dead_pool_feet, self.dead_pool_af, Reservoir.dead_pool_color)
+                                         ]
 
     def load_data(self, report_path:Path, start_date:date, current_date:date, end_date:date):
         self.load_date(report_path, start_date, current_date, end_date)
@@ -106,6 +110,34 @@ class LakePowell(Reservoir):
         self.usgs_load_daily('09333500', 'Dirty Devil Near Hanksville, UT')
         self.usgs_load_daily('09315000', 'Green River Near Green River, UT')
         self.usgs_load_daily('09379500', 'San Juan River Near Bluff, UT')
+
+        if 1:
+            NGVD_1929 = "62614"
+            NAVD_1988 = "62615"
+            daily_cfs = self.usgs_load_daily('09379900', 'Powell Elevation', start_year=2026,
+                                 end_year=2027,
+                                 parameterCd=NAVD_1988, do_instantaneous=True)
+
+            val = daily_cfs[-1]
+            self.elevation_feet = val[1]
+            self.active_capacity_af = self.af_for_elevation(val[1])
+
+            df = df_utils.store_value_closest_day(
+                self.df_daily,
+                column="Powell WY Active",
+                value=self.active_capacity_af,
+                target_date=val[0],  # or date, datetime, Timestamp, etc.
+            )
+
+            val = daily_cfs[-2]
+            af = self.af_for_elevation(val[1])
+            df = df_utils.store_value_closest_day(
+                self.df_daily,
+                column="Powell WY Active",
+                value=af,
+                target_date=val[0],  # or date, datetime, Timestamp, etc.
+            )
+            pass
 
         # 24 Month
         #

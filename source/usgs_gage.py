@@ -61,7 +61,6 @@ class USGSGage(object):
                  year_interval=1, color='royalblue'):
         self.site = site
         self.site_name:str = ''
-        self.do_instantaneous_updates:bool = False
 
         if start_date:
             self.start_date = start_date.strip()
@@ -120,7 +119,8 @@ class USGSGage(object):
     def monthly_af(self, start_year=0, end_year=0):
         return daily_cfs_to_monthly_af(self.daily_discharge(update=update_gages), start_year, end_year)
 
-    def daily_discharge(self, water_year_info=None, update=update_gages, alias='', parameterCd='00060', statCd='00003'):
+    def daily_discharge(self, water_year_info=None, update=update_gages, alias='',
+                        parameterCd='00060', statCd='00003', do_instantaneous=False):
         if water_year_info is not None:
             self.start_date = water_year_info.start_date
             self.end_date = water_year_info.end_date
@@ -144,12 +144,15 @@ class USGSGage(object):
             # Let the cache decide; we will only force if truly stale by the new rule
             force = False
 
+        suffix = ""
+        if do_instantaneous:
+            suffix = parameterCd
         data = cache.load_or_fetch(
             key=self.site,
             water_year_info=water_year_info,
             fetch_fn=fetch_fn,
             parse_fn=parse_fn,
-            suffix="",
+            suffix=suffix,
             extension='.csv',
             force=force,
             move_on_update=True,
@@ -157,7 +160,7 @@ class USGSGage(object):
         )
 
         # Always attempt instantaneous for current water year, independent of daily cache
-        if self.do_instantaneous_updates and (water_year_info is not None and
+        if do_instantaneous and (water_year_info is not None and
                 water_year_info.is_current_water_year and
                 data is not None and len(data)):
             latest = self.request_instantaneous_value_discharge(parameterCd=parameterCd)

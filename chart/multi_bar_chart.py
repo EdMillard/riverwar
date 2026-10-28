@@ -351,7 +351,7 @@ class MultiBarChart(Chart):
                         if series_obj is None or series_obj.edgecolor is None:
                             bar_kwargs['edgecolor'] = hatch_color
 
-                    ax.bar(bar_positions[i], height, **bar_kwargs)
+                    ax.bar(bar_positions[i], height, **bar_kwargs, antialiased=False)
 
                     bottom += height
                     max_height = max(max_height, bottom)
@@ -516,9 +516,12 @@ class MultiBarChart(Chart):
             height_inch: Optional[float] = None,
             dpi: int = 145,
     ):
+        target_pixel_width = 1200  # whatever you liked before
         if width_inch is not None:
+            width_inch = target_pixel_width / dpi
             self.width_inch = width_inch
         if height_inch is not None:
+            height_inch = target_pixel_width / dpi
             self.height_inch = height_inch
 
         # Option A: just pass a smaller figsize when you want higher dpi

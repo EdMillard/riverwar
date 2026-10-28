@@ -64,8 +64,11 @@ class LakeMead(Reservoir):
         self.full_af = 27620294
 
         # Critical
-        self.power_high_head_target_feet = 1035
-        self.power_high_head_target_af = 6637508
+        # self.power_high_head_target_feet = 1035
+        # self.power_high_head_target_af = 6637508
+
+        self.power_high_head_target_feet = 1018
+        self.power_high_head_target_af = 5_369_639
 
         self.mead_consult_feet = 1010
         self.mead_consult_af = 5_054_082
@@ -90,7 +93,7 @@ class LakeMead(Reservoir):
             (self.sweet_spot_lower_feet, self.sweet_spot_lower_af, ""),
             (self.power_high_head_target_feet, self.power_high_head_target_af, "Turbines", "above"),
             # (1025, 5_981_122, "Level 3"),
-            (self.mead_consult_feet, self.mead_consult_af, "Consult", "above"),
+            (self.mead_consult_feet, self.mead_consult_af, "Consult", ""),
             (self.power_head_target_feet, self.power_head_target_af, "Critical", "above"),
             (self.power_head_min_feet, self.power_head_min_af, "Intakes"),
         ]
