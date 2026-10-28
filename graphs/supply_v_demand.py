@@ -210,8 +210,13 @@ class Demand1906To1971(DemandChartFrame):
 
         # Enable draggable lines only on charts that support them
         for chart in self.charts:
-            if chart == self.ub_demand_chart or chart == self.lb_demand_chart:
+            totals = []
+            if chart == self.ub_demand_chart:
                 bar_values_split_label = True
+                totals = ["Evap"]
+            elif chart == self.lb_demand_chart:
+                bar_values_split_label = True
+                totals = ["Mexico Treaty"]
             else:
                 bar_values_split_label = False
 
@@ -225,7 +230,8 @@ class Demand1906To1971(DemandChartFrame):
                     show_year_label=show_label,
                     show_bar_values=show_bar_values,
                     bar_values_split_label=bar_values_split_label,
-                    dual_side_lines=True
+                    dual_side_lines=True,
+                    top_total_columns=totals,
                 )
 
     def load_charts(self):

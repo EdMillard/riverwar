@@ -836,7 +836,8 @@ class MultiBarChart(Chart):
                                bar_values_split_label=False,
                                bar_value_bgcolor='black',
                                bar_value_bg_alpha=0.85,
-                               dual_side_lines: bool = False):
+                               dual_side_lines: bool = False,
+                               top_total_columns: Optional[List[str]] = None):
         """
         ...
         If show_bar_values=True, labels are drawn in the middle of each stacked
@@ -876,6 +877,8 @@ class MultiBarChart(Chart):
         self._show_bar_values = show_bar_values
         self._dual_side_lines = dual_side_lines
         self._side_lines = []
+        self._top_total_columns = set(top_total_columns or [])
+        self._top_total_texts = []
 
         if dual_side_lines:
             # Keep the center line for picking/interaction but make it invisible
@@ -888,20 +891,20 @@ class MultiBarChart(Chart):
                 )
                 self._side_lines.append(line)
 
-        if self._show_year_label:
-            self._update_year_label(x0)
-        if self._show_bar_values:
-            self._update_bar_value_labels(x0)
+            if self._show_year_label:
+                self._update_year_label(x0)
+            if self._show_bar_values:
+                self._update_bar_value_labels(x0)
 
-        canvas = self.fig.canvas
-        self._vline_cids = [
-            canvas.mpl_connect('button_press_event', self._on_vline_press),
-            canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
-            canvas.mpl_connect('button_release_event', self._on_vline_release),
-            canvas.mpl_connect('scroll_event', self._on_vline_scroll),
-            canvas.mpl_connect('key_press_event', self._on_vline_key),
-        ]
-        self.fig.canvas.draw_idle()
+            canvas = self.fig.canvas
+            self._vline_cids = [
+                canvas.mpl_connect('button_press_event', self._on_vline_press),
+                canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
+                canvas.mpl_connect('button_release_event', self._on_vline_release),
+                canvas.mpl_connect('scroll_event', self._on_vline_scroll),
+                canvas.mpl_connect('key_press_event', self._on_vline_key),
+            ]
+            self.fig.canvas.draw_idle()
 
     def _index_to_year(self, idx):
         """Reverse lookup: integer index → year."""
@@ -1034,6 +1037,86 @@ class MultiBarChart(Chart):
         self._vline_dragging = False
         self.fig.canvas.draw_idle()
 
+    def enable_draggable_vline(self, callback=None, color='#d62728', linewidth=1.6,
+                               alpha=0.9, initial_year=None,
+                               show_year_label=False, year_label_color=None,
+                               year_label_fontsize=9,
+                               show_bar_values=False, bar_value_color='white',
+                               bar_value_fontsize=7.5,
+                               bar_values_split_label=False,
+                               bar_value_bgcolor='black',
+                               bar_value_bg_alpha=0.85,
+                               dual_side_lines: bool = False,
+                               top_total_columns: Optional[List[str]] = None):
+        """
+        ...
+        If show_bar_values=True, labels are drawn in the middle of each stacked
+        segment for the year the line is on (value of that segment only).
+
+        If dual_side_lines=True, the single center line is hidden and two
+        vertical lines are drawn at the outer left and right edges of the
+        annotation bubbles.
+        """
+        if self.ax is None or self.year_to_idx is None:
+            raise RuntimeError("Call create_figure() before enabling the draggable line")
+
+        # Starting position
+        if initial_year is not None and initial_year in self.year_to_idx:
+            x0 = float(self.year_to_idx[initial_year])
+        else:
+            xlim = self.ax.get_xlim()
+            x0 = float(round((xlim[0] + xlim[1]) / 2))
+
+        self._vline = self.ax.axvline(
+            x0, color=color, linewidth=linewidth, alpha=alpha,
+            linestyle='-', zorder=20, picker=8
+        )
+        self._vline_callback = callback
+        self._vline_dragging = False
+        self._show_year_label = show_year_label
+        self._year_label_color = year_label_color or color
+        self._year_label_fontsize = year_label_fontsize
+        self._year_label = None
+
+        self._bar_value_color = bar_value_color  # default white
+        self._bar_value_fontsize = bar_value_fontsize
+        self._bar_value_texts = []
+        self._bar_values_split_label = bar_values_split_label
+        self._bar_value_bgcolor = bar_value_bgcolor  # default black
+        self._bar_value_bg_alpha = bar_value_bg_alpha
+        self._show_bar_values = show_bar_values
+        self._dual_side_lines = dual_side_lines
+        self._side_lines = []
+        self._top_total_columns = set(top_total_columns or [])
+        self._top_total_texts = []
+
+        if dual_side_lines:
+            # Keep the center line for picking/interaction but make it invisible
+            self._vline.set_visible(False)
+            # Create two side lines (positioned later)
+            for _ in range(2):
+                line = self.ax.axvline(
+                    x0, color=color, linewidth=linewidth, alpha=alpha,
+                    linestyle='-', zorder=19, visible=False
+                )
+                self._side_lines.append(line)
+
+        # These must run regardless of dual_side_lines
+        if self._show_year_label:
+            self._update_year_label(x0)
+        if self._show_bar_values:
+            self._update_bar_value_labels(x0)
+
+        canvas = self.fig.canvas
+        self._vline_cids = [
+            canvas.mpl_connect('button_press_event', self._on_vline_press),
+            canvas.mpl_connect('motion_notify_event', self._on_vline_motion),
+            canvas.mpl_connect('button_release_event', self._on_vline_release),
+            canvas.mpl_connect('scroll_event', self._on_vline_scroll),
+            canvas.mpl_connect('key_press_event', self._on_vline_key),
+        ]
+        self.fig.canvas.draw_idle()
+
     def _update_bar_value_labels(self, idx):
         """Place labels for the year under the vline.
         Bubbles sit completely outside the bars.
@@ -1043,6 +1126,9 @@ class MultiBarChart(Chart):
         When dual_side_lines is enabled, places two vertical lines at the
         inner edges of the annotation bubbles (right edge of left bubbles,
         left edge of right bubbles).
+
+        When top_total_columns is set, places a cumulative total (that segment
+        plus everything stacked under it) at the top of each matching series.
         """
         if not self._show_bar_values:
             return
@@ -1050,6 +1136,8 @@ class MultiBarChart(Chart):
         year = self._index_to_year(int(idx))
         if year is None:
             for t in self._bar_value_texts:
+                t.set_visible(False)
+            for t in getattr(self, '_top_total_texts', []):
                 t.set_visible(False)
             return
 
@@ -1059,8 +1147,8 @@ class MultiBarChart(Chart):
 
         group_width = 0.78 / n_groups
         # Left side pulled a bit further off the bar
-        label_gap = 0.4
-        value_gap = 0.4
+        label_gap = 0.22
+        value_gap = 0.35
 
         y_bottom, y_top = self.ax.get_ylim()
         font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
@@ -1092,7 +1180,7 @@ class MultiBarChart(Chart):
             if g > r + 40 and g > b + 40 and luminance < 160:
                 return True
 
-            return luminance < 140  # raised from 110
+            return luminance < 140
 
         for g_idx, group in enumerate(self.groups):
             yearly = MultiBarChart._get_yearly_stacked_data(group.series)
@@ -1140,7 +1228,7 @@ class MultiBarChart(Chart):
 
                 bottom += height
 
-        # Reuse / create Text artists
+        # Reuse / create Text artists for side bubbles
         for i, (x, y, txt, ha, text_color, bgcolor) in enumerate(needed):
             if i < len(self._bar_value_texts):
                 text = self._bar_value_texts[i]
@@ -1178,6 +1266,84 @@ class MultiBarChart(Chart):
         for j in range(len(needed), len(self._bar_value_texts)):
             self._bar_value_texts[j].set_visible(False)
 
+        # --- Cumulative top totals for selected columns ---
+        if getattr(self, '_top_total_columns', None):
+            for t in getattr(self, '_top_total_texts', []):
+                t.set_visible(False)
+
+            top_needed = []  # (x, y, text)
+
+            for g_idx, group in enumerate(self.groups):
+                # Build a year → value map for every series in this group
+                series_values = []
+                for s in group.series:
+                    val = 0.0
+                    if not s.df.empty and 'Year' in s.df.columns and s.col in s.df.columns:
+                        match = s.df[s.df['Year'] == year]
+                        if not match.empty:
+                            val = pd.to_numeric(match[s.col].iloc[0], errors='coerce')
+                            if pd.isna(val):
+                                val = 0.0
+                    series_values.append((s.col, val))
+
+                if not any(v > 0 for _, v in series_values):
+                    continue
+
+                bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
+                bottom = 0.0
+                cumulative = 0.0
+
+                for col_name, raw_val in series_values:
+                    height = raw_val / self.y_divisor
+                    cumulative += height
+
+                    print(f"[top-total] year={year} group={group.label!r} "
+                          f"col={col_name!r} height={height:.4f} cumulative={cumulative:.4f} "
+                          f"in_list={col_name in self._top_total_columns}")
+
+                    if col_name in self._top_total_columns and height > 0:
+                        top_y = bottom + height
+                        label_y = top_y + (y_top - y_bottom) * 0.025
+                        total_txt = (f"{cumulative:.3f}" if abs(cumulative) < 10 else f"{cumulative:.1f}")
+                        print(f"  --> placing '{total_txt}' at x={bar_center:.3f} y={label_y:.3f}")
+                        top_needed.append((bar_center, label_y, total_txt))
+
+                    bottom += max(height, 0.0)
+
+            if not hasattr(self, '_top_total_texts'):
+                self._top_total_texts = []
+
+            for i, (x, y, txt) in enumerate(top_needed):
+                if i < len(self._top_total_texts):
+                    text = self._top_total_texts[i]
+                    text.set_position((x, y))
+                    text.set_text(txt)
+                    text.set_visible(True)
+                else:
+                    text = self.ax.text(
+                        x, y, txt,
+                        ha='center', va='bottom',
+                        fontsize=self._bar_value_fontsize + 0.5,
+                        color='black',
+                        fontweight='bold',
+                        zorder=30,
+                        clip_on=False,
+                        bbox=dict(
+                            boxstyle="round,pad=0.2",
+                            facecolor="white",
+                            alpha=0.95,
+                            edgecolor="#333333",
+                            linewidth=0.8,
+                        ),
+                    )
+                    self._top_total_texts.append(text)
+
+            for j in range(len(top_needed), len(self._top_total_texts)):
+                self._top_total_texts[j].set_visible(False)
+        else:
+            for t in getattr(self, '_top_total_texts', []):
+                t.set_visible(False)
+
         # --- Dual side lines: place them at the INNER edges of the bubbles ---
         # Left line  = right edge of left (label) bubbles
         # Right line = left edge of right (value) bubbles
@@ -1207,8 +1373,8 @@ class MultiBarChart(Chart):
 
             if left_inner > float('-inf') and right_inner < float('inf'):
                 # Left line gets a little extra gap so it sits further off the bar
-                left_pad = 0.015
-                right_pad = 0.010
+                left_pad = 0.025
+                right_pad = 0.015
                 self._side_lines[0].set_xdata([left_inner + left_pad, left_inner + left_pad])
                 self._side_lines[0].set_visible(True)
                 self._side_lines[1].set_xdata([right_inner - right_pad, right_inner - right_pad])
