@@ -217,14 +217,15 @@ class Demand1906To1971(DemandChartFrame):
 
             if hasattr(chart, 'enable_draggable_vline'):
                 show_bar_values = True,
-                show_label = (chart is self.natural_flow_chart)
+                show_label = (chart is self.natural_flow_chart) or (chart is self.lb_demand_chart)
                 chart.enable_draggable_vline(
                     callback=self.on_line_moved,
-                    color='black',
+                    color='#202020',
                     initial_year=1922,
                     show_year_label=show_label,
                     show_bar_values=show_bar_values,
-                    bar_values_split_label=bar_values_split_label
+                    bar_values_split_label=bar_values_split_label,
+                    dual_side_lines=True
                 )
 
     def load_charts(self):
@@ -403,10 +404,10 @@ class Demand1906To1971(DemandChartFrame):
                 (df_cu_1906_2024, "CA", Colors.CA),
                 (df_cu_1906_2024, "Alamo", Colors.CA_ALAMO ),
                 (df_cu_1906_2024, "Volcano", Colors.CA_VOLCANO),
-                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL),
+                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
                 (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, Colors.CA_MWD, {'label': 'MWD'}),
                 (df_cu_1906_2024, "Palo Verde", Colors.CA_PALO_VERDE),
-                (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4),
+                (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4, {'label': 'CA Misc'}),
 
                 # NV
                 (df_cu_1906_2024, "NV", Colors.NV1),
@@ -415,7 +416,7 @@ class Demand1906To1971(DemandChartFrame):
 
                 # AZ
                 (df_cu_1906_2024, "AZ", Colors.AZ),
-                (df_lb_cul, lb.AZ_MAINSTEM, Colors.AZ),
+                (df_lb_cul, lb.AZ_MAINSTEM, Colors.AZ, {'label': 'AZ Misc'}),
                 (df_lb_cul, lb.AZ_CRIT_CU, Colors.AZ, {'label': 'CRIT'}),
                 (df_lb_cul, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton'}),
                 (df_lb_cul, lb.AZ_CAP, Colors.AZ1, {'label': 'CAP'}),
@@ -579,6 +580,7 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1909, "Gunnison", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1910, "SRP", offset_lines=0, color=Colors.LB)
             self._annotate_bottom(ax, 1922, "Compact")
+            self._annotate_bottom(ax, 1923, "PVID", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1915, "Grand\nValley", color=Colors.UB)
             self._annotate_bottom(ax, 1929, "BCPA", offset_lines=0)
             self._annotate_bottom(ax, 1933, "Depression", offset_lines=1)
@@ -590,7 +592,7 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1947, "Coachella", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1947, "Northern", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1951, "Wellton", color=Colors.LB)
-            self._annotate_bottom(ax, 1959, "MWD\u2191", offset_lines=1, color=Colors.LB)
+            self._annotate_bottom(ax, 1959, "MWD\u2191", offset_lines=2, color=Colors.LB)
             self._annotate_bottom(ax, 1964, "Roberts", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1964, "AZ v CA")
             self._annotate_bottom(ax, 1972, "Fryark", color=Colors.UB)

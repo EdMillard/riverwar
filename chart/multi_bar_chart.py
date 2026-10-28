@@ -831,13 +831,20 @@ class MultiBarChart(Chart):
                                alpha=0.9, initial_year=None,
                                show_year_label=False, year_label_color=None,
                                year_label_fontsize=9,
-                               show_bar_values=False, bar_value_color='black',
+                               show_bar_values=False, bar_value_color='white',
                                bar_value_fontsize=7.5,
-                               bar_values_split_label=False):
+                               bar_values_split_label=False,
+                               bar_value_bgcolor='black',
+                               bar_value_bg_alpha=0.85,
+                               dual_side_lines: bool = False):
         """
         ...
         If show_bar_values=True, labels are drawn in the middle of each stacked
         segment for the year the line is on (value of that segment only).
+
+        If dual_side_lines=True, the single center line is hidden and two
+        vertical lines are drawn at the outer left and right edges of the
+        annotation bubbles.
         """
         if self.ax is None or self.year_to_idx is None:
             raise RuntimeError("Call create_figure() before enabling the draggable line")
@@ -860,11 +867,26 @@ class MultiBarChart(Chart):
         self._year_label_fontsize = year_label_fontsize
         self._year_label = None
 
-        self._show_bar_values = show_bar_values
-        self._bar_value_color = bar_value_color
+        self._bar_value_color = bar_value_color  # default white
         self._bar_value_fontsize = bar_value_fontsize
-        self._bar_value_texts = []  # list of Text artists
+        self._bar_value_texts = []
         self._bar_values_split_label = bar_values_split_label
+        self._bar_value_bgcolor = bar_value_bgcolor  # default black
+        self._bar_value_bg_alpha = bar_value_bg_alpha
+        self._show_bar_values = show_bar_values
+        self._dual_side_lines = dual_side_lines
+        self._side_lines = []
+
+        if dual_side_lines:
+            # Keep the center line for picking/interaction but make it invisible
+            self._vline.set_visible(False)
+            # Create two side lines (positioned later)
+            for _ in range(2):
+                line = self.ax.axvline(
+                    x0, color=color, linewidth=linewidth, alpha=alpha,
+                    linestyle='-', zorder=19, visible=False
+                )
+                self._side_lines.append(line)
 
         if self._show_year_label:
             self._update_year_label(x0)
@@ -1004,19 +1026,29 @@ class MultiBarChart(Chart):
             self._vline_cids = []
         if hasattr(self, '_vline') and self._vline in self.ax.lines:
             self._vline.remove()
+        if hasattr(self, '_side_lines'):
+            for line in self._side_lines:
+                if line in self.ax.lines:
+                    line.remove()
+            self._side_lines = []
         self._vline_dragging = False
         self.fig.canvas.draw_idle()
 
     def _update_bar_value_labels(self, idx):
         """Place labels for the year under the vline.
-        Reuses existing Text artists when possible for performance.
+        Bubbles sit completely outside the bars.
+        Values: always black background + white text.
+        Labels: adaptive background biased strongly toward black.
+
+        When dual_side_lines is enabled, places two vertical lines at the
+        inner edges of the annotation bubbles (right edge of left bubbles,
+        left edge of right bubbles).
         """
         if not self._show_bar_values:
             return
 
         year = self._index_to_year(int(idx))
         if year is None:
-            # Hide all existing labels
             for t in self._bar_value_texts:
                 t.set_visible(False)
             return
@@ -1026,17 +1058,41 @@ class MultiBarChart(Chart):
             return
 
         group_width = 0.78 / n_groups
-        offset = 0.18
+        # Left side pulled a bit further off the bar
+        label_gap = 0.4
+        value_gap = 0.4
 
-        # Visible y-range (data coordinates)
         y_bottom, y_top = self.ax.get_ylim()
-
-        # Position just below the year label (or the same spot if year label is off)
         font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
         special_y = y_top - (y_top - y_bottom) * (0.04 + font_height_frac * 1.6)
 
-        # Collect the labels we need this frame
-        needed = []  # list of (x, y, text, ha)
+        needed = []  # (x, y, text, ha, text_color, bgcolor)
+
+        def is_dark(hex_color: str) -> bool:
+            """Return True for colors that need a light background for readability.
+            More sensitive to dark greens than the plain luminance threshold.
+            """
+            if not hex_color or not isinstance(hex_color, str):
+                return False
+            h = hex_color.lstrip('#')
+            if len(h) == 3:
+                h = ''.join(c * 2 for c in h)
+            if len(h) != 6:
+                return False
+            try:
+                r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+            except ValueError:
+                return False
+
+            # Standard relative luminance
+            luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+            # Extra penalty for greens: if the green channel dominates and overall
+            # luminance is still modest, treat it as dark.
+            if g > r + 40 and g > b + 40 and luminance < 160:
+                return True
+
+            return luminance < 140  # raised from 110
 
         for g_idx, group in enumerate(self.groups):
             yearly = MultiBarChart._get_yearly_stacked_data(group.series)
@@ -1044,24 +1100,10 @@ class MultiBarChart(Chart):
             if not segments:
                 continue
 
-            bar_x = idx - 0.4 + (g_idx + 0.5) * group_width
-
-            if self._bar_values_split_label:
-                # Label on the left (right-justified), value on the right (left-justified)
-                label_x_left = idx - offset
-                label_x_right = idx + offset
-                ha_left = 'right'
-                ha_right = 'left'
-            elif n_groups == 2:
-                if g_idx == 0:
-                    label_x = idx - offset
-                    ha = 'right'
-                else:
-                    label_x = idx + offset
-                    ha = 'left'
-            else:
-                label_x = bar_x
-                ha = 'center'
+            bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
+            bar_half = (group_width - 0.04) / 2.0
+            bar_left = bar_center - bar_half
+            bar_right = bar_center + bar_half
 
             bottom = 0.0
             for val, label, color, overrides in segments:
@@ -1071,8 +1113,6 @@ class MultiBarChart(Chart):
                     continue
 
                 top = bottom + height
-
-                # Special case: bottom visible, top clipped above the axes
                 if bottom < y_top and top > y_top:
                     mid_y = special_y
                 else:
@@ -1084,45 +1124,101 @@ class MultiBarChart(Chart):
                        if abs(val / self.y_divisor) < 10
                        else f"{val / self.y_divisor:.1f}")
 
-                if self._bar_values_split_label:
-                    # Label left, value right
-                    needed.append((label_x_left, mid_y, label, ha_left))
-                    needed.append((label_x_right, mid_y, txt, ha_right))
-                else:
-                    needed.append((label_x, mid_y, txt, ha))
+                dark = is_dark(color)
+
+                # Label: adaptive background (now biased strongly toward black)
+                # lighter bar → black bg; only quite dark bars → light gray bg
+                label_bg = '#222222' if not dark else '#e0e0e0'
+
+                # Label bubble: right-justified, left of the bar
+                label_x = bar_left - label_gap
+                needed.append((label_x, mid_y, label, 'right', color, label_bg))
+
+                # Value bubble: always black background + white text, further right
+                value_x = bar_right + value_gap
+                needed.append((value_x, mid_y, txt, 'left', '#ffffff', '#000000'))
 
                 bottom += height
 
-        # Reuse existing Text artists; create only if we need more
-        for i, (x, y, txt, ha) in enumerate(needed):
+        # Reuse / create Text artists
+        for i, (x, y, txt, ha, text_color, bgcolor) in enumerate(needed):
             if i < len(self._bar_value_texts):
                 text = self._bar_value_texts[i]
                 text.set_position((x, y))
                 text.set_text(txt)
                 text.set_ha(ha)
+                text.set_color(text_color)
                 text.set_visible(True)
+                text.set_bbox(dict(
+                    boxstyle="round,pad=0.18",
+                    facecolor=bgcolor,
+                    alpha=0.92,
+                    edgecolor="none",
+                    linewidth=0,
+                ))
             else:
                 text = self.ax.text(
                     x, y, txt,
                     ha=ha, va='center',
                     fontsize=self._bar_value_fontsize,
-                    color=self._bar_value_color,
+                    color=text_color,
                     fontweight='bold',
                     zorder=25,
                     clip_on=True,
                     bbox=dict(
-                        boxstyle="round,pad=0.02",  # was 0.18
-                        facecolor="white",
-                        alpha=0.8,
+                        boxstyle="round,pad=0.18",
+                        facecolor=bgcolor,
+                        alpha=0.92,
                         edgecolor="none",
                         linewidth=0,
                     ),
                 )
                 self._bar_value_texts.append(text)
 
-        # Hide any leftover labels we no longer need
         for j in range(len(needed), len(self._bar_value_texts)):
             self._bar_value_texts[j].set_visible(False)
+
+        # --- Dual side lines: place them at the INNER edges of the bubbles ---
+        # Left line  = right edge of left (label) bubbles
+        # Right line = left edge of right (value) bubbles
+        if getattr(self, '_dual_side_lines', False) and self._side_lines and self._bar_value_texts:
+            # Force a draw so get_window_extent() is valid
+            self.fig.canvas.draw()
+
+            renderer = self.fig.canvas.get_renderer()
+            left_inner = float('-inf')  # right edge of label bubbles
+            right_inner = float('inf')  # left edge of value bubbles
+
+            for text in self._bar_value_texts:
+                if not text.get_visible():
+                    continue
+                bbox = text.get_window_extent(renderer=renderer)
+                inv = self.ax.transData.inverted()
+                x_left_data = inv.transform((bbox.x0, 0))[0]
+                x_right_data = inv.transform((bbox.x1, 0))[0]
+
+                ha = text.get_ha()
+                if ha == 'right':
+                    # Left (label) bubble → we want its right edge
+                    left_inner = max(left_inner, x_right_data)
+                elif ha == 'left':
+                    # Right (value) bubble → we want its left edge
+                    right_inner = min(right_inner, x_left_data)
+
+            if left_inner > float('-inf') and right_inner < float('inf'):
+                # Left line gets a little extra gap so it sits further off the bar
+                left_pad = 0.015
+                right_pad = 0.010
+                self._side_lines[0].set_xdata([left_inner + left_pad, left_inner + left_pad])
+                self._side_lines[0].set_visible(True)
+                self._side_lines[1].set_xdata([right_inner - right_pad, right_inner - right_pad])
+                self._side_lines[1].set_visible(True)
+            else:
+                for line in self._side_lines:
+                    line.set_visible(False)
+        elif getattr(self, '_side_lines', None):
+            for line in self._side_lines:
+                line.set_visible(False)
 
     def _update_year_label(self, idx):
         """Create or move the year label centered on the vline, just below the top."""
