@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 # Data Sources
-# I started from:
+#
 # USBR Colorado River Uses 1906-2006
 #    https://usbr.gov/lc/region/g4000/uses.html
 #
@@ -49,15 +49,27 @@ SOFTWARE.
 #   Summary of Records of Surface Waters at Base Stations in Colorado River Basin 1891-1938
 #   https://pubs.usgs.gov/wsp/0918/report.pdf
 #
-# Colorado River Water Supply Its Magnitude and  Distribution 1969
+# USGS Colorado River Water Supply Its Magnitude and  Distribution 1969
 #   https://pubs.usgs.gov/pp/0486d/report.pdf
 #
-# Surface waters 1945
+# USGS Surface waters 1945
 #   https://pubs.usgs.gov/wsp/1039/report.pdf
 #
-# Surface waters 1949
+# USGS Surface waters 1949
 #   https://pubs.usgs.gov/wsp/1149/report.pdf
 #
+# USGS Compilation of Records of Surface Waters of the United States, October 1950 to September 1960
+#   https://pubs.usgs.gov/wsp/1733/report.pdf
+#
+# USGS Compilation of Records of Surface Waters of the United States 1890-1950
+#   https://pubs.usgs.gov/wsp/1313/report.pdf
+
+# Coachella
+# https://www.cvwd.org/DocumentCenter/View/1193/Final-Coachella-Valley-Water-Management-Plan--September-2002--PDF
+#
+# Statements to L Ward Bannister
+#  https://www.varuna.io/LOTR/1935/Bannister_Report_1935.pdf
+
 # My Lower Colorado Annual Report digitization 1964-2021 (Im update the files I need for 2022-2025)
 # This gets me LB individual users and through 2025 (no LB tributaries)
 # https://github.com/EdMillard/riverwar/tree/main/data/USBR_Reports
@@ -201,7 +213,7 @@ class Demand1906To1971(DemandChartFrame):
         self._syncing_lines = False  # prevent re-entrancy
 
         super().__init__(notebook_frame, demand,
-                         name='Demand', start_year=1904, end_year=2026, version=0.5)
+                         name='Demand', start_year=1904, end_year=2025, version=0.5)
         self.top_axis_annotations()
         if self.ub_demand_chart is not None:
             self.ub_demand_chart.set_custom_legend([("Upper Basin", Colors.UB)])
@@ -265,6 +277,9 @@ class Demand1906To1971(DemandChartFrame):
         df_volcano = sheet.read_csv('data/Colorado_River/volcamo_lake_1916_1921.csv', sep=',')
         volcano_column_map = { "Water_Year_Runoff_AF": "Volcano" }
         df_utils.copy_columns_by_key(df_volcano, self.df, volcano_column_map, overwrite=True)
+
+        sheet.usgs_annuals(self.df, '09523000', 1940, self. end_year, title="All American USGS",divisor=1) # 1960 is partial
+        # sheet.usgs_annuals(self.df, '09527590', 1940, self. end_year, title="Coachella USGS",divisor=1) # 1960 is partial
 
         # Delta early years is Yume Gage - ALamo - Volcano - Small Yuma diversion
         #
@@ -555,20 +570,27 @@ class Demand1906To1971(DemandChartFrame):
     def bottom_axis_annotations(self):
         if self.lb_demand_chart is not None:
             ax = self.lb_demand_chart.ax
-            self._annotate_bottom(ax, 1906, "IID", offset_lines=0, color=Colors.LB)
+            self._annotate_bottom(ax, 1882, "GVIC", offset_lines=-1, color=Colors.UB) # Water rights 1882, formed 1894
+            self._annotate_bottom(ax, 1885, "Montezuma", offset_lines=0, color=Colors.UB) # 1885
+            self._annotate_bottom(ax, 1882, "Uncompaghre", offset_lines=1, color=Colors.UB) # 1882
+            self._annotate_bottom(ax, 1901, "Alamo", offset_lines=2, color=Colors.LB) # California Development Company (CDC) 1896
+            # self._annotate_bottom(ax, 1902, "UVWUA", offset_lines=0, color=Colors.UB)
+
+            # self._annotate_bottom(ax, 1906, "Alamo Fixed", offset_lines=0, color=Colors.LB)
             self._annotate_bottom(ax, 1908, "Palo Verde", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1909, "Gunnison", offset_lines=2, color=Colors.UB)
+            self._annotate_bottom(ax, 1911, "IID", offset_lines=-1, color=Colors.LB)
             self._annotate_bottom(ax, 1910, "SRP", offset_lines=0, color=Colors.LB)
             self._annotate_bottom(ax, 1922, "Compact")
             self._annotate_bottom(ax, 1923, "PVID", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1915, "Grand\nValley", color=Colors.UB)
             self._annotate_bottom(ax, 1929, "BCPA", offset_lines=0)
-            self._annotate_bottom(ax, 1933, "Depression", offset_lines=1)
-            self._annotate_bottom(ax, 1931, "AZ v CA", offset_lines=2)
-            self._annotate_bottom(ax, 1936, "Moffat", offset_lines=2, color=Colors.UB)
+            self._annotate_bottom(ax, 1931, "AZ v CA", offset_lines=1)
+            self._annotate_bottom(ax, 1936, "Moffat", offset_lines=1, color=Colors.UB)
+            self._annotate_bottom(ax, 1933, "Depression", offset_lines=2)
             self._annotate_bottom(ax, 1944, "MX Treaty", offset_lines=0)
-            self._annotate_bottom(ax, 1940, "All Am", offset_lines=1, color=Colors.LB)
-            self._annotate_bottom(ax, 1941, "MWD", offset_lines=2, color=Colors.LB)
+            self._annotate_bottom(ax, 1941, "MWD", offset_lines=1, color=Colors.LB)
+            self._annotate_bottom(ax, 1940, "All Am", offset_lines=2, color=Colors.LB)
             self._annotate_bottom(ax, 1947, "Coachella", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1947, "Northern", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1951, "Wellton", color=Colors.LB)
@@ -576,8 +598,8 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1964, "Roberts", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1964, "AZ v CA")
             self._annotate_bottom(ax, 1972, "Fryark", color=Colors.UB)
-            self._annotate_bottom(ax, 1971, "LV", offset_lines=1, color=Colors.LB)  # LVVWD
             self._annotate_bottom(ax, 1971, "CUP", offset_lines=2, color=Colors.UB)
+            self._annotate_bottom(ax, 1971, "LV", offset_lines=1, color=Colors.LB)  # LVVWD
             self._annotate_bottom(ax, 1968, "CRBPA", offset_lines=1)
             self._annotate_bottom(ax, 1984, "Dolores", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1985, "CAP", color=Colors.LB)

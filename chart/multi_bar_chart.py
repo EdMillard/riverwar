@@ -625,21 +625,49 @@ class MultiBarChart(Chart):
                        offset_lines=0):
         if not hasattr(self, 'year_to_idx') or self.year_to_idx is None:
             return None
-        if year not in self.year_to_idx:
-            return None
-        if offset_lines not in (0, 1, 2, 3):
-            raise ValueError("offset_lines must be 0, 1, 2, or 3")
+        if offset_lines not in (-1, 0, 1, 2, 3):
+            raise ValueError("offset_lines must be -1, 0, 1, 2, or 3")
 
-        x = self.year_to_idx[year]
+        in_mapping = year in self.year_to_idx
+        if in_mapping:
+            x = self.year_to_idx[year]
+        else:
+            x = None
+
+        fig = ax.figure
+        # Blended: figure x + axes y  (so labels sit on the canvas edge
+        # while keeping the same vertical placement as the other annotations)
+        from matplotlib.transforms import blended_transform_factory
+        fig_axes_trans = blended_transform_factory(fig.transFigure, ax.transAxes)
+
         trans = ax.get_xaxis_transform()
+        xlim = ax.get_xlim()
+        xmin, xmax = xlim
 
-        # Approximate one font height in axes-fraction units
+        if not in_mapping:
+            if not self.year_to_idx:
+                return None
+            min_year = min(self.year_to_idx.keys())
+            max_year = max(self.year_to_idx.keys())
+            if year < min_year:
+                is_out_left = True
+                is_out_right = False
+                edge_x = xmin
+            elif year > max_year:
+                is_out_left = False
+                is_out_right = True
+                edge_x = xmax
+            else:
+                return None
+        else:
+            is_out_left = x < xmin
+            is_out_right = x > xmax
+            edge_x = xmin if is_out_left else xmax
+
         line_height_frac = (fontsize / 72.0) / ax.figure.get_figheight() * 1.15
 
-        # Extra space needed when x-axis tick labels are visible
         label_clearance = 0.0
         if position == 'below_bottom' and getattr(self, 'show_x_labels', True):
-            # Just clear the tick labels (about half a font height)
             label_clearance = 0.025
 
         if position == 'above_top':
@@ -661,8 +689,6 @@ class MultiBarChart(Chart):
             base_y, va = -0.045, 'top'
             arrow_dir = 'up'
             offset_sign = -1
-            # Fixed marker sits just below the axis, or further down
-            # if tick labels are present
             fixed_marker_y = -0.012 - label_clearance
         else:
             base_y, va = 1.025, 'bottom'
@@ -670,8 +696,102 @@ class MultiBarChart(Chart):
             offset_sign = +1
             fixed_marker_y = 1.012
 
-        # Only the text is offset
         y_frac = base_y + offset_sign * offset_lines * line_height_frac
+
+        if is_out_left or is_out_right:
+            # Place against the edge of the whole figure/canvas
+            if is_out_left:
+                text_x = 0.005  # figure fraction — flush left
+                ha = 'left'
+                edge_frac = 0.0  # left edge of axes in figure coords (approx)
+            else:
+                text_x = 0.995  # figure fraction — flush right
+                ha = 'right'
+                edge_frac = 1.0
+
+            print(f"[OUT-OF-RANGE] year={year} label='{label}' "
+                  f"left={is_out_left} right={is_out_right} "
+                  f"text_x={text_x} ha={ha} y_frac={y_frac:.3f}")
+
+            edge = color if draw_outline else "none"
+
+            text = ax.text(text_x, y_frac, label,
+                           transform=fig_axes_trans,
+                           ha=ha, va=va,
+                           fontsize=fontsize, color=color, fontweight='bold',
+                           clip_on=False,
+                           bbox=dict(boxstyle="round,pad=0.12",
+                                     facecolor="white", alpha=0.95,
+                                     edgecolor=edge, linewidth=0.8),
+                           zorder=10)
+
+            # Horizontal line to label
+            # Create the label first so we can measure it
+            edge = color if draw_outline else "none"
+            text = ax.text(text_x, y_frac, label,
+                           transform=fig_axes_trans,
+                           ha=ha, va=va,
+                           fontsize=fontsize, color=color, fontweight='bold',
+                           clip_on=False,
+                           bbox=dict(boxstyle="round,pad=0.12",
+                                     facecolor="white", alpha=0.95,
+                                     edgecolor=edge, linewidth=0.8),
+                           zorder=10)
+
+            # Measure the label in figure coordinates
+            fig.canvas.draw()
+            bbox_disp = text.get_window_extent()
+            bbox_fig = bbox_disp.transformed(fig.transFigure.inverted())
+
+            # Axes edge in figure x
+            ax_pos = ax.get_position()
+            vert_x = ax_pos.x0 if is_out_left else ax_pos.x1
+
+            if is_out_left:
+                # left-justified → right edge of the label
+                label_edge_x = bbox_fig.x1
+                # Tiny stub only when it would otherwise be zero-length
+                if abs(label_edge_x - vert_x) < 0.004:
+                    label_edge_x = vert_x - 0.008
+            else:
+                # right-justified → left edge of the label
+                label_edge_x = bbox_fig.x0
+                if abs(label_edge_x - vert_x) < 0.004:
+                    label_edge_x = vert_x + 0.008
+
+            # Vertical center of the label in figure y
+            h_y_fig = (bbox_fig.y0 + bbox_fig.y1) / 2.0
+
+            # Start y in figure coordinates
+            if position in ('above_bottom', 'below_bottom'):
+                start_y_fig = ax_pos.y0
+            else:
+                disp_pt = ax.transAxes.transform((0.0, fixed_marker_y))
+                start_y_fig = fig.transFigure.inverted().transform(disp_pt)[1]
+
+            print(f"[LINE DEBUG] year={year} pos={position} "
+                  f"vert_x={vert_x:.3f} h_y_fig={h_y_fig:.3f} "
+                  f"label_edge_x={label_edge_x:.3f} delta={label_edge_x - vert_x:.3f}")
+
+            # Vertical segment
+            ax.plot([vert_x, vert_x],
+                    [start_y_fig, h_y_fig],
+                    transform=fig.transFigure,
+                    color=color, linestyle='-', linewidth=0.8,
+                    alpha=0.85, clip_on=False, zorder=12)
+
+            # Horizontal segment
+            ax.plot([vert_x, label_edge_x],
+                    [h_y_fig, h_y_fig],
+                    transform=fig.transFigure,
+                    color=color, linestyle='-', linewidth=0.8,
+                    alpha=0.85, clip_on=False, zorder=12)
+
+            return {'vline': None, 'marker': None, 'text': text, 'connector': None}
+
+        # ---------- original in-range path (unchanged) ----------
+        if not in_mapping:
+            return None
 
         vline = None
         marker = None
@@ -681,7 +801,6 @@ class MultiBarChart(Chart):
             vline = ax.axvline(x, color=color, linestyle='--', linewidth=1.2,
                                alpha=0.8, zorder=3)
         else:
-            # Short fixed arrow — stays next to the axis (or below labels)
             length = 0.010
             if arrow_dir == 'up':
                 start_y = fixed_marker_y
@@ -699,7 +818,6 @@ class MultiBarChart(Chart):
                 zorder=5,
             )
 
-            # Connector starts from the fixed marker (which already accounts for labels)
             if offset_lines > 0:
                 connector = ax.annotate(
                     '', xy=(x, y_frac), xytext=(x, fixed_marker_y),
@@ -723,6 +841,7 @@ class MultiBarChart(Chart):
                        zorder=10)
 
         return {'vline': vline, 'marker': marker, 'text': text, 'connector': connector}
+
 
     def annotate_range(self, ax, start_year, end_year, label,
                        line_color, text_color=None,
