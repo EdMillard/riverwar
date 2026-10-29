@@ -85,11 +85,33 @@ class DemandChartFrame(ChartFrame):
         )
         self.charts.append(self.multi_bar_chart)
 
-    def on_line_moved(self, year):
-        if year == self.current_year:
+    def on_line_moved(self, year, shift=False):
+        if getattr(self, '_syncing_lines', False):
             return
+        if not shift and year == self.current_year:
+            return
+
         self.current_year = year
-        if self.demand_pie_chart is not None:
-            self.demand_pie_chart.update_for_year(self.current_year)
-        if hasattr(self, 'toolbar_status') and self.toolbar_status is not None:
-            self.toolbar_status.SetLabel(f"Year: {self.current_year}")
+        self._syncing_lines = True
+        try:
+            for chart in self.charts:
+                if chart is None:
+                    continue
+                year_to_idx = getattr(chart, 'year_to_idx', None)
+                if not year_to_idx or year not in year_to_idx:
+                    continue
+
+                if shift and hasattr(chart, 'add_annotation_set'):
+                    chart.add_annotation_set(year)
+                else:
+                    idx = year_to_idx[year]
+                    if hasattr(chart, '_vline') and chart._vline is not None:
+                        chart._vline.set_xdata([idx, idx])
+                    if getattr(chart, '_show_year_label', False):
+                        chart._update_year_label(idx)
+                    if getattr(chart, '_show_bar_values', False):
+                        chart._update_bar_value_labels(idx)
+                    if hasattr(chart, 'fig') and chart.fig is not None:
+                        chart.fig.canvas.draw_idle()
+        finally:
+            self._syncing_lines = False

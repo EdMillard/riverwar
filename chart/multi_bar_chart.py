@@ -974,16 +974,13 @@ class MultiBarChart(Chart):
         shift = event.key == 'shift' or (hasattr(event, 'modifiers') and 'shift' in event.modifiers)
 
         if shift:
-            # Freeze current active set and create a new one
-            new_set = self._create_annotation_set(idx)
-            self._annotation_sets.append(new_set)
-            self._active_set = new_set
-            # Point the back-compat attributes at the new set so updates hit it
-            self._vline = new_set.vline
-            self._year_label = new_set.year_label
-            self._bar_value_texts = new_set.bar_value_texts
-            self._side_lines = new_set.side_lines
-            self._top_total_texts = new_set.top_total_texts
+            if self._vline_callback is not None:
+                try:
+                    self._vline_callback(self._index_to_year(idx), shift=True)
+                except TypeError:
+                    # Fallback if the callback doesn’t accept shift yet
+                    self._vline_callback(self._index_to_year(idx))
+            return
         else:
             # Normal click: keep only the primary set and move it
             primary = self._annotation_sets[0]
@@ -1174,6 +1171,8 @@ class MultiBarChart(Chart):
 
             return luminance < 140
 
+        y_bottom, y_top = self.ax.get_ylim()
+
         for g_idx, group in enumerate(self.groups):
             yearly = MultiBarChart._get_yearly_stacked_data(group.series)
             segments = yearly.get(year, [])
@@ -1192,29 +1191,39 @@ class MultiBarChart(Chart):
                     bottom += max(height, 0.0)
                     continue
 
-                top = bottom + height
-                if bottom < y_top and top > y_top:
-                    mid_y = special_y
-                else:
-                    geometric_mid = bottom + height / 2.0
-                    nudge = min(height * 0.04, 0.08)
-                    mid_y = geometric_mid - nudge
+                seg_bottom = bottom
+                seg_top = bottom + height
+
+                # Completely outside the visible y-range → skip
+                if seg_top <= y_bottom or seg_bottom >= y_top:
+                    bottom += height
+                    continue
+
+                # Clamp to the visible portion of this segment
+                vis_bottom = max(seg_bottom, y_bottom)
+                vis_top = min(seg_top, y_top)
+                if vis_top <= vis_bottom:
+                    bottom += height
+                    continue
+
+                # Place the label in the middle of the *visible* part
+                mid_y = (vis_bottom + vis_top) / 2.0
+
+                # Keep a little breathing room from the axes edges
+                font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
+                margin = (y_top - y_bottom) * (0.02 + font_height_frac)
+                mid_y = max(y_bottom + margin, min(y_top - margin, mid_y))
 
                 txt = (f"{val / self.y_divisor:.3f}"
                        if abs(val / self.y_divisor) < 10
                        else f"{val / self.y_divisor:.1f}")
 
                 dark = is_dark(color)
-
-                # Label: adaptive background (now biased strongly toward black)
-                # lighter bar → black bg; only quite dark bars → light gray bg
                 label_bg = '#222222' if not dark else '#e0e0e0'
 
-                # Label bubble: right-justified, left of the bar
                 label_x = bar_left - label_gap
                 needed.append((label_x, mid_y, label, 'right', color, label_bg))
 
-                # Value bubble: always black background + white text, further right
                 value_x = bar_right + value_gap
                 needed.append((value_x, mid_y, txt, 'left', '#ffffff', '#000000'))
 
@@ -1501,3 +1510,25 @@ class MultiBarChart(Chart):
             )
 
         ax.figure.canvas.draw_idle()
+
+    def add_annotation_set(self, year: int):
+        """Create a new annotation set at the given year and make it the active one.
+        Used by shift-click so all linked charts stay in sync.
+        """
+        if not hasattr(self, '_annotation_sets') or year not in self.year_to_idx:
+            return
+        idx = self.year_to_idx[year]
+        new_set = self._create_annotation_set(idx)
+        self._annotation_sets.append(new_set)
+        self._active_set = new_set
+
+        # Point the back-compat attributes at the new set
+        self._vline = new_set.vline
+        self._year_label = new_set.year_label
+        self._bar_value_texts = new_set.bar_value_texts
+        self._side_lines = new_set.side_lines
+        self._top_total_texts = new_set.top_total_texts
+
+        self._update_year_label(idx)
+        self._update_bar_value_labels(idx)
+        self.fig.canvas.draw_idle()

@@ -508,32 +508,6 @@ class Demand1906To1971(DemandChartFrame):
         )
         self.charts.append(self.demand_pie_chart)
 
-    def on_line_moved(self, year):
-        if self._syncing_lines or year == self.current_year:
-            return
-
-        self.current_year = year
-        self._syncing_lines = True
-        try:
-            for chart in self.charts:
-                if chart is None or not hasattr(chart, '_vline'):
-                    continue
-                if year in getattr(chart, 'year_to_idx', {}):
-                    idx = chart.year_to_idx[year]
-                    chart._vline.set_xdata([idx, idx])
-
-                    # Year label (if this chart is showing one)
-                    if getattr(chart, '_show_year_label', False):
-                        chart._update_year_label(idx)
-
-                    # Bar-segment value labels (if this chart is showing them)
-                    if getattr(chart, '_show_bar_values', False):
-                        chart._update_bar_value_labels(idx)
-
-                    chart.fig.canvas.draw_idle()
-        finally:
-            self._syncing_lines = False
-
     def right_axis_annotations(self):
         if self.lb_demand_chart is not None:
             ax = self.lb_demand_chart.ax
