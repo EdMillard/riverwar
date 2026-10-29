@@ -292,18 +292,29 @@ class MultiBarChart(Chart):
         self.year_to_idx = {year: idx for idx, year in enumerate(years)}
 
         n_groups = len(self.groups)
-        group_width = 0.78 / n_groups if n_groups > 0 else 0.6
-        spacing = 0.04
+        # Controls the gap between years. Smaller value = bigger gap.
+        group_width = 0.82 / n_groups if n_groups > 0 else 0.82
+        spacing = 0.0
 
         max_height = 0.0
 
         # Underlay lines
         self._plot_lines(ax, self.underlay_lines, self.year_to_idx, zorder=1, linewidth=2.8, alpha=0.85)
 
+        # Force a draw so bbox is valid for pixel calculations
+        ax.figure.canvas.draw()
+
+        # Pixels per data unit (for snapping)
+        xlim = ax.get_xlim()
+        pixel_per_data = ax.bbox.width / (xlim[1] - xlim[0]) if xlim[1] != xlim[0] else 1.0
+
         # Bars
-        for g_idx, (group, yearly_data) in enumerate(zip(self.groups, group_data)):
+        for g_idx, group in enumerate(self.groups):
             yearly_data = MultiBarChart._get_yearly_stacked_data(group.series)
-            bar_positions = x - 0.4 + (g_idx + 0.5) * group_width
+            if n_groups == 1:
+                bar_positions = x
+            else:
+                bar_positions = x - 0.4 + (g_idx + 0.5) * group_width
 
             for i, year in enumerate(years):
                 if self.x_min is not None and year < self.x_min:
@@ -320,41 +331,33 @@ class MultiBarChart(Chart):
                                 bar_color = ov_color
                                 break
 
-                    series_obj = None
-                    if s_idx < len(group.series):
-                        series_obj = group.series[s_idx]
-
+                    series_obj = group.series[s_idx] if s_idx < len(group.series) else None
                     height = val / self.y_divisor
 
-                    edge = 'none'
-                    lw = 0.0
-                    hatch = None
-                    hatch_color = bar_color
-
-                    if series_obj is not None:
-                        if series_obj.edgecolor is not None:
-                            edge = series_obj.edgecolor
-                        if series_obj.linewidth is not None:
-                            lw = series_obj.linewidth
-                        hatch = series_obj.hatch
-                        hatch_color = series_obj.hatch_color or series_obj.color
+                    # Snap width to whole pixels
+                    raw_width = group_width - spacing
+                    snapped_width = round(raw_width * pixel_per_data) / pixel_per_data
 
                     bar_kwargs = dict(
-                        width=group_width - spacing,
                         bottom=bottom,
                         color=bar_color,
-                        edgecolor=edge,
-                        linewidth=lw,
+                        edgecolor=bar_color,
+                        linewidth=0,
                         label=None if self.custom_legend is not None else label,
                         zorder=5,
                     )
 
-                    if hatch:
-                        bar_kwargs['hatch'] = hatch
-                        if series_obj is None or series_obj.edgecolor is None:
-                            bar_kwargs['edgecolor'] = hatch_color
+                    if series_obj is not None and series_obj.hatch:
+                        bar_kwargs['hatch'] = series_obj.hatch
+                        bar_kwargs['edgecolor'] = series_obj.hatch_color or bar_color
 
-                    ax.bar(bar_positions[i], height, **bar_kwargs, antialiased=False)
+                    ax.bar(
+                        bar_positions[i],
+                        height,
+                        width=snapped_width,
+                        **bar_kwargs,
+                        antialiased=False,
+                    )
 
                     bottom += height
                     max_height = max(max_height, bottom)
@@ -441,6 +444,11 @@ class MultiBarChart(Chart):
 
         ax.tick_params(axis='y', which='major', length=6, width=1.2, labelsize=10)
         ax.tick_params(axis='y', which='minor', length=3, width=0.7, labelsize=8.5)
+
+        # Kill any x-grid lines
+        ax.xaxis.grid(False)
+        for gl in ax.get_xgridlines():
+            gl.set_visible(False)
 
         for ann in self.annotations:
             self.add_total_annotations(ann)
@@ -1132,7 +1140,7 @@ class MultiBarChart(Chart):
         group_width = 0.78 / n_groups
         # Left side pulled a bit further off the bar
         label_gap = 0.22
-        value_gap = 0.35
+        value_gap = 0.30
 
         y_bottom, y_top = self.ax.get_ylim()
         font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
@@ -1353,7 +1361,7 @@ class MultiBarChart(Chart):
             if left_inner > float('-inf') and right_inner < float('inf'):
                 # Left line gets a little extra gap so it sits further off the bar
                 left_pad = 0.025
-                right_pad = 0.015
+                right_pad = 0.3
                 self._side_lines[0].set_xdata([left_inner + left_pad, left_inner + left_pad])
                 self._side_lines[0].set_visible(True)
                 self._side_lines[1].set_xdata([right_inner - right_pad, right_inner - right_pad])
