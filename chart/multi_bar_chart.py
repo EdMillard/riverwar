@@ -1112,12 +1112,10 @@ class MultiBarChart(Chart):
         Values: always black background + white text.
         Labels: adaptive background biased strongly toward black.
 
-        When dual_side_lines is enabled, places two vertical lines at the
-        inner edges of the annotation bubbles (right edge of left bubbles,
-        left edge of right bubbles).
-
-        When top_total_columns is set, places a cumulative total (that segment
-        plus everything stacked under it) at the top of each matching series.
+        Segments completely outside the visible y-range are skipped.
+        Partially visible segments have their label centered in the visible portion.
+        Overlapping bubbles on the same side are stacked vertically.
+        If a stack has only one visible segment, the left label is omitted.
         """
         if not self._show_bar_values:
             return
@@ -1135,20 +1133,17 @@ class MultiBarChart(Chart):
             return
 
         group_width = 0.78 / n_groups
-        # Left side pulled a bit further off the bar
         label_gap = 0.22
-        value_gap = 0.30
+        value_gap = 0.35
 
         y_bottom, y_top = self.ax.get_ylim()
+        y_span = y_top - y_bottom
         font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
-        special_y = y_top - (y_top - y_bottom) * (0.04 + font_height_frac * 1.6)
+        margin = y_span * (0.02 + font_height_frac)
 
         needed = []  # (x, y, text, ha, text_color, bgcolor)
 
         def is_dark(hex_color: str) -> bool:
-            """Return True for colors that need a light background for readability.
-            More sensitive to dark greens than the plain luminance threshold.
-            """
             if not hex_color or not isinstance(hex_color, str):
                 return False
             h = hex_color.lstrip('#')
@@ -1160,18 +1155,10 @@ class MultiBarChart(Chart):
                 r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
             except ValueError:
                 return False
-
-            # Standard relative luminance
             luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-
-            # Extra penalty for greens: if the green channel dominates and overall
-            # luminance is still modest, treat it as dark.
             if g > r + 40 and g > b + 40 and luminance < 160:
                 return True
-
             return luminance < 140
-
-        y_bottom, y_top = self.ax.get_ylim()
 
         for g_idx, group in enumerate(self.groups):
             yearly = MultiBarChart._get_yearly_stacked_data(group.series)
@@ -1183,6 +1170,21 @@ class MultiBarChart(Chart):
             bar_half = (group_width - 0.04) / 2.0
             bar_left = bar_center - bar_half
             bar_right = bar_center + bar_half
+
+            # Count visible segments for this group
+            visible_count = 0
+            tmp_bottom = 0.0
+            for v, _, _, _ in segments:
+                h = v / self.y_divisor
+                if abs(v) < 1e-6 or h <= 0:
+                    tmp_bottom += max(h, 0.0)
+                    continue
+                seg_b = tmp_bottom
+                seg_t = tmp_bottom + h
+                if seg_t > y_bottom and seg_b < y_top:
+                    visible_count += 1
+                tmp_bottom += h
+            only_one = (visible_count == 1)
 
             bottom = 0.0
             for val, label, color, overrides in segments:
@@ -1199,19 +1201,14 @@ class MultiBarChart(Chart):
                     bottom += height
                     continue
 
-                # Clamp to the visible portion of this segment
+                # Clamp to the visible portion
                 vis_bottom = max(seg_bottom, y_bottom)
                 vis_top = min(seg_top, y_top)
                 if vis_top <= vis_bottom:
                     bottom += height
                     continue
 
-                # Place the label in the middle of the *visible* part
                 mid_y = (vis_bottom + vis_top) / 2.0
-
-                # Keep a little breathing room from the axes edges
-                font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
-                margin = (y_top - y_bottom) * (0.02 + font_height_frac)
                 mid_y = max(y_bottom + margin, min(y_top - margin, mid_y))
 
                 txt = (f"{val / self.y_divisor:.3f}"
@@ -1221,15 +1218,39 @@ class MultiBarChart(Chart):
                 dark = is_dark(color)
                 label_bg = '#222222' if not dark else '#e0e0e0'
 
-                label_x = bar_left - label_gap
-                needed.append((label_x, mid_y, label, 'right', color, label_bg))
+                # Skip the left label when this is the only visible segment
+                if not only_one:
+                    label_x = bar_left - label_gap
+                    needed.append((label_x, mid_y, label, 'right', color, label_bg))
 
                 value_x = bar_right + value_gap
                 needed.append((value_x, mid_y, txt, 'left', '#ffffff', '#000000'))
 
                 bottom += height
 
-        # Reuse / create Text artists for side bubbles
+        # --- Vertical stacking to prevent overlaps ---
+        def stack_side(items, min_gap_frac=0.028):
+            if len(items) < 2:
+                return items
+            items = sorted(items, key=lambda t: t[1])
+            min_gap = y_span * min_gap_frac
+            for i in range(1, len(items)):
+                prev_y = items[i - 1][1]
+                curr_y = items[i][1]
+                if curr_y < prev_y + min_gap:
+                    new_y = prev_y + min_gap
+                    new_y = min(new_y, y_top - y_span * 0.01)
+                    items[i] = (items[i][0], new_y, items[i][2], items[i][3],
+                                items[i][4], items[i][5])
+            return items
+
+        left_items = [t for t in needed if t[3] == 'right']
+        right_items = [t for t in needed if t[3] == 'left']
+        left_items = stack_side(left_items)
+        right_items = stack_side(right_items)
+        needed = left_items + right_items
+
+        # Reuse / create Text artists
         for i, (x, y, txt, ha, text_color, bgcolor) in enumerate(needed):
             if i < len(self._bar_value_texts):
                 text = self._bar_value_texts[i]
@@ -1275,7 +1296,6 @@ class MultiBarChart(Chart):
             top_needed = []  # (x, y, text)
 
             for g_idx, group in enumerate(self.groups):
-                # Build a year → value map for every series in this group
                 series_values = []
                 for s in group.series:
                     val = 0.0
@@ -1300,7 +1320,7 @@ class MultiBarChart(Chart):
 
                     if col_name in self._top_total_columns and height > 0:
                         top_y = bottom + height
-                        label_y = top_y + (y_top - y_bottom) * 0.025
+                        label_y = top_y + y_span * 0.025
                         total_txt = (f"{cumulative:.3f}" if abs(cumulative) < 10 else f"{cumulative:.1f}")
                         top_needed.append((bar_center, label_y, total_txt))
 
@@ -1340,16 +1360,12 @@ class MultiBarChart(Chart):
             for t in getattr(self, '_top_total_texts', []):
                 t.set_visible(False)
 
-        # --- Dual side lines: place them at the INNER edges of the bubbles ---
-        # Left line  = right edge of left (label) bubbles
-        # Right line = left edge of right (value) bubbles
-        if getattr(self, '_dual_side_lines', False) and self._side_lines and self._bar_value_texts:
-            # Force a draw so get_window_extent() is valid
+        # --- Dual side lines ---
+        if getattr(self, '_dual_side_lines', False) and self._side_lines:
             self.fig.canvas.draw()
-
             renderer = self.fig.canvas.get_renderer()
-            left_inner = float('-inf')   # right edge of label bubbles
-            right_inner = float('inf')   # left edge of value bubbles
+            left_inner = float('-inf')
+            right_inner = float('inf')
 
             for text in self._bar_value_texts:
                 if not text.get_visible():
@@ -1361,16 +1377,27 @@ class MultiBarChart(Chart):
 
                 ha = text.get_ha()
                 if ha == 'right':
-                    # Left (label) bubble → we want its right edge
                     left_inner = max(left_inner, x_right_data)
                 elif ha == 'left':
-                    # Right (value) bubble → we want its left edge
                     right_inner = min(right_inner, x_left_data)
 
+            # Fallback to bar edges if one side has no bubbles
+            if left_inner == float('-inf') or right_inner == float('inf'):
+                # Use the bar edges from the first group that has data
+                for g_idx, group in enumerate(self.groups):
+                    yearly = MultiBarChart._get_yearly_stacked_data(group.series)
+                    if yearly.get(year):
+                        bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
+                        bar_half = (group_width - 0.04) / 2.0
+                        if left_inner == float('-inf'):
+                            left_inner = bar_center - bar_half
+                        if right_inner == float('inf'):
+                            right_inner = bar_center + bar_half
+                        break
+
             if left_inner > float('-inf') and right_inner < float('inf'):
-                # Left line gets a little extra gap so it sits further off the bar
                 left_pad = 0.025
-                right_pad = 0.3
+                right_pad = 0.015
                 self._side_lines[0].set_xdata([left_inner + left_pad, left_inner + left_pad])
                 self._side_lines[0].set_visible(True)
                 self._side_lines[1].set_xdata([right_inner - right_pad, right_inner - right_pad])

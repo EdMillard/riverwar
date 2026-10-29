@@ -412,8 +412,8 @@ class Demand1906To1971(DemandChartFrame):
                 (df_cu_1906_2024, "Volcano", Colors.CA_VOLCANO),
                 (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
                 (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, Colors.CA_MWD, {'label': 'MWD'}),
-                (df_cu_1906_2024, "Palo Verde", Colors.CA_PALO_VERDE),
                 (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4, {'label': 'CA Misc'}),
+                (df_cu_1906_2024, "Palo Verde", Colors.CA_PALO_VERDE),
 
                 # NV
                 (df_cu_1906_2024, "NV", Colors.NV1),
