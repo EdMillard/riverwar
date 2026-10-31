@@ -76,6 +76,8 @@ SOFTWARE.
 #
 import pandas as pd
 import wx
+
+from api.df_utils import divide_columns, divide_by_constant
 from data_sets.demand import Demand, Colors
 from demand_chart_frame import DemandChartFrame
 from sheet import sheet
@@ -89,7 +91,7 @@ import colorado.allb as all_b
 from api import df_utils
 from typing import Optional
 
-class SupplyVDemand(DemandChartFrame):
+class SupplyVDemandPie(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
         super().__init__(notebook_frame,  demand, name='Supply v Demand',
                          start_year=1971, end_year=2024, version=0.4)
@@ -202,7 +204,7 @@ class SupplyVDemand(DemandChartFrame):
         self.demand_pie_chart.update_for_year(self.current_year)
         self.current_year += 1
 
-class Demand1906To1971(DemandChartFrame):
+class SupplyVDemand(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand: Demand):
         self.natural_flow_chart = None
         self.ub_demand_chart = None
@@ -246,6 +248,67 @@ class Demand1906To1971(DemandChartFrame):
                     top_total_columns=totals,
                 )
 
+    @staticmethod
+    def load_annual_report(df:pd.DataFrame, directory:str, path:str, column:str):
+        df_tmp = sheet.read_csv(f'data/USBR_Reports/{directory}/usbr_{directory}_{path}.csv', sep='\s+')
+        sheet.merge_annual_column(df, df_tmp, column, divisor=1)
+
+    def load_annual_reports(self):
+        SupplyVDemand.load_annual_report(self.df, "ca", "total_consumptive_use", 'CA')
+        SupplyVDemand.load_annual_report(self.df, "az", "total_consumptive_use", 'AZ')
+        SupplyVDemand.load_annual_report(self.df, "nv", "total_consumptive_use", 'NV')
+        df_utils.add_column_sum(self.df, ["AZ", "CA",  "NV"], 'LB')
+
+        SupplyVDemand.load_annual_report(self.df, "ca", "imperial_irrigation_consumptive_use", lb.IMPERIAL_CU)
+        # SupplyVDemand.load_annual_report(self.df, "ca", "imperial_irrigation_diversion", lb.IMPERIAL_CU)
+        SupplyVDemand.load_annual_report(self.df, "ca", "coachella_consumptive_use", lb.COACHELLA_CU)
+        # SupplyVDemand.load_annual_report(self.df, "ca", "coachella_diversion", lb.COACHELLA_CU)
+        SupplyVDemand.load_annual_report(self.df, "ca", "yuma_project_sum_consumptive_use", "Yuma Project")
+
+        df_utils.add_column_sum(self.df, [lb.IMPERIAL_CU, lb.COACHELLA_CU], lb.IMPERIAL_VALLEY_CU)
+
+        sheet.usgs_annuals(self.df, '09523000', 1940, self. end_year, title="All American USGS",divisor=1) # 1960 is partial
+        sheet.usgs_annuals(self.df, '09527000', 1943, self. end_year, title="Pilot Knob Power USGS",divisor=1) # 1960 is partial
+        sheet.usgs_annuals(self.df, '09527500', 1961, self. end_year, title="Below Pilot Knob USGS",divisor=1) # 1960 is partial
+
+        # sheet.usgs_annuals(self.df, '09527590', 1940, self. end_year, title="Coachella USGS",divisor=1) # 1960 is partial
+
+        SupplyVDemand.load_annual_report(self.df, "ca", "metropolitan_consumptive_use", lb.METROPOLITAN_CU)
+        df_tmp = sheet.read_csv(f'data/USGS_Surface_Waters/colorado_river_aquaduct_1939_1965.csv', sep=',')
+        sheet.merge_annual_column(self.df, df_tmp, lb.METROPOLITAN_CU, divisor=1)
+
+        self.load_palo_verde()
+
+        df_utils.add_column_sum(self.df, [lb.IMPERIAL_VALLEY_CU, lb.METROPOLITAN_CU, "Palo Verde", "Yuma Project"], "CA Big Users")
+        df_utils.subtract_column(self.df, "CA", "CA Big Users", "CA")
+
+        SupplyVDemand.load_annual_report(self.df, "az", "crit_consumptive_use", lb.AZ_CRIT_CU)
+        SupplyVDemand.load_annual_report(self.df, "az", "wellton_mohawk_consumptive_use", lb.WELLTON_MOHAWK_CU)
+
+        #SupplyVDemand.load_annual_report(self.df, "nv", "snwa_griffith_diversion", lb.NV_SNWA)
+        pass
+
+    def load_palo_verde(self):
+        # Palo Verde 1922-1938
+        df_palo_verde_1922_1938 = sheet.read_csv('data/USGS_Surface_Waters/palo_verde_1922_1938.csv', sep=',')
+        palo_verde_column_map = { "Net_WY_Runoff_AF": "Palo Verde" }
+        df_utils.copy_columns_by_key(df_palo_verde_1922_1938, self.df, palo_verde_column_map, overwrite=True)
+
+        df_palo_verde_1922_1850 = sheet.read_csv('data/USGS_Surface_Waters/palo_verde_discharge_1922_1950.csv', sep=',')
+        palo_verde_column_map = { "Runoff acre-feet (WY ending Sept. 30)": "Palo Verde" }
+        df_utils.copy_columns_by_key(df_palo_verde_1922_1850, self.df, palo_verde_column_map, overwrite=True)
+
+        df_palo_verde_1950_1960 = sheet.read_csv('data/USGS_Surface_Waters/palo_verde_discharge_1950_1960.csv', sep=',')
+        palo_verde_column_map = { "Total": "Palo Verde" }
+        df_utils.copy_columns_by_key(df_palo_verde_1950_1960, self.df, palo_verde_column_map, overwrite=True)
+        df_utils,divide_by_constant(self.df, "Palo Verde", 2, "Palo Verde")
+
+        df_palo_verde_1961_1963 = sheet.read_csv('data/USGS_Surface_Waters/palo_verde_discharge_1961_1965.csv', sep=',')
+        palo_verde_column_map = { "Total": "Palo Verde" }
+        df_utils.copy_columns_by_key(df_palo_verde_1961_1963, self.df, palo_verde_column_map, overwrite=True)
+
+        SupplyVDemand.load_annual_report(self.df, "ca", "palo_verde_consumptive_use", "Palo Verde")
+
     def load_charts(self):
 
         # Bureau estimated diversions/consumptive use 1906-2006 (Fairly trustworthy)
@@ -253,6 +316,8 @@ class Demand1906To1971(DemandChartFrame):
         self.df = sheet.read_csv('data/Colorado_River/usbr_colorado_river_use_since_1906.csv',
                                          sep='\s+', na_values=["---", "-", "*******"])
         self.df = df_utils.extend_years(self.df, min_year=1904, max_year=2026)
+
+        self.load_annual_reports()
 
         # Gila at Dome confluence 1 mile above Yuma
         sheet.usgs_annuals(self.df, '09520500', 1929, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1000000) # Has missing years
@@ -278,19 +343,11 @@ class Demand1906To1971(DemandChartFrame):
         volcano_column_map = { "Water_Year_Runoff_AF": "Volcano" }
         df_utils.copy_columns_by_key(df_volcano, self.df, volcano_column_map, overwrite=True)
 
-        sheet.usgs_annuals(self.df, '09523000', 1940, self. end_year, title="All American USGS",divisor=1) # 1960 is partial
-        # sheet.usgs_annuals(self.df, '09527590', 1940, self. end_year, title="Coachella USGS",divisor=1) # 1960 is partial
-
         # Delta early years is Yume Gage - ALamo - Volcano - Small Yuma diversion
         #
         df_utils.subtract_column(self.df, "Yuma USGS", "Alamo", "Delta", clip_negative_to_zero=True)
         df_utils.subtract_column(self.df, "Delta", "Volcano", "Delta")
         # df_utils.zero_out_column(self.df, "Delta", 1939, 1965, date_col='Year', use_nan=True)
-
-        # Palo Verde 1922-1938
-        df_palo_verde = sheet.read_csv('data/Colorado_River/palo_verde_1922_1938.csv', sep=',')
-        palo_verde_column_map = { "Net_WY_Runoff_AF": "Palo Verde" }
-        df_utils.copy_columns_by_key(df_palo_verde, self.df, palo_verde_column_map, overwrite=True)
 
         # Estimated Mexico use 1907-1970 (Not trustworthy)
         #
@@ -407,9 +464,9 @@ class Demand1906To1971(DemandChartFrame):
             df_lb_cul = self.demand.df_lb_cul
             ltsc_df = self.demand.az_ltsc_data.df
 
-            df_utils.zero_out_column(df_cu_1906_2024,  "CA", 1971, self.end_year, date_col='Year', use_nan=True)
-            df_utils.zero_out_column(df_cu_1906_2024,  "AZ", 1971, self.end_year, date_col='Year', use_nan=True)
-            df_utils.zero_out_column(df_cu_1906_2024,  "NV", 1971, self.end_year, date_col='Year', use_nan=True)
+            df_utils.zero_out_column(df_cu_1906_2024,  "CA", 1971, 2024, date_col='Year', use_nan=True)
+            df_utils.zero_out_column(df_cu_1906_2024,  "AZ", 1971, 2024, date_col='Year', use_nan=True)
+            df_utils.zero_out_column(df_cu_1906_2024,  "NV", 1971, 2024, date_col='Year', use_nan=True)
 
             lb_column_map = {
                 "Imperial CU": "Imperial",
@@ -417,18 +474,21 @@ class Demand1906To1971(DemandChartFrame):
             }
             df_utils.copy_columns_by_key(df_lb_cul, df_cu_1906_2024, lb_column_map, overwrite=False)
 
-            df_utils.subtract_column_by_year(df_cu_1906_2024, "CA", lb.SALTON_INFLOW, result_column="CA",
-                                             start_year=1961, end_year=1970)
+            # df_utils.subtract_column_by_year(df_cu_1906_2024, "CA", lb.SALTON_INFLOW, result_column="CA",
+            #                                 start_year=1961, end_year=1963)
+            # df_utils.subtract_column_by_year(df_cu_1906_2024, lb.IMPERIAL_VALLEY_CU, lb.SALTON_INFLOW, result_column=lb.IMPERIAL_VALLEY_CU,
+            #                                  start_year=1964, end_year=1970)
             series = ('', [
                 # CA
-                (df_cu_1906_2024, lb.SALTON_INFLOW, Colors.CA_SALTON, {'label': 'Salton'}),
+                # (df_cu_1906_2024, lb.SALTON_INFLOW, Colors.CA_SALTON, {'label': 'Salton'}),
                 (df_cu_1906_2024, "CA", Colors.CA),
                 (df_cu_1906_2024, "Alamo", Colors.CA_ALAMO ),
                 (df_cu_1906_2024, "Volcano", Colors.CA_VOLCANO),
-                (df_lb_cul, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
-                (df_lb_cul, lb.CA_OUTSIDE_SYSTEM, Colors.CA_MWD, {'label': 'MWD'}),
-                (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4, {'label': 'CA Misc'}),
+                (df_cu_1906_2024, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
+                (df_cu_1906_2024, "Yuma Project", Colors.CA4),
                 (df_cu_1906_2024, "Palo Verde", Colors.CA_PALO_VERDE),
+                (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4, {'label': 'CA Misc'}),
+                (df_cu_1906_2024, lb.METROPOLITAN_CU, Colors.CA_MWD, {'label': 'MWD'}),
 
                 # NV
                 (df_cu_1906_2024, "NV", Colors.NV1),
@@ -438,8 +498,8 @@ class Demand1906To1971(DemandChartFrame):
                 # AZ
                 (df_cu_1906_2024, "AZ", Colors.AZ),
                 (df_lb_cul, lb.AZ_MAINSTEM, Colors.AZ, {'label': 'AZ Misc'}),
-                (df_lb_cul, lb.AZ_CRIT_CU, Colors.AZ, {'label': 'CRIT'}),
-                (df_lb_cul, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton'}),
+                (self.df, lb.AZ_CRIT_CU, Colors.AZ, {'label': 'CRIT'}),
+                (self.df, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton'}),
                 (df_lb_cul, lb.AZ_CAP, Colors.AZ1, {'label': 'CAP'}),
                 (ltsc_df, lb.AZ_LTSC_STORED, Colors.AZ2, {'label': 'AZ Aquifer'}),
 
@@ -589,7 +649,7 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1936, "Moffat", offset_lines=1, color=Colors.UB)
             self._annotate_bottom(ax, 1933, "Depression", offset_lines=2)
             self._annotate_bottom(ax, 1944, "MX Treaty", offset_lines=0)
-            self._annotate_bottom(ax, 1941, "MWD", offset_lines=1, color=Colors.LB)
+            self._annotate_bottom(ax, 1939, "MWD", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1940, "All Am", offset_lines=2, color=Colors.LB)
             self._annotate_bottom(ax, 1947, "Coachella", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1947, "Northern", offset_lines=2, color=Colors.UB)
@@ -604,6 +664,7 @@ class Demand1906To1971(DemandChartFrame):
             self._annotate_bottom(ax, 1984, "Dolores", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1985, "CAP", color=Colors.LB)
             self._annotate_bottom(ax, 1991, "SNWA", color=Colors.LB)
+            self._annotate_bottom(ax, 1990, "Yuma Project", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 2003, "QSA", color=Colors.LB)
             self._annotate_bottom(ax, 2007, "2007\nGuidelines", offset_lines=1)
             self._annotate_bottom(ax, 2014, "Delta\nPulse", color=Colors.LB)
@@ -617,8 +678,8 @@ if __name__ == "__main__":
 
     d = Demand(rw, show_tributaries=False)
 
-    # SupplyVDemand(nf, d)
-    Demand1906To1971(nf, d)
+    # SupplyVDemandPie(nf, d)
+    SupplyVDemand(nf, d)
 
     nf.Show()
     app.MainLoop()

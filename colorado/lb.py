@@ -125,6 +125,7 @@ CA_M_I_OTHER = 'CA M I Other CUL'
 CA_OUTSIDE_SYSTEM = 'CA Out Of Basin'
 
 NV_TOTAL = 'NV Total CUL'
+NV_SNWA = 'SNWA'
 NV_COLORADO_RIVER_TOTAL = 'NV Colorado River'
 NV_AGRICULTURE = 'NV Agriculture CUL'
 NV_M_I_OTHER = 'NV M I Other CUL'
