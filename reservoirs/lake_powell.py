@@ -111,7 +111,7 @@ class LakePowell(Reservoir):
         self.usgs_load_daily('09315000', 'Green River Near Green River, UT')
         self.usgs_load_daily('09379500', 'San Juan River Near Bluff, UT')
 
-        if 1:
+        if 0:
             NGVD_1929 = "62614"
             NAVD_1988 = "62615"
             daily_cfs = self.usgs_load_daily('09379900', 'Powell Elevation', start_year=2026,
