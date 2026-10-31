@@ -263,7 +263,13 @@ class SupplyVDemand(DemandChartFrame):
         # SupplyVDemand.load_annual_report(self.df, "ca", "imperial_irrigation_diversion", lb.IMPERIAL_CU)
         SupplyVDemand.load_annual_report(self.df, "ca", "coachella_consumptive_use", lb.COACHELLA_CU)
         # SupplyVDemand.load_annual_report(self.df, "ca", "coachella_diversion", lb.COACHELLA_CU)
+
         SupplyVDemand.load_annual_report(self.df, "ca", "yuma_project_sum_consumptive_use", "Yuma Project")
+
+        df_utils.copy_column(self.demand.df_lb_cul, self.df,  lb.CA_MAINSTEM, lb.CA_MAINSTEM)
+        # FIXME, Yuma project doesn't seem to be in mainstem, maybe because its diverted out of All American
+        # Mainstem jumps a bunch in 2003, maybe due to return flow account tightening after QSA
+        # df_utils.subtract_column_by_year(self.df, lb.CA_MAINSTEM, "Yuma Project", 2003, 2025, "CA Mainstem estimated")
 
         df_utils.add_column_sum(self.df, [lb.IMPERIAL_CU, lb.COACHELLA_CU], lb.IMPERIAL_VALLEY_CU)
 
@@ -316,6 +322,13 @@ class SupplyVDemand(DemandChartFrame):
         self.df = sheet.read_csv('data/Colorado_River/usbr_colorado_river_use_since_1906.csv',
                                          sep='\s+', na_values=["---", "-", "*******"])
         self.df = df_utils.extend_years(self.df, min_year=1904, max_year=2026)
+        df_utils.copy_column(self.df, self.df, "Upper Basin", "UB 06", insert_before="Upper Basin")
+        df_utils.copy_column(self.df, self.df, "Lower Basin", "LB 06", insert_before="Lower Basin")
+        df_utils.copy_column(self.df, self.df, "AZ", "AZ 06", insert_before="AZ")
+        df_utils.copy_column(self.df, self.df, "AZ", "AZ 06", insert_before="AZ")
+        df_utils.copy_column(self.df, self.df, "CA", "CA 06", insert_before="CA")
+        df_utils.copy_column(self.df, self.df, "NV", "NV 06", insert_before="NV")
+        df_utils.copy_column(self.df, self.df, "Mexico", "MX 06", insert_before="Mexico")
 
         self.load_annual_reports()
 
@@ -398,6 +411,8 @@ class SupplyVDemand(DemandChartFrame):
         }
         df_utils.copy_columns_by_key(self.df, self.df, delta_map)
 
+        self.pre_lb_demand_bar_chart(self.df, use_cul=True)
+
         self.create_natural_flow_bar_chart(self.df)
         self.create_ub_demand_bar_chart(self.df)
         # self.create_lb_trib_bar_chart(self.df)
@@ -408,19 +423,40 @@ class SupplyVDemand(DemandChartFrame):
         self.on_line_moved(1922)
 
     def create_natural_flow_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
-        series = ('', [
-            (self.demand.natural_flow_data.df, "Natural Lees Ferry", Colors.NATURAL_FLOW),
+        df_utils.add_column_sum(self.df, ["LB 06", "UB 06", "Cienega", "Mexico Treaty"],'Demand')
+        df_utils.copy_column(self.demand.natural_flow_data.df, self.df, "Natural Lees Ferry", "Natural Lees Ferry")
+        df_utils.subtract_column(self.df,  "Natural Lees Ferry", 'Demand', "Diff")
+        df_utils.split_column_by_sign(self.df, "Diff", "Deficit", "Surplus", drop_original=True)
+
+        df_utils.add_column_sum(self.df, ["Demand", "Delta"],'Expected')
+        df_utils.subtract_column(self.df,  "Expected", "Natural Lees Ferry", "Diff")
+        df_utils.split_column_by_sign(self.df, "Diff", "Fill", "Overflow", drop_original=True)
+        df_utils.subtract_column(self.df,  "Overflow", "Deficit", "Overflow")
+
+        demand = ('', [
+            (self.df, "LB 06", Colors.LB),
+            (self.df, "UB 06", Colors.UB),
+            (self.df, "Cienega", Colors.MX_CIENEGA),
+            (self.df, "Mexico Treaty", Colors.MX),
+            (self.df, "Delta", Colors.MX_DELTA),
+            (self.df, "Fill", "#9090ff"),
+        ])
+        supply = ('', [
+            (self.df, "Natural Lees Ferry", Colors.NATURAL_FLOW),
+            (self.df, "Deficit", "#ff0000"),
+            (self.df, "Overflow", "#00ff00"),
         ])
         self.natural_flow_chart = MultiBarChart(
             # title=f'Colorado River {self.name}     ver={self.version}',
             percentage=0.20,
-            groups=[series],
+            groups=[demand, supply],
             start_year=self.start_year,
             end_year=self.end_year,
             x_min = 0,
             y_max=25.0,
-            y_min=4.0,
+            y_min=0.0,
             show_x_labels=False,
+            custom_legend=[("Natural Lee Ferry", Colors.NATURAL_FLOW) ],
             legend_loc = 'upper center',
         )
         self.charts.append(self.natural_flow_chart)
@@ -459,10 +495,9 @@ class SupplyVDemand(DemandChartFrame):
         )
         self.charts.append(self.ub_demand_chart)
 
-    def create_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
+    def pre_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
         if use_cul:
             df_lb_cul = self.demand.df_lb_cul
-            ltsc_df = self.demand.az_ltsc_data.df
 
             df_utils.zero_out_column(df_cu_1906_2024,  "CA", 1971, 2024, date_col='Year', use_nan=True)
             df_utils.zero_out_column(df_cu_1906_2024,  "AZ", 1971, 2024, date_col='Year', use_nan=True)
@@ -478,6 +513,11 @@ class SupplyVDemand(DemandChartFrame):
             #                                 start_year=1961, end_year=1963)
             # df_utils.subtract_column_by_year(df_cu_1906_2024, lb.IMPERIAL_VALLEY_CU, lb.SALTON_INFLOW, result_column=lb.IMPERIAL_VALLEY_CU,
             #                                  start_year=1964, end_year=1970)
+
+    def create_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
+        if use_cul:
+            df_lb_cul = self.demand.df_lb_cul
+            ltsc_df = self.demand.az_ltsc_data.df
             series = ('', [
                 # CA
                 # (df_cu_1906_2024, lb.SALTON_INFLOW, Colors.CA_SALTON, {'label': 'Salton'}),
@@ -487,7 +527,7 @@ class SupplyVDemand(DemandChartFrame):
                 (df_cu_1906_2024, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
                 (df_cu_1906_2024, "Yuma Project", Colors.CA4),
                 (df_cu_1906_2024, "Palo Verde", Colors.CA_PALO_VERDE),
-                (df_lb_cul, lb.CA_MAINSTEM, Colors.CA4, {'label': 'CA Misc'}),
+                (df_cu_1906_2024, lb.CA_MAINSTEM, Colors.CA4, {'label': 'CA Misc'}),
                 (df_cu_1906_2024, lb.METROPOLITAN_CU, Colors.CA_MWD, {'label': 'MWD'}),
 
                 # NV
@@ -630,10 +670,10 @@ class SupplyVDemand(DemandChartFrame):
     def bottom_axis_annotations(self):
         if self.lb_demand_chart is not None:
             ax = self.lb_demand_chart.ax
-            self._annotate_bottom(ax, 1882, "GVIC", offset_lines=-1, color=Colors.UB) # Water rights 1882, formed 1894
-            self._annotate_bottom(ax, 1885, "Montezuma", offset_lines=0, color=Colors.UB) # 1885
-            self._annotate_bottom(ax, 1882, "Uncompaghre", offset_lines=1, color=Colors.UB) # 1882
-            self._annotate_bottom(ax, 1901, "Alamo", offset_lines=2, color=Colors.LB) # California Development Company (CDC) 1896
+            self._annotate_bottom(ax, 1882, "GVIC'82", offset_lines=-1, color=Colors.UB) # Water rights 1882, formed 1894
+            self._annotate_bottom(ax, 1885, "Montezuma'85", offset_lines=0, color=Colors.UB) # 1885
+            self._annotate_bottom(ax, 1882, "Uncompaghre'82", offset_lines=1, color=Colors.UB) # 1882
+            self._annotate_bottom(ax, 1901, "Alamo'01", offset_lines=2, color=Colors.LB) # California Development Company (CDC) 1896
             # self._annotate_bottom(ax, 1902, "UVWUA", offset_lines=0, color=Colors.UB)
 
             # self._annotate_bottom(ax, 1906, "Alamo Fixed", offset_lines=0, color=Colors.LB)
@@ -645,10 +685,11 @@ class SupplyVDemand(DemandChartFrame):
             self._annotate_bottom(ax, 1923, "PVID", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1915, "Grand\nValley", color=Colors.UB)
             self._annotate_bottom(ax, 1929, "BCPA", offset_lines=0)
-            self._annotate_bottom(ax, 1931, "AZ v CA", offset_lines=1)
+            self._annotate_bottom(ax, 1931, "AZ v CA", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1936, "Moffat", offset_lines=1, color=Colors.UB)
             self._annotate_bottom(ax, 1933, "Depression", offset_lines=2)
-            self._annotate_bottom(ax, 1944, "MX Treaty", offset_lines=0)
+            self._annotate_bottom(ax, 1937, "Asalto", offset_lines=0, color=Colors.MX)
+            self._annotate_bottom(ax, 1944, "MX Treaty", offset_lines=0, color=Colors.MX)
             self._annotate_bottom(ax, 1939, "MWD", offset_lines=1, color=Colors.LB)
             self._annotate_bottom(ax, 1940, "All Am", offset_lines=2, color=Colors.LB)
             self._annotate_bottom(ax, 1947, "Coachella", offset_lines=1, color=Colors.LB)
@@ -656,15 +697,18 @@ class SupplyVDemand(DemandChartFrame):
             self._annotate_bottom(ax, 1951, "Wellton", color=Colors.LB)
             self._annotate_bottom(ax, 1959, "MWD\u2191", offset_lines=2, color=Colors.LB)
             self._annotate_bottom(ax, 1964, "Roberts", offset_lines=2, color=Colors.UB)
-            self._annotate_bottom(ax, 1964, "AZ v CA")
+            self._annotate_bottom(ax, 1964, "AZ v CA", color=Colors.LB)
             self._annotate_bottom(ax, 1972, "Fryark", color=Colors.UB)
             self._annotate_bottom(ax, 1971, "CUP", offset_lines=2, color=Colors.UB)
             self._annotate_bottom(ax, 1971, "LV", offset_lines=1, color=Colors.LB)  # LVVWD
             self._annotate_bottom(ax, 1968, "CRBPA", offset_lines=1)
             self._annotate_bottom(ax, 1984, "Dolores", offset_lines=2, color=Colors.UB)
+            self._annotate_bottom(ax, 1982, "El Niño", offset_lines=1)
             self._annotate_bottom(ax, 1985, "CAP", color=Colors.LB)
-            self._annotate_bottom(ax, 1991, "SNWA", color=Colors.LB)
+            self._annotate_bottom(ax, 1992, "AZ Aquifers", offset_lines=0, color=Colors.LB)
+            self._annotate_bottom(ax, 1991, "SNWA", offset_lines=2, color=Colors.LB)
             self._annotate_bottom(ax, 1990, "Yuma Project", offset_lines=1, color=Colors.LB)
+            # self._annotate_bottom(ax, 1990, "Cienega", offset_lines=2, color=Colors.MX_CIENEGA)
             self._annotate_bottom(ax, 2003, "QSA", color=Colors.LB)
             self._annotate_bottom(ax, 2007, "2007\nGuidelines", offset_lines=1)
             self._annotate_bottom(ax, 2014, "Delta\nPulse", color=Colors.LB)

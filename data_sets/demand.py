@@ -70,7 +70,8 @@ class Colors:
     LB = 'maroon'
     UB = '#8080ff'
 
-    NATURAL_FLOW = "cornflowerblue"
+    # NATURAL_FLOW = "cornflowerblue"
+    NATURAL_FLOW = "navy"
 
     EVAP = '#c5a67a'
 

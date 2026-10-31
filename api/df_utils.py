@@ -1239,17 +1239,67 @@ def zero_out_column_seasonal(
 
     df.loc[mask, column] = 0
 
+def split_column_by_sign(
+    df: pd.DataFrame,
+    column: str,
+    neg_column: str,
+    pos_column: str,
+    drop_original: bool = False,
+    inplace: bool = True
+) -> pd.DataFrame:
+    """
+    Split a numeric column into two columns:
+      - Negative values → abs(value) in `neg_column`
+      - Positive values → value in `pos_column`
+      - Zeros are placed in both columns as 0
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+    column : str
+        Source column to split
+    neg_column : str
+        Name of the new column that will receive absolute values of negatives
+    pos_column : str
+        Name of the new column that will receive positive values
+    drop_original : bool, default False
+        If True, remove the original column after splitting
+    inplace : bool, default True
+        If True, modify df in place
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    if column not in df.columns:
+        raise KeyError(f"Column '{column}' not found in DataFrame")
+
+    if not inplace:
+        df = df.copy()
+
+    series = df[column]
+
+    # Negative values (made positive) and positive values
+    df[neg_column] = series.where(series < 0, 0).abs()
+    df[pos_column] = series.where(series > 0, 0)
+
+    if drop_original:
+        df.drop(columns=[column], inplace=True)
+
+    return df
+
 def copy_column(
         source_df: pd.DataFrame,
         target_df: pd.DataFrame,
         column_name: str,
         new_name: Optional[str] = None,
         key_column: Optional[str] = None,
+        insert_before: Optional[str] = None,
         inplace: bool = True
 ) -> pd.DataFrame:
     """
     Copy a column from source_df to target_df, aligning on a key column (Year/Date).
-    Creates the column if it doesn't exist.
+    Creates the column if it doesn't exist. Optionally inserts it before a given column.
 
     Parameters:
         source_df (pd.DataFrame): Source DataFrame
@@ -1257,6 +1307,9 @@ def copy_column(
         column_name (str): Column to copy from source
         new_name (str, optional): Name to use in target (default = column_name)
         key_column (str, optional): Column to match on (auto-detects 'Year' or 'Date')
+        insert_before (str, optional): Column name in target to insert the new column before.
+                                        If None, inserts before `column_name` if it exists,
+                                        otherwise appends at the end.
         inplace (bool): Modify target_df in place if True
 
     Returns:
@@ -1288,8 +1341,33 @@ def copy_column(
     # Create a mapping from source: key → value
     source_map = source_df.set_index(key_column)[column_name]
 
-    # Assign to target (aligns on key_column)
-    target[target_col_name] = target[key_column].map(source_map)
+    # Get the mapped values
+    new_values = target[key_column].map(source_map)
+
+    # Determine insertion position
+    if insert_before is not None:
+        if insert_before not in target.columns:
+            raise KeyError(f"Column '{insert_before}' not found in target DataFrame")
+        insert_pos = target.columns.get_loc(insert_before)
+    elif target_col_name in target.columns:
+        # Insert before the existing column of the same name
+        insert_pos = target.columns.get_loc(target_col_name)
+    elif column_name in target.columns:
+        # Fall back to inserting before the original column name
+        insert_pos = target.columns.get_loc(column_name)
+    else:
+        # Append at the end
+        insert_pos = len(target.columns)
+
+    # Drop the column if it already exists (so we can re-insert cleanly)
+    if target_col_name in target.columns:
+        target = target.drop(columns=[target_col_name])
+        # Adjust insert position if we dropped a column before the insertion point
+        if insert_pos > target.columns.get_loc(target_col_name) if target_col_name in target.columns else False:
+            insert_pos -= 1
+
+    # Insert the new column at the desired position
+    target.insert(insert_pos, target_col_name, new_values)
 
     # Optional: Warn if many values couldn't be matched
     missing = target[target_col_name].isna().sum()
@@ -1297,10 +1375,6 @@ def copy_column(
         print(f"Warning: {missing} rows in target could not be matched on '{key_column}'")
 
     return target
-
-
-import pandas as pd
-
 
 def compute_delta(
         df: pd.DataFrame,
