@@ -77,19 +77,19 @@ SOFTWARE.
 import pandas as pd
 import wx
 
-from api.df_utils import divide_columns, divide_by_constant
+from api.df_utils import divide_by_constant
 from data_sets.demand import Demand, Colors
 from demand_chart_frame import DemandChartFrame
 from sheet import sheet
 from graphs.chart_frame import ChartFrame, NotebookFrame
 from chart.pie_chart import PieChart
-from chart.multi_bar_chart import MultiBarChart
+from chart.multi_bar_chart import MultiBarChart, BarSeries, BarGroup
 from colorado.river_war import RiverWar
 import colorado.lb as lb
 import colorado.ub as ub
 import colorado.allb as all_b
 from api import df_utils
-from typing import Optional
+from typing import Optional, List
 
 class SupplyVDemandPie(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
@@ -448,7 +448,7 @@ class SupplyVDemand(DemandChartFrame):
             (self.df, "Cienega", Colors.MX_CIENEGA),
             (self.df, "Mexico Treaty", Colors.MX),
             (self.df, "Delta", Colors.MX_DELTA),
-            (self.df, "Fill", "#9090ff"),
+            (self.df, "Fill", Colors.FILL),
         ])
         supply = ('', [
             (self.df, "Natural Lees Ferry", Colors.NATURAL_FLOW),
@@ -466,7 +466,7 @@ class SupplyVDemand(DemandChartFrame):
             y_max=25.0,
             y_min=0.0,
             show_x_labels=False,
-            custom_legend=[("Natural", Colors.NATURAL_FLOW), ("Gila Dome", Colors.AZ), ("Fill", "#9090ff") ],
+            custom_legend=[("Natural", Colors.NATURAL_FLOW), ("Gila Dome", Colors.AZ), ("Fill", Colors.FILL) ],
             legend_loc = 'upper center',
         )
         self.charts.append(self.natural_flow_chart)
@@ -570,7 +570,7 @@ class SupplyVDemand(DemandChartFrame):
                 (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
             ])
         legend = [
-            ("CA", Colors.MX),
+            ("MX", Colors.MX),
             ("AZ", Colors.AZ),
             ("NV", Colors.NV1),
             ("CA", Colors.CA),

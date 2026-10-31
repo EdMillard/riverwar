@@ -1514,13 +1514,17 @@ class MultiBarChart(Chart):
         return stack_side(left_items) + stack_side(right_items)
 
     def _update_top_total_labels(self, idx, year, group_width, y_span):
-        if not getattr(self, '_top_total_columns', None):
-            for t in getattr(self, '_top_total_texts', []):
+        if not getattr(self, "_top_total_columns", None):
+            for t in getattr(self, "_top_total_texts", []):
                 t.set_visible(False)
             return
 
-        for t in getattr(self, '_top_total_texts', []):
+        for t in getattr(self, "_top_total_texts", []):
             t.set_visible(False)
+
+        # Match the exact width used when the bars are drawn
+        n_groups = len(self.groups)
+        group_width = 0.82 / n_groups if n_groups else 0.82
 
         top_needed = []
 
@@ -1528,34 +1532,44 @@ class MultiBarChart(Chart):
             series_values = []
             for s in group.series:
                 val = 0.0
-                if not s.df.empty and 'Year' in s.df.columns and s.col in s.df.columns:
-                    match = s.df[s.df['Year'] == year]
+                if s.df is not None and not s.df.empty and "Year" in s.df.columns and s.col in s.df.columns:
+                    match = s.df[s.df["Year"] == year]
                     if not match.empty:
-                        val = pd.to_numeric(match[s.col].iloc[0], errors='coerce')
-                        if pd.isna(val):
-                            val = 0.0
+                        v = pd.to_numeric(match[s.col].iloc[0], errors="coerce")
+                        if pd.notna(v):
+                            val = float(v)
                 series_values.append((s.col, val))
 
-            if not any(v > 0 for _, v in series_values):
+            if not any(v != 0 for _, v in series_values):
                 continue
 
             bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
             bottom = 0.0
             cumulative = 0.0
+            place_at = None
+            found = False
 
             for col_name, raw_val in series_values:
                 height = raw_val / self.y_divisor
                 cumulative += height
-
-                if col_name in self._top_total_columns and height > 0:
-                    top_y = bottom + height
-                    label_y = top_y + y_span * 0.025
-                    total_txt = (f"{cumulative:.3f}" if abs(cumulative) < 10 else f"{cumulative:.1f}")
-                    top_needed.append((bar_center, label_y, total_txt))
-
                 bottom += max(height, 0.0)
 
-        if not hasattr(self, '_top_total_texts'):
+                if col_name in self._top_total_columns:
+                    # Include this column; place label at its top
+                    place_at = bottom
+                    found = True
+                    break
+
+            # If the named column was never found, skip this group
+            if not found:
+                continue
+
+            if abs(cumulative) > 1e-6:
+                label_y = place_at + y_span * 0.025
+                total_txt = f"{cumulative:.3f}" if abs(cumulative) < 10 else f"{cumulative:.1f}"
+                top_needed.append((bar_center, label_y, total_txt))
+
+        if not hasattr(self, "_top_total_texts"):
             self._top_total_texts = []
 
         for i, (x, y, txt) in enumerate(top_needed):
@@ -1567,10 +1581,10 @@ class MultiBarChart(Chart):
             else:
                 text = self.ax.text(
                     x, y, txt,
-                    ha='center', va='bottom',
+                    ha="center", va="bottom",
                     fontsize=self._bar_value_fontsize + 0.5,
-                    color='black',
-                    fontweight='bold',
+                    color="black",
+                    fontweight="bold",
                     zorder=30,
                     clip_on=False,
                     bbox=dict(
@@ -1765,3 +1779,56 @@ class MultiBarChart(Chart):
         self._update_year_label(idx)
         self._update_bar_value_labels(idx)
         self.fig.canvas.draw_idle()
+
+    @staticmethod
+    def compute_stack_totals(
+            series: List[BarSeries] | BarGroup,
+            top_col: str,
+            total_col_name: str = "Total",
+    ) -> pd.DataFrame:
+        """
+        Sum every series from the bottom of the stack up to and including top_col.
+        Series above top_col are excluded. NaNs are treated as 0.
+        Returns DataFrame with columns ['Year', total_col_name].
+        """
+        if isinstance(series, BarGroup):
+            series = series.series
+
+        if not series:
+            return pd.DataFrame(columns=["Year", total_col_name])
+
+        # Find the index of the cutoff column (inclusive)
+        cutoff = None
+        for i, s in enumerate(series):
+            if s.col == top_col:
+                cutoff = i
+                break
+        if cutoff is None:
+            return pd.DataFrame(columns=["Year", total_col_name])
+
+        included = series[:cutoff + 1]  # bottom through and including top_col
+
+        all_years = set()
+        for s in included:
+            if s.df is not None and not s.df.empty and "Year" in s.df.columns:
+                years = pd.to_numeric(s.df["Year"], errors="coerce").dropna()
+                all_years.update(int(y) for y in years)
+
+        if not all_years:
+            return pd.DataFrame(columns=["Year", total_col_name])
+
+        rows = []
+        for year in sorted(all_years):
+            total = 0.0
+            for s in included:
+                if s.df is None or s.df.empty or s.col not in s.df.columns:
+                    continue
+                match = s.df[s.df["Year"] == year]
+                if match.empty:
+                    continue
+                val = pd.to_numeric(match[s.col].iloc[0], errors="coerce")
+                if pd.notna(val):
+                    total += val
+            rows.append({"Year": year, total_col_name: total})
+
+        return pd.DataFrame(rows)

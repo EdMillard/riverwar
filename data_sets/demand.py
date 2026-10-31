@@ -30,7 +30,31 @@ from colorado.river_war import RiverWar
 
 
 class Colors:
-    """Shared color constants for demand charts."""
+    brown = ['#5c3718', '#7f5b3d', '#a18062', '#c6a385']
+    deep_purple = ['#5200f6', '#702bf8', '#8d57fa', '#ab82fb']
+    lavender = ['#c8aefd', '#e6d9ff', '#3e8ba4', '#69a8bc']
+    cyan = ['#92c2d1', '#bcdce6', '#c800c8', '#da4cda']
+    magenta =['#ed99ed', '#ffe5ff', '#737373', '#959595']
+    grays = ['#b7b7b7', '#d9d9d9', '#c05812', '#cf7940']
+    orange = ['#dd9b6e', '#ecbc9c', '#faddca', '#d6ad00']
+    yellow = ['#e0bd2a', '#ebce54', '#f5de7d', '#ffeea7']
+    green = ['#43682a', '#63834d', '#839e70', '#a2b994']
+    light_green = ['#c2d4b7', '#e2efda', '#3087ce', '#6ba9dc']
+    lightest_blue = ['#a5cbea', '#e0edf8']
+
+    palette = [
+        '#4b76d2',  # Colorado (deep blue)
+        '#9dbaef',  # Utah
+        '#cbd8f4',  # New Mexico
+        '#a6ca8c',  # Wyoming / CRSP area (light green)
+        '#77a559',  # Mead Evaporation (green)
+        '#e9c352',  # Mexico (yellow)
+        '#eac04e',  # Nevada / gold-yellow
+        '#cf6b67',  # Arizona (lighter red)
+        '#bb271b',  # Arizona mid-red
+        '#8b1a10',  # California (dark red)
+    ]
+
     CO = '#c050c0'
     UT = '#6060ff'
     WY = '#A0A0ff'
@@ -41,7 +65,7 @@ class Colors:
     CA_SALTON = '#000000'
     CA_ALAMO = 'gray'
     CA_VOLCANO = 'darkgray'
-    CA_IMPERIAL = '#800000'
+    CA_IMPERIAL = '#8b1a10'
     CA_MWD = '#a03030'
     CA_PALO_VERDE = '#c03030'
     CA_MAINSTEM = '#ff2020'
@@ -78,6 +102,8 @@ class Colors:
     Wet = "green"
     Drought = "red"
     Monsoon = "black"
+
+    FILL = deep_purple[2]
 
 class Demand:
     monsoon_years = [
