@@ -70,7 +70,7 @@ SOFTWARE.
 # Statements to L Ward Bannister
 #  https://www.varuna.io/LOTR/1935/Bannister_Report_1935.pdf
 
-# My Lower Colorado Annual Report digitization 1964-2021 (Im update the files I need for 2022-2025)
+# My Lower Colorado Annual Report digitization 1964-2021
 # This gets me LB individual users and through 2025 (no LB tributaries)
 # https://github.com/EdMillard/riverwar/tree/main/data/USBR_Reports
 #
@@ -89,7 +89,7 @@ import colorado.lb as lb
 import colorado.ub as ub
 import colorado.allb as all_b
 from api import df_utils
-from typing import Optional, List
+from typing import Optional
 
 class SupplyVDemandPie(DemandChartFrame):
     def __init__(self, notebook_frame: NotebookFrame, demand:Demand):
@@ -363,7 +363,7 @@ class SupplyVDemand(DemandChartFrame):
         volcano_column_map = { "Water_Year_Runoff_AF": "Volcano" }
         df_utils.copy_columns_by_key(df_volcano, self.df, volcano_column_map, overwrite=True)
 
-        # Delta early years is Yume Gage - ALamo - Volcano - Small Yuma diversion
+        # Delta early years is Yuma Gage - ALamo - Volcano - Small Yuma diversion
         #
         df_utils.subtract_column(self.df, "Yuma USGS", "Alamo", "Delta", clip_negative_to_zero=True)
         df_utils.subtract_column(self.df, "Delta", "Volcano", "Delta")
@@ -420,7 +420,7 @@ class SupplyVDemand(DemandChartFrame):
 
         self.pre_lb_demand_bar_chart(self.df, use_cul=True)
 
-        self.create_natural_flow_bar_chart(self.df)
+        self.create_natural_flow_bar_chart()
         self.create_ub_demand_bar_chart(self.df)
         # self.create_lb_trib_bar_chart(self.df)
         self.create_lb_demand_bar_chart(self.df)
@@ -428,82 +428,6 @@ class SupplyVDemand(DemandChartFrame):
 
         # self.create_reservoir_bar_chart(show_x_labels=False)
         self.on_line_moved(1922)
-
-    def create_natural_flow_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
-        df_utils.add_column_sum(self.df, ["LB 06", "UB 06", "Cienega", "Mexico Treaty"],'Demand')
-        df_utils.copy_column(self.demand.natural_flow_data.df, self.df, "Natural Lees Ferry", "Natural Lees Ferry")
-        df_utils.add_column_sum(self.df, [ "Natural Lees Ferry", "Gila Dome"],'Supply')
-
-        df_utils.subtract_column(self.df,  "Supply", 'Demand', "Diff")
-        df_utils.split_column_by_sign(self.df, "Diff", "Deficit", "Surplus", drop_original=True)
-
-        df_utils.add_column_sum(self.df, ["Demand", "Delta"],'Expected')
-        df_utils.subtract_column(self.df,  "Expected", "Supply", "Diff")
-        df_utils.split_column_by_sign(self.df, "Diff", "Fill", "Overflow", drop_original=True)
-        df_utils.subtract_column(self.df,  "Overflow", "Deficit", "Overflow")
-
-        demand = ('', [
-            (self.df, "LB 06", Colors.LB),
-            (self.df, "UB 06", Colors.UB),
-            (self.df, "Cienega", Colors.MX_CIENEGA),
-            (self.df, "Mexico Treaty", Colors.MX),
-            (self.df, "Delta", Colors.MX_DELTA),
-            (self.df, "Fill", Colors.FILL),
-        ])
-        supply = ('', [
-            (self.df, "Natural Lees Ferry", Colors.NATURAL_FLOW),
-            (self.df, "Gila Dome", Colors.AZ),
-            (self.df, "Deficit", "#ff0000"),
-            (self.df, "Overflow", "#00ff00"),
-        ])
-        self.natural_flow_chart = MultiBarChart(
-            # title=f'Colorado River {self.name}     ver={self.version}',
-            percentage=0.20,
-            groups=[demand, supply],
-            start_year=self.start_year,
-            end_year=self.end_year,
-            x_min = 0,
-            y_max=25.0,
-            y_min=0.0,
-            show_x_labels=False,
-            custom_legend=[("Natural", Colors.NATURAL_FLOW), ("Gila Dome", Colors.AZ), ("Fill", Colors.FILL) ],
-            legend_loc = 'upper center',
-        )
-        self.charts.append(self.natural_flow_chart)
-
-    def create_ub_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
-        if use_cul:
-            df_ub_cul = self.demand.df_ub_cul
-            df_utils.zero_out_column(df_cu_1906_2024,  "Upper Basin", 1971, self.end_year, date_col='Year', use_nan=True)
-            df_utils.copy_column(df_ub_cul, df_ub_cul, ub.UB_RESERVOIR_EVAP, 'Evap')
-            series = ('', [
-                (df_cu_1906_2024, "Upper Basin", Colors.UB),
-                (df_ub_cul, ub.CO_WEST_SLOPE, Colors.CO),
-                (df_ub_cul, ub.CU_UT, Colors.UT),
-                (df_ub_cul, ub.CU_WY, Colors.WY),
-                (df_ub_cul, ub.CU_NM, Colors.NM),
-                (df_ub_cul, 'Evap', 'cornflowerblue'),
-            ])
-        else:
-            series = ('', [
-                (df_cu_1906_2024, "Upper Basin", Colors.UB),
-            ])
-
-        self.ub_demand_chart = MultiBarChart(
-            # title=f'Colorado River {self.name}     ver={self.version}',
-            title="",
-            percentage=0.20,
-            groups=[series],
-            start_year=self.start_year,
-            end_year=self.end_year,
-            x_min = 0,
-            y_max=5.0,
-            y_min=0,
-            show_x_labels=False,
-            custom_legend=[("Upper Basin", Colors.UB)],
-            legend_loc = 'upper left',
-        )
-        self.charts.append(self.ub_demand_chart)
 
     def pre_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
         if use_cul:
@@ -524,65 +448,156 @@ class SupplyVDemand(DemandChartFrame):
             # df_utils.subtract_column_by_year(df_cu_1906_2024, lb.IMPERIAL_VALLEY_CU, lb.SALTON_INFLOW, result_column=lb.IMPERIAL_VALLEY_CU,
             #                                  start_year=1964, end_year=1970)
 
-    def create_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
+    def create_natural_flow_bar_chart(self):
+        df_utils.add_column_sum(self.df, ["LB 06", "UB 06", "Cienega", "Mexico Treaty"], 'Demand')
+        df_utils.copy_column(self.demand.natural_flow_data.df, self.df, "Natural Lees Ferry", "Natural Lees Ferry")
+        df_utils.add_column_sum(self.df, ["Natural Lees Ferry", "Gila Dome"], 'Supply')
+
+        df_utils.subtract_column(self.df, "Supply", 'Demand', "Diff")
+        df_utils.split_column_by_sign(self.df, "Diff", "Deficit", "Surplus", drop_original=True)
+
+        df_utils.add_column_sum(self.df, ["Demand", "Delta"], 'Expected')
+        df_utils.subtract_column(self.df, "Expected", "Supply", "Diff")
+        df_utils.split_column_by_sign(self.df, "Diff", "Fill", "Overflow", drop_original=True)
+        df_utils.subtract_column(self.df, "Overflow", "Deficit", "Overflow")
+
+        demand = BarGroup(
+            label="",
+            series=[
+                BarSeries(df=self.df, col="LB 06", color=Colors.LB),
+                BarSeries(df=self.df, col="UB 06", color=Colors.UB),
+                BarSeries(df=self.df, col="Cienega", color=Colors.MX_CIENEGA),
+                BarSeries(df=self.df, col="Mexico Treaty", color=Colors.MX),
+                BarSeries(df=self.df, col="Delta", color=Colors.MX_DELTA),
+                BarSeries(df=self.df, col="Fill", color=Colors.FILL),
+            ],
+        )
+        supply = BarGroup(
+            label="",
+            series=[
+                BarSeries(df=self.df, col="Natural Lees Ferry", color=Colors.NATURAL_FLOW),
+                BarSeries(df=self.df, col="Gila Dome", color=Colors.AZ),
+                BarSeries(df=self.df, col="Deficit", color="#ff0000"),
+                BarSeries(df=self.df, col="Overflow", color="#00ff00"),
+            ],
+        )
+        self.natural_flow_chart = MultiBarChart(
+            percentage=0.20,
+            groups=[demand, supply],
+            start_year=self.start_year,
+            end_year=self.end_year,
+            x_min=0,
+            y_max=25.0,
+            y_min=0.0,
+            show_x_labels=False,
+            custom_legend=[("Natural", Colors.NATURAL_FLOW), ("Gila Dome", Colors.AZ), ("Fill", Colors.FILL)],
+            legend_loc='upper center',
+        )
+        self.charts.append(self.natural_flow_chart)
+
+    def create_ub_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul: bool = True):
+        if use_cul:
+            df_ub_cul = self.demand.df_ub_cul
+            df_utils.zero_out_column(df_cu_1906_2024, "Upper Basin", 1971, self.end_year, date_col='Year', use_nan=True)
+            df_utils.copy_column(df_ub_cul, df_ub_cul, ub.UB_RESERVOIR_EVAP, 'Evap')
+            series = BarGroup(
+                label="",
+                series=[
+                    BarSeries(df=df_cu_1906_2024, col="Upper Basin", color=Colors.UB),
+                    BarSeries(df=df_ub_cul, col=ub.CO_WEST_SLOPE, color=Colors.CO),
+                    BarSeries(df=df_ub_cul, col=ub.CU_UT, color=Colors.UT),
+                    BarSeries(df=df_ub_cul, col=ub.CU_WY, color=Colors.WY),
+                    BarSeries(df=df_ub_cul, col=ub.CU_NM, color=Colors.NM),
+                    BarSeries(df=df_ub_cul, col='Evap', color='cornflowerblue'),
+                ],
+            )
+        else:
+            series = BarGroup(
+                label="",
+                series=[
+                    BarSeries(df=df_cu_1906_2024, col="Upper Basin", color=Colors.UB),
+                ],
+            )
+
+        self.ub_demand_chart = MultiBarChart(
+            title="",
+            percentage=0.20,
+            groups=[series],
+            start_year=self.start_year,
+            end_year=self.end_year,
+            x_min=0,
+            y_max=5.0,
+            y_min=0,
+            show_x_labels=False,
+            custom_legend=[("Upper Basin", Colors.UB)],
+            legend_loc='upper left',
+        )
+        self.charts.append(self.ub_demand_chart)
+
+    def create_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul: bool = True):
         if use_cul:
             df_lb_cul = self.demand.df_lb_cul
             ltsc_df = self.demand.az_ltsc_data.df
-            series = ('', [
-                # CA
-                # (df_cu_1906_2024, lb.SALTON_INFLOW, Colors.CA_SALTON, {'label': 'Salton'}),
-                (df_cu_1906_2024, "CA", Colors.CA),
-                (df_cu_1906_2024, "Alamo", Colors.CA_ALAMO ),
-                (df_cu_1906_2024, "Volcano", Colors.CA_VOLCANO),
-                (df_cu_1906_2024, lb.IMPERIAL_VALLEY_CU, Colors.CA_IMPERIAL, {'label': 'Imperial'}),
-                (df_cu_1906_2024, "Yuma Project", Colors.CA4),
-                (df_cu_1906_2024, "Palo Verde", Colors.CA_PALO_VERDE),
-                (df_cu_1906_2024, lb.CA_MAINSTEM, Colors.CA4, {'label': 'CA Misc'}),
-                (df_cu_1906_2024, lb.METROPOLITAN_CU, Colors.CA_MWD, {'label': 'MWD'}),
+            series = BarGroup(
+                label="",
+                series=[
+                    # CA
+                    BarSeries(df=df_cu_1906_2024, col="CA", color=Colors.CA),
+                    BarSeries(df=df_cu_1906_2024, col="Alamo", color=Colors.CA_ALAMO),
+                    BarSeries(df=df_cu_1906_2024, col="Volcano", color=Colors.CA_VOLCANO),
+                    BarSeries(df=df_cu_1906_2024, col=lb.IMPERIAL_VALLEY_CU, color=Colors.CA_IMPERIAL,
+                              label='Imperial'),
+                    BarSeries(df=df_cu_1906_2024, col="Yuma Project", color=Colors.CA4),
+                    BarSeries(df=df_cu_1906_2024, col="Palo Verde", color=Colors.CA_PALO_VERDE),
+                    BarSeries(df=df_cu_1906_2024, col=lb.CA_MAINSTEM, color=Colors.CA4, label='CA Misc'),
+                    BarSeries(df=df_cu_1906_2024, col=lb.METROPOLITAN_CU, color=Colors.CA_MWD, label='MWD'),
 
-                # NV
-                (df_cu_1906_2024, "NV", Colors.NV1),
-                (df_lb_cul, lb.NV_COLORADO_RIVER_TOTAL, Colors.NV2, {'label': 'NV'}),
-                # (df_lb_cul, lb.NV_TRIBUTARY_CUL, Colors.NV1, {'label': 'NV Trib'}),
+                    # NV
+                    BarSeries(df=df_cu_1906_2024, col="NV", color=Colors.NV1),
+                    BarSeries(df=df_lb_cul, col=lb.NV_COLORADO_RIVER_TOTAL, color=Colors.NV2, label='NV'),
 
-                # AZ
-                (df_cu_1906_2024, "AZ", Colors.AZ),
-                (df_lb_cul, lb.AZ_MAINSTEM, Colors.AZ, {'label': 'AZ Misc'}),
-                (self.df, lb.AZ_CRIT_CU, Colors.AZ, {'label': 'CRIT'}),
-                (self.df, lb.WELLTON_MOHAWK_CU, Colors.AZ, {'label': 'Wellton'}),
-                (df_lb_cul, lb.AZ_CAP, Colors.AZ1, {'label': 'CAP'}),
-                (ltsc_df, lb.AZ_LTSC_STORED, Colors.AZ2, {'label': 'AZ Aquifer'}),
+                    # AZ
+                    BarSeries(df=df_cu_1906_2024, col="AZ", color=Colors.AZ),
+                    BarSeries(df=df_lb_cul, col=lb.AZ_MAINSTEM, color=Colors.AZ, label='AZ Misc'),
+                    BarSeries(df=self.df, col=lb.AZ_CRIT_CU, color=Colors.AZ, label='CRIT'),
+                    BarSeries(df=self.df, col=lb.WELLTON_MOHAWK_CU, color=Colors.AZ, label='Wellton'),
+                    BarSeries(df=df_lb_cul, col=lb.AZ_CAP, color=Colors.AZ1, label='CAP'),
+                    BarSeries(df=ltsc_df, col=lb.AZ_LTSC_STORED, color=Colors.AZ2, label='AZ Aquifer'),
 
-                (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
-
-                (df_cu_1906_2024, "Mexico Treaty",  Colors.MX, {'label': 'MX'}),
-                (df_cu_1906_2024, "LB Evap", Colors.EVAP, {'label': 'Evap'}),
-                (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
-            ])
+                    BarSeries(df=df_cu_1906_2024, col="Cienega", color=Colors.MX_CIENEGA),
+                    BarSeries(df=df_cu_1906_2024, col="Mexico Treaty", color=Colors.MX, label='MX'),
+                    BarSeries(df=df_cu_1906_2024, col="LB Evap", color=Colors.EVAP, label='Evap'),
+                    BarSeries(df=df_cu_1906_2024, col="Delta", color=Colors.MX_DELTA),
+                ],
+            )
         else:
-            series = ('', [
-                (df_cu_1906_2024, "CA", Colors.CA),
-                (df_cu_1906_2024, "NV", Colors.NV1),
-                (df_cu_1906_2024, "AZ", Colors.AZ),
-                (df_cu_1906_2024, "Mexico Treaty",  Colors.MX),
-                (df_cu_1906_2024, "Cienega", Colors.MX_CIENEGA),
-                (df_cu_1906_2024, "LB Evap", Colors.EVAP),
-                (df_cu_1906_2024, "Delta", Colors.MX_DELTA),
-            ])
+            series = BarGroup(
+                label="",
+                series=[
+                    BarSeries(df=df_cu_1906_2024, col="CA", color=Colors.CA),
+                    BarSeries(df=df_cu_1906_2024, col="NV", color=Colors.NV1),
+                    BarSeries(df=df_cu_1906_2024, col="AZ", color=Colors.AZ),
+                    BarSeries(df=df_cu_1906_2024, col="Mexico Treaty", color=Colors.MX),
+                    BarSeries(df=df_cu_1906_2024, col="Cienega", color=Colors.MX_CIENEGA),
+                    BarSeries(df=df_cu_1906_2024, col="LB Evap", color=Colors.EVAP),
+                    BarSeries(df=df_cu_1906_2024, col="Delta", color=Colors.MX_DELTA),
+                ],
+            )
+
         legend = [
             ("MX", Colors.MX),
             ("AZ", Colors.AZ),
             ("NV", Colors.NV1),
             ("CA", Colors.CA),
-            ("Alamo", Colors.CA_ALAMO)
+            ("Alamo", Colors.CA_ALAMO),
         ]
         self.lb_demand_chart = MultiBarChart(
-            title=f'',
+            title='',
             percentage=0.60,
             groups=[series],
             start_year=self.start_year,
             end_year=self.end_year,
-            x_min = 0,
+            x_min=0,
             y_max=11,
             y_min=0,
             show_x_labels=True,
@@ -593,19 +608,22 @@ class SupplyVDemand(DemandChartFrame):
 
     def create_lb_trib_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
         lb_trib_column_map = {
-             lb.LB_TRIBUTARY_CUL: "LB Tributary CU",
+            lb.LB_TRIBUTARY_CUL: "LB Tributary CU",
         }
         df_utils.copy_columns_by_key(self.demand.df_lb_cul, df_cu_1906_2024, lb_trib_column_map)
-        series = ('', [
-            (df_cu_1906_2024, "LB Tributary CU", 'orange'),
-        ])
+        series = BarGroup(
+            label="",
+            series=[
+                BarSeries(df=df_cu_1906_2024, col="LB Tributary CU", color='orange'),
+            ],
+        )
         self.lb_trib_chart = MultiBarChart(
-            title=f'',
+            title='',
             percentage=0.20,
             groups=[series],
             start_year=self.start_year,
             end_year=self.end_year,
-            x_min = 0,
+            x_min=0,
             y_max=4.5,
             y_min=0,
             show_x_labels=True,
