@@ -333,9 +333,16 @@ class SupplyVDemand(DemandChartFrame):
         self.load_annual_reports()
 
         # Gila at Dome confluence 1 mile above Yuma
-        sheet.usgs_annuals(self.df, '09520500', 1929, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1000000) # Has missing years
+        df_gila = sheet.read_csv('data/USGS_Surface_Waters/gila_dome_1903_1950.csv', sep=',')
+        df_utils.multiply_constant(df_gila, "Total", "Gila Dome", 1000)
+        df_utils.copy_column(df_gila, self.df, "Gila Dome")
+
+        sheet.usgs_annuals(self.df, '09520500', 1929, self.end_year, title=lb.AZ_GILA_DOME_USGS, divisor=1) # Has missing years1
+        df_utils.copy_column(self.df, self.df, "Gila Dome")
+
         # Yuma Gage 5-6 miles above Alamo
         sheet.usgs_annuals(self.df, '09521000', 1904, 1964, title="Yuma USGS", divisor=1)
+
         # Mexico border
         sheet.usgs_annuals(self.df, '09522000', 1950, self.end_year, title=lb.NIB_MORELOS_USGS)
 
@@ -346,13 +353,13 @@ class SupplyVDemand(DemandChartFrame):
         df_utils.add_column_sum(self.df, [lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER], lb.SALTON_INFLOW)
 
         # Alamo Canal 1909-1938
-        df_alamo = sheet.read_csv('data/Colorado_River/alamo_1909_1938.csv', sep=',')
+        df_alamo = sheet.read_csv('data/USGS_Surface_Waters//alamo_1909_1938.csv', sep=',')
         alamo_column_map = { "CY_Runoff_acre_ft": "Alamo" }
         df_utils.copy_columns_by_key(df_alamo, self.df, alamo_column_map, overwrite=True)
         df_utils.divide_by_constant(self.df, "Alamo", 2.0, 'Alamo Split')
 
         # Volcano Island Supplement to Imperial on top of Alamo 1916-1921
-        df_volcano = sheet.read_csv('data/Colorado_River/volcamo_lake_1916_1921.csv', sep=',')
+        df_volcano = sheet.read_csv('data/USGS_Surface_Waters//volcano_lake_1916_1921.csv', sep=',')
         volcano_column_map = { "Water_Year_Runoff_AF": "Volcano" }
         df_utils.copy_columns_by_key(df_volcano, self.df, volcano_column_map, overwrite=True)
 
@@ -425,11 +432,13 @@ class SupplyVDemand(DemandChartFrame):
     def create_natural_flow_bar_chart(self, df_cu_1906_2024: pd.DataFrame):
         df_utils.add_column_sum(self.df, ["LB 06", "UB 06", "Cienega", "Mexico Treaty"],'Demand')
         df_utils.copy_column(self.demand.natural_flow_data.df, self.df, "Natural Lees Ferry", "Natural Lees Ferry")
-        df_utils.subtract_column(self.df,  "Natural Lees Ferry", 'Demand', "Diff")
+        df_utils.add_column_sum(self.df, [ "Natural Lees Ferry", "Gila Dome"],'Supply')
+
+        df_utils.subtract_column(self.df,  "Supply", 'Demand', "Diff")
         df_utils.split_column_by_sign(self.df, "Diff", "Deficit", "Surplus", drop_original=True)
 
         df_utils.add_column_sum(self.df, ["Demand", "Delta"],'Expected')
-        df_utils.subtract_column(self.df,  "Expected", "Natural Lees Ferry", "Diff")
+        df_utils.subtract_column(self.df,  "Expected", "Supply", "Diff")
         df_utils.split_column_by_sign(self.df, "Diff", "Fill", "Overflow", drop_original=True)
         df_utils.subtract_column(self.df,  "Overflow", "Deficit", "Overflow")
 
@@ -443,6 +452,7 @@ class SupplyVDemand(DemandChartFrame):
         ])
         supply = ('', [
             (self.df, "Natural Lees Ferry", Colors.NATURAL_FLOW),
+            (self.df, "Gila Dome", Colors.AZ),
             (self.df, "Deficit", "#ff0000"),
             (self.df, "Overflow", "#00ff00"),
         ])
@@ -456,7 +466,7 @@ class SupplyVDemand(DemandChartFrame):
             y_max=25.0,
             y_min=0.0,
             show_x_labels=False,
-            custom_legend=[("Natural Lee Ferry", Colors.NATURAL_FLOW) ],
+            custom_legend=[("Natural", Colors.NATURAL_FLOW), ("Gila Dome", Colors.AZ), ("Fill", "#9090ff") ],
             legend_loc = 'upper center',
         )
         self.charts.append(self.natural_flow_chart)

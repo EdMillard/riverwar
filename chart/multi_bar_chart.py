@@ -1253,6 +1253,7 @@ class MultiBarChart(Chart):
             y_bottom, y_top, margin
         )
 
+        # Stack only when y values actually collide; keep label+value pairs together
         needed = self._stack_labels_vertically(needed, y_span, y_top)
 
         self._apply_bar_value_texts(needed)
@@ -1270,23 +1271,8 @@ class MultiBarChart(Chart):
     def _collect_bar_label_positions(self, idx, year, group_width, label_gap, value_gap,
                                      y_bottom, y_top, margin):
         needed = []
-
-        def is_dark(hex_color: str) -> bool:
-            if not hex_color or not isinstance(hex_color, str):
-                return False
-            h = hex_color.lstrip('#')
-            if len(h) == 3:
-                h = ''.join(c * 2 for c in h)
-            if len(h) != 6:
-                return False
-            try:
-                r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-            except ValueError:
-                return False
-            luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-            if g > r + 40 and g > b + 40 and luminance < 160:
-                return True
-            return luminance < 140
+        n_groups = len(self.groups)
+        two_bars = (n_groups == 2)
 
         for g_idx, group in enumerate(self.groups):
             yearly = MultiBarChart._get_yearly_stacked_data(group.series)
@@ -1313,6 +1299,16 @@ class MultiBarChart(Chart):
                     visible_count += 1
                 tmp_bottom += h
             only_one = (visible_count == 1)
+
+            if two_bars and g_idx == 0:
+                place_both_left = True
+                place_both_right = False
+            elif two_bars and g_idx == 1:
+                place_both_left = False
+                place_both_right = True
+            else:
+                place_both_left = False
+                place_both_right = False
 
             bottom = 0.0
             for val, label, color, overrides in segments:
@@ -1341,42 +1337,66 @@ class MultiBarChart(Chart):
                        if abs(val / self.y_divisor) < 10
                        else f"{val / self.y_divisor:.1f}")
 
-                dark = is_dark(color)
-                label_bg = '#222222' if not dark else '#e0e0e0'
-
-                if not only_one:
-                    label_x = bar_left - label_gap
-                    needed.append((label_x, mid_y, label, 'right', color, label_bg))
-
-                value_x = bar_right + value_gap
-                needed.append((value_x, mid_y, txt, 'left', '#ffffff', '#000000'))
+                # bgcolor is ignored by _apply_bar_value_texts; pass a dummy
+                if place_both_left:
+                    value_x = bar_left - 0.06
+                    needed.append((value_x, mid_y, txt, 'right', '#ffffff', '#000000'))
+                    if not only_one:
+                        label_x = value_x - 0.50
+                        needed.append((label_x, mid_y, label, 'right', color, '#000000'))
+                elif place_both_right:
+                    value_x = bar_right + 0.06
+                    needed.append((value_x, mid_y, txt, 'left', '#ffffff', '#000000'))
+                    if not only_one:
+                        label_x = value_x + 0.50
+                        needed.append((label_x, mid_y, label, 'left', color, '#000000'))
+                else:
+                    if not only_one:
+                        label_x = bar_left - label_gap
+                        needed.append((label_x, mid_y, label, 'right', color, '#000000'))
+                    value_x = bar_right + value_gap
+                    needed.append((value_x, mid_y, txt, 'left', '#ffffff', '#000000'))
 
                 bottom += height
 
         return needed
 
-    def _stack_labels_vertically(self, needed, y_span, y_top, min_gap_frac=0.028):
-        def stack_side(items):
-            if len(items) < 2:
-                return items
-            items = sorted(items, key=lambda t: t[1])
-            min_gap = y_span * min_gap_frac
-            for i in range(1, len(items)):
-                prev_y = items[i - 1][1]
-                curr_y = items[i][1]
-                if curr_y < prev_y + min_gap:
-                    new_y = prev_y + min_gap
-                    new_y = min(new_y, y_top - y_span * 0.01)
-                    items[i] = (items[i][0], new_y, items[i][2], items[i][3],
-                                items[i][4], items[i][5])
-            return items
-
-        left_items = [t for t in needed if t[3] == 'right']
-        right_items = [t for t in needed if t[3] == 'left']
-        return stack_side(left_items) + stack_side(right_items)
-
     def _apply_bar_value_texts(self, needed):
+        from matplotlib.colors import to_hex
+
+        def relative_luminance(hex_color: str) -> float:
+            if not hex_color or not isinstance(hex_color, str):
+                return 1.0
+            h = hex_color.lstrip('#')
+            if len(h) == 3:
+                h = ''.join(c * 2 for c in h)
+            if len(h) != 6:
+                return 1.0
+            try:
+                r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+            except ValueError:
+                return 1.0
+            def channel(c):
+                c = c / 255.0
+                return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+            R, G, B = channel(r), channel(g), channel(b)
+            return 0.2126 * R + 0.7152 * G + 0.0722 * B
+
+        # First pass: create/update all texts and force background from text color
         for i, (x, y, txt, ha, text_color, bgcolor) in enumerate(needed):
+            # Normalize whatever color format we received to hex
+            try:
+                norm_color = to_hex(text_color)
+            except Exception:
+                norm_color = '#000000'
+
+            if norm_color.lower() == '#ffffff':
+                final_bg = '#000000'
+            else:
+                lum = relative_luminance(norm_color)
+                #final_bg = '#e0e0e0' if lum < 0.40 else '#222222'
+                final_bg = '#e0e0e0' if lum < 0.25 else '#222222'
+
             if i < len(self._bar_value_texts):
                 text = self._bar_value_texts[i]
                 text.set_position((x, y))
@@ -1386,7 +1406,7 @@ class MultiBarChart(Chart):
                 text.set_visible(True)
                 text.set_bbox(dict(
                     boxstyle="round,pad=0.18",
-                    facecolor=bgcolor,
+                    facecolor=final_bg,
                     alpha=0.92,
                     edgecolor="none",
                     linewidth=0,
@@ -1402,7 +1422,7 @@ class MultiBarChart(Chart):
                     clip_on=True,
                     bbox=dict(
                         boxstyle="round,pad=0.18",
-                        facecolor=bgcolor,
+                        facecolor=final_bg,
                         alpha=0.92,
                         edgecolor="none",
                         linewidth=0,
@@ -1412,6 +1432,86 @@ class MultiBarChart(Chart):
 
         for j in range(len(needed), len(self._bar_value_texts)):
             self._bar_value_texts[j].set_visible(False)
+
+        # Second pass: only for two-bar mode — measure value bubbles and push labels past them
+        n_groups = len(self.groups)
+        if n_groups == 2:
+            self.fig.canvas.draw()
+            renderer = self.fig.canvas.get_renderer()
+            inv = self.ax.transData.inverted()
+
+            value_texts = []
+            for text in self._bar_value_texts:
+                if not text.get_visible():
+                    continue
+                if text.get_color() == '#ffffff':
+                    value_texts.append(text)
+
+            for text in self._bar_value_texts:
+                if not text.get_visible():
+                    continue
+                if text.get_color() == '#ffffff':
+                    continue
+
+                text_y = text.get_position()[1]
+                text_ha = text.get_ha()
+
+                matching_value = None
+                for vt in value_texts:
+                    if vt.get_ha() != text_ha:
+                        continue
+                    if abs(vt.get_position()[1] - text_y) < 1e-4:
+                        matching_value = vt
+                        break
+                if matching_value is None:
+                    continue
+
+                bbox = matching_value.get_window_extent(renderer=renderer)
+                x0 = inv.transform((bbox.x0, 0))[0]
+                x1 = inv.transform((bbox.x1, 0))[0]
+                value_width = x1 - x0
+
+                if text_ha == 'right':
+                    new_x = matching_value.get_position()[0] - value_width - 0.04
+                    text.set_position((new_x, text_y))
+                elif text_ha == 'left':
+                    new_x = matching_value.get_position()[0] + value_width + 0.04
+                    text.set_position((new_x, text_y))
+
+    def _stack_labels_vertically(self, needed, y_span, y_top, min_gap_frac=0.028):
+        def stack_side(items):
+            if len(items) < 2:
+                return items
+            # Group by nearly-identical y so label+value pairs stay together
+            items = sorted(items, key=lambda t: t[1])
+            groups = []
+            current_group = [items[0]]
+            y_tol = y_span * 0.005
+            for item in items[1:]:
+                if abs(item[1] - current_group[-1][1]) < y_tol:
+                    current_group.append(item)
+                else:
+                    groups.append(current_group)
+                    current_group = [item]
+            groups.append(current_group)
+
+            # Stack the groups
+            min_gap = y_span * min_gap_frac
+            result = []
+            prev_group_y = None
+            for group in groups:
+                group_y = group[0][1]
+                if prev_group_y is not None and group_y < prev_group_y + min_gap:
+                    group_y = prev_group_y + min_gap
+                    group_y = min(group_y, y_top - y_span * 0.01)
+                for item in group:
+                    result.append((item[0], group_y, item[2], item[3], item[4], item[5]))
+                prev_group_y = group_y
+            return result
+
+        left_items = [t for t in needed if t[3] == 'right']
+        right_items = [t for t in needed if t[3] == 'left']
+        return stack_side(left_items) + stack_side(right_items)
 
     def _update_top_total_labels(self, idx, year, group_width, y_span):
         if not getattr(self, '_top_total_columns', None):
