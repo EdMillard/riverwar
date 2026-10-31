@@ -709,9 +709,9 @@ class MultiBarChart(Chart):
                 ha = 'right'
                 edge_frac = 1.0
 
-            print(f"[OUT-OF-RANGE] year={year} label='{label}' "
-                  f"left={is_out_left} right={is_out_right} "
-                  f"text_x={text_x} ha={ha} y_frac={y_frac:.3f}")
+            # print(f"[OUT-OF-RANGE] year={year} label='{label}' "
+            #       f"left={is_out_left} right={is_out_right} "
+            #       f"text_x={text_x} ha={ha} y_frac={y_frac:.3f}")
 
             edge = color if draw_outline else "none"
 
@@ -769,9 +769,9 @@ class MultiBarChart(Chart):
                 disp_pt = ax.transAxes.transform((0.0, fixed_marker_y))
                 start_y_fig = fig.transFigure.inverted().transform(disp_pt)[1]
 
-            print(f"[LINE DEBUG] year={year} pos={position} "
-                  f"vert_x={vert_x:.3f} h_y_fig={h_y_fig:.3f} "
-                  f"label_edge_x={label_edge_x:.3f} delta={label_edge_x - vert_x:.3f}")
+            # print(f"[LINE DEBUG] year={year} pos={position} "
+            #       f"vert_x={vert_x:.3f} h_y_fig={h_y_fig:.3f} "
+            #       f"label_edge_x={label_edge_x:.3f} delta={label_edge_x - vert_x:.3f}")
 
             # Vertical segment
             ax.plot([vert_x, vert_x],
@@ -1226,25 +1226,13 @@ class MultiBarChart(Chart):
         self.fig.canvas.draw_idle()
 
     def _update_bar_value_labels(self, idx):
-        """Place labels for the year under the vline.
-        Bubbles sit completely outside the bars.
-        Values: always black background + white text.
-        Labels: adaptive background biased strongly toward black.
-
-        Segments completely outside the visible y-range are skipped.
-        Partially visible segments have their label centered in the visible portion.
-        Overlapping bubbles on the same side are stacked vertically.
-        If a stack has only one visible segment, the left label is omitted.
-        """
+        """Place labels for the year under the vline."""
         if not self._show_bar_values:
             return
 
         year = self._index_to_year(int(idx))
         if year is None:
-            for t in self._bar_value_texts:
-                t.set_visible(False)
-            for t in getattr(self, '_top_total_texts', []):
-                t.set_visible(False)
+            self._hide_bar_value_texts()
             return
 
         n_groups = len(self.groups)
@@ -1252,15 +1240,36 @@ class MultiBarChart(Chart):
             return
 
         group_width = 0.78 / n_groups
-        label_gap = 0.22
-        value_gap = 0.35
+        label_gap = 0.38
+        value_gap = 0.38
 
         y_bottom, y_top = self.ax.get_ylim()
         y_span = y_top - y_bottom
         font_height_frac = (self._bar_value_fontsize / 72.0) / self.ax.figure.get_figheight()
         margin = y_span * (0.02 + font_height_frac)
 
-        needed = []  # (x, y, text, ha, text_color, bgcolor)
+        needed = self._collect_bar_label_positions(
+            idx, year, group_width, label_gap, value_gap,
+            y_bottom, y_top, margin
+        )
+
+        needed = self._stack_labels_vertically(needed, y_span, y_top)
+
+        self._apply_bar_value_texts(needed)
+
+        self._update_top_total_labels(idx, year, group_width, y_span)
+
+        self._update_side_lines(idx, year, group_width)
+
+    def _hide_bar_value_texts(self):
+        for t in self._bar_value_texts:
+            t.set_visible(False)
+        for t in getattr(self, '_top_total_texts', []):
+            t.set_visible(False)
+
+    def _collect_bar_label_positions(self, idx, year, group_width, label_gap, value_gap,
+                                     y_bottom, y_top, margin):
+        needed = []
 
         def is_dark(hex_color: str) -> bool:
             if not hex_color or not isinstance(hex_color, str):
@@ -1290,7 +1299,7 @@ class MultiBarChart(Chart):
             bar_left = bar_center - bar_half
             bar_right = bar_center + bar_half
 
-            # Count visible segments for this group
+            # Count visible segments
             visible_count = 0
             tmp_bottom = 0.0
             for v, _, _, _ in segments:
@@ -1315,12 +1324,10 @@ class MultiBarChart(Chart):
                 seg_bottom = bottom
                 seg_top = bottom + height
 
-                # Completely outside the visible y-range → skip
                 if seg_top <= y_bottom or seg_bottom >= y_top:
                     bottom += height
                     continue
 
-                # Clamp to the visible portion
                 vis_bottom = max(seg_bottom, y_bottom)
                 vis_top = min(seg_top, y_top)
                 if vis_top <= vis_bottom:
@@ -1337,7 +1344,6 @@ class MultiBarChart(Chart):
                 dark = is_dark(color)
                 label_bg = '#222222' if not dark else '#e0e0e0'
 
-                # Skip the left label when this is the only visible segment
                 if not only_one:
                     label_x = bar_left - label_gap
                     needed.append((label_x, mid_y, label, 'right', color, label_bg))
@@ -1347,8 +1353,10 @@ class MultiBarChart(Chart):
 
                 bottom += height
 
-        # --- Vertical stacking to prevent overlaps ---
-        def stack_side(items, min_gap_frac=0.028):
+        return needed
+
+    def _stack_labels_vertically(self, needed, y_span, y_top, min_gap_frac=0.028):
+        def stack_side(items):
             if len(items) < 2:
                 return items
             items = sorted(items, key=lambda t: t[1])
@@ -1365,11 +1373,9 @@ class MultiBarChart(Chart):
 
         left_items = [t for t in needed if t[3] == 'right']
         right_items = [t for t in needed if t[3] == 'left']
-        left_items = stack_side(left_items)
-        right_items = stack_side(right_items)
-        needed = left_items + right_items
+        return stack_side(left_items) + stack_side(right_items)
 
-        # Reuse / create Text artists
+    def _apply_bar_value_texts(self, needed):
         for i, (x, y, txt, ha, text_color, bgcolor) in enumerate(needed):
             if i < len(self._bar_value_texts):
                 text = self._bar_value_texts[i]
@@ -1407,124 +1413,105 @@ class MultiBarChart(Chart):
         for j in range(len(needed), len(self._bar_value_texts)):
             self._bar_value_texts[j].set_visible(False)
 
-        # --- Cumulative top totals for selected columns ---
-        if getattr(self, '_top_total_columns', None):
+    def _update_top_total_labels(self, idx, year, group_width, y_span):
+        if not getattr(self, '_top_total_columns', None):
             for t in getattr(self, '_top_total_texts', []):
                 t.set_visible(False)
+            return
 
-            top_needed = []  # (x, y, text)
+        for t in getattr(self, '_top_total_texts', []):
+            t.set_visible(False)
 
-            for g_idx, group in enumerate(self.groups):
-                series_values = []
-                for s in group.series:
-                    val = 0.0
-                    if not s.df.empty and 'Year' in s.df.columns and s.col in s.df.columns:
-                        match = s.df[s.df['Year'] == year]
-                        if not match.empty:
-                            val = pd.to_numeric(match[s.col].iloc[0], errors='coerce')
-                            if pd.isna(val):
-                                val = 0.0
-                    series_values.append((s.col, val))
+        top_needed = []
 
-                if not any(v > 0 for _, v in series_values):
-                    continue
+        for g_idx, group in enumerate(self.groups):
+            series_values = []
+            for s in group.series:
+                val = 0.0
+                if not s.df.empty and 'Year' in s.df.columns and s.col in s.df.columns:
+                    match = s.df[s.df['Year'] == year]
+                    if not match.empty:
+                        val = pd.to_numeric(match[s.col].iloc[0], errors='coerce')
+                        if pd.isna(val):
+                            val = 0.0
+                series_values.append((s.col, val))
 
-                bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
-                bottom = 0.0
-                cumulative = 0.0
+            if not any(v > 0 for _, v in series_values):
+                continue
 
-                for col_name, raw_val in series_values:
-                    height = raw_val / self.y_divisor
-                    cumulative += height
+            bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
+            bottom = 0.0
+            cumulative = 0.0
 
-                    if col_name in self._top_total_columns and height > 0:
-                        top_y = bottom + height
-                        label_y = top_y + y_span * 0.025
-                        total_txt = (f"{cumulative:.3f}" if abs(cumulative) < 10 else f"{cumulative:.1f}")
-                        top_needed.append((bar_center, label_y, total_txt))
+            for col_name, raw_val in series_values:
+                height = raw_val / self.y_divisor
+                cumulative += height
 
-                    bottom += max(height, 0.0)
+                if col_name in self._top_total_columns and height > 0:
+                    top_y = bottom + height
+                    label_y = top_y + y_span * 0.025
+                    total_txt = (f"{cumulative:.3f}" if abs(cumulative) < 10 else f"{cumulative:.1f}")
+                    top_needed.append((bar_center, label_y, total_txt))
 
-            if not hasattr(self, '_top_total_texts'):
-                self._top_total_texts = []
+                bottom += max(height, 0.0)
 
-            for i, (x, y, txt) in enumerate(top_needed):
-                if i < len(self._top_total_texts):
-                    text = self._top_total_texts[i]
-                    text.set_position((x, y))
-                    text.set_text(txt)
-                    text.set_visible(True)
-                else:
-                    text = self.ax.text(
-                        x, y, txt,
-                        ha='center', va='bottom',
-                        fontsize=self._bar_value_fontsize + 0.5,
-                        color='black',
-                        fontweight='bold',
-                        zorder=30,
-                        clip_on=False,
-                        bbox=dict(
-                            boxstyle="round,pad=0.2",
-                            facecolor="white",
-                            alpha=0.95,
-                            edgecolor="#333333",
-                            linewidth=0.8,
-                        ),
-                    )
-                    self._top_total_texts.append(text)
+        if not hasattr(self, '_top_total_texts'):
+            self._top_total_texts = []
 
-            for j in range(len(top_needed), len(self._top_total_texts)):
-                self._top_total_texts[j].set_visible(False)
-        else:
-            for t in getattr(self, '_top_total_texts', []):
-                t.set_visible(False)
-
-        # --- Dual side lines ---
-        if getattr(self, '_dual_side_lines', False) and self._side_lines:
-            self.fig.canvas.draw()
-            renderer = self.fig.canvas.get_renderer()
-            left_inner = float('-inf')
-            right_inner = float('inf')
-
-            for text in self._bar_value_texts:
-                if not text.get_visible():
-                    continue
-                bbox = text.get_window_extent(renderer=renderer)
-                inv = self.ax.transData.inverted()
-                x_left_data = inv.transform((bbox.x0, 0))[0]
-                x_right_data = inv.transform((bbox.x1, 0))[0]
-
-                ha = text.get_ha()
-                if ha == 'right':
-                    left_inner = max(left_inner, x_right_data)
-                elif ha == 'left':
-                    right_inner = min(right_inner, x_left_data)
-
-            # Fallback to bar edges if one side has no bubbles
-            if left_inner == float('-inf') or right_inner == float('inf'):
-                # Use the bar edges from the first group that has data
-                for g_idx, group in enumerate(self.groups):
-                    yearly = MultiBarChart._get_yearly_stacked_data(group.series)
-                    if yearly.get(year):
-                        bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
-                        bar_half = (group_width - 0.04) / 2.0
-                        if left_inner == float('-inf'):
-                            left_inner = bar_center - bar_half
-                        if right_inner == float('inf'):
-                            right_inner = bar_center + bar_half
-                        break
-
-            if left_inner > float('-inf') and right_inner < float('inf'):
-                left_pad = 0.025
-                right_pad = 0.015
-                self._side_lines[0].set_xdata([left_inner + left_pad, left_inner + left_pad])
-                self._side_lines[0].set_visible(True)
-                self._side_lines[1].set_xdata([right_inner - right_pad, right_inner - right_pad])
-                self._side_lines[1].set_visible(True)
+        for i, (x, y, txt) in enumerate(top_needed):
+            if i < len(self._top_total_texts):
+                text = self._top_total_texts[i]
+                text.set_position((x, y))
+                text.set_text(txt)
+                text.set_visible(True)
             else:
+                text = self.ax.text(
+                    x, y, txt,
+                    ha='center', va='bottom',
+                    fontsize=self._bar_value_fontsize + 0.5,
+                    color='black',
+                    fontweight='bold',
+                    zorder=30,
+                    clip_on=False,
+                    bbox=dict(
+                        boxstyle="round,pad=0.2",
+                        facecolor="white",
+                        alpha=0.95,
+                        edgecolor="#333333",
+                        linewidth=0.8,
+                    ),
+                )
+                self._top_total_texts.append(text)
+
+        for j in range(len(top_needed), len(self._top_total_texts)):
+            self._top_total_texts[j].set_visible(False)
+
+    def _update_side_lines(self, idx, year, group_width):
+        if not getattr(self, '_dual_side_lines', False) or not self._side_lines:
+            if getattr(self, '_side_lines', None):
                 for line in self._side_lines:
                     line.set_visible(False)
-        elif getattr(self, '_side_lines', None):
+            return
+
+        left_edge = float('inf')
+        right_edge = float('-inf')
+
+        for g_idx, group in enumerate(self.groups):
+            yearly = MultiBarChart._get_yearly_stacked_data(group.series)
+            if yearly.get(year):
+                bar_center = idx - 0.4 + (g_idx + 0.5) * group_width
+                bar_half = (group_width - 0.04) / 2.0
+                left_edge = min(left_edge, bar_center - bar_half)
+                right_edge = max(right_edge, bar_center + bar_half)
+
+        if left_edge < float('inf') and right_edge > float('-inf'):
+            left_pad = 0.12
+            right_pad = 0.12
+            self._side_lines[0].set_xdata([left_edge - left_pad, left_edge - left_pad])
+            self._side_lines[0].set_visible(True)
+            self._side_lines[1].set_xdata([right_edge + right_pad, right_edge + right_pad])
+            self._side_lines[1].set_visible(True)
+        else:
             for line in self._side_lines:
                 line.set_visible(False)
 
