@@ -1782,20 +1782,23 @@ class MultiBarChart(Chart):
 
     @staticmethod
     def compute_stack_totals(
+            target_df: pd.DataFrame,
             series: List[BarSeries] | BarGroup,
             top_col: str,
-            total_col_name: str = "Total",
+            result_col: str,
     ) -> pd.DataFrame:
         """
-        Sum every series from the bottom of the stack up to and including top_col.
+        Sum every series from the bottom of the stack up to and including top_col
+        and write the yearly totals into target_df[result_col] (aligned by Year).
         Series above top_col are excluded. NaNs are treated as 0.
-        Returns DataFrame with columns ['Year', total_col_name].
+        Returns target_df for chaining.
         """
         if isinstance(series, BarGroup):
             series = series.series
 
-        if not series:
-            return pd.DataFrame(columns=["Year", total_col_name])
+        if not series or "Year" not in target_df.columns:
+            target_df[result_col] = 0.0
+            return target_df
 
         # Find the index of the cutoff column (inclusive)
         cutoff = None
@@ -1804,31 +1807,27 @@ class MultiBarChart(Chart):
                 cutoff = i
                 break
         if cutoff is None:
-            return pd.DataFrame(columns=["Year", total_col_name])
+            target_df[result_col] = 0.0
+            return target_df
 
         included = series[:cutoff + 1]  # bottom through and including top_col
 
-        all_years = set()
+        # Build a Year -> total map
+        year_totals: dict[int, float] = {}
         for s in included:
-            if s.df is not None and not s.df.empty and "Year" in s.df.columns:
-                years = pd.to_numeric(s.df["Year"], errors="coerce").dropna()
-                all_years.update(int(y) for y in years)
+            if s.df is None or s.df.empty or "Year" not in s.df.columns or s.col not in s.df.columns:
+                continue
+            tmp = s.df[["Year", s.col]].copy()
+            tmp["Year"] = pd.to_numeric(tmp["Year"], errors="coerce")
+            tmp[s.col] = pd.to_numeric(tmp[s.col], errors="coerce").fillna(0.0)
+            tmp = tmp.dropna(subset=["Year"])
+            for _, row in tmp.iterrows():
+                y = int(row["Year"])
+                year_totals[y] = year_totals.get(y, 0.0) + float(row[s.col])
 
-        if not all_years:
-            return pd.DataFrame(columns=["Year", total_col_name])
+        # Write into the target DataFrame
+        target_df[result_col] = target_df["Year"].map(
+            lambda y: year_totals.get(int(y), 0.0) if pd.notna(y) else 0.0
+        )
 
-        rows = []
-        for year in sorted(all_years):
-            total = 0.0
-            for s in included:
-                if s.df is None or s.df.empty or s.col not in s.df.columns:
-                    continue
-                match = s.df[s.df["Year"] == year]
-                if match.empty:
-                    continue
-                val = pd.to_numeric(match[s.col].iloc[0], errors="coerce")
-                if pd.notna(val):
-                    total += val
-            rows.append({"Year": year, total_col_name: total})
-
-        return pd.DataFrame(rows)
+        return target_df

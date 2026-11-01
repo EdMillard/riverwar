@@ -95,15 +95,14 @@ class Colors:
     UB = '#8080ff'
 
     # NATURAL_FLOW = "cornflowerblue"
-    NATURAL_FLOW = "navy"
+    NATURAL_FLOW = deep_purple[0]
+    FILL = deep_purple[3]
 
-    EVAP = '#c5a67a'
+    EVAPORATION = yellow[1]
 
     Wet = "green"
     Drought = "red"
     Monsoon = "black"
-
-    FILL = deep_purple[2]
 
 class Demand:
     monsoon_years = [
@@ -309,14 +308,14 @@ class Demand:
             ("CA", (self.df_lb_cul, lb.CA_TOTAL), Colors.CA1),
             ("AZ", (self.df_lb_cul, lb.AZ_TOTAL), Colors.AZ),
             ("NV", (self.df_lb_cul, lb.NV_TOTAL), 'darkgray'),
-            ("LB Evap", (self.df_lb_cul, lb.LB_RESERVOIR_EVAP), Colors.EVAP),
+            ("LB Evap", (self.df_lb_cul, lb.LB_RESERVOIR_EVAP), Colors.EVAPORATION),
             ("LB Demand", (self.df_lb_cul, lb.LB_TOTAL), 'maroon')
         ])
 
         self.evap_totals = (0.0, 0.02, [
-            ("UB Evap", (self.df_ub_cul, ub.UB_RESERVOIR_EVAP), Colors.EVAP),
-            ("LB Evap", (self.df_lb_cul, lb.LB_RESERVOIR_EVAP), Colors.EVAP),
-            ("Salton Evap", (self.df_lb_cul, lb.SALTON_INFLOW), Colors.EVAP),
+            ("UB Evap", (self.df_ub_cul, ub.UB_RESERVOIR_EVAP), Colors.EVAPORATION),
+            ("LB Evap", (self.df_lb_cul, lb.LB_RESERVOIR_EVAP), Colors.EVAPORATION),
+            ("Salton Evap", (self.df_lb_cul, lb.SALTON_INFLOW), Colors.EVAPORATION),
             ("Total", (self.df_lb_cul, all_b.EVAP_TOTAL))
         ])
 
