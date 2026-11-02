@@ -21,7 +21,7 @@ SOFTWARE.
 """
 from datetime import date
 import numpy as np
-from typing import List, Union, Dict, Any, Optional, cast
+from typing import List, Union, Dict, Any, Optional, Tuple, cast
 import pandas as pd
 from datetime import datetime
 
@@ -403,35 +403,20 @@ def add_column_sum(df: pd.DataFrame,
                    sum_column_name: str = 'total_sum') -> pd.DataFrame:
     """
     Add (or update) a column with the row-wise sum of specified columns.
-    NaN values are ignored. If all values in a row are NaN, the result is NaN.
-    Creates the target column if it doesn't exist.
-
-    Parameters:
-        df (pd.DataFrame): The DataFrame to modify.
-        cols_to_sum (list): List of column names to sum.
-        sum_column_name (str): Name of the column where the sum will be stored.
-
-    Returns:
-        pd.DataFrame: The original DataFrame with the sum column added/updated.
+    NaN / <NA> values are ignored. If all values in a row are missing, the result is NaN.
     """
-    # Input validation
     if not isinstance(df, pd.DataFrame):
         raise TypeError("Input must be a pandas DataFrame")
 
-    # Check all columns exist
     missing = [col for col in cols_to_sum if col not in df.columns]
     if missing:
         raise ValueError(f"Columns not found in DataFrame: {missing}")
 
-    # Sum while ignoring NaNs; return NaN if all values in the row are NaN
-    df[sum_column_name] = df[cols_to_sum].sum(axis=1, min_count=1)
+    # Convert to numeric (turns pd.NA → NaN) then sum
+    numeric = df[cols_to_sum].apply(pd.to_numeric, errors='coerce')
+    df[sum_column_name] = numeric.sum(axis=1, min_count=1)
 
     return df
-
-
-import pandas as pd
-from typing import List, Tuple, Optional
-
 
 def add_columns_across_dfs(
         sources: List[Tuple[pd.DataFrame, str]],

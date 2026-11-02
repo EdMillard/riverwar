@@ -46,6 +46,9 @@ SOFTWARE.
 #     https://www.usbr.gov/uc/DocLibrary/Reports/ConsumptiveUsesLosses/v24.5_UB_CU_WY_Annual.xlsx
 #
 # USGS Reports
+#   Report of Progress of Stream Measurements the Calendar Year 1904
+#   https://pubs.usgs.gov/wsp/0134/report.pdf
+#
 #   Summary of Records of Surface Waters at Base Stations in Colorado River Basin 1891-1938
 #   https://pubs.usgs.gov/wsp/0918/report.pdf
 #
@@ -386,6 +389,27 @@ class SupplyVDemand(DemandChartFrame):
         df_utils.subtract_column(self.df, "Yuma USGS", "Alamo", "Delta", clip_negative_to_zero=True)
         df_utils.subtract_column(self.df, "Delta", "Volcano", "Delta")
 
+        # Alamo 1912-1915
+        #
+        df_alamo_1912_1915 = sheet.read_csv('data/USGS_Surface_Waters/alamo_1912_1915.csv', sep=',')
+        df_utils.copy_column_by_year_range(df_alamo_1912_1915, self.df, "Total_American_Deliveries", lb.IMPERIAL_VALLEY_CU, 1912, 1915)
+        df_utils.copy_column_by_year_range(df_alamo_1912_1915, self.df, "Total_Mexican_Deliveries", "Mexico Treaty", 1912, 1915)
+        df_utils.copy_column_by_year_range(df_alamo_1912_1915, self.df, "Total_Loss", "Alamo", 1912, 1915)
+
+        # Alamo 1915-1935 with gaps
+        # FIXME - Unsure if Volcano inflow is included in these numbers, if it is we need to remove volcano from the bar
+        #
+        df_alamo_2015_2019 = sheet.read_csv('data/USGS_Surface_Waters/alamo_us_v_mexico_1915_1935.csv', sep=',')
+        df_utils.copy_column_by_year_range(df_lc_usgs, df_alamo_2015_2019, "Alamo_at_head_Morelos", "Alamo", 1912, 1941)
+        df_utils.subtract_column(df_alamo_2015_2019, "Alamo", "Total_AF", "Loss")
+        df_utils.divide_columns(df_alamo_2015_2019, "Loss", "Alamo", "Loss %")
+        df_utils.copy_column_by_year_range(df_alamo_2015_2019, self.df, "Mexico_AF", "Mexico Treaty", 1915, 1919)
+        df_utils.copy_column_by_year_range(df_alamo_2015_2019, self.df, "Mexico_AF", "Mexico Treaty", 1935, 1935)
+        df_utils.copy_column_by_year_range(df_alamo_2015_2019, self.df, "United_States_AF", lb.IMPERIAL_VALLEY_CU, 1915, 1919)
+        df_utils.copy_column_by_year_range(df_alamo_2015_2019, self.df, "United_States_AF", lb.IMPERIAL_VALLEY_CU, 1935, 1935)
+        df_utils.copy_column_by_year_range(df_alamo_2015_2019, self.df, "Loss", "Alamo", 1915, 1919)
+        df_utils.copy_column_by_year_range(df_alamo_2015_2019, self.df, "Loss", "Alamo", 1935, 1935)
+
         # Estimated Mexico use 1907-1970 (Not trustworthy)
         #
         df_mexico_treaty_guess = sheet.read_csv('data/Colorado_River/mexico_guess_1907_1963.csv',
@@ -420,6 +444,23 @@ class SupplyVDemand(DemandChartFrame):
         ub_column_map = { "UB Total": "Upper Basin", }
         df_utils.copy_columns_by_key(self.demand.df_ub_cul, self.df, ub_column_map)
 
+        self.load_mexico(df_alamo_breach)
+
+        self.pre_lb_demand_bar_chart(self.df, use_cul=True)
+
+        self.ub_bar_group = SupplyVDemand.build_ub_demand(self.df, self.demand.df_ub_cul, self.end_year)
+        self.lb_bar_group = SupplyVDemand.build_lb_demand_series(self.df, self.demand.df_lb_cul, self.demand.az_ltsc_data.df)
+
+        self.create_natural_flow_bar_chart()
+        self.create_ub_demand_bar_chart(self.df)
+        # self.create_lb_trib_bar_chart(self.df)
+        self.create_lb_demand_bar_chart(self.df)
+        #self.create_demand_pie_chart(self.df)
+
+        # self.create_reservoir_bar_chart(show_x_labels=False)
+        self.on_line_moved(1922)
+
+    def load_mexico(self, df_alamo_breach:pd.DataFrame):
         # Mexico Delta, 2005 to present from annual reports
         #
         df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_in_excess.csv', sep='\s+')
@@ -441,19 +482,6 @@ class SupplyVDemand(DemandChartFrame):
         df_utils.copy_columns_by_key(self.df, self.df, delta_map)
         df_utils.copy_column_by_year_range(df_alamo_breach, self.df, "Residual_to_Delta_AF", "Delta", 1905, 1905)
 
-        self.pre_lb_demand_bar_chart(self.df, use_cul=True)
-
-        self.ub_bar_group = SupplyVDemand.build_ub_demand(self.df, self.demand.df_ub_cul, self.end_year)
-        self.lb_bar_group = SupplyVDemand.build_lb_demand_series(self.df, self.demand.df_lb_cul, self.demand.az_ltsc_data.df)
-
-        self.create_natural_flow_bar_chart()
-        self.create_ub_demand_bar_chart(self.df)
-        # self.create_lb_trib_bar_chart(self.df)
-        self.create_lb_demand_bar_chart(self.df)
-        #self.create_demand_pie_chart(self.df)
-
-        # self.create_reservoir_bar_chart(show_x_labels=False)
-        self.on_line_moved(1922)
 
     def pre_lb_demand_bar_chart(self, df_cu_1906_2024: pd.DataFrame, use_cul:bool=True):
         if use_cul:
@@ -674,6 +702,7 @@ class SupplyVDemand(DemandChartFrame):
             ("NV", Colors.NV1),
             ("CA", Colors.CA),
             ("Alamo", Colors.CA_ALAMO),
+            ("Volcano", Colors.CA_VOLCANO),
         ]
         self.lb_demand_chart = MultiBarChart(
             title='',
