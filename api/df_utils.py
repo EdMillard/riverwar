@@ -378,12 +378,13 @@ def multiply_constant(
         target_col: str,
         constant: float,
         inplace: bool = True
-) -> None:
+) -> pd.DataFrame:
     """
-    Subtract a constant from source_col and store result in target_col.
+    Multiply a column by a constant and store the result in target_col.
+    Safely handles numeric columns, string columns containing numbers
+    (including negatives like "-123.4"), and column names that contain "-".
 
-    Example:
-        subtract_constant(df_daily, "Inflow_cfs", "Inflow_cfs_minus_5000", 5000)
+    Bad/non-numeric values become NaN.
     """
     if source_col not in df.columns:
         raise ValueError(f"Column '{source_col}' not found in DataFrame")
@@ -391,10 +392,11 @@ def multiply_constant(
     if not inplace:
         df = df.copy()
 
-    df[target_col] = df[source_col] * constant
+    # Convert to numeric first so string negatives and object dtypes work
+    numeric = pd.to_numeric(df[source_col], errors="coerce")
+    df[target_col] = numeric * constant
 
-    # Optional: convert to numeric and handle NaNs gracefully
-    df[target_col] = pd.to_numeric(df[target_col], errors='coerce')
+    return df
 
 def add_column_sum(df: pd.DataFrame,
                    cols_to_sum: list,
@@ -1098,6 +1100,97 @@ def copy_rows_by_year(
         target_df[col] = target_df[y_col].map(source_map[col])
 
     print(f"✅ Copied {len(columns_to_copy)} columns from source into target by Year match")
+
+def copy_column_by_year_range(
+        source_df: pd.DataFrame,
+        target_df: pd.DataFrame,
+        source_col: str,
+        target_col: str,
+        start_year: int,
+        end_year: int,
+        year_col: str = "Year",
+        overwrite: bool = True,
+        inplace: bool = True,
+) -> pd.DataFrame:
+    """
+    Copy values from source_df[source_col] into target_df[target_col]
+    for years in [start_year, end_year] (inclusive), aligned on year_col.
+
+    Years outside the range are left unchanged.
+    Creates target_col if it does not exist.
+
+    Parameters
+    ----------
+    source_df : DataFrame
+        Source data (must contain year_col and source_col).
+    target_df : DataFrame
+        Destination (modified in place unless inplace=False).
+    source_col : str
+        Column to copy from in source_df.
+    target_col : str
+        Column to write into in target_df.
+    start_year, end_year : int
+        Inclusive year range to copy.
+    year_col : str, default "Year"
+        Key column used for alignment.
+    overwrite : bool, default True
+        If True, always write the source value (when it is not NA).
+        If False, only write when the target cell is currently NA.
+    inplace : bool, default True
+        Modify target_df directly if True; otherwise work on a copy.
+
+    Returns
+    -------
+    DataFrame
+        The (possibly modified) target DataFrame.
+    """
+    if not isinstance(source_df, pd.DataFrame) or not isinstance(target_df, pd.DataFrame):
+        raise TypeError("source_df and target_df must be pandas DataFrames")
+
+    if year_col not in source_df.columns or year_col not in target_df.columns:
+        raise ValueError(f"year_col '{year_col}' must exist in both DataFrames")
+    if source_col not in source_df.columns:
+        raise ValueError(f"Source column '{source_col}' not found")
+    if start_year > end_year:
+        raise ValueError(f"start_year ({start_year}) must be <= end_year ({end_year})")
+
+    target = target_df if inplace else target_df.copy()
+
+    # Ensure target column exists
+    if target_col not in target.columns:
+        target[target_col] = pd.NA
+
+    # Build a year → value map from the source (only the requested range)
+    src_mask = (source_df[year_col] >= start_year) & (source_df[year_col] <= end_year)
+    src_map = (
+        source_df.loc[src_mask]
+        .set_index(year_col)[source_col]
+        .dropna()          # skip NA source values
+    )
+
+    if src_map.empty:
+        return target
+
+    # Align on year
+    target_years = target[year_col]
+    in_range = (target_years >= start_year) & (target_years <= end_year)
+
+    # Map source values onto the target years
+    mapped = target_years.map(src_map)
+
+    # Decide which cells to write
+    if overwrite:
+        write_mask = in_range & mapped.notna()
+    else:
+        write_mask = in_range & mapped.notna() & target[target_col].isna()
+
+    if write_mask.any():
+        target.loc[write_mask, target_col] = mapped[write_mask]
+
+    # Keep numeric if possible
+    target[target_col] = pd.to_numeric(target[target_col], errors="coerce")
+
+    return target
 
 def store_value_closest_day(
         df: pd.DataFrame,

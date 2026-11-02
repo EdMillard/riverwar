@@ -63,6 +63,9 @@ SOFTWARE.
 #
 # USGS Compilation of Records of Surface Waters of the United States 1890-1950
 #   https://pubs.usgs.gov/wsp/1313/report.pdf
+#
+# USGS Lower Colorado River Water Supply Its Magnitude and Distribution
+#   https://pubs.usgs.gov/pp/0486d/report.pdf
 
 # Coachella
 # https://www.cvwd.org/DocumentCenter/View/1193/Final-Coachella-Valley-Water-Management-Plan--September-2002--PDF
@@ -356,12 +359,24 @@ class SupplyVDemand(DemandChartFrame):
         df_utils.add_column_sum(self.df, [lb.ALAMO_RIVER, lb.NEW_RIVER, lb.WHITEWATER], lb.SALTON_INFLOW)
 
         # Alamo Canal 1909-1938
-        df_alamo = sheet.read_csv('data/USGS_Surface_Waters//alamo_1909_1938.csv', sep=',')
-        alamo_column_map = { "CY_Runoff_acre_ft": "Alamo" }
-        df_utils.copy_columns_by_key(df_alamo, self.df, alamo_column_map, overwrite=True)
-        df_utils.divide_by_constant(self.df, "Alamo", 2.0, 'Alamo Split')
+        # df_alamo = sheet.read_csv('data/USGS_Surface_Waters//alamo_1909_1938.csv', sep=',')
+        # alamo_column_map = { "CY_Runoff_acre_ft": "Alamo" }
+        # df_utils.copy_columns_by_key(df_alamo, self.df, alamo_column_map, overwrite=True)
+        # df_utils.divide_by_constant(self.df, "Alamo", 2.0, 'Alamo Split')
+
+        # Alamo Canal 1908-1950
+        # df_alamo2 = sheet.read_csv('data/USGS_Surface_Waters/alamo_1908_1950.csv', sep=',')
+        # df_utils.multiply_constant(df_alamo2, "Total", "Alamo", 1000)
+
+        df_alamo_breach = sheet.read_csv('data/Colorado_River/alamo_breach_1905_1907.csv', sep=',')
+        df_utils.copy_column_by_year_range(df_alamo_breach, self.df, "Alamo_Salton_Sea_AF", "Alamo", 1905, 1907)
+
+        df_lc_usgs = sheet.read_csv('data/USGS_Surface_Waters/diversions_and_returns_below_imperial_1908_1966.csv', sep=',')
+        df_utils.copy_column_by_year_range(df_lc_usgs, self.df, "Alamo_at_head_Morelos", "Alamo", 1908, 1939)
+        df_utils.zero_out_column(self.df, "CA", 1906, 1939, date_col='Year', use_nan=True)
 
         # Volcano Island Supplement to Imperial on top of Alamo 1916-1921
+        #
         df_volcano = sheet.read_csv('data/USGS_Surface_Waters//volcano_lake_1916_1921.csv', sep=',')
         volcano_column_map = { "Water_Year_Runoff_AF": "Volcano" }
         df_utils.copy_columns_by_key(df_volcano, self.df, volcano_column_map, overwrite=True)
@@ -370,7 +385,6 @@ class SupplyVDemand(DemandChartFrame):
         #
         df_utils.subtract_column(self.df, "Yuma USGS", "Alamo", "Delta", clip_negative_to_zero=True)
         df_utils.subtract_column(self.df, "Delta", "Volcano", "Delta")
-        # df_utils.zero_out_column(self.df, "Delta", 1939, 1965, date_col='Year', use_nan=True)
 
         # Estimated Mexico use 1907-1970 (Not trustworthy)
         #
@@ -380,6 +394,11 @@ class SupplyVDemand(DemandChartFrame):
 
         mexico_guess_column_map = { "estimated_AF": "Mexico Treaty",}
         df_utils.copy_columns_by_key(df_mexico_treaty_guess, self.df, mexico_guess_column_map, overwrite=True)
+
+        df_mx = sheet.read_csv('data/USBR_Reports/mx/usbr_mx_satisfaction_of_treaty.csv', sep='\s+')
+        sheet.merge_annual_column(self.df, df_mx, "Mexico Treaty", divisor=1)
+
+        df_utils.copy_column_by_year_range(df_lc_usgs, self.df, "Alamo_at_head_Morelos", "Mexico Treaty", 1942, 1964)
 
         # Bureau CUL data 1971-2024 (Very trustworthy)
         # Lower Basin CUL
@@ -420,6 +439,7 @@ class SupplyVDemand(DemandChartFrame):
             "Mexico Delta": "Delta",
         }
         df_utils.copy_columns_by_key(self.df, self.df, delta_map)
+        df_utils.copy_column_by_year_range(df_alamo_breach, self.df, "Residual_to_Delta_AF", "Delta", 1905, 1905)
 
         self.pre_lb_demand_bar_chart(self.df, use_cul=True)
 
